@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanishing Points — Atlas of the Forgotten</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Atmospheric Overlays -->
+    <div class="vignette"></div>
+    <div class="grain"></div>
+    <div class="scanlines"></div>
+    <div class="dust-container" id="dust-container"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-bg"></div>
+        <div class="loading-content">
+            <div class="loading-fog"></div>
+            <div class="loading-glitch" data-text="VANISHING POINTS">VANISHING POINTS</div>
+            <div class="loading-divider"><span>◆</span></div>
+            <p class="loading-subtitle">Atlas of the Forgotten</p>
+            <div class="loading-bar-container">
+                <div class="loading-bar"></div>
+            </div>
+            <p class="loading-text" id="loading-text">Establishing connection to the void...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" style="display:none">
+        <!-- Header -->
+        <header class="site-header">
+            <div class="header-inner">
+                <h1 class="site-title">Vanishing Points</h1>
+                <p class="site-tagline">Atlas of the Forgotten</p>
+            </div>
+            <div class="header-actions">
+                <button id="btn-surprise" class="btn-secondary">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Surprise Me
+                </button>
+                <button id="btn-add-place" class="btn-primary btn-glow">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Report a Place
+                </button>
+            </div>
+        </header>
+
+        <div class="header-divider"></div>
+
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="search-input" placeholder="Search by name, location, or tale...">
+            </div>
+            
+            <div class="filter-group">
+                <select id="category-filter" class="filter-select">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+
+            <div class="view-toggles">
+                <button id="view-map" class="view-btn active">Map</button>
+                <button id="view-list" class="view-btn">List</button>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <span id="places-count">0 places found</span>
+            <span id="explored-count">0 marked</span>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Map View -->
+            <div id="map-container" class="map-view active">
+                <div id="map"></div>
+                <div class="map-overlay-fog"></div>
+                <div class="map-legend">
+                    <div class="legend-title">Intensity</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#5a4a3a"></span> Faint</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#7a6a52"></span> Present</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#9a8a6a"></span> Strong</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#baaa8a"></span> Intense</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#dacaaa"></span> Overwhelming</div>
+                </div>
+            </div>
+
+            <!-- List View -->
+            <div id="list-container" class="list-view">
+                <div id="places-list" class="places-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Place Detail Panel -->
+    <div id="detail-panel" class="detail-panel">
+        <div class="detail-panel-inner">
+            <button class="detail-close" id="detail-close">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Add Place Modal -->
+    <div id="add-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report a Vanishing Point</h2>
+                <button class="modal-close" id="modal-close">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-intro">Know of a forgotten place? Submit it to the atlas. All submissions are reviewed before appearing on the map.</p>
+                <form id="add-place-form" class="add-form">
+                    <div class="form-group">
+                        <label for="place-name">Name <span class="required">*</span></label>
+                        <input type="text" id="place-name" required placeholder="e.g., St. Mary's Asylum">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="place-location">Location <span class="required">*</span></label>
+                            <input type="text" id="place-location" required placeholder="City, Region">
+                        </div>
+                        <div class="form-group">
+                            <label for="place-country">Country <span class="required">*</span></label>
+                            <input type="text" id="place-country" required placeholder="Country">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="place-lat">Latitude <span class="required">*</span></label>
+                            <input type="number" id="place-lat" step="any" required placeholder="51.5074">
+                        </div>
+                        <div class="form-group">
+                            <label for="place-lng">Longitude <span class="required">*</span></label>
+                            <input type="number" id="place-lng" step="any" required placeholder="-0.1278">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="place-category">Category <span class="required">*</span></label>
+                            <select id="place-category" required>
+                                <option value="">Select category...</option>
+                                <option value="Ghost Cities">Ghost Cities</option>
+                                <option value="Ghost Towns">Ghost Towns</option>
+                                <option value="Abandoned Villages">Abandoned Villages</option>
+                                <option value="Castles & Forts">Castles & Forts</option>
+                                <option value="Hospitals & Asylums">Hospitals & Asylums</option>
+                                <option value="Prisons">Prisons</option>
+                                <option value="Churches & Temples">Churches & Temples</option>
+                                <option value="Islands">Islands</option>
+                                <option value="Forests">Forests</option>
+                                <option value="Ruins & Geoglyphs">Ruins & Geoglyphs</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="place-intensity">Intensity</label>
+                            <select id="place-intensity">
+                                <option value="1">1 — Faint whisper</option>
+                                <option value="2">2 — Present</option>
+                                <option value="3">3 — Strong</option>
+                                <option value="4">4 — Intense</option>
+                                <option value="5">5 — Overwhelming</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="place-year">Year Abandoned / Incident</label>
+                        <input type="text" id="place-year" placeholder="e.g., 1986 or 'Ongoing'">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="place-description">Description <span class="required">*</span></label>
+                        <textarea id="place-description" rows="4" required placeholder="Tell us what happened here. Be atmospheric but factual..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="place-submitter">Your Name <span class="optional">(optional)</span></label>
+                        <input type="text" id="place-submitter" placeholder="Anonymous">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel">Cancel</button>
+                        <button type="submit" class="btn-primary btn-glow">Submit for Review</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

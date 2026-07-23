@@ -2,6 +2,25 @@
  * VANISHING POINTS — Atlas of the Forgotten
  */
 
+// ============================================
+// EMERGENCY LOADING SCREEN FALLBACK
+// This runs immediately and guarantees advancement
+// ============================================
+setTimeout(() => {
+    const ls = document.getElementById('loading-screen');
+    const app = document.getElementById('app');
+    if (ls) {
+        ls.style.transition = 'opacity 1.2s ease, visibility 1.2s ease';
+        ls.style.opacity = '0';
+        ls.style.visibility = 'hidden';
+        ls.style.pointerEvents = 'none';
+        setTimeout(() => {
+            ls.style.display = 'none';
+            if (app) app.style.display = 'block';
+        }, 1200);
+    }
+}, 4000);
+
 const API_BASE = '';
 let map;
 let markers = [];
@@ -29,12 +48,11 @@ const intensityColors = {
 };
 
 // ============================================
-// INITIALIZATION — BULLETPROOF
+// INITIALIZATION
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Vanishing Points initializing...');
-    
     try {
         initLoadingScreen();
         initEventListeners();
@@ -42,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCategories();
     } catch (err) {
         console.error('Init error:', err);
-        forceShowApp();
     }
 });
 
@@ -51,20 +68,13 @@ function initLoadingScreen() {
     const loadingText = document.getElementById('loading-text');
     const app = document.getElementById('app');
     
-    console.log('Loading screen elements:', { loadingScreen: !!loadingScreen, app: !!app });
-    
-    if (!loadingScreen || !app) {
-        console.error('Missing loading elements, forcing app show');
-        forceShowApp();
-        return;
-    }
+    if (!loadingScreen || !app) return;
     
     // Rotate loading text
     let textIndex = 0;
     const textInterval = setInterval(() => {
         if (!loadingText) return;
         textIndex = (textIndex + 1) % loadingTexts.length;
-        loadingText.style.transition = 'opacity 0.2s ease';
         loadingText.style.opacity = '0';
         setTimeout(() => {
             if (loadingText) {
@@ -74,58 +84,23 @@ function initLoadingScreen() {
         }, 200);
     }, 1800);
     
-    // ALWAYS advance after 4 seconds — this is a hard guarantee
+    // Primary advancement logic
     setTimeout(() => {
-        console.log('Loading timeout reached, advancing...');
         clearInterval(textInterval);
-        
-        // Add hidden class to trigger CSS transition
         loadingScreen.classList.add('hidden');
-        
-        // After CSS transition completes, fully remove and show app
         setTimeout(() => {
-            console.log('Removing loading screen, showing app');
             loadingScreen.style.display = 'none';
-            loadingScreen.style.opacity = '0';
-            loadingScreen.style.visibility = 'hidden';
             app.style.display = 'block';
-            
-            // Initialize map and data
             try {
                 initMap();
                 setTimeout(() => {
-                    loadPlaces().then(() => {
-                        handleUrlParams();
-                    }).catch((err) => {
-                        console.error('Load places error:', err);
-                    });
+                    loadPlaces().then(() => handleUrlParams()).catch(() => {});
                 }, 100);
             } catch (e) {
                 console.error('Map init error:', e);
             }
-        }, 1500); // Wait longer than CSS transition (1.5s > 1.5s)
-        
-    }, 4000); // 4 seconds total loading time
-}
-
-// Emergency fallback
-function forceShowApp() {
-    console.log('FORCE SHOW APP called');
-    const loadingScreen = document.getElementById('loading-screen');
-    const app = document.getElementById('app');
-    
-    if (loadingScreen) {
-        loadingScreen.style.display = 'none';
-        loadingScreen.classList.add('hidden');
-        loadingScreen.style.opacity = '0';
-        loadingScreen.style.visibility = 'hidden';
-    }
-    if (app) app.style.display = 'block';
-    
-    try { initMap(); } catch(e) { console.error('Force map init failed:', e); }
-    setTimeout(() => {
-        loadPlaces().catch(() => {});
-    }, 200);
+        }, 1500);
+    }, 4000);
 }
 
 // ============================================
@@ -135,64 +110,49 @@ function forceShowApp() {
 function initDustParticles() {
     const container = document.getElementById('dust-container');
     if (!container) return;
-    
-    const particleCount = window.innerWidth < 768 ? 12 : 25;
-    
-    for (let i = 0; i < particleCount; i++) {
+    const count = window.innerWidth < 768 ? 12 : 25;
+    for (let i = 0; i < count; i++) {
         createDustParticle(container);
     }
 }
 
 function createDustParticle(container) {
-    const particle = document.createElement('div');
-    particle.className = 'dust';
-    
+    const p = document.createElement('div');
+    p.className = 'dust';
     const size = Math.random() * 2 + 1;
-    const startX = Math.random() * 100;
-    const startY = Math.random() * 100;
-    const duration = Math.random() * 20 + 15;
-    const delay = Math.random() * 10;
-    
-    particle.style.width = `${size}px`;
-    particle.style.height = `${size}px`;
-    particle.style.left = `${startX}%`;
-    particle.style.top = `${startY}%`;
-    particle.style.opacity = Math.random() * 0.3 + 0.1;
-    
-    animateParticle(particle, duration, delay);
-    container.appendChild(particle);
+    p.style.width = `${size}px`;
+    p.style.height = `${size}px`;
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.top = `${Math.random() * 100}%`;
+    p.style.opacity = Math.random() * 0.3 + 0.1;
+    container.appendChild(p);
+    animateParticle(p);
 }
 
-function animateParticle(particle, duration, delay) {
-    let start = null;
-    const startX = parseFloat(particle.style.left);
-    const startY = parseFloat(particle.style.top);
-    const driftX = (Math.random() - 0.5) * 20;
-    const driftY = (Math.random() - 0.5) * 10 - 5;
+function animateParticle(p) {
+    const startX = parseFloat(p.style.left);
+    const startY = parseFloat(p.style.top);
+    const dx = (Math.random() - 0.5) * 20;
+    const dy = (Math.random() - 0.5) * 10 - 5;
+    const duration = (Math.random() * 20 + 15) * 1000;
+    const startTime = performance.now();
     
-    function step(timestamp) {
-        if (!start) start = timestamp - delay * 1000;
-        const progress = Math.max(0, (timestamp - start) / (duration * 1000));
-        
+    function step(now) {
+        const progress = (now - startTime) / duration;
         if (progress >= 1) {
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.top = `${Math.random() * 100}%`;
-            animateParticle(particle, duration, 0);
+            p.style.left = `${Math.random() * 100}%`;
+            p.style.top = `${Math.random() * 100}%`;
+            animateParticle(p);
             return;
         }
-        
-        const x = startX + Math.sin(progress * Math.PI * 2) * driftX;
-        const y = startY + progress * driftY;
-        const opacity = Math.sin(progress * Math.PI) * 0.3;
-        
-        particle.style.left = `${x}%`;
-        particle.style.top = `${y}%`;
-        particle.style.opacity = opacity;
-        
+        const x = startX + Math.sin(progress * Math.PI * 2) * dx;
+        const y = startY + progress * dy;
+        p.style.left = `${x}%`;
+        p.style.top = `${y}%`;
+        p.style.opacity = Math.sin(progress * Math.PI) * 0.3;
         requestAnimationFrame(step);
     }
-    
-    setTimeout(() => requestAnimationFrame(step), delay * 1000);
+    requestAnimationFrame(step);
 }
 
 // ============================================
@@ -201,12 +161,8 @@ function animateParticle(particle, duration, delay) {
 
 function initMap() {
     if (map) return;
-    
-    const mapContainer = document.getElementById('map');
-    if (!mapContainer) {
-        console.error('Map container not found');
-        return;
-    }
+    const container = document.getElementById('map');
+    if (!container) return;
     
     map = L.map('map', {
         zoomControl: false,
@@ -230,11 +186,11 @@ function initMap() {
 
 async function loadCategories() {
     try {
-        const response = await fetch(`${API_BASE}/api/categories`);
-        categories = await response.json();
+        const res = await fetch(`${API_BASE}/api/categories`);
+        categories = await res.json();
         populateCategoryFilter();
     } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error('Categories load failed:', err);
     }
 }
 
@@ -243,10 +199,10 @@ function populateCategoryFilter() {
     if (!select) return;
     select.innerHTML = '<option value="all">All Categories</option>';
     categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.category;
-        option.textContent = `${cat.category} (${cat.count})`;
-        select.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = cat.category;
+        opt.textContent = `${cat.category} (${cat.count})`;
+        select.appendChild(opt);
     });
 }
 
@@ -254,21 +210,19 @@ async function loadPlaces() {
     try {
         const category = document.getElementById('category-filter')?.value || 'all';
         const search = document.getElementById('search-input')?.value || '';
-        
         let url = `${API_BASE}/api/places`;
         const params = new URLSearchParams();
         if (category && category !== 'all') params.append('category', category);
         if (search) params.append('search', search);
         if (params.toString()) url += '?' + params.toString();
         
-        const response = await fetch(url);
-        places = await response.json();
-        
+        const res = await fetch(url);
+        places = await res.json();
         updateStats();
         renderMarkers();
         renderList();
     } catch (err) {
-        console.error('Failed to load places:', err);
+        console.error('Places load failed:', err);
         showToast('Failed to load places. Is the server running on port 3000?', 'error');
     }
 }
@@ -279,12 +233,8 @@ async function loadPlaces() {
 
 function renderMarkers() {
     if (!map) return;
-    
-    markers.forEach(m => {
-        try { map.removeLayer(m); } catch(e) {}
-    });
+    markers.forEach(m => { try { map.removeLayer(m); } catch(e) {} });
     markers = [];
-    
     if (places.length === 0) return;
     
     places.forEach(place => {
@@ -306,16 +256,10 @@ function renderMarkers() {
         });
         
         const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
-        
-        const popupContent = `
+        marker.bindPopup(`
             <h3>${escapeHtml(place.name)}</h3>
             <p>${escapeHtml(place.location)}, ${escapeHtml(place.country)}</p>
-        `;
-        
-        marker.bindPopup(popupContent, {
-            closeButton: false,
-            offset: [0, -14]
-        });
+        `, { closeButton: false, offset: [0, -14] });
         
         marker.on('click', () => openDetailPanel(place));
         markers.push(marker);
@@ -340,7 +284,7 @@ function renderList() {
     if (places.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M12 8v4M12 16h.01"/>
                 </svg>
@@ -373,9 +317,7 @@ function createPlaceCard(place, index) {
         <div class="place-card-description">${escapeHtml(place.description)}</div>
         <div class="place-card-meta">
             <span class="place-card-category">${place.category}</span>
-            <div class="place-card-intensity">
-                ${renderIntensityDiamonds(place.intensity)}
-            </div>
+            <div class="place-card-intensity">${renderIntensityDiamonds(place.intensity)}</div>
         </div>
     `;
     return card;
@@ -404,15 +346,12 @@ function openDetailPanel(place) {
     content.innerHTML = `
         <h2 class="detail-name">${escapeHtml(place.name)}</h2>
         <div class="detail-location">${escapeHtml(place.location)}, ${escapeHtml(place.country)}</div>
-        
         <div class="detail-meta">
             <div class="detail-meta-item"><span>${place.category}</span></div>
             <div class="detail-meta-item"><span>Intensity: ${renderIntensityDiamonds(place.intensity)}</span></div>
             ${place.yearAbandoned ? `<div class="detail-meta-item"><span>${place.yearAbandoned}</span></div>` : ''}
         </div>
-        
         <div class="detail-description"><p>${escapeHtml(place.description)}</p></div>
-        
         <div class="detail-actions">
             <button class="detail-btn detail-btn-mark ${isExplored ? 'marked' : ''}" onclick="window.toggleExplored('${place.id}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -428,14 +367,10 @@ function openDetailPanel(place) {
                 ${isFav ? 'Favorited' : 'Favorite'}
             </button>
         </div>
-        
         <div class="detail-coords" onclick="window.copyCoords('${place.lat}', '${place.lng}')">${place.lat.toFixed(4)}°, ${place.lng.toFixed(4)}°</div>
-        
         <div class="detail-share" onclick="window.sharePlace('${place.id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="18" cy="5" r="3"/>
-                <circle cx="6" cy="12" r="3"/>
-                <circle cx="18" cy="19" r="3"/>
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
@@ -481,9 +416,7 @@ window.sharePlace = function(id) {
     const url = `${window.location.origin}?place=${id}`;
     navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard', 'success');
-    }).catch(() => {
-        showToast('Failed to copy link', 'error');
-    });
+    }).catch(() => showToast('Failed to copy link', 'error'));
 };
 
 window.copyCoords = function(lat, lng) {
@@ -500,14 +433,9 @@ function surpriseMe() {
     if (places.length === 0) return;
     const random = places[Math.floor(Math.random() * places.length)];
     openDetailPanel(random);
-    
     if (map && currentView === 'map') {
-        map.flyTo([random.lat, random.lng], 10, {
-            duration: 2,
-            easeLinearity: 0.25
-        });
+        map.flyTo([random.lat, random.lng], 10, { duration: 2, easeLinearity: 0.25 });
     }
-    
     showToast(`Found: ${random.name}`, 'success');
 }
 
@@ -529,7 +457,6 @@ function closeAddModal() {
 
 async function submitPlace(e) {
     e.preventDefault();
-    
     const data = {
         name: document.getElementById('place-name')?.value,
         location: document.getElementById('place-location')?.value,
@@ -549,15 +476,13 @@ async function submitPlace(e) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/api/places`, {
+        const res = await fetch(`${API_BASE}/api/places`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
+        const result = await res.json();
+        if (res.ok) {
             showToast('Place submitted for review. Thank you.', 'success');
             closeAddModal();
         } else {
@@ -573,34 +498,17 @@ async function submitPlace(e) {
 // ============================================
 
 function initEventListeners() {
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) searchInput.addEventListener('input', debounce(loadPlaces, 300));
-    
-    const categoryFilter = document.getElementById('category-filter');
-    if (categoryFilter) categoryFilter.addEventListener('change', loadPlaces);
-    
-    const viewMap = document.getElementById('view-map');
-    const viewList = document.getElementById('view-list');
-    if (viewMap) viewMap.addEventListener('click', () => setView('map'));
-    if (viewList) viewList.addEventListener('click', () => setView('list'));
-    
-    const btnSurprise = document.getElementById('btn-surprise');
-    if (btnSurprise) btnSurprise.addEventListener('click', surpriseMe);
-    
-    const btnAdd = document.getElementById('btn-add-place');
-    const modalClose = document.getElementById('modal-close');
-    const btnCancel = document.getElementById('btn-cancel');
-    const addForm = document.getElementById('add-place-form');
-    const backdrop = document.querySelector('.modal-backdrop');
-    
-    if (btnAdd) btnAdd.addEventListener('click', openAddModal);
-    if (modalClose) modalClose.addEventListener('click', closeAddModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeAddModal);
-    if (addForm) addForm.addEventListener('submit', submitPlace);
-    if (backdrop) backdrop.addEventListener('click', closeAddModal);
-    
-    const detailClose = document.getElementById('detail-close');
-    if (detailClose) detailClose.addEventListener('click', closeDetailPanel);
+    document.getElementById('search-input')?.addEventListener('input', debounce(loadPlaces, 300));
+    document.getElementById('category-filter')?.addEventListener('change', loadPlaces);
+    document.getElementById('view-map')?.addEventListener('click', () => setView('map'));
+    document.getElementById('view-list')?.addEventListener('click', () => setView('list'));
+    document.getElementById('btn-surprise')?.addEventListener('click', surpriseMe);
+    document.getElementById('btn-add-place')?.addEventListener('click', openAddModal);
+    document.getElementById('modal-close')?.addEventListener('click', closeAddModal);
+    document.getElementById('btn-cancel')?.addEventListener('click', closeAddModal);
+    document.getElementById('add-place-form')?.addEventListener('submit', submitPlace);
+    document.querySelector('.modal-backdrop')?.addEventListener('click', closeAddModal);
+    document.getElementById('detail-close')?.addEventListener('click', closeDetailPanel);
     
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -618,10 +526,7 @@ function setView(view) {
     document.getElementById('view-list')?.classList.toggle('active', view === 'list');
     document.getElementById('map-container')?.classList.toggle('active', view === 'map');
     document.getElementById('list-container')?.classList.toggle('active', view === 'list');
-    
-    if (view === 'map' && map) {
-        setTimeout(() => map.invalidateSize(), 150);
-    }
+    if (view === 'map' && map) setTimeout(() => map.invalidateSize(), 150);
 }
 
 function handleUrlParams() {
@@ -634,8 +539,10 @@ function handleUrlParams() {
 }
 
 function updateStats() {
-    document.getElementById('places-count')?.textContent = `${places.length} place${places.length !== 1 ? 's' : ''} found`;
-    document.getElementById('explored-count')?.textContent = `${explored.size} marked`;
+    const countEl = document.getElementById('places-count');
+    const exploredEl = document.getElementById('explored-count');
+    if (countEl) countEl.textContent = `${places.length} place${places.length !== 1 ? 's' : ''} found`;
+    if (exploredEl) exploredEl.textContent = `${explored.size} marked`;
 }
 
 // ============================================
@@ -660,12 +567,10 @@ function escapeHtml(str) {
 function showToast(message, type = '') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
     container.appendChild(toast);
-    
     setTimeout(() => {
         toast.classList.add('toast-out');
         setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300);

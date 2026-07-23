@@ -33,6 +33,8 @@ const intensityColors = {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Vanishing Points initializing...');
+    
     try {
         initLoadingScreen();
         initEventListeners();
@@ -49,7 +51,10 @@ function initLoadingScreen() {
     const loadingText = document.getElementById('loading-text');
     const app = document.getElementById('app');
     
+    console.log('Loading screen elements:', { loadingScreen: !!loadingScreen, app: !!app });
+    
     if (!loadingScreen || !app) {
+        console.error('Missing loading elements, forcing app show');
         forceShowApp();
         return;
     }
@@ -59,6 +64,7 @@ function initLoadingScreen() {
     const textInterval = setInterval(() => {
         if (!loadingText) return;
         textIndex = (textIndex + 1) % loadingTexts.length;
+        loadingText.style.transition = 'opacity 0.2s ease';
         loadingText.style.opacity = '0';
         setTimeout(() => {
             if (loadingText) {
@@ -68,14 +74,20 @@ function initLoadingScreen() {
         }, 200);
     }, 1800);
     
-    // ALWAYS advance after 3.5 seconds, no matter what
+    // ALWAYS advance after 4 seconds — this is a hard guarantee
     setTimeout(() => {
+        console.log('Loading timeout reached, advancing...');
         clearInterval(textInterval);
+        
+        // Add hidden class to trigger CSS transition
         loadingScreen.classList.add('hidden');
         
-        // Wait for CSS fade-out transition (1.2s), then remove completely
+        // After CSS transition completes, fully remove and show app
         setTimeout(() => {
+            console.log('Removing loading screen, showing app');
             loadingScreen.style.display = 'none';
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.visibility = 'hidden';
             app.style.display = 'block';
             
             // Initialize map and data
@@ -84,26 +96,33 @@ function initLoadingScreen() {
                 setTimeout(() => {
                     loadPlaces().then(() => {
                         handleUrlParams();
-                    }).catch(() => {});
+                    }).catch((err) => {
+                        console.error('Load places error:', err);
+                    });
                 }, 100);
             } catch (e) {
                 console.error('Map init error:', e);
             }
-        }, 1200);
+        }, 1500); // Wait longer than CSS transition (1.5s > 1.5s)
         
-    }, 3500);
+    }, 4000); // 4 seconds total loading time
 }
 
-// Emergency fallback — if anything breaks, show the app
+// Emergency fallback
 function forceShowApp() {
+    console.log('FORCE SHOW APP called');
     const loadingScreen = document.getElementById('loading-screen');
     const app = document.getElementById('app');
+    
     if (loadingScreen) {
         loadingScreen.style.display = 'none';
         loadingScreen.classList.add('hidden');
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.visibility = 'hidden';
     }
     if (app) app.style.display = 'block';
-    try { initMap(); } catch(e) {}
+    
+    try { initMap(); } catch(e) { console.error('Force map init failed:', e); }
     setTimeout(() => {
         loadPlaces().catch(() => {});
     }, 200);
@@ -182,6 +201,12 @@ function animateParticle(particle, duration, delay) {
 
 function initMap() {
     if (map) return;
+    
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
     
     map = L.map('map', {
         zoomControl: false,

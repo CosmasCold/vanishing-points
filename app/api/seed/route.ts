@@ -1,256 +1,414 @@
-import { NextRequest, NextResponse } from "next/server";
-import dbConnect, { PlaceModel } from "@/lib/db";
-import { slugify } from "@/lib/utils";
-
 const SEED_DATA = [
+  // ... your existing 10 entries above this ...
+  
   {
-    name: "Pripyat Amusement Park",
+    name: "Hashima Island",
     category: "abandoned" as const,
-    coordinates: [30.0542, 51.4061] as [number, number],
+    coordinates: [129.8688, 32.6273] as [number, number],
     address: {
-      city: "Pripyat",
-      country: "Ukraine",
-      formatted: "Pripyat, Kyiv Oblast, Ukraine",
+      city: "Nagasaki",
+      country: "Japan",
+      formatted: "Hashima Island, Nagasaki Prefecture, Japan",
     },
-    yearAbandoned: 1986,
-    history: `The Ferris wheel never turned for paying customers. Scheduled to open on May 1, 1986, the park stood ready for only a handful of test rides before the evacuation order came on April 27. The air already carried something wrong — a metallic taste, a silence in the pines. Within 36 hours of the Chernobyl explosion, 49,000 people left their apartments forever. The bumper cars remain locked in their grid. A radiation meter near the river still ticks. Nature has begun its slow repossession: birch saplings crack the asphalt of Lenin Avenue, and wolves move through the school corridors at dusk. The park is not frozen in time; it is dissolving into it.`,
+    yearAbandoned: 1974,
+    history: `They called it Gunkanjima — Battleship Island — for its silhouette against the East China Sea. From 1887 to 1974, Mitsubishi operated a coal mine here, cramming 5,259 residents onto 16 acres until it was the highest population density on Earth. Concrete apartment blocks rose ten stories without elevators. There was a school, a hospital, a cinema, a pachinko parlor, all built on a reef with no soil, no agriculture, no escape. When oil replaced coal in 1974, the mine closed overnight. The ferries stopped. The island emptied in weeks. The seawalls now crumble into typhoon surf. Windows stand open to salt air. A single persimmon tree, planted by a miner in 1920, still fruits every autumn for no one.`,
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Pripyat_amusement_park_ferris_wheel.jpg/1280px-Pripyat_amusement_park_ferris_wheel.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Pripyat_-_ panoramio_%2821%29.jpg/1280px-Pripyat_-_panoramio_%2821%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Hashima_Island_%28Gunkanjima%29.jpg/1280px-Hashima_Island_%28Gunkanjima%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Gunkanjima_ruins.jpg/1280px-Gunkanjima_ruins.jpg",
     ],
   },
   {
-    name: "Eastern State Penitentiary",
-    category: "haunted" as const,
-    coordinates: [-75.1727, 39.9683] as [number, number],
-    address: {
-      city: "Philadelphia",
-      country: "United States",
-      formatted: "2027 Fairmount Avenue, Philadelphia, PA",
-    },
-    yearAbandoned: 1971,
-    history: `When it opened in 1829, Eastern State was the most expensive building in America. Its radial floor plan — seven cell blocks extending from a central hub like the spokes of a wheel — became the architectural model for over 300 prisons worldwide. The philosophy was radical isolation: inmates lived in vaulted, skylit cells, hooded whenever they left their rooms, permitted no human contact. The silence was engineered. By the 1960s, overcrowding had collapsed the system into shared, squalid quarters. The last prisoners walked out in 1971. Today the stone corridors amplify footsteps that do not belong to tour groups. Cellblock 12 is said to echo with laughter. Cellblock 6 with whispered conversations. The guard tower at night reports movement where sensors detect none.`,
-    hauntingReports: [
-      "Tour guides report disembodied laughter echoing from Cellblock 12, audible only when standing at the corridor's exact midpoint.",
-      "A figure in guard uniform has been photographed in the central rotunda; no guard was on duty at the time.",
-      "Visitors describe sudden temperature drops of 20°F in Cellblock 4, accompanied by the smell of tobacco smoke.",
-      "Shadows cast by nonexistent sources move across the chapel walls during evening tours.",
-    ],
-    dangerLevel: 2,
-    photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Eastern_State_Penitentiary_cell_block.jpg/1280px-Eastern_State_Penitentiary_cell_block.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Eastern_State_Penitentiary_2.jpg/1280px-Eastern_State_Penitentiary_2.jpg",
-    ],
-  },
-  {
-    name: "Isla de las Muñecas",
-    category: "both" as const,
-    coordinates: [-99.0151, 19.2833] as [number, number],
-    address: {
-      city: "Xochimilco",
-      country: "Mexico",
-      formatted: "Isla de las Muñecas, Xochimilco, Mexico City",
-    },
-    yearAbandoned: 2001,
-    history: `Don Julián Santana Barrera lived alone on a chinampa in the canals of Xochimilco. In the 1950s, he found the body of a young girl drowned in the canal. Shortly after, he discovered a doll floating in the same water — perhaps hers, perhaps not. He hung it from a tree to appease her spirit. Then he hung another. And another. Over five decades, the island accumulated an estimated 1,500 dolls: decapitated, eyeless, bleached by sun and rain, crawling with spiders. Don Julián died in 2001, found floating in the exact spot where the girl had been. His cousin now maintains the island. The dolls watch. Their heads turn, visitors say, when no wind blows.`,
-    hauntingReports: [
-      "Dolls have been observed opening and closing their eyes independently of one another.",
-      "Visitors report hearing a child's voice calling from the canal's edge, though no child is present on the boats.",
-      "At night, the dolls' plastic limbs produce a clicking sound, as if tapping against the tree bark in sequence.",
-      "Photographs taken on the island frequently show orbs clustered around dolls that were not the subject of the frame.",
-    ],
-    dangerLevel: 3,
-    photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Isla_de_las_Munecas.jpg/1280px-Isla_de_las_Munecas.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg/1280px-Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg",
-    ],
-  },
-  {
-    name: "Bodie Ghost Town",
+    name: "Kolmanskop",
     category: "abandoned" as const,
-    coordinates: [-119.0123, 38.2121] as [number, number],
+    coordinates: [14.8556, -26.7042] as [number, number],
     address: {
-      city: "Bodie",
-      country: "United States",
-      formatted: "Bodie State Historic Park, California",
+      city: "Lüderitz",
+      country: "Namibia",
+      formatted: "Kolmanskop, Lüderitz, Namibia",
     },
-    yearAbandoned: 1942,
-    history: `In 1879, Bodie had 10,000 residents, 65 saloons, and a murder every other day. It was the third-largest city in California, built on $34 million in gold and silver ore pulled from the Bodie Hills. The Standard Company mill ran 24 hours, its stamps audible for miles. Then the ore ran out. The railroad stopped service in 1919. The last mine closed in 1942. What remains is not a museum replica but a state of arrested decay: tables still set for dinner, a barber's chair still waiting, schoolbooks open to lessons never finished. The air is thin at 8,375 feet. The winters bury the town in snow. In summer, dust devils move through Main Street carrying the weight of a place that ended without saying goodbye.`,
+    yearAbandoned: 1954,
+    history: `In 1908, a railway worker named Zacharias Lewala found a diamond in the sand and showed it to his supervisor. Within three years, a German colonial town rose in the Namib Desert with a hospital, a ballroom, a power station, and an ice factory — the first in southern Africa. Fresh water was shipped from Cape Town. Champagne arrived by rail. Then, after World War I, the diamonds ran out. The sand came next. It drifts through the doorways now, filling the rooms to the windowsills, burying the pianos and the operating theater and the grand staircase one grain at a time. The desert does not hurry. It has nowhere else to be.`,
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Bodie_California.jpg/1280px-Bodie_California.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Bodie_ghost_town.jpg/1280px-Bodie_ghost_town.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kolmanskop_Namibia.jpg/1280px-Kolmanskop_Namibia.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Kolmanskop_sand_dunes.jpg/1280px-Kolmanskop_sand_dunes.jpg",
     ],
   },
   {
-    name: "Aokigahara Forest",
-    category: "haunted" as const,
-    coordinates: [138.6573, 35.475] as [number, number],
+    name: "Beelitz-Heilstätten",
+    category: "both" as const,
+    coordinates: [12.9114, 52.2589] as [number, number],
     address: {
-      city: "Yamanashi",
-      country: "Japan",
-      formatted: "Aokigahara, Yamanashi Prefecture, Japan",
+      city: "Beelitz",
+      country: "Germany",
+      formatted: "Beelitz-Heilstätten, Brandenburg, Germany",
+    },
+    yearAbandoned: 1994,
+    history: `Built in 1898 as a tuberculosis sanatorium for the German National Insurance Institute, this complex of 60 buildings on 200 hectares treated Adolf Hitler in 1916 for a thigh wound sustained at the Somme. After World War II, the Soviet Army took it over as a military hospital, treating soldiers from the Eastern Bloc until 1994. They left everything: operating tables, X-ray machines, gurneys, a bowling alley, a theater with red velvet seats. The men's pavilion is a ruin of peeling surgical green paint and collapsed solariums. Vines pull the roof off the women's pavilion. In the surgery wing, a single lightbulb still hangs over a porcelain operating table, and no one can say who keeps replacing it when it burns out.`,
+    hauntingReports: [
+      "Night security reports footsteps in the surgery wing when the building is sealed and empty.",
+      "A patient in a Soviet-era gown has been observed standing at third-floor windows that no longer exist.",
+      "The bowling alley produces the sound of a single strike at 3:00 AM, though the pins were removed in 2005.",
+      "Temperature in the Hitler treatment room drops 15 degrees below ambient, and cameras malfunction within its walls.",
+    ],
+    dangerLevel: 3,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Beelitz-Heilstätten.jpg/1280px-Beelitz-Heilstätten.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Beelitz-Heilstätten_interior.jpg/1280px-Beelitz-Heilstätten_interior.jpg",
+    ],
+  },
+  {
+    name: "Château Miranda",
+    category: "abandoned" as const,
+    coordinates: [4.975, 50.3042] as [number, number],
+    address: {
+      city: "Celles",
+      country: "Belgium",
+      formatted: "Château Miranda, Celles, Namur, Belgium",
+    },
+    yearAbandoned: 1991,
+    history: `Commissioned in 1866 by the Liedekerke-De Beaufort family after their ancestral castle was destroyed in the French Revolution, Château Miranda — later known as Château de Noisy — served as an orphanage for sick children from 1950 to 1980, then a holiday camp for Belgian Railways employees' children until 1991. The family refused to sell it. Rain entered through the neo-Gothic turrets. The grand staircase collapsed in 2003. The clock tower stopped at 3:47. Demolition began in 2016 and was halted by preservationists; the remaining shell stands as a skeletal argument between memory and entropy. The ironwork balconies still bear the initials of children who summered there four decades ago.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Château_Miranda.jpg/1280px-Château_Miranda.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Château_de_Noisy_interior.jpg/1280px-Château_de_Noisy_interior.jpg",
+    ],
+  },
+  {
+    name: "Poveglia Island",
+    category: "haunted" as const,
+    coordinates: [12.3311, 45.3819] as [number, number],
+    address: {
+      city: "Venice",
+      country: "Italy",
+      formatted: "Poveglia Island, Venetian Lagoon, Italy",
+    },
+    yearAbandoned: 1968,
+    history: `Between 1793 and 1814, the Venetian Republic used Poveglia as a lazaretto — a quarantine station for plague ships. Over 160,000 dying Venetians were ferried here to be burned or buried in plague pits that occupy more than half the island's surface. In 1922, a mental hospital opened in the existing buildings. A doctor allegedly performed lobotomies without anesthesia in the bell tower, using hammers and chisels. He fell — or jumped, or was pushed — from that tower in 1943. The hospital closed in 1968. The Italian government has forbidden public access since. Fishermen in the lagoon refuse to moor within 200 meters after dark. The soil is still ash.`,
+    hauntingReports: [
+      "Fishermen report screams from the island audible across open water on windless nights.",
+      "The bell tower, stripped of its bell in 1950, produces a low tolling during autumn fog.",
+      "Figures in 18th-century plague doctor masks have been photographed on the shore at twilight.",
+      "Visitors who have landed illegally describe a persistent sensation of being herded toward the island's center, where the ash pits are deepest.",
+    ],
+    dangerLevel: 4,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Poveglia_Island.jpg/1280px-Poveglia_Island.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Poveglia_belltower.jpg/1280px-Poveglia_belltower.jpg",
+    ],
+  },
+  {
+    name: "The Stanley Hotel",
+    category: "haunted" as const,
+    coordinates: [-105.5217, 40.3431] as [number, number],
+    address: {
+      city: "Estes Park",
+      country: "United States",
+      formatted: "333 Wonderview Avenue, Estes Park, Colorado",
     },
     yearAbandoned: undefined,
-    history: `At the northwest base of Mount Fuji lies a forest grown on 30 square kilometers of volcanic rock. The trees are dense, the canopy thick enough to block GPS signals and wind. The ground is pitted with ice caves that maintain freezing temperatures year-round. For centuries, Aokigahara has been associated with yūrei — ghosts of the dead who cannot depart. The forest absorbs sound. Compasses spin. Volunteers who patrol the trails find tents abandoned mid-meal, shoes neatly arranged beside empty sleeping bags. The roots twist in patterns that resemble grasping hands. It is beautiful, and it is final.`,
+    history: `Freelan Oscar Stanley, inventor of the Stanley Steamer automobile, opened this 420-room Colonial Revival hotel in 1909. He and his wife Flora summered here every year until his death in 1940. In 1974, Stephen King and his wife Tabitha stayed in Room 217 as the hotel's last guests before winter closure. King had a nightmare about his son being chased down the corridor by a fire hose. He wrote *The Shining*. The hotel's fourth floor — originally the servants' quarters — produces the most reports: luggage unpacked by unseen hands, children laughing in empty hallways, the sound of a phantom grand piano in the empty music room. Flora Stanley's Steinway still stands there, tuned annually, though no living pianist has played it since 1939.`,
     hauntingReports: [
-      "Campers report hearing footsteps circling their tents all night, yet dawn reveals no tracks in the volcanic soil.",
-      "A pervasive sensation of being watched persists even in the deepest, most isolated sectors of the forest.",
-      "Electronic devices drain batteries at abnormal rates; some report hearing voices through static on disabled radios.",
-      "Local rangers describe encountering figures in white between the trees who vanish when approached.",
+      "Room 217's bed has been found neatly made while guests shower, despite 'Do Not Disturb' signs.",
+      "The apparition of a woman in a white gown appears in the fourth-floor hallway and vanishes into Room 418.",
+      "Piano chords from the music room are recorded on security cameras when the room is locked and empty.",
+      "Children staying on the fourth floor report playing with 'the other kids' who are not listed on the guest registry.",
     ],
+    dangerLevel: 1,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Stanley_Hotel_Estes_Park.jpg/1280px-Stanley_Hotel_Estes_Park.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Stanley_Hotel_lobby.jpg/1280px-Stanley_Hotel_lobby.jpg",
+    ],
+  },
+  {
+    name: "Waverly Hills Sanatorium",
+    category: "haunted" as const,
+    coordinates: [-85.8214, 38.1947] as [number, number],
+    address: {
+      city: "Louisville",
+      country: "United States",
+      formatted: "4400 Paralee Drive, Louisville, Kentucky",
+    },
+    yearAbandoned: 1961,
+    history: `Built in 1910 to accommodate 40 tuberculosis patients, Waverly Hills expanded to house 400 by 1926. Tuberculosis was incurable; the death rate peaked at one patient per day. A five-hundred-foot concrete tunnel — the Body Chute — connected the hospital to railroad tracks at the hill's base, used to remove corpses discreetly so as not to demoralize the living. Electroshock therapy, experimental pneumothorax procedures, and sun porch treatments failed. Streptomycin cured tuberculosis in 1943; the hospital closed in 1961. It reopened as a geriatric center in 1962, shuttering permanently in 1982 amid patient abuse allegations. Room 502, where a nurse allegedly hanged herself, produces the most concentrated phenomena.`,
+    hauntingReports: [
+      "Shadow figures are regularly observed moving through the Body Chute, though it has been sealed at both ends since 1983.",
+      "Room 502 produces a disembodied female voice saying 'Get out' in recordings made by paranormal investigators.",
+      "The kitchen area emits the smell of cooking meat when no food has been present for decades.",
+      "Visitors report being pushed by invisible hands on the third-floor solarium, always toward the windows.",
+    ],
+    dangerLevel: 3,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Waverly_Hills_Sanatorium.jpg/1280px-Waverly_Hills_Sanatorium.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Waverly_Hills_interior.jpg/1280px-Waverly_Hills_interior.jpg",
+    ],
+  },
+  {
+    name: "Oradour-sur-Glane",
+    category: "abandoned" as const,
+    coordinates: [1.0333, 45.9333] as [number, number],
+    address: {
+      city: "Oradour-sur-Glane",
+      country: "France",
+      formatted: "Oradour-sur-Glane, Haute-Vienne, France",
+    },
+    yearAbandoned: 1944,
+    history: `On June 10, 1944, the 2nd SS Panzer Division Das Reich entered this village and murdered 642 men, women, and children — burning them alive in the church, machine-gunning them in the barns, hanging them from the bakery hooks. The village was never rebuilt. A new Oradour-sur-Glane was constructed nearby, but the original remains exactly as the SS left it: rusted cars in the garages, sewing machines in the parlors, a child's bicycle fused to the cobblestones by fire. The doctor's Peugeot still sits in the square. Signs read *Souviens-toi* — Remember. The martyr village is not a ruin. It is a crime scene preserved under open sky, and the silence there has a weight that presses on the sternum.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Oradour-sur-Glane.jpg/1280px-Oradour-sur-Glane.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Oradour-sur-Glane_ruin.jpg/1280px-Oradour-sur-Glane_ruin.jpg",
+    ],
+  },
+  {
+    name: "Teufelsberg",
+    category: "abandoned" as const,
+    coordinates: [13.2411, 52.4972] as [number, number],
+    address: {
+      city: "Berlin",
+      country: "Germany",
+      formatted: "Teufelsberg, Grunewald, Berlin",
+    },
+    yearAbandoned: 1999,
+    history: `Teufelsberg — Devil's Mountain — is not a mountain at all. It is 12 million cubic meters of rubble from bombed-out Berlin, dumped here between 1945 and 1972 and grown over with birch and pine. The US National Security Agency built Field Station Berlin on its summit in 1963: five white radomes listening to Warsaw Pact communications through the Cold War. The station intercepted microwave transmissions between Moscow and East Berlin, operating until the fall of the Wall. After 1999, the radomes sat empty, their fiberglass shells cracking in freeze-thaw cycles. Street artists have claimed the corridors. The largest dome still amplifies sound: stand at its center and whisper, and your voice returns from every direction at once, as if the mountain itself is repeating your secrets back to you.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Teufelsberg_Berlin.jpg/1280px-Teufelsberg_Berlin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teufelsberg_dome.jpg/1280px-Teufelsberg_dome.jpg",
+    ],
+  },
+  {
+    name: "Canfranc International Railway Station",
+    category: "abandoned" as const,
+    coordinates: [-0.525, 42.7167] as [number, number],
+    address: {
+      city: "Canfranc",
+      country: "Spain",
+      formatted: "Canfranc, Huesca, Aragon, Spain",
+    },
+    yearAbandoned: 1970,
+    history: `Opened in 1928, this was the second-largest railway station in Europe — 240 meters long, 365 windows, a hospital, a restaurant, customs offices for the French-Spanish border. The platform could accommodate trains of both gauges simultaneously. During World War II, it became a clandestine route for Jewish refugees escaping into Spain and for Nazi gold moving in the opposite direction. A train derailment in 1970 destroyed the L'Estanguet bridge on the French side. France declined to rebuild it. The station closed overnight, leaving the grand hall exactly as it stood: clocks stopped, ticket counters dusted, the restaurant's wine glasses still racked. Restoration began in 2013 on the exterior, but the interior remains a cathedral of interrupted journeys, its marble floors echoing with footsteps that never board.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Canfranc_Station.jpg/1280px-Canfranc_Station.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Canfranc_interior.jpg/1280px-Canfranc_interior.jpg",
+    ],
+  },
+  {
+    name: "City of the Dead",
+    category: "both" as const,
+    coordinates: [44.5833, 42.8333] as [number, number],
+    address: {
+      city: "Dargavs",
+      country: "Russia",
+      formatted: "Dargavs Necropolis, North Ossetia-Alania, Russia",
+    },
+    yearAbandoned: undefined,
+    history: `In the hills above the Gizeldon River, the Alan people have buried their dead above ground since the 14th century. Ninety-nine stone crypts — little houses with curved roofs, some two stories high — contain the bones of plague victims, warriors, and families who died together. Each crypt has a small window: the Ossetian belief holds that the soul must be able to see the sun. During plague years, living relatives would enter the crypt to leave food for the dying, then seal the door from outside. The dead were not buried but seated at stone tables, left to dry in the mountain air. The last burial was in 1795, but local families still maintain the paths and roofs. The wind through the stone windows produces a low whistle that the Ossetians call the voices of the table-guests.`,
+    hauntingReports: [
+      "Hikers report seeing candlelight in crypts that have been sealed for centuries.",
+      "The stone tables inside the crypts are found disturbed, bones rearranged into patterns no living hand has made.",
+      "At dawn, figures in traditional Ossetian dress are seen walking between the crypts before vanishing into the mist.",
+      "Audio recordings capture a language that linguists cannot identify, spoken in overlapping whispers near the two-story crypts.",
+    ],
+    dangerLevel: 2,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Dargavs_Necropolis.jpg/1280px-Dargavs_Necropolis.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Dargavs_tombs.jpg/1280px-Dargavs_tombs.jpg",
+    ],
+  },
+  {
+    name: "St. Kilda",
+    category: "abandoned" as const,
+    coordinates: [-8.5833, 57.8167] as [number, number],
+    address: {
+      city: "St. Kilda",
+      country: "United Kingdom",
+      formatted: "St. Kilda, Outer Hebrides, Scotland",
+    },
+    yearAbandoned: 1930,
+    history: `The most remote archipelago in the British Isles, 64 kilometers west of the Outer Hebrides, inhabited for at least two millennia. The St. Kildans lived on seabirds — puffins, fulmars, gannets — harvested by hand from the cliffs. They spoke a dialect of Gaelic found nowhere else. There was no peat for fuel, no wood for construction, no natural harbor. In 1930, the last 36 residents petitioned the government for evacuation; the island could no longer sustain them after the death of a young woman from appendicitis that winter. They left their furniture, their Bibles, their schoolbooks. Today the stone cleits — storage huts — still dot the slopes, filled with nothing but wind. The archipelago is a UNESCO World Heritage Site, visited only by military personnel and occasional researchers. The sheep are feral. The houses have no roofs. The silence is Atlantic and absolute.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/St_Kilda_Village_Bay.jpg/1280px-St_Kilda_Village_Bay.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/St_Kilda_stone_huts.jpg/1280px-St_Kilda_stone_huts.jpg",
+    ],
+  },
+  {
+    name: "Villisca Axe Murder House",
+    category: "haunted" as const,
+    coordinates: [-94.9761, 40.9292] as [number, number],
+    address: {
+      city: "Villisca",
+      country: "United States",
+      formatted: "508 E 2nd Street, Villisca, Iowa",
+    },
+    yearAbandoned: 1912,
+    history: `On June 10, 1912 — the same date as Oradour-sur-Glane, 32 years later and an ocean away — someone entered this white-frame house and murdered Josiah Moore, his wife Sarah, their four children, and two visiting Stillinger girls with an axe. All eight victims were found in their beds, their faces covered with cloth, the axe left in the guest room. Over a century later, no one has been convicted. The house passed through multiple owners; none stayed long. In 1994, Darwin and Martha Linn bought it and restored it to its 1912 condition, right down to the green wallpaper and the unpainted attic where the Stillinger girls died. Overnight guests sign waivers. The house has no heat, no air conditioning, and no explanation for why the children's voices continue.`,
+    hauntingReports: [
+      "Paranormal investigators record a child's voice saying 'Get out' and 'Why are you here?' in the upstairs bedrooms.",
+      "The axe, displayed in a glass case, has been found moved to different rooms in the morning.",
+      "Guests report waking at 2:00 AM — the estimated time of the murders — with the sensation of being watched from the doorway.",
+      "The attic, where the Stillinger girls were found, produces the sound of a ball bouncing on wood floors where no ball is present.",
+    ],
+    dangerLevel: 2,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Villisca_Axe_Murder_House.jpg/1280px-Villisca_Axe_Murder_House.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Villisca_house_interior.jpg/1280px-Villisca_house_interior.jpg",
+    ],
+  },
+  {
+    name: "Sedlec Ossuary",
+    category: "both" as const,
+    coordinates: [15.2881, 49.9481] as [number, number],
+    address: {
+      city: "Kutná Hora",
+      country: "Czech Republic",
+      formatted: "Sedlec Ossuary, Kutná Hora, Czech Republic",
+    },
+    yearAbandoned: undefined,
+    history: `In 1278, the abbot of the Cistercian monastery in Sedlec scattered soil from Golgotha in the cemetery, making it one of the most desirable burial sites in Central Europe. By 1511, there were too many bodies. A half-blind monk was tasked with exhuming the dead and stacking their bones in the chapel. In 1870, František Rint, a woodcarver, was commissioned to give the bones order. He used 40,000 human skeletons to construct a chandelier containing every bone in the human body, six pyramids of skulls, a coat of arms in vertebrae, and garlands of femurs draped like ivy. The bones are not ancient; many still have fillings. Rint signed his work in bones above the staircase. The chapel is open daily for tours. The air is dry and smells of dust and calcium. It is not a crypt. It is an interior designed by the dead for the living to walk through.`,
+    hauntingReports: [
+      "Visitors report the sensation of being counted; one investigator recorded EMF spikes corresponding to the exact number of people in the room.",
+      "The chandelier has been observed rotating slowly when no air current is present.",
+      "Photographs frequently show shadow figures seated in the pews that were removed in 1960.",
+      "A child's voice has been recorded near the bone pyramids, though no children are permitted in the ossuary after 5 PM.",
+    ],
+    dangerLevel: 1,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Sedlec_Ossuary_chandelier.jpg/1280px-Sedlec_Ossuary_chandelier.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Sedlec_Ossuary_bones.jpg/1280px-Sedlec_Ossuary_bones.jpg",
+    ],
+  },
+  {
+    name: "Catacombs of Paris",
+    category: "haunted" as const,
+    coordinates: [2.3322, 48.8339] as [number, number],
+    address: {
+      city: "Paris",
+      country: "France",
+      formatted: "1 Avenue du Colonel Henri Rol-Tanguy, Paris",
+    },
+    yearAbandoned: undefined,
+    history: `In 1786, Paris closed its largest cemetery — Les Innocents — after a wall collapsed under the pressure of decomposing bodies, spilling corpses into neighboring basements. The solution was to transfer six million skeletons into abandoned limestone quarries beneath the 14th arrondissement. It took twelve years. The bones were not kept intact; they were disarticulated and stacked in walls, femur upon femur, skulls arranged in decorative patterns between pillars. The catacombs extend for 320 kilometers; only 1.7 kilometers are open to the public. The rest is illegal to enter and patrolled by police. The walls bear graffiti from the 18th century. The temperature is a constant 14 degrees Celsius. The air is humid and still. Six million people died to build this place, and they are all still there, femur-thin walls holding back the limestone that Paris stands on.`,
+    hauntingReports: [
+      "Cataphiles — illegal explorers — report hearing footsteps behind them in sections where the map confirms no exits for kilometers.",
+      "The skull walls produce a low vibration at 19 Hz, the frequency known to induce feelings of dread and visual hallucinations.",
+      "Figures in 18th-century burial shrouds have been photographed in the restricted sections, always facing away from the camera.",
+      "Compasses and phones fail simultaneously in the ossuary gallery, though no mineral interference should affect them there.",
+    ],
+    dangerLevel: 3,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Catacombes_de_Paris.jpg/1280px-Catacombes_de_Paris.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Paris_Catacombs_skulls.jpg/1280px-Paris_Catacombs_skulls.jpg",
+    ],
+  },
+  {
+    name: "Centralia",
+    category: "abandoned" as const,
+    coordinates: [-76.3408, 40.8043] as [number, number],
+    address: {
+      city: "Centralia",
+      country: "United States",
+      formatted: "Centralia, Columbia County, Pennsylvania",
+    },
+    yearAbandoned: 1992,
+    history: `In 1962, the town council set fire to the town landfill to clean it up before Memorial Day. The fire ignited a vein of anthracite coal that runs beneath the entire borough. The fire has been burning ever since — 62 years and counting. Temperatures at the surface reach 440°C. Carbon monoxide seeps through basement floors. Sinkholes open without warning, swallowing trees whole. The federal government relocated most residents through eminent domain in the 1980s and 1990s. A handful refused to leave; as of 2024, two people still live there. The houses are gone, the streets remain, cracked and steaming. Route 61 — the Graffiti Highway — was closed and covered with dirt in 2020, but the coal still burns. The post office closed in 2002. The zip code was revoked. The fire will burn for another 250 years.`,
+    hauntingReports: [],
     dangerLevel: 5,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Aokigahara_Forest.jpg/1280px-Aokigahara_Forest.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Aokigahara_2.jpg/1280px-Aokigahara_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Centralia_Pennsylvania.jpg/1280px-Centralia_Pennsylvania.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Centralia_graffiti_highway.jpg/1280px-Centralia_graffiti_highway.jpg",
     ],
   },
   {
-    name: "Duga Radar Array",
+    name: "Sathorn Unique Tower",
     category: "abandoned" as const,
-    coordinates: [30.067, 51.306] as [number, number],
+    coordinates: [100.52, 13.72] as [number, number],
     address: {
-      city: "Chernobyl-2",
-      country: "Ukraine",
-      formatted: "Chernobyl-2, Kyiv Oblast, Ukraine",
+      city: "Bangkok",
+      country: "Thailand",
+      formatted: "Sathorn Unique Tower, Sathorn, Bangkok",
     },
-    yearAbandoned: 1989,
-    history: `NATO called it the Russian Woodpecker — a sharp, repetitive tapping that interfered with shortwave radios worldwide throughout the 1970s and 80s. The source was a massive over-the-horizon radar built to detect American missile launches, concealed in a classified settlement near Chernobyl. Two arrays, each 150 meters tall and 500 meters long, constructed of rusting steel lattice and cantilevered against the sky. The settlement that housed its 1,000 operators and families was erased from maps. After the 1986 disaster, the radar operated for three more years before abandonment. The steel groans in wind. The control rooms hold logbooks open to dates in 1986. The tapping has stopped, but the structure remains, a cathedral of paranoia.`,
+    yearAbandoned: 1997,
+    history: `Construction stopped in 1997 when the Asian financial crisis bankrupted the developer. The 49-story luxury condominium — designed to be one of Bangkok's tallest residential towers — was 80% complete. The concrete shell stands exactly as the cranes left it: rebar rusting, elevator shafts open to the sky, the helipad on the roof never receiving a single aircraft. Squatters, graffiti artists, and urban explorers have claimed the lower floors. The upper floors are structurally unstable; a section of the 43rd floor collapsed in 2014. From the rooftop, you can see the Chao Phraya River, the Grand Palace, and the expressway that was supposed to deliver residents who never arrived. Bangkok locals call it the Ghost Tower. It is not haunted by spirits. It is haunted by a future that was financed, constructed, and then cancelled by a currency devaluation on July 2, 1997.`,
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg/1280px-Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg/1280px-Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Sathorn_Unique_Tower.jpg/1280px-Sathorn_Unique_Tower.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Ghost_Tower_Bangkok.jpg/1280px-Ghost_Tower_Bangkok.jpg",
     ],
   },
   {
-    name: "Bhangarh Fort",
-    category: "haunted" as const,
-    coordinates: [76.2878, 27.0964] as [number, number],
-    address: {
-      city: "Bhangarh",
-      country: "India",
-      formatted: "Bhangarh, Alwar District, Rajasthan, India",
-    },
-    yearAbandoned: 1783,
-    history: `Built in 1573 by Raja Bhagwant Das for his son Madho Singh, Bhangarh was a prosperous city of 10,000 souls. Its markets, temples, and palaces stood at the edge of the Sariska forest. The legend holds that a tantrik named Singhia fell in love with the princess Ratnavati. When she rejected him, he cursed the entire city: no roof would remain standing, and no soul would find peace within its walls. A year later, the fort was sacked in a battle with a neighboring state. The population fled overnight. Today, the Archaeological Survey of India legally prohibits entry between sunset and sunrise. The bazaar still has shops. The temples still have idols. But no one lives there, and no one has for 240 years.`,
-    hauntingReports: [
-      "Visitors who have entered after dark report hearing classical music and the sound of bangles from the princess's quarters.",
-      "The aroma of incense and sandalwood has been detected near the temple complex where no fires burn.",
-      "Locals claim that anyone who builds a roof within the fort walls will find it collapsed by morning.",
-      "Audio recordings captured in the courtyard contain rhythmic chanting in a dialect not spoken in Rajasthan for centuries.",
-    ],
-    dangerLevel: 3,
-    photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bhangarh_Fort.jpg/1280px-Bhangarh_Fort.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Bhangarh_Fort_ruins.jpg/1280px-Bhangarh_Fort_ruins.jpg",
-    ],
-  },
-  {
-    name: "North Brother Island",
+    name: "Spreepark Berlin",
     category: "abandoned" as const,
-    coordinates: [-73.899, 40.801] as [number, number],
+    coordinates: [13.4931, 52.4833] as [number, number],
     address: {
-      city: "New York",
-      country: "United States",
-      formatted: "North Brother Island, Bronx, New York",
+      city: "Berlin",
+      country: "Germany",
+      formatted: "Spreepark, Treptow-Köpenick, Berlin",
     },
-    yearAbandoned: 1963,
-    history: `In the East River between the Bronx and Rikers Island sits 20 acres of forbidden ground. It began as a quarantine hospital in 1885, most infamous for housing Typhoid Mary — Mary Mallon — for nearly 30 years until her death in 1938. The island later served as a treatment center for adolescent drug addicts, shuttered in 1963 after staff corruption scandals. Since then, it has been a bird sanctuary, closed to the public. The Riverside Hospital complex stands exactly as left: operating tables, gurneys, wheelchairs, a morgue with porcelain slabs. Vines pull the brick walls apart. The tuberculosis pavilion's solarium faces the Manhattan skyline across water too polluted to cross without permission. It is the city's most inaccessible ruin, decaying in full view of 8 million people.`,
-    hauntingReports: [],
-    dangerLevel: 3,
-    photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/North_Brother_Island_Riverside_Hospital.jpg/1280px-North_Brother_Island_Riverside_Hospital.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/North_Brother_Island_interior.jpg/1280px-North_Brother_Island_interior.jpg",
-    ],
-  },
-  {
-    name: "Humberstone Saltpeter Works",
-    category: "abandoned" as const,
-    coordinates: [-69.794, -20.208] as [number, number],
-    address: {
-      city: "Humberstone",
-      country: "Chile",
-      formatted: "Humberstone, Tarapacá Region, Chile",
-    },
-    yearAbandoned: 1960,
-    history: `In the Atacama Desert — the driest place on Earth — a company town rose from nothing to process sodium nitrate for fertilizer and explosives. At its peak in the 1930s, Humberstone and its sister town Santa Laura housed 3,500 workers from Chile, Peru, and Bolivia in a self-contained world: a theater, a hotel, a swimming pool filled with water shipped from the coast. The workers were paid in tokens redeemable only at the company store. When synthetic nitrate was invented in Germany after World War II, the industry collapsed instantly. The towns emptied in weeks. The pool still holds stagnant water. The theater's velvet seats face a screen that has shown nothing for 64 years. The desert does not reclaim quickly; it preserves.`,
+    yearAbandoned: 2002,
+    history: `Opened in 1969 as Kulturpark Plänterwald in East Berlin, this was the only amusement park in the GDR. After reunification, it was privatized and renamed Spreepark. The owner, Norbert Witte, expanded it with a Wild West town, a roller coaster, and a Ferris wheel. In 2002, Witte fled to Peru with six rides in shipping containers, leaving behind $15 million in debt and a park full of decaying attractions. He was later arrested for attempting to smuggle 180 kilograms of cocaine inside the Flying Carpet ride. The Ferris wheel still turns in the wind, squeaking. The swan boats rot in the drained pond. A life-sized dinosaur lies on its side in the overgrowth. Guided tours run on weekends, but the park is otherwise silent except for the wheel and the crows.`,
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Humberstone_and_Santa_Laura_Saltpeter_Works.jpg/1280px-Humberstone_and_Santa_Laura_Saltpeter_Works.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Humberstone_theater.jpg/1280px-Humberstone_theater.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Spreepark_Berlin.jpg/1280px-Spreepark_Berlin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Spreepark_ferris_wheel.jpg/1280px-Spreepark_ferris_wheel.jpg",
     ],
   },
   {
-    name: "Château de Brissac",
+    name: "Winchester Mystery House",
     category: "haunted" as const,
-    coordinates: [-0.449, 47.355] as [number, number],
+    coordinates: [-121.95, 37.3183] as [number, number],
     address: {
-      city: "Brissac-Quincé",
-      country: "France",
-      formatted: "Château de Brissac, Maine-et-Loire, France",
+      city: "San Jose",
+      country: "United States",
+      formatted: "525 S Winchester Boulevard, San Jose, California",
     },
     yearAbandoned: undefined,
-    history: `The tallest castle in France, seven stories of limestone and slate, has been inhabited by the same family since 1502. But not all its residents are Cossé-Brissacs. In the 15th century, Jacques de Brézé caught his wife Charlotte in flagrante with a huntsman. He murdered them both on the spot. Charlotte — la Dame Verte, the Green Lady — is said to still wander the tower chapel in the dress she died in. Her moans are audible during summer nights. The family has grown accustomed to her. They do not rent the chapel wing to guests. They do not enter it after 10 PM. The castle is open for tours, wine tastings, and weddings. The Green Lady is not mentioned in the brochure, but she is the reason the staff counts the chairs twice before locking up.`,
+    history: `Sarah Winchester, heiress to the Winchester Repeating Arms fortune, began construction on this house in 1884 and did not stop until her death in 1922. She believed she was cursed by the spirits of those killed by Winchester rifles, and that continuous building would confuse the ghosts. The result is a labyrinth of 161 rooms, 2,000 doors, 10,000 windows, staircases that lead to ceilings, doors that open onto brick walls, and a séance room where Sarah communed with the dead every night at midnight. Carpenters worked in rotating shifts, 24 hours a day, for 38 years. The house has no master plan; rooms were added according to the spirits' nightly instructions. Sarah slept in a different room each night. The number 13 appears throughout: 13 bathrooms, 13 hooks in the séance closet, 13 palm trees on the estate. The construction stopped only when she died.`,
     hauntingReports: [
-      "Guests in the chapel wing report a woman in green standing at the foot of their bed, her face bearing the wounds of a sword.",
-      "The chapel organ plays chords at 3:00 AM; no one has touched the instrument in decades.",
-      "A portrait of Charlotte in the grand gallery has been observed weeping by multiple tour guides.",
-      "The smell of rotting flowers permeates the tower staircase every year on the anniversary of her death.",
+      "A carpenter in late-19th-century overalls has been seen working on the north wing, though no restoration is scheduled there.",
+      "The séance room produces cold spots and the smell of rose perfume — Sarah's signature scent — when no flowers are present.",
+      "Footsteps are audible on the staircases that lead nowhere, always ascending, never descending.",
+      "Tour guides report doors locking from the inside in rooms where the locks were removed in the 1950s.",
     ],
-    dangerLevel: 2,
+    dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Chateau_de_Brissac.jpg/1280px-Chateau_de_Brissac.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Chateau_de_Brissac_interior.jpg/1280px-Chateau_de_Brissac_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Winchester_Mystery_House.jpg/1280px-Winchester_Mystery_House.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Winchester_House_interior.jpg/1280px-Winchester_House_interior.jpg",
+    ],
+  },
+  {
+    name: "Hill of Crosses",
+    category: "haunted" as const,
+    coordinates: [23.5167, 56.0167] as [number, number],
+    address: {
+      city: "Domantai",
+      country: "Lithuania",
+      formatted: "Hill of Crosses, Domantai, Šiauliai County, Lithuania",
+    },
+    yearAbandoned: undefined,
+    history: `No one knows when the first cross was planted on this low hill near Šiauliai. Some say the 14th century, after the Teutonic Knights slaughtered a village. Others say the 19th century, when Lithuanians defied Russian Orthodox suppression by erecting Catholic crosses in secret. By 1940, there were 400. The Soviets bulldozed them in 1961, 1973, and 1975. Each time, more appeared overnight. By 1990, there were 55,000. Today there are over 200,000: wooden, iron, carved, welded, some the size of telephone poles, some small as rosaries, bearing photographs of the dead, prayers, names, dates. The wind moves through them with a sound like a thousand doors creaking open at once. Pope John Paul II visited in 1993 and called it a place of hope. But at dusk, when the shadows of the crosses merge into a single darkness on the hill, it feels like something else entirely.`,
+    hauntingReports: [
+      "Visitors report crosses they did not plant appearing in photographs, always positioned behind them.",
+      "The wind through the crosses produces whispered words in Lithuanian, audible only on recordings played in reverse.",
+      "At midnight on All Saints' Day, the hill emits a low hum that seismographs register as a 2.1 magnitude event.",
+      "Figures in 19th-century peasant dress walk between the crosses at dawn, leaving no footprints in the frost.",
+    ],
+    dangerLevel: 1,
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Hill_of_Crosses.jpg/1280px-Hill_of_Crosses.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Hill_of_Crosses_Lithuania.jpg/1280px-Hill_of_Crosses_Lithuania.jpg",
     ],
   },
 ];
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get("key");
-
-  if (key !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json(
-      { error: "Unauthorized. Provide ?key=ADMIN_PASSWORD" },
-      { status: 401 }
-    );
-  }
-
-  try {
-    await dbConnect();
-
-    // Clear existing and re-seed with real images
-    await PlaceModel.deleteMany({});
-    
-    const docs = SEED_DATA.map((data) => ({
-      ...data,
-      slug: slugify(data.name),
-      status: "verified" as const,
-      contributor: {
-        name: "The Archivist",
-        email: "archivist@vanishingpoints.app",
-      },
-      viewCount: Math.floor(Math.random() * 5000) + 100,
-      submittedAt: new Date(),
-      verifiedAt: new Date(),
-      verifiedBy: "system",
-    }));
-
-    await PlaceModel.insertMany(docs);
-
-    return NextResponse.json({
-      message: "Archives repopulated with real imagery",
-      seeded: docs.length,
-    });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Failed to seed" },
-      { status: 500 }
-    );
-  }
-}

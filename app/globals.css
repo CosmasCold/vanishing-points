@@ -1,0 +1,183 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@400;500&family=Space+Mono:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --void: #0a0a0f;
+  --shadow: #12121a;
+  --fog: #1e1e2e;
+  --ash: #8b8b9a;
+  --bone: #c4c4b5;
+  --ember: #8b4513;
+  --specter: #4a6741;
+  --warning: #7c2d12;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ash) var(--void);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ash);
+  border-radius: 3px;
+}
+
+html {
+  background: var(--void);
+  color: var(--bone);
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--void);
+  color: var(--bone);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(139, 69, 19, 0.3);
+  color: var(--bone);
+}
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+.fog-layer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25vh;
+  pointer-events: none;
+  z-index: 50;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 15, 0.6) 0%,
+    transparent 100%
+  );
+  animation: drift 20s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(20px);
+  }
+}
+
+.custom-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ash);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  mix-blend-mode: difference;
+}
+
+.custom-cursor.hovering {
+  transform: scale(2);
+  opacity: 0.5;
+  border-color: var(--bone);
+}
+
+.mapboxgl-map {
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+
+.mapboxgl-popup-content {
+  background: var(--shadow) !important;
+  border: 1px solid var(--fog) !important;
+  border-radius: 8px !important;
+  color: var(--bone) !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: var(--fog) !important;
+}
+
+.mapboxgl-ctrl-group {
+  background: var(--shadow) !important;
+  border: 1px solid var(--fog) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.mapboxgl-ctrl-group button {
+  background: transparent !important;
+  color: var(--ash) !important;
+  border-color: var(--fog) !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background: var(--fog) !important;
+  color: var(--bone) !important;
+}
+
+.mapboxgl-ctrl-scale {
+  background: var(--shadow) !important;
+  color: var(--ash) !important;
+  border-color: var(--fog) !important;
+}
+
+input,
+textarea,
+select {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ash);
+  color: var(--bone);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-bottom-color: var(--bone);
+  box-shadow: 0 2px 8px -2px rgba(196, 196, 181, 0.08);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ash);
+  opacity: 0.6;
+}
+
+button {
+  cursor: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain-overlay,
+  .fog-layer {
+    display: none;
+  }
+}

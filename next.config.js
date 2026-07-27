@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["res.cloudinary.com", "api.mapbox.com"],
+    domains: [
+      "res.cloudinary.com",
+      "api.mapbox.com",
+      "upload.wikimedia.org",
+    ],
   },
   async headers() {
     return [

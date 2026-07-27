@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Place } from "@/types";
@@ -25,12 +24,12 @@ export default function PlaceCard({ place, index }: Props) {
       <Link href={`/place/${place.slug}`} className="block">
         <div className="relative h-48 overflow-hidden">
           {place.photos[0] ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={place.photos[0]}
               alt={place.name}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, 33vw"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-fog/30 flex items-center justify-center">

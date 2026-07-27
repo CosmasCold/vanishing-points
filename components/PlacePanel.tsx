@@ -2,11 +2,10 @@
 
 import { motion } from "framer-motion";
 import { X, MapPin, Calendar, AlertTriangle, Eye, User } from "lucide-react";
-import Image from "next/image";
 import { Place } from "@/types";
-import StatusBadge from "@/components/StatusBadge";
-import DangerIndicator from "@/components/DangerIndicator";
-import PhotoGallery from "@/components/PhotoGallery";
+import StatusBadge from "./StatusBadge";
+import DangerIndicator from "./DangerIndicator";
+import PhotoGallery from "./PhotoGallery";
 
 interface Props {
   place: Place;
@@ -22,7 +21,6 @@ export default function PlacePanel({ place, onClose }: Props) {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="absolute top-0 right-0 h-full w-full max-w-lg bg-shadow/95 backdrop-blur-md border-l border-fog/40 z-50 overflow-y-auto"
     >
-      {/* Close */}
       <button
         onClick={onClose}
         className="absolute top-5 right-5 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-fog/30 text-ash hover:text-bone hover:bg-fog/50 transition-all duration-200"
@@ -32,7 +30,6 @@ export default function PlacePanel({ place, onClose }: Props) {
       </button>
 
       <div className="p-8 pt-12">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -50,7 +47,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </div>
         </motion.div>
 
-        {/* Meta */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -75,7 +71,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </div>
         </motion.div>
 
-        {/* Photos */}
         {place.photos.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -87,7 +82,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </motion.div>
         )}
 
-        {/* History */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,7 +96,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </div>
         </motion.div>
 
-        {/* Haunting Reports */}
         {place.hauntingReports && place.hauntingReports.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -126,7 +119,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </motion.div>
         )}
 
-        {/* Coordinates */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -138,7 +130,6 @@ export default function PlacePanel({ place, onClose }: Props) {
           </div>
         </motion.div>
 
-        {/* Contributor */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

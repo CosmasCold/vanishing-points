@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, MapPin, Calendar, AlertTriangle, Eye, User } from "lucide-react";
 import { PlaceModel } from "@/lib/db";
 import dbConnect from "@/lib/db";

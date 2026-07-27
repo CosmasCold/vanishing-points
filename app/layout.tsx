@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   title: "Vanishing Points | An Atlas of the Forgotten",
   description:
     "An interactive map of abandoned and haunted places worldwide. Explore the forgotten, the decayed, and the spectral.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "Vanishing Points",
     description: "An Atlas of the Forgotten",

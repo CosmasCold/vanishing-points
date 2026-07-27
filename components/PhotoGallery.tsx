@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -25,12 +24,12 @@ export default function PhotoGallery({ photos }: Props) {
             className="relative flex-shrink-0 w-48 h-32 rounded-lg overflow-hidden cursor-none group"
             onClick={() => setLightbox(i)}
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={photo}
               alt={`Photo ${i + 1}`}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
-              sizes="192px"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-void/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </motion.div>
@@ -85,13 +84,11 @@ export default function PhotoGallery({ photos }: Props) {
               className="relative w-[90vw] max-w-4xl aspect-video"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={photos[lightbox]}
                 alt={`Photo ${lightbox + 1}`}
-                fill
-                className="object-contain"
-                sizes="90vw"
-                priority
+                className="w-full h-full object-contain"
               />
             </motion.div>
 

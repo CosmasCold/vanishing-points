@@ -1,20 +1,8 @@
 import { MetadataRoute } from "next";
-import dbConnect, { PlaceModel } from "@/lib/db";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await dbConnect();
-  const places = await PlaceModel.find({ status: "verified" })
-    .select("slug updatedAt")
-    .lean();
-
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://vanishingpoints.vercel.app";
-
-  const placeUrls = places.map((place: any) => ({
-    url: `${baseUrl}/place/${place.slug}`,
-    lastModified: place.updatedAt || new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://vanishingpoints.vercel.app";
 
   return [
     {
@@ -35,6 +23,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.5,
     },
-    ...placeUrls,
   ];
 }

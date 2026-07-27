@@ -36,7 +36,7 @@ const placeSchema = new mongoose.Schema(
       enum: ["abandoned", "haunted", "both"],
       required: true,
     },
-    coordinates: { type: [Number], required: true, index: "2dsphere" },
+    coordinates: { type: [Number], required: true },
     address: {
       city: String,
       country: String,
@@ -64,6 +64,7 @@ const placeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes declared only here, not in the field definitions
 placeSchema.index({ coordinates: "2dsphere" });
 placeSchema.index({ status: 1, category: 1 });
 placeSchema.index({ slug: 1 });

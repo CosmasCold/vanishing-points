@@ -17,8 +17,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Pripyat_amusement_park_ferris_wheel.jpg/1280px-Pripyat_amusement_park_ferris_wheel.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Pripyat_-_panoramio_%2821%29.jpg/1280px-Pripyat_-_panoramio_%2821%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/27/Pripyat_%2838338630751%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/37/Pripyat-_Hospital_N%C2%BA_126_%2825000160968%29.jpg",
     ],
   },
   {
@@ -40,8 +40,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Eastern_State_Penitentiary_cell_block.jpg/1280px-Eastern_State_Penitentiary_cell_block.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Eastern_State_Penitentiary_2.jpg/1280px-Eastern_State_Penitentiary_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/38/Eastern_State_Penitentiary_-_Philadelphia_-_Pennsylvania_-_15.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/aa/Eastern_State_Penitentiary_-_Cell_blocks_6.jpg",
     ],
   },
   {
@@ -63,8 +63,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Isla_de_las_Munecas.jpg/1280px-Isla_de_las_Munecas.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg/1280px-Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b6/Xochimilco_Dolls%27_Island.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/39/Piernas_de_mu%C3%B1ecas.JPG",
     ],
   },
   {
@@ -81,8 +81,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Bodie_California.jpg/1280px-Bodie_California.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Bodie_ghost_town.jpg/1280px-Bodie_ghost_town.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/38/Bodie_ghost_town_edit1.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1e/Bodie_Ghost_Town_%2835428770871%29.jpg",
     ],
   },
   {
@@ -104,8 +104,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 5,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Aokigahara_Forest.jpg/1280px-Aokigahara_Forest.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Aokigahara_2.jpg/1280px-Aokigahara_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/36/Aokigahara_05.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/70/Aokigahara_and_Misak_Mountains_s2.jpg",
     ],
   },
   {
@@ -122,8 +122,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg/1280px-Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg/1280px-Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/90/Woodpecker_array.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Duga_radar_system-_wreckage_of_electronic_devices_%2826826471019%29.jpg",
     ],
   },
   {
@@ -145,8 +145,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bhangarh_Fort.jpg/1280px-Bhangarh_Fort.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Bhangarh_Fort_ruins.jpg/1280px-Bhangarh_Fort_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8d/Ancient_site_8%2C_Bhangarh.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a6/Bhangarh_fort.jpg",
     ],
   },
   {
@@ -163,8 +163,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/North_Brother_Island_Riverside_Hospital.jpg/1280px-North_Brother_Island_Riverside_Hospital.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/North_Brother_Island_interior.jpg/1280px-North_Brother_Island_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/50/Riverside_Hospital_North_Brother_Island.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/19/Riverside_Hospital%2C_North_Brother_Island._LOC_gsc.5a09793.tif",
     ],
   },
   {
@@ -181,8 +181,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Humberstone_and_Santa_Laura_Saltpeter_Works.jpg/1280px-Humberstone_and_Santa_Laura_Saltpeter_Works.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Humberstone_theater.jpg/1280px-Humberstone_theater.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/eb/Oficinas_salitreras_de_Humberstone_y_Santa_Laura%2C_Chile%2C_2016-02-11%2C_DD_30.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/80/Oficinas_salitreras_de_Humberstone_y_Santa_Laura%2C_Chile%2C_2016-02-11%2C_DD_71.jpg",
     ],
   },
   {
@@ -204,8 +204,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Chateau_de_Brissac.jpg/1280px-Chateau_de_Brissac.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Chateau_de_Brissac_interior.jpg/1280px-Chateau_de_Brissac_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8d/Ch%C3%A2teau_de_Brissac_-_Sud_Est.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/69/Ch%C3%A2teau_de_Brissac_-_Chambre_de_Louis_XIII.jpg",
     ],
   },
   {
@@ -222,8 +222,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Hashima_Island_%28Gunkanjima%29.jpg/1280px-Hashima_Island_%28Gunkanjima%29.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Gunkanjima_ruins.jpg/1280px-Gunkanjima_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/4e/Hashima%2C_Nagasaki%2C_Japan%2C_20240814_1512_3474.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d6/Hashima_Island_05.jpg",
     ],
   },
   {
@@ -240,8 +240,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Kolmanskop_Namibia.jpg/1280px-Kolmanskop_Namibia.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Kolmanskop_sand_dunes.jpg/1280px-Kolmanskop_sand_dunes.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c9/Kolmanskop_2018_02.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e2/Kolmanskop_Ghost_Town_Buildings.jpg",
     ],
   },
   {
@@ -263,8 +263,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Beelitz-Heilstätten.jpg/1280px-Beelitz-Heilstätten.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Beelitz-Heilstätten_interior.jpg/1280px-Beelitz-Heilstätten_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c7/20220808_Chirurgie_Beelitz-Heilst%C3%A4tten_06.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/10/Beelitz-Heilst%C3%A4tten-1.jpg",
     ],
   },
   {
@@ -281,8 +281,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Château_Miranda.jpg/1280px-Château_Miranda.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Château_de_Noisy_interior.jpg/1280px-Château_de_Noisy_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e4/Ch%C3%A2teau_Miranda_%2815249666204%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a6/Ch%C3%A2teau_Miranda_%2815871947405%29.jpg",
     ],
   },
   {
@@ -304,8 +304,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Poveglia_Island.jpg/1280px-Poveglia_Island.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Poveglia_belltower.jpg/1280px-Poveglia_belltower.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Isola_di_Poveglia_-_panoramio_-_Angelo_Meneghini.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Isola_di_Poveglia_-_panoramio.jpg",
     ],
   },
   {
@@ -327,8 +327,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Stanley_Hotel_Estes_Park.jpg/1280px-Stanley_Hotel_Estes_Park.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Stanley_Hotel_lobby.jpg/1280px-Stanley_Hotel_lobby.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b8/Stanley_Hotel_Staircase.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/36/Stanley_Hotel%2C_Estes_Park.jpg",
     ],
   },
   {
@@ -350,8 +350,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Waverly_Hills_Sanatorium.jpg/1280px-Waverly_Hills_Sanatorium.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Waverly_Hills_interior.jpg/1280px-Waverly_Hills_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/82/Waverly_Hills_Sanatorium_2018.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/95/1940_Census_Enumeration_District_Descriptions_-_Kentucky_-_Jefferson_County_-_ED_56-39%2C_ED_56-40%2C_ED_56-41%2C_ED_56-42_-_NARA_-_5862591.jpg",
     ],
   },
   {
@@ -368,8 +368,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Oradour-sur-Glane.jpg/1280px-Oradour-sur-Glane.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Oradour-sur-Glane_ruin.jpg/1280px-Oradour-sur-Glane_ruin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/11/Oradour-sur-Glane_43.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/3/33/Oradour-sur-Glane-cars.jpg",
     ],
   },
   {
@@ -386,8 +386,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Teufelsberg_Berlin.jpg/1280px-Teufelsberg_Berlin.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teufelsberg_dome.jpg/1280px-Teufelsberg_dome.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/04/Teufelsberg_Berlin_2021-11-10_09.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/26/NSA-Station_Teufelsberg_%282009%29.jpg",
     ],
   },
   {
@@ -404,8 +404,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Canfranc_Station.jpg/1280px-Canfranc_Station.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Canfranc_interior.jpg/1280px-Canfranc_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/9e/Canfranc_1993_02.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b5/Estaci%C3%B3n_Internacional_de_Canfranc.jpg",
     ],
   },
   {
@@ -427,8 +427,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Dargavs_Necropolis.jpg/1280px-Dargavs_Necropolis.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Dargavs_tombs.jpg/1280px-Dargavs_tombs.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Dargavs._Crypt_burial_grounds.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/42/Dargavs_gorod_mertvych.jpg",
     ],
   },
   {
@@ -445,8 +445,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/St_Kilda_Village_Bay.jpg/1280px-St_Kilda_Village_Bay.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/St_Kilda_stone_huts.jpg/1280px-St_Kilda_stone_huts.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0d/Village_Bay_St_Kilda_-_geograph.org.uk_-_21097.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ec/St_Kilda_bay_from_Oisebhal_summit_-_geograph.org.uk_-_6271265.jpg",
     ],
   },
   {
@@ -468,8 +468,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Villisca_Axe_Murder_House.jpg/1280px-Villisca_Axe_Murder_House.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Villisca_house_interior.jpg/1280px-Villisca_house_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d5/Josiah_B._and_Sara_Moore_House_-_NRHP97001471_-_Villisca_-_Montgomery_County_-_Iowa_-10-23-2016.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/04/The_day_book._%28Chicago%2C_Ill.%29%2C_14_June_1912.jpg",
     ],
   },
   {
@@ -491,8 +491,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Sedlec_Ossuary_chandelier.jpg/1280px-Sedlec_Ossuary_chandelier.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Sedlec_Ossuary_bones.jpg/1280px-Sedlec_Ossuary_bones.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/6e/Sedlec_Ossuary_-_Interior_6.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/6/64/Sedlec_Ossuary_Interior_7.jpg",
     ],
   },
   {
@@ -514,8 +514,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Catacombes_de_Paris.jpg/1280px-Catacombes_de_Paris.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Paris_Catacombs_skulls.jpg/1280px-Paris_Catacombs_skulls.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1f/Catacombs_of_Paris%2C_16_August_2013_012.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/95/Paris_Catacombs_%288591960734%29.jpg",
     ],
   },
   {
@@ -532,8 +532,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 5,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Centralia_Pennsylvania.jpg/1280px-Centralia_Pennsylvania.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Centralia_graffiti_highway.jpg/1280px-Centralia_graffiti_highway.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/90/Graffiti_Highway_-_Centralia%2C_Pennsylvania_%282019%29_b.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Centralia_PA_in_1971.jpg",
     ],
   },
   {
@@ -550,8 +550,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Sathorn_Unique_Tower.jpg/1280px-Sathorn_Unique_Tower.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Ghost_Tower_Bangkok.jpg/1280px-Ghost_Tower_Bangkok.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0a/Sathorn_Unique_Tower_%28II%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/04/Inside_of_Sathorn_Unique_Tower%2C_Bangkok%2C_Thailand_%284%29.JPG",
     ],
   },
   {
@@ -568,8 +568,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Spreepark_Berlin.jpg/1280px-Spreepark_Berlin.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Spreepark_ferris_wheel.jpg/1280px-Spreepark_ferris_wheel.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d6/Spreepark_gelaende_1.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/95/Roller_coasters_at_Spreepark_-_panoramio_-_wazabi.jpg",
     ],
   },
   {
@@ -591,8 +591,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Winchester_Mystery_House.jpg/1280px-Winchester_Mystery_House.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Winchester_House_interior.jpg/1280px-Winchester_House_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Winchester_Mystery_House_San_Jose_01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/30/Arboretum_Hallway_in_Winchester_Mystery_House.jpg",
     ],
   },
   {
@@ -614,8 +614,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Hill_of_Crosses.jpg/1280px-Hill_of_Crosses.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Hill_of_Crosses_Lithuania.jpg/1280px-Hill_of_Crosses_Lithuania.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Hill_of_Crosses_05082019_002.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/39/Hill_of_Crosses_05082019_023.jpg",
     ],
   },
     {
@@ -637,8 +637,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Port_Arthur_Tasmania.jpg/1280px-Port_Arthur_Tasmania.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Port_Arthur_penitentiary.jpg/1280px-Port_Arthur_penitentiary.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ee/PortArthur_main_lowres.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/4/41/Port_Arthur_hospital_remains.jpg",
     ],
   },
   {
@@ -655,8 +655,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ani_Cathedral_Turkey.jpg/1280px-Ani_Cathedral_Turkey.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ani_fortress_walls.jpg/1280px-Ani_fortress_walls.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c4/Cathedral_of_Ani%2C_Kars_Province.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/4a/20110419_Ruins_in_Citadel_Ani_Turkey_2.jpg",
     ],
   },
   {
@@ -673,8 +673,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bokor_Palace_Hotel.jpg/1280px-Bokor_Palace_Hotel.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Bokor_Hill_Station_church.jpg/1280px-Bokor_Hill_Station_church.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/39/Kirche_auf_dem_Gel%C3%A4nde_der_Bokor_Hill_Station%2C_Ansicht_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Bokor_P2.jpg",
     ],
   },
   {
@@ -696,8 +696,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Lawang_Sewu_Semarang.jpg/1280px-Lawang_Sewu_Semarang.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Lawang_Sewu_interior.jpg/1280px-Lawang_Sewu_interior.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Lawang_sewu_semarang.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/4e/Pintu_Jendela_Lawang_Sewu_Semarang.jpg",
     ],
   },
   {
@@ -714,8 +714,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Villa_Epecuen_ruins.jpg/1280px-Villa_Epecuen_ruins.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Villa_Epecuen_salt_trees.jpg/1280px-Villa_Epecuen_salt_trees.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/52/Ruinas_de_Epecuen_42.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/49/Ruinas_de_Epecuen_44_Hotel_y_confiteria_Coradini.jpg",
     ],
   },
   {
@@ -732,8 +732,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Chacaltaya_glacier.jpg/1280px-Chacaltaya_glacier.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Chacaltaya_ski_lodge.jpg/1280px-Chacaltaya_ski_lodge.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/6c/Ski_%40_5400m_%28Esta%C3%A7%C3%A3o_De_Esqui_De_Chatalcaya%29_-_panoramio.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5c/Chacaltaya-20110325.jpg",
     ],
   },
   {
@@ -750,8 +750,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Grytviken_whaling_station.jpg/1280px-Grytviken_whaling_station.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Grytviken_church.jpg/1280px-Grytviken_church.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0a/Whale_Oil_Tanks_at_Grytviken_Whaling_Station_%285685472143%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/08/Meat_Cookery_at_Grytviken_Whaling_Station.jpg",
     ],
   },
   {
@@ -1158,6 +1158,414 @@ const SEED_DATA = [
     photos: [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cocos_Island_Costa_Rica.jpg/1280px-Cocos_Island_Costa_Rica.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Cocos_Island_prison_ruins.jpg/1280px-Cocos_Island_prison_ruins.jpg",
+    ],
+  },
+    {
+    name: "Val-Jalbert",
+    category: "abandoned" as const,
+    coordinates: [-72.45, 48.77] as [number, number],
+    address: {
+      city: "Val-Jalbert",
+      country: "Canada",
+      formatted: "Val-Jalbert, Lac-Saint-Jean, Quebec, Canada",
+    },
+    yearAbandoned: 1927,
+    history: `Built in 1901 around a pulp mill on the Ouiatchouan River, the town produced 45 tons of pulp daily at its peak. It had 70 buildings: a school, a general store, a hospital, and modern worker housing with electricity and running water — rare luxuries in rural Quebec. When the mill closed in 1927, the entire population of 300 left within months. The dam, the mill, and the houses were simply left. Today the Ouiatchouan Falls still power the empty turbines. The houses are preserved as a heritage site, but the machinery hall is silent, and the forest has begun to pull the boarding houses apart.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/valjalbert1/1200/800",
+      "https://picsum.photos/seed/valjalbert2/1200/800",
+    ],
+  },
+  {
+    name: "Grosse Île",
+    category: "haunted" as const,
+    coordinates: [-70.67, 47.02] as [number, number],
+    address: {
+      city: "Grosse Île",
+      country: "Canada",
+      formatted: "Grosse Île, Saint-Antoine-de-l'Isle-aux-Grues, Quebec, Canada",
+    },
+    yearAbandoned: 1937,
+    history: `From 1832 to 1937, Grosse Île served as a quarantine station for immigrants arriving at Quebec, primarily Irish fleeing the Great Famine. In 1847 alone, 7,000 people died of typhus here and were buried in mass graves. The island had a hospital, a Catholic chapel, an Anglican church, and a village for medical staff. After 1937, it was used for animal quarantine until 1957, then abandoned. The red-roofed hospital still stands, its wards empty. The Celtic cross on the hill commemorates the Irish dead. The mass graves are unmarked but mapped. The St. Lawrence River freezes the island in winter. The fog in May — when the immigrant ships once arrived — still carries a smell that tour guides do not discuss.`,
+    hauntingReports: [
+      "The hospital wards produce the sound of coughing at night, though the building has been unheated since 1957.",
+      "Figures in 19th-century immigrant dress have been photographed standing at the quarantine dock during fog.",
+      "The Celtic cross is said to weep on the anniversary of the worst ship arrival, May 29.",
+      "Park rangers report medical instruments moving in the display cases of the former surgery theater.",
+    ],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/grosseile1/1200/800",
+      "https://picsum.photos/seed/grosseile2/1200/800",
+    ],
+  },
+  {
+    name: "Fordlândia",
+    category: "abandoned" as const,
+    coordinates: [-55.28, -3.83] as [number, number],
+    address: {
+      city: "Fordlândia",
+      country: "Brazil",
+      formatted: "Fordlândia, Pará, Brazil",
+    },
+    yearAbandoned: 1934,
+    history: `Henry Ford wanted to break the British monopoly on rubber. In 1928, he bought 2.5 million acres of Amazon rainforest and built an American-style industrial town complete with swimming pools, a golf course, and strict Prohibition laws. The rubber trees, planted in neat rows, succumbed to South American leaf blight — a fungus that thrives in monoculture. The workers revolted against the enforced American diet and square dances. Ford abandoned the project in 1934 after losing $20 million. The hospital, the water tower, and the worker cottages still stand in the jungle, being dismantled by strangler figs and termites. The blight is still there, waiting for anyone who tries again.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [
+      "https://picsum.photos/seed/fordlandia1/1200/800",
+      "https://picsum.photos/seed/fordlandia2/1200/800",
+    ],
+  },
+  {
+    name: "Armero",
+    category: "abandoned" as const,
+    coordinates: [-74.9, 4.97] as [number, number],
+    address: {
+      city: "Armero",
+      country: "Colombia",
+      formatted: "Armero, Tolima, Colombia",
+    },
+    yearAbandoned: 1985,
+    history: `On November 13, 1985, the Nevado del Ruiz volcano erupted. The heat melted its ice cap, sending a lahar — a wall of mud, water, and debris — racing down the Lagunilla River at 30 miles per hour. It reached Armero at 11:30 PM. In minutes, 23,000 people were buried under 15 feet of mud. The town was erased. Rescue workers found bodies entombed in their beds, cars compressed into metal pancakes, and the church bell tower protruding from the flow like a grave marker. A new town was built nearby, but the original Armero remains beneath the hardened mud — a Pompeii of the Andes, its streets still mapped under the surface.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [
+      "https://picsum.photos/seed/armero1/1200/800",
+      "https://picsum.photos/seed/armero2/1200/800",
+    ],
+  },
+  {
+    name: "Paranapiacaba",
+    category: "abandoned" as const,
+    coordinates: [-46.3, -23.78] as [number, number],
+    address: {
+      city: "Paranapiacaba",
+      country: "Brazil",
+      formatted: "Paranapiacaba, São Paulo, Brazil",
+    },
+    yearAbandoned: 1974,
+    history: `Built by the British-owned São Paulo Railway Company in the 1860s to house workers operating the inclined plane railway over the Serra do Mar. The town was a slice of Victorian England transplanted to the Atlantic Forest: terraced cottages, a clock tower, a Presbyterian church, and a funicular system. When Brazil switched to metric gauge and diesel locomotives in the 1970s, the inclined plane became obsolete. The British left. The forest advanced. Today the clock tower still keeps time, though no trains arrive. The cottages are painted in faded pastels. The mist from the escarpment fills the empty station daily at 4 PM, exactly when the last train used to depart.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/paranapiacaba1/1200/800",
+      "https://picsum.photos/seed/paranapiacaba2/1200/800",
+    ],
+  },
+  {
+    name: "Dallol",
+    category: "abandoned" as const,
+    coordinates: [40.3, 14.24] as [number, number],
+    address: {
+      city: "Dallol",
+      country: "Ethiopia",
+      formatted: "Dallol, Afar Region, Ethiopia",
+    },
+    yearAbandoned: 1960,
+    history: `In the Danakil Depression, 125 meters below sea level, the hottest inhabited place on Earth, a potash mining settlement was established in the 1960s. The average annual temperature is 35°C. The landscape is hydrothermal: salt flats, sulfur springs, acid pools, and geysers that deposit neon-green and orange mineral crusts. The workers lived in prefabricated huts. The salt was extracted by hand. When the mine became unprofitable, the settlement was abandoned. The huts have dissolved in the salt air. The road is swallowed annually by floods. The Afar nomads avoid the area, calling it the gateway to hell. The colors are beautiful and corrosive.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [
+      "https://picsum.photos/seed/dallol1/1200/800",
+      "https://picsum.photos/seed/dallol2/1200/800",
+    ],
+  },
+  {
+    name: "Elizabeth Bay",
+    category: "abandoned" as const,
+    coordinates: [15.08, -26.08] as [number, number],
+    address: {
+      city: "Elizabeth Bay",
+      country: "Namibia",
+      formatted: "Elizabeth Bay, Lüderitz, Namibia",
+    },
+    yearAbandoned: 1948,
+    history: `Established in 1911 by the Diamond Corporation, Elizabeth Bay was a more mechanized counterpart to Kolmanskop. The mine produced 200,000 carats annually at its peak. The settlement had an ice factory, a bowling alley, and a casino — all supplied by ship from Cape Town. When the diamond field was exhausted after World War II, the pumps were turned off and the desert entered. Unlike Kolmanskop, Elizabeth Bay was partially demolished, but the power station and the administrative building remain, filled with sand to the second floor. The Atlantic fog rolls through the empty casino nightly, condensing on the roulette wheels and dripping onto the floor.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/elizabethbay1/1200/800",
+      "https://picsum.photos/seed/elizabethbay2/1200/800",
+    ],
+  },
+  {
+    name: "Wittenoom",
+    category: "abandoned" as const,
+    coordinates: [118.33, -22.25] as [number, number],
+    address: {
+      city: "Wittenoom",
+      country: "Australia",
+      formatted: "Wittenoom, Western Australia",
+    },
+    yearAbandoned: 1966,
+    history: `In 1943, blue asbestos was discovered in the Hamersley Ranges. The Australian Blue Asbestos Company built a town of 150 houses, a hospital, a school, and a cinema to service the mine. By 1959, 20,000 tons of asbestos were being extracted annually. The fibers were everywhere — in the laundry, the playgrounds, the bakery flour. When the mine closed in 1966, the company left. The residents began dying of mesothelioma. The Western Australian government compulsorily acquired the houses and demolished them. Today Wittenoom is not just abandoned; it is legally erased from road signs and postal records. Three residents still refuse to leave. The gorges nearby are stunning and toxic. The water in the creek runs blue with crocidolite.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [
+      "https://picsum.photos/seed/wittenoom1/1200/800",
+      "https://picsum.photos/seed/wittenoom2/1200/800",
+    ],
+  },
+  {
+    name: "Macetown",
+    category: "abandoned" as const,
+    coordinates: [168.87, -44.87] as [number, number],
+    address: {
+      city: "Macetown",
+      country: "New Zealand",
+      formatted: "Macetown, Otago, New Zealand",
+    },
+    yearAbandoned: 1914,
+    history: `A gold rush town established in 1862 at the head of the Arrow River. At its peak, 400 miners lived here, extracting gold from quartz reefs using a 24-stamp battery powered by water races. The town had a school, a hotel, and a bakery. The gold ran out by 1900; the battery closed in 1914. The buildings were dismantled for timber or collapsed in snow avalanches. Today only the stone battery foundations and the baker's oven remain. The access track crosses the river 25 times. In autumn, the larch trees planted by miners turn gold — the same color as what they came seeking. The silence is broken only by the river and the kea parrots that tear rubber from visiting vehicles.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/macetown1/1200/800",
+      "https://picsum.photos/seed/macetown2/1200/800",
+    ],
+  },
+  {
+    name: "Kadykchan",
+    category: "abandoned" as const,
+    coordinates: [147.03, 62.37] as [number, number],
+    address: {
+      city: "Kadykchan",
+      country: "Russia",
+      formatted: "Kadykchan, Magadan Oblast, Russia",
+    },
+    yearAbandoned: 1995,
+    history: `Built by gulag prisoners in the 1940s to mine coal for the Kolyma region, Kadykchan — meaning "Valley of Death" in Evenk — was a model Soviet town with apartment blocks, a Palace of Culture, a swimming pool heated by mine water, and a monument to Lenin. The mines were worked by political prisoners and later by free laborers lured by high wages. When the Soviet Union collapsed, the subsidies stopped. A methane explosion in 1995 killed six miners and sealed the main shaft. The remaining 5,000 residents were evacuated by military convoy. The apartments still contain furniture, schoolbooks, and propaganda posters. The heating pipes burst, coating the floors in ice. The temperature drops to -50°C. The road is impassable eight months a year.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [
+      "https://picsum.photos/seed/kadykchan1/1200/800",
+      "https://picsum.photos/seed/kadykchan2/1200/800",
+    ],
+  },
+  {
+    name: "Kuldhara",
+    category: "haunted" as const,
+    coordinates: [70.62, 26.38] as [number, number],
+    address: {
+      city: "Kuldhara",
+      country: "India",
+      formatted: "Kuldhara, Jaisalmer District, Rajasthan, India",
+    },
+    yearAbandoned: 1825,
+    history: `Founded in the 13th century by the Paliwal Brahmins, Kuldhara was a prosperous village of 600 houses, known for advanced water conservation and trade in silver and opium. In 1825, the residents abandoned the village overnight. The legend holds that the Diwan of Jaisalmer, Salim Singh, levied such heavy taxes and threatened such violence that the entire population of 1,500 left in a single night, cursing the land so that no one could ever settle there again. The curse, they say, still holds. The houses are intact, their staircases leading to roofs that have not been touched in 200 years. No guard will stay after dark. The wells are dry. The streets are silent. The curse is specific: anyone who tries to live here will die.`,
+    hauntingReports: [
+      "Night guards report hearing footsteps in the narrow lanes and the sound of doors closing in houses where no wind blows.",
+      "A spectral procession of villagers carrying torches has been observed leaving the village at midnight on the anniversary of the abandonment.",
+      "Visitors who spend the night describe dreams of being chased by men in 19th-century Rajasthani dress.",
+      "The village well, dry for two centuries, occasionally produces the sound of splashing water at 3:00 AM.",
+    ],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/kuldhara1/1200/800",
+      "https://picsum.photos/seed/kuldhara2/1200/800",
+    ],
+  },
+  {
+    name: "Ross Island",
+    category: "haunted" as const,
+    coordinates: [92.76, 11.67] as [number, number],
+    address: {
+      city: "Ross Island",
+      country: "India",
+      formatted: "Ross Island, Andaman and Nicobar Islands, India",
+    },
+    yearAbandoned: 1942,
+    history: `The British established a penal colony here in 1858, shortly after the Indian Rebellion. The island became the administrative headquarters of the Andamans, with a bazaar, a bakery, a church, and tennis courts. Japanese forces occupied it in 1942 and built bunkers. After 1945, the British never returned. The island was abandoned. Today the banyan trees have strangled the Presbyterian church, their roots pouring through the windows like frozen lava. The deer introduced by the British still graze among the ruins. The Japanese bunkers are flooded. The Andaman administration runs a sound-and-light show in the evenings, projecting images of colonial officers onto the crumbling walls. The deer watch, unimpressed.`,
+    hauntingReports: [
+      "The sound-and-light show equipment has been found running at 3:00 AM, projecting images of officials not in the program.",
+      "Visitors report seeing a man in a British naval uniform walking the jetty, though the last naval vessel left in 1942.",
+      "The church organ produces chords when no one is near the instrument, which has been without bellows since 1955.",
+      "Japanese bunker tunnels echo with footsteps that cease when flashlights are raised.",
+    ],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/rossisland1/1200/800",
+      "https://picsum.photos/seed/rossisland2/1200/800",
+    ],
+  },
+  {
+    name: "Houtouwan",
+    category: "abandoned" as const,
+    coordinates: [122.68, 30.73] as [number, number],
+    address: {
+      city: "Houtouwan",
+      country: "China",
+      formatted: "Houtouwan, Shengshan Island, Zhejiang, China",
+    },
+    yearAbandoned: 1990,
+    history: `A fishing village on Shengshan Island in the Zhoushan Archipelago, Houtouwan was home to 2,000 fishermen and their families in the 1980s. The harbor was too small for modern trawlers, and the climb from the water to the houses — 400 stone steps — was too steep for the young, who left for the mainland. By the early 1990s, the village was empty. Without maintenance, the houses were colonized by ivy, vines, and ferns. The green carpet grew over the walls, the roofs, the pathways. Today Houtouwan is a tourist attraction accessible only by fishing boat. The village looks less abandoned than consumed — as if the island decided to swallow the architecture and digest it slowly into vegetation.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/houtouwan1/1200/800",
+      "https://picsum.photos/seed/houtouwan2/1200/800",
+    ],
+  },
+  {
+    name: "Ordos Kangbashi",
+    category: "abandoned" as const,
+    coordinates: [109.78, 39.60] as [number, number],
+    address: {
+      city: "Ordos",
+      country: "China",
+      formatted: "Kangbashi District, Ordos, Inner Mongolia, China",
+    },
+    yearAbandoned: undefined,
+    history: `Designed in 2003 to house one million residents, Kangbashi was the flagship of China's urban expansion: monumental government buildings, a museum shaped like a desert boulder, a library, a theater, and thousands of apartment towers built on the Ordos grasslands. The coal boom that funded it collapsed. The population peaked at 30,000. Today the streets are six lanes wide and empty. The traffic lights change for no one. The public squares are maintained by crews who outnumber the pedestrians. Real estate agents occupy glass towers with no tenants. It is not a ruin; it is a city built to a scale that its inhabitants never arrived to match. The architecture is pristine, the silence is municipal, and the future it was built for has been postponed indefinitely.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/ordos1/1200/800",
+      "https://picsum.photos/seed/ordos2/1200/800",
+    ],
+  },
+  {
+    name: "Chaitén",
+    category: "abandoned" as const,
+    coordinates: [-72.71, -42.92] as [number, number],
+    address: {
+      city: "Chaitén",
+      country: "Chile",
+      formatted: "Chaitén, Los Lagos Region, Chile",
+    },
+    yearAbandoned: 2008,
+    history: `The town of 4,000 sat beneath the Chaitén volcano, which had been dormant for 9,000 years. On May 2, 2008, it erupted without warning, sending a column of ash 30 kilometers into the stratosphere and triggering a lahar that buried the town in three meters of mud and volcanic debris. The residents were evacuated by naval vessel. The government declared the site uninhabitable. A new Chaitén was built 10 kilometers north. The original town remains: cars half-buried, houses collapsed under the weight of wet ash, the school playground swallowed. The volcano continues to steam. The forest is returning, but slowly — the ash is too acidic for most seedlings.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [
+      "https://picsum.photos/seed/chaiten1/1200/800",
+      "https://picsum.photos/seed/chaiten2/1200/800",
+    ],
+  },
+    {
+    name: "Battery Russell",
+    category: "abandoned" as const,
+    coordinates: [-123.9633, 46.2036] as [number, number],
+    address: {
+      city: "Hammond",
+      country: "United States",
+      formatted: "Battery Russell, Fort Stevens State Park, Hammond, Oregon",
+    },
+    yearAbandoned: 1947,
+    history: `Built between 1903 and 1904 to defend the mouth of the Columbia River, Battery Russell was named for Major General David A. Russell, killed in the Civil War. The installation mounted two 10-inch disappearing rifles — cannons that rose from concrete pits, fired, and recoiled back below the parapet. On the night of June 21, 1942, the Japanese submarine I-25 surfaced offshore and fired seventeen shells at Fort Stevens. Battery Russell received the only hostile fire directed at a continental U.S. military installation during World War II. The shells landed in the scrub, damaging nothing. The garrison held their fire, afraid of revealing the battery's exact position. The guns were scrapped in 1947. The concrete pits remain, filled with rainwater and salal berries, looking out over the Pacific where the submarine waited.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [
+      "https://picsum.photos/seed/batteryrussell1/1200/800",
+      "https://picsum.photos/seed/batteryrussell2/1200/800",
+    ],
+  },
+  {
+    name: "Seringal de Iranduba",
+    category: "abandoned" as const,
+    coordinates: [-60.1833, -3.3167] as [number, number],
+    address: {
+      city: "Iranduba",
+      country: "Brazil",
+      formatted: "Iranduba, Amazonas, Brazil",
+    },
+    yearAbandoned: 1912,
+    history: `During the Amazon rubber boom, estates like this one lined the Rio Negro upstream from Manaus. The casa grande — the master's house — was built of imported Portuguese tile and Brazilian hardwood, surrounded by barracks for the tappers, a drying shed, and a chapel. When the British began growing rubber in Malaya and the price collapsed in 1912, the patrons abandoned their holdings overnight. The jungle reclaimed the drying sheds in three seasons. The casa grande's tile roof collapsed in 1920. Today the site is accessible only by canoe during the wet season. The iron press used to compact rubber into balls still sits in the mud. The chapel's bell was removed by scavengers, but the hardwood altar remains, carved with Jesuit symbols and overgrown with philodendron vines thicker than a man's thigh.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [
+      "https://picsum.photos/seed/iranduba1/1200/800",
+      "https://picsum.photos/seed/iranduba2/1200/800",
+    ],
+  },
+  {
+    name: "Manteno State Hospital",
+    category: "haunted" as const,
+    coordinates: [-87.8314, 41.2503] as [number, number],
+    address: {
+      city: "Manteno",
+      country: "United States",
+      formatted: "Manteno State Hospital, Manteno, Illinois",
+    },
+    yearAbandoned: 1985,
+    history: `Opened in 1930 to relieve overcrowding at Chicago state asylums, Manteno grew to 300 buildings on 1,200 acres, housing 8,100 patients by 1954. It had its own dairy farm, power plant, cemetery, and railroad spur. The treatments evolved from hydrotherapy and occupational therapy to insulin shock, electroshock, and prefrontal lobotomy. In 1970, a federal investigation found patients living in squalor, tied to beds, and medicated into catatonia. Deinstitutionalization emptied the wards through the 1970s; the hospital closed in 1985. The Kirkbride-style administration building was demolished in 2000, but the patient cottages, the tunnel system, and the power plant remain. The cemetery holds over 400 unmarked graves. The tunnels connect buildings that no longer exist, ending in brick walls where corridors once continued.`,
+    hauntingReports: [
+      "Security patrols report screams from the hydrotherapy wing, though the plumbing was removed in 1988.",
+      "The patient cemetery produces electronic voice phenomena saying names that match burial records never digitized.",
+      "A nurse in 1950s uniform has been observed in the south cottage windows, though the floors collapsed in 2010.",
+      "The steam tunnels emit a rhythmic clanging at 3:00 AM, synchronized with the old shift-change bell schedule.",
+    ],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/manteno1/1200/800",
+      "https://picsum.photos/seed/manteno2/1200/800",
+    ],
+  },
+  {
+    name: "The Sayer House",
+    category: "both" as const,
+    coordinates: [-82.95, 38.33] as [number, number],
+    address: {
+      city: "Grayson",
+      country: "United States",
+      formatted: "Carter County, near Grayson, Kentucky",
+    },
+    yearAbandoned: 1970,
+    history: `A two-story brick Federal-style house built in 1840 by the Sayer family, who farmed the hollow for five generations. The last resident, Elizabeth Sayer, died in 1970 at age 94, having lived alone in the house for forty years after her brothers were killed in the Pacific during World War II. She left the house exactly as it stood: her mother's wedding dress in the upstairs closet, canned goods in the cellar from 1968, a Bible open to Psalm 23 on the kitchen table. The family refused to sell. The roof began to leak in 1985. By 2000, the east wall had buckled. The piano still sits in the parlor, its strings rusted to the same color as the brick. Local teenagers dare each other to spend a night inside. None stay until morning.`,
+    hauntingReports: [
+      "The piano produces a single low chord at dusk, though the strings are severed and the soundboard is rotted through.",
+      "Elizabeth Sayer's rocking chair on the front porch moves during storms when no wind reaches the sheltered hollow.",
+      "Visitors report finding fresh footprints in the dust on the staircase leading to the room where she died.",
+      "The cellar preserves a constant temperature of 55°F year-round, and the canned jars on the shelves remain sealed, their contents unchanged.",
+    ],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/sayerhouse1/1200/800",
+      "https://picsum.photos/seed/sayerhouse2/1200/800",
+    ],
+  },
+  {
+    name: "Mount Moriah Cemetery",
+    category: "abandoned" as const,
+    coordinates: [-75.235, 39.935] as [number, number],
+    address: {
+      city: "Philadelphia",
+      country: "United States",
+      formatted: "Mount Moriah Cemetery, Southwest Philadelphia, Pennsylvania",
+    },
+    yearAbandoned: 2011,
+    history: `Incorporated in 1855, Mount Moriah was once the largest cemetery in Pennsylvania — 380 acres, 85,000 burials, including Betsy Ross (reputed), 40 Civil War generals, and thousands of unmarked graves in the Potters Field. It had a Romanesque gatehouse, a reflecting pool, and a naval plot for the U.S. Colored Troops. By the 1990s, the cemetery association was bankrupt. Maintenance stopped. The last trustee died in 2011, and the gates were chained. Since then, the Friends of Mount Moriah have fought to preserve what they can, but 200 acres remain impenetrable: headstones toppled by trees, mausoleums cracked open by frost, the reflecting pool filled with cattails and algae. The deer have worn paths between the graves. The gatehouse still stands, but its stained glass is gone, and the iron gates are rusted permanently ajar.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [
+      "https://picsum.photos/seed/mtmoriah1/1200/800",
+      "https://picsum.photos/seed/mtmoriah2/1200/800",
+    ],
+  },
+  {
+    name: "Jemison Center",
+    category: "haunted" as const,
+    coordinates: [-87.535, 33.214] as [number, number],
+    address: {
+      city: "Tuscaloosa",
+      country: "United States",
+      formatted: "Jemison Center, Tuscaloosa, Alabama",
+    },
+    yearAbandoned: 2012,
+    history: `Built in 1939 as the African American annex to Bryce Hospital — Alabama's first insane asylum, founded in 1861 — the Jemison Center operated under segregation until 1969, then as an overflow ward until 2003. The building was finally abandoned in 2012. It is a long, low brick structure with a central corridor and barred windows set too high for patients to see out. The wards still contain iron bed frames, hydrotherapy tubs, and restraint chairs. The paint is peeling in sheets the color of institutional green. The University of Alabama owns the property and has debated demolition for a decade. The building is not open to the public, but the windows are broken, and the corridor is visible from the parking lot — a long perspective of doorways receding into darkness, each one identical.`,
+    hauntingReports: [
+      "The Tuscaloosa Paranormal Research Society recorded a male voice saying 'Let me out' in the east ward, though the building was sealed.",
+      "Figures have been photographed standing at the high windows at night, though the floors are considered structurally unsafe for human weight.",
+      "The hydrotherapy room produces a sound of running water when the plumbing has been disconnected since 2003.",
+      "Visitors outside the building report being watched from the roofline, though no access to the roof has existed since the stairwell collapsed.",
+    ],
+    dangerLevel: 3,
+    photos: [
+      "https://picsum.photos/seed/jemison1/1200/800",
+      "https://picsum.photos/seed/jemison2/1200/800",
     ],
   },
 ];

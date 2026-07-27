@@ -17,8 +17,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://picsum.photos/seed/pripyat1/1200/800",
-      "https://picsum.photos/seed/pripyat2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Pripyat_amusement_park_ferris_wheel.jpg/1280px-Pripyat_amusement_park_ferris_wheel.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Pripyat_-_ panoramio_%2821%29.jpg/1280px-Pripyat_-_panoramio_%2821%29.jpg",
     ],
   },
   {
@@ -40,8 +40,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/easternstate1/1200/800",
-      "https://picsum.photos/seed/easternstate2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Eastern_State_Penitentiary_cell_block.jpg/1280px-Eastern_State_Penitentiary_cell_block.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Eastern_State_Penitentiary_2.jpg/1280px-Eastern_State_Penitentiary_2.jpg",
     ],
   },
   {
@@ -63,8 +63,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/dollisland1/1200/800",
-      "https://picsum.photos/seed/dollisland2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Isla_de_las_Munecas.jpg/1280px-Isla_de_las_Munecas.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg/1280px-Dolls_on_Isla_de_las_Mu%C3%B1ecas.jpg",
     ],
   },
   {
@@ -81,8 +81,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/bodie1/1200/800",
-      "https://picsum.photos/seed/bodie2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Bodie_California.jpg/1280px-Bodie_California.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Bodie_ghost_town.jpg/1280px-Bodie_ghost_town.jpg",
     ],
   },
   {
@@ -104,8 +104,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 5,
     photos: [
-      "https://picsum.photos/seed/aokigahara1/1200/800",
-      "https://picsum.photos/seed/aokigahara2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Aokigahara_Forest.jpg/1280px-Aokigahara_Forest.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Aokigahara_2.jpg/1280px-Aokigahara_2.jpg",
     ],
   },
   {
@@ -122,8 +122,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://picsum.photos/seed/duga1/1200/800",
-      "https://picsum.photos/seed/duga2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg/1280px-Duga_radar_array_in_Chernobyl_Exclusion_Zone.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg/1280px-Duga_radar_%28Chernobyl_Exclusion_Zone%29_2.jpg",
     ],
   },
   {
@@ -145,8 +145,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/bhangarh1/1200/800",
-      "https://picsum.photos/seed/bhangarh2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bhangarh_Fort.jpg/1280px-Bhangarh_Fort.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Bhangarh_Fort_ruins.jpg/1280px-Bhangarh_Fort_ruins.jpg",
     ],
   },
   {
@@ -163,8 +163,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/northbrother1/1200/800",
-      "https://picsum.photos/seed/northbrother2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/North_Brother_Island_Riverside_Hospital.jpg/1280px-North_Brother_Island_Riverside_Hospital.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/North_Brother_Island_interior.jpg/1280px-North_Brother_Island_interior.jpg",
     ],
   },
   {
@@ -181,8 +181,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/humberstone1/1200/800",
-      "https://picsum.photos/seed/humberstone2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Humberstone_and_Santa_Laura_Saltpeter_Works.jpg/1280px-Humberstone_and_Santa_Laura_Saltpeter_Works.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Humberstone_theater.jpg/1280px-Humberstone_theater.jpg",
     ],
   },
   {
@@ -204,8 +204,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/brissac1/1200/800",
-      "https://picsum.photos/seed/brissac2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Chateau_de_Brissac.jpg/1280px-Chateau_de_Brissac.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Chateau_de_Brissac_interior.jpg/1280px-Chateau_de_Brissac_interior.jpg",
     ],
   },
 ];
@@ -224,14 +224,9 @@ export async function GET(request: NextRequest) {
   try {
     await dbConnect();
 
-    const existing = await PlaceModel.countDocuments();
-    if (existing > 0) {
-      return NextResponse.json({
-        message: "Database already seeded",
-        count: existing,
-      });
-    }
-
+    // Clear existing and re-seed with real images
+    await PlaceModel.deleteMany({});
+    
     const docs = SEED_DATA.map((data) => ({
       ...data,
       slug: slugify(data.name),
@@ -249,7 +244,7 @@ export async function GET(request: NextRequest) {
     await PlaceModel.insertMany(docs);
 
     return NextResponse.json({
-      message: "Archives populated",
+      message: "Archives repopulated with real imagery",
       seeded: docs.length,
     });
   } catch (error: any) {

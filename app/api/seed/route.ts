@@ -768,8 +768,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Pyramiden_Svalbard.jpg/1280px-Pyramiden_Svalbard.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Pyramiden_gymnasium.jpg/1280px-Pyramiden_gymnasium.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/52/Pyramiden_35.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/cf/Pyramiden_45.jpg",
     ],
   },
   {
@@ -786,8 +786,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Varosha_Famagusta.jpg/1280px-Varosha_Famagusta.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Varosha_abandoned_hotels.jpg/1280px-Varosha_abandoned_hotels.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/9f/Varosha_2016_4.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/01/Varosha_2020_2.jpg",
     ],
   },
   {
@@ -804,8 +804,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Kayakoy_ruins.jpg/1280px-Kayakoy_ruins.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Kayakoy_church.jpg/1280px-Kayakoy_church.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c0/Kayak%C3%B6y_7421.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8f/Kayak%C3%B6y_6765.jpg",
     ],
   },
   {
@@ -822,8 +822,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Kennecott_mill_Alaska.jpg/1280px-Kennecott_mill_Alaska.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Kennecott_concentration_mill.jpg/1280px-Kennecott_concentration_mill.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0b/Kennecott_Mines_1.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1d/Kennecott_power_plant_%28interior%29.jpg",
     ],
   },
   {
@@ -840,8 +840,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Bombay_Beach_Salton_Sea.jpg/1280px-Bombay_Beach_Salton_Sea.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Bombay_Beach_ruins.jpg/1280px-Bombay_Beach_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/de/BombayBeach2008.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/79/The_Swing_at_Bombay_Beach.jpg",
     ],
   },
   {
@@ -858,8 +858,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Maunsell_Forts.jpg/1280px-Maunsell_Forts.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Red_Sands_fort.jpg/1280px-Red_Sands_fort.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/92/Red_Sands_Maunsell_Fort_-_Control_and_four_Gunnery_Towers_-_geograph.org.uk_-_6245158.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8a/REDSANDFORT.png",
     ],
   },
   {
@@ -876,8 +876,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/San_Zhi_pod_village.jpg/1280px-San_Zhi_pod_village.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/San_Zhi_UFO_houses.jpg/1280px-San_Zhi_UFO_houses.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/01/%E4%B8%89%E8%8A%9D%E9%A3%9B%E7%A2%9F%E5%B1%8B.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/36/UFO_House%2C_Sanjhih%2C_Taiwan_%282364626890%29.jpg",
     ],
   },
   {
@@ -894,8 +894,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Nara_Dreamland_castle.jpg/1280px-Nara_Dreamland_castle.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Nara_Dreamland_aska.jpg/1280px-Nara_Dreamland_aska.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e1/Nara_Dreamland_2014_%2814390669918%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8c/Nara_Dreamland_2014_%2814573947601%29.jpg",
     ],
   },
   {
@@ -912,8 +912,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Six_Flags_New_Orleans.jpg/1280px-Six_Flags_New_Orleans.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/SFNO_flood_damage.jpg/1280px-SFNO_flood_damage.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/02/Theatre_-_Six_Flags_New_Orleans_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/cb/Little_swings_-_Six_Flags_New_Orleans_ruins.jpg",
     ],
   },
   {
@@ -930,8 +930,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 5,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Plymouth_Montserrat.jpg/1280px-Plymouth_Montserrat.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Plymouth_ash_flow.jpg/1280px-Plymouth_ash_flow.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/97/Plymouth_Montserrat_Heli.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/dc/Interior_of_an_abandoned_hotel_near_Plymouth_%286997157934%29.jpg",
     ],
   },
   {
@@ -948,8 +948,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Craco_Italy.jpg/1280px-Craco_Italy.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Craco_ruins.jpg/1280px-Craco_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Craco_il_paese_fantasma.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/31/Craco0012.jpg",
     ],
   },
   {
@@ -966,8 +966,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Belchite_ruins.jpg/1280px-Belchite_ruins.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Belchite_church.jpg/1280px-Belchite_church.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/df/Belchite_y_Torre_de_San_Mart%C3%ADn_de_Tours%2C_Belchite.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b9/Iglesia_de_San_Agust%C3%ADn%2C_Belchite%2C_Arag%C3%B3n_%28Espa%C3%B1a%29.jpg",
     ],
   },
     {
@@ -984,8 +984,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Deception_Island_whaling_station.jpg/1280px-Deception_Island_whaling_station.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Deception_Island_ruins.jpg/1280px-Deception_Island_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/3b/B_Deception_Island_-_Whalers_Bay.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/7b/Deception_Island_02%28js%29.jpg",
     ],
   },
   {
@@ -1002,8 +1002,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Mada%27in_Saleh_tombs.jpg/1280px-Mada%27in_Saleh_tombs.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Hegra_Saudi_Arabia.jpg/1280px-Hegra_Saudi_Arabia.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/02/Hegra_%28Mada%27in_Salih%29%2C_the_kingdom%27s_second_Nabatean_capital_after_Petra%2C_Saudi_Arabia_-_53533892417.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/37/Jabal_al-Ahmar_Necropolis%2C_Hegra_%28Mada%27in_Salih%29%2C_the_kingdom%27s_second_Nabatean_capital_after_Petra%2C_Saudi_Arabia.jpg",
     ],
   },
   {
@@ -1020,8 +1020,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Al_Madam_ghost_town.jpg/1280px-Al_Madam_ghost_town.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Al_Madam_abandoned_houses.jpg/1280px-Al_Madam_abandoned_houses.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/ae/The_Mosque%2C_Al_Madam_%2849459523832%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/40/Sand_Filled_%28Al_Madam%2C_UAE%29.jpg",
     ],
   },
   {
@@ -1038,8 +1038,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Moynaq_ship_graveyard.jpg/1280px-Moynaq_ship_graveyard.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Aral_Sea_rusty_ships.jpg/1280px-Aral_Sea_rusty_ships.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/cf/Moynaq%2C_Aral_Sea_%286226807306%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e1/Muynak_%288600890150%29.jpg",
     ],
   },
   {
@@ -1056,8 +1056,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Devils_Island_French_Guiana.jpg/1280px-Devils_Island_French_Guiana.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Devils_Island_prison_ruins.jpg/1280px-Devils_Island_prison_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/7a/Penal_Colony_of_Devil%27s_Island.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e1/%C3%8Eles_du_Salut_10_June_DSC_1190_%C3%8Ele_du_Diable.jpg",
     ],
   },
   {
@@ -1074,8 +1074,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Sarajevo_bobsled_track.jpg/1280px-Sarajevo_bobsled_track.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Sarajevo_1984_olympics_ruins.jpg/1280px-Sarajevo_1984_olympics_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b1/Sarajevo%2C_Bobsled_track_%2810476999006%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a3/Sarajevo_Olympic_Bobsleigh_on_35mm_film.jpg",
     ],
   },
   {
@@ -1092,8 +1092,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Vieques_beach_bunkers.jpg/1280px-Vieques_beach_bunkers.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Vieques_navy_ruins.jpg/1280px-Vieques_navy_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/12/Oldest_tree_on_the_island_of_Vieques.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/38/Historic_American_Buildings_Survey%2C_PART_OF_WEST_ELEVATION._-_Fuerte_de_Vieques%2C_Isla_de_Vieques%2C_Isabel_Segunda%2C_Vieques_Municipio%2C_PR_HABS_PR%2C8-VIEQUI%2C1-6.tif",
     ],
   },
   {
@@ -1110,8 +1110,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Tyneham_village_Dorset.jpg/1280px-Tyneham_village_Dorset.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Tyneham_church.jpg/1280px-Tyneham_church.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0a/Tyneham_June_2021.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/93/Interior_of_farmhouse%2C_Tyneham_-_geograph.org.uk_-_2741601.jpg",
     ],
   },
   {
@@ -1133,8 +1133,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Clipperton_Island_aerial.jpg/1280px-Clipperton_Island_aerial.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Clipperton_lighthouse.jpg/1280px-Clipperton_lighthouse.jpg",
+      "https://www.eluniversal.com.mx/resizer/v2/GH4LIOGZCVCWHHW4IULZM7WYLQ.jpg?auth=ad2ad5091786a475b131f17c0e4cc360ca16cdb53b9dc0f0985ecea7793d41b9&smart=true&height=666",
+      "https://images.squarespace-cdn.com/content/v1/5de7ab07465f7953ae1b53db/1576692324688-PH16MKJYZMOUX60GBQRS/Clipperton+Island+shark+research+Pelagios+Kakunja",
     ],
   },
   {
@@ -1156,8 +1156,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 4,
     photos: [
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cocos_Island_Costa_Rica.jpg/1280px-Cocos_Island_Costa_Rica.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Cocos_Island_prison_ruins.jpg/1280px-Cocos_Island_prison_ruins.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b3/Cocos_Island.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/bc/Cocos_Island_wireless_mast_destroyed%2C_September_1914.png",
     ],
   },
     {
@@ -1174,8 +1174,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/valjalbert1/1200/800",
-      "https://picsum.photos/seed/valjalbert2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/b/bc/Village_historique_de_Val_Jalbert_5.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/9/94/Village_historique_de_Val-Jalbert_%287%29.JPG",
     ],
   },
   {
@@ -1197,8 +1197,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/grosseile1/1200/800",
-      "https://picsum.photos/seed/grosseile2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c4/Maison_infirmieres_Grosse_Ile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/05/Monument_to_the_Irish_immigrant_victims_of_typhus%2C_Grosse-%C3%8Ele%2C_QC%2C_about_1910_%283421927336%29.jpg",
     ],
   },
   {
@@ -1215,8 +1215,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/fordlandia1/1200/800",
-      "https://picsum.photos/seed/fordlandia2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5f/Fordlandia_2.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/7/7a/Aerial_View_of_Fordlandia%2C_Brazil%2C_1934.jpg",
     ],
   },
   {
@@ -1233,8 +1233,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://picsum.photos/seed/armero1/1200/800",
-      "https://picsum.photos/seed/armero2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0c/Raices_en_ruinas_de_Armero.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/9/9a/Armero_casa.jpg",
     ],
   },
   {
@@ -1251,8 +1251,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/paranapiacaba1/1200/800",
-      "https://picsum.photos/seed/paranapiacaba2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/3/3d/Vila_de_Paranapiacaba_na_Cidade_de_Santo_Andr%C3%A9_-_S%C3%A3o_Paulo.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fe/Paranapiacaba.jpg",
     ],
   },
   {
@@ -1269,8 +1269,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 5,
     photos: [
-      "https://picsum.photos/seed/dallol1/1200/800",
-      "https://picsum.photos/seed/dallol2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/5/58/Dallol-Montagnes_de_sel_%2810%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/50/Dallol-Ethiopie_%2842%29.jpg",
     ],
   },
   {
@@ -1287,8 +1287,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/elizabethbay1/1200/800",
-      "https://picsum.photos/seed/elizabethbay2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5e/Elisabethbucht_Namibia_Geisterstadt.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/06/Elisabethbucht%2C_Namibia.jpg",
     ],
   },
   {
@@ -1305,8 +1305,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 5,
     photos: [
-      "https://picsum.photos/seed/wittenoom1/1200/800",
-      "https://picsum.photos/seed/wittenoom2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/8/84/1966_WITTENOOM_%283371782555%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d1/Wittenoom_-_Doc_Holidays.JPG",
     ],
   },
   {
@@ -1323,8 +1323,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/macetown1/1200/800",
-      "https://picsum.photos/seed/macetown2/1200/800",
+      "https://www.doc.govt.nz/thumbs/hero/contentassets/f7bb1b351f744a969043d4c7382c0ee3/homeward-bound-battery-1920.jpg",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIAY_oMjNy08oo9FXXbOZxkhYeXPAinGNSob2-aT83cEzIZva_jPfg7MDs&s=10",
     ],
   },
   {
@@ -1341,8 +1341,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://picsum.photos/seed/kadykchan1/1200/800",
-      "https://picsum.photos/seed/kadykchan2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/f/f9/Laika_ac_Kadykchan_%286480293211%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/fb/Laika_ac_Kadykchan_%286480291477%29.jpg",
     ],
   },
   {
@@ -1364,8 +1364,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/kuldhara1/1200/800",
-      "https://picsum.photos/seed/kuldhara2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/0/00/Kuldhara%2C_an_abandoned_village_at_Jaiselamer%2C_Rajasthan_07.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d3/Kuldhara%2C_an_abandoned_village_%2830738741447%29.jpg",
     ],
   },
   {
@@ -1387,8 +1387,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/rossisland1/1200/800",
-      "https://picsum.photos/seed/rossisland2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/8/84/Ross_Island%2C_Andamans%2C_Penal_Colony_harbor.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b5/Netaji_Subhash_Chandra_Bose_Island_aka_Ross_Island%2C_Andaman_vrvbaan042k24_%2829%29.jpg",
     ],
   },
   {
@@ -1405,8 +1405,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/houtouwan1/1200/800",
-      "https://picsum.photos/seed/houtouwan2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1b/Thomas_was_taken_on_20180517_in_Wuren_island%2CZhoushan_City%2C_Zhejiang_Province_S8A0593.tiff",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8e/Houtouwan_04.jpg",
     ],
   },
   {
@@ -1423,8 +1423,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/ordos1/1200/800",
-      "https://picsum.photos/seed/ordos2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/Ordos.Kang_Bashi_Daqiao.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b0/%E5%BA%B7%E5%B7%B4%E4%BB%80_%E9%84%82%E5%B0%94%E5%A4%9A%E6%96%AF%E5%B8%82%E5%9B%BE%E4%B9%A6%E9%A6%86_01.jpg",
     ],
   },
   {
@@ -1441,8 +1441,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
-      "https://picsum.photos/seed/chaiten1/1200/800",
-      "https://picsum.photos/seed/chaiten2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/8/85/Chait%C3%A9n.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0c/Volc%C3%A1n_Chait%C3%A9n-Sam_Beebe-Ecotrust.jpg",
     ],
   },
     {
@@ -1459,8 +1459,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 1,
     photos: [
-      "https://picsum.photos/seed/batteryrussell1/1200/800",
-      "https://picsum.photos/seed/batteryrussell2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/8/87/Battery_Russell_at_Fort_Stevens_State_Park_19.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/ce/The_Stairs_to_Battery_Russell_in_Fort_Stevens_State_Park.jpg",
     ],
   },
   {
@@ -1477,8 +1477,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/iranduba1/1200/800",
-      "https://picsum.photos/seed/iranduba2/1200/800",
+      "https://www.amazonasemais.com.br/wp-content/uploads/2014/06/MUSEU-DO-SERINGAL-2.jpg",
+      "https://brasiltotalreceptivos.com.br/fotos/produto/9a3d36699bfa0008da1970c7128d48a9_208.png",
     ],
   },
   {
@@ -1500,8 +1500,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/manteno1/1200/800",
-      "https://picsum.photos/seed/manteno2/1200/800",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpZp0BNfqUoOrdfS8mpCjkaayLDSYdONVueTfKZ5YRY2ZTEe6G5fDL06Ms&s=10",
+      "https://media.wnyc.org/i/757/800/h/80/1/Doctors-Office-NYPL.jpg",
     ],
   },
   {
@@ -1523,8 +1523,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/sayerhouse1/1200/800",
-      "https://picsum.photos/seed/sayerhouse2/1200/800",
+      "https://i.huffpost.com/gadgets/slideshows/378352/slide_378352_4465040_free.jpg",
+      "https://i.huffpost.com/gadgets/slideshows/378352/slide_378352_4465040_free.jpg",
     ],
   },
   {
@@ -1541,8 +1541,8 @@ const SEED_DATA = [
     hauntingReports: [],
     dangerLevel: 2,
     photos: [
-      "https://picsum.photos/seed/mtmoriah1/1200/800",
-      "https://picsum.photos/seed/mtmoriah2/1200/800",
+      "https://upload.wikimedia.org/wikipedia/commons/4/41/Mausoleums_and_Obelisks_in_Mount_Moriah_Cemetery.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/87/Mt_Moriah_Masolea.JPG",
     ],
   },
   {
@@ -1564,8 +1564,8 @@ const SEED_DATA = [
     ],
     dangerLevel: 3,
     photos: [
-      "https://picsum.photos/seed/jemison1/1200/800",
-      "https://picsum.photos/seed/jemison2/1200/800",
+      "https://abandonedsoutheast.com/wp-content/uploads/2019/08/50804493921_f8255ea2b2_k.jpg",
+      "https://abandonedsoutheast.com/wp-content/uploads/2019/08/48062317871_66b3412daa_k.jpg?w=1440",
     ],
   },
 ];

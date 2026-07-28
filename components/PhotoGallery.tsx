@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -18,18 +19,19 @@ export default function PhotoGallery({ photos }: Props) {
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
         {photos.map((photo, i) => (
           <motion.div
-            key={i}
+            key={photo}
             whileHover={{ scale: 1.03 }}
             transition={{ duration: 0.3 }}
             className="relative flex-shrink-0 w-48 h-32 rounded-lg overflow-hidden cursor-none group"
             onClick={() => setLightbox(i)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={photo}
               alt={`Photo ${i + 1}`}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              loading="lazy"
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+              sizes="192px"
+              loading={i === 0 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-void/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </motion.div>
@@ -77,18 +79,20 @@ export default function PhotoGallery({ photos }: Props) {
             )}
 
             <motion.div
-              key={lightbox}
+              key={photos[lightbox]}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
               className="relative w-[90vw] max-w-4xl aspect-video"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={photos[lightbox]}
                 alt={`Photo ${lightbox + 1}`}
-                className="w-full h-full object-contain"
+                fill
+                className="object-contain"
+                sizes="90vw"
+                priority
               />
             </motion.div>
 

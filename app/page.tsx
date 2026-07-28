@@ -25,7 +25,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/places")
+    fetch("/api/places?limit=30")
       .then((r) => r.json())
       .then((data) => {
         setPlaces(data.places || []);
@@ -105,9 +105,10 @@ export default function Home() {
       />
 
       {/* Place Panel */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedPlace && (
           <PlacePanel
+            key={selectedPlace._id}
             place={selectedPlace}
             onClose={() => setSelectedPlace(null)}
           />

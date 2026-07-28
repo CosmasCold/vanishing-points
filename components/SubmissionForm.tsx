@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Upload, MapPin, AlertTriangle, Send, X } from "lucide-react";
 import { useDropzone } from "react-dropzone";
+import Image from "next/image";
 import { geocodeAddress } from "@/lib/geocode";
 import { PlaceInput } from "@/types";
 import Toast from "./Toast";
@@ -375,11 +376,13 @@ export default function SubmissionForm({ onSuccess }: Props) {
           {form.photos && form.photos.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {form.photos.map((photo, i) => (
-                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden group">
-                  <img
+                <div key={photo} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                  <Image
                     src={photo}
                     alt={`Upload ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
                   />
                   <button
                     type="button"
@@ -399,7 +402,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           )}
         </motion.div>
 
-                {/* Contributor */}
+        {/* Contributor */}
         <div className="grid grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

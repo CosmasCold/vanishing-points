@@ -150,15 +150,13 @@ export default function SubmissionForm({ onSuccess }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-            Place name
-          </label>
+          <label className="submit-label block mb-2">Place name</label>
           <input
             type="text"
             required
             value={form.name || ""}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors text-lg"
+            className="submit-input w-full py-2.5 px-3 text-sm"
             placeholder="What is this place called?"
           />
         </motion.div>
@@ -169,19 +167,17 @@ export default function SubmissionForm({ onSuccess }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-3">
-            Classification
-          </label>
+          <label className="submit-label block mb-3">Classification</label>
           <div className="flex gap-2">
             {(["abandoned", "haunted", "both"] as const).map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setForm({ ...form, category: cat })}
-                className={`px-4 py-2 rounded-lg border text-sm font-mono uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-lg border text-xs font-mono uppercase tracking-wider transition-all ${
                   form.category === cat
-                    ? "bg-fog border-ash text-bone"
-                    : "border-fog/40 text-ash hover:border-ash/50"
+                    ? "bg-[#3a2a1a] border-[#3a2a1a] text-[#d4c4a8]"
+                    : "border-[rgba(139,115,85,0.3)] text-[#5a4a3a] hover:border-[#8b7355]"
                 }`}
               >
                 {cat}
@@ -197,41 +193,39 @@ export default function SubmissionForm({ onSuccess }: Props) {
           transition={{ delay: 0.2 }}
           className="relative"
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-            Location
-          </label>
+          <label className="submit-label block mb-2">Location</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <MapPin
                 size={14}
-                className="absolute left-0 top-1/2 -translate-y-1/2 text-ash"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b7355]"
               />
               <input
                 type="text"
                 value={addressQuery}
                 onChange={(e) => setAddressQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddressSearch()}
-                className="w-full pl-6 py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors"
+                className="submit-input w-full py-2.5 pl-9 pr-3 text-sm"
                 placeholder="Search for an address..."
               />
             </div>
             <button
               type="button"
               onClick={handleAddressSearch}
-              className="px-4 py-2 bg-fog/30 border border-fog/40 rounded-lg text-ash text-xs font-mono hover:text-bone hover:border-ash transition-all"
+              className="px-4 py-2 bg-[rgba(60,40,20,0.08)] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#5a4a3a] text-xs font-mono hover:text-[#2a1f14] hover:border-[#8b7355] transition-all"
             >
               Locate
             </button>
           </div>
 
           {addressResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-shadow border border-fog/40 rounded-lg shadow-xl overflow-hidden">
+            <div className="absolute z-10 mt-1 w-full bg-[#e8dcc8] border border-[rgba(139,115,85,0.25)] rounded-lg shadow-xl overflow-hidden">
               {addressResults.map((result, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => selectAddress(result)}
-                  className="w-full px-4 py-3 text-left text-sm text-ash hover:bg-fog/30 hover:text-bone transition-colors border-b border-fog/20 last:border-0"
+                  className="w-full px-4 py-3 text-left text-sm text-[#3a2a1a] hover:bg-[rgba(139,115,85,0.1)] hover:text-[#1a120b] transition-colors border-b border-[rgba(139,115,85,0.15)] last:border-0"
                 >
                   {result.place_name}
                 </button>
@@ -247,9 +241,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-              Year abandoned
-            </label>
+            <label className="submit-label block mb-2">Year abandoned</label>
             <input
               type="number"
               value={form.yearAbandoned || ""}
@@ -261,7 +253,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
                     : undefined,
                 })
               }
-              className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors"
+              className="submit-input w-full py-2.5 px-3 text-sm"
               placeholder="e.g. 1986"
             />
           </motion.div>
@@ -271,11 +263,9 @@ export default function SubmissionForm({ onSuccess }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-              Danger level
-            </label>
+            <label className="submit-label block mb-2">Danger level</label>
             <div className="flex items-center gap-3">
-              <AlertTriangle size={14} className="text-ash" />
+              <AlertTriangle size={14} className="text-[#8b7355]" />
               <input
                 type="range"
                 min={1}
@@ -287,9 +277,9 @@ export default function SubmissionForm({ onSuccess }: Props) {
                     dangerLevel: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5,
                   })
                 }
-                className="flex-1 accent-bone"
+                className="flex-1 accent-[#6b3020]"
               />
-              <span className="font-mono text-sm text-bone w-4">
+              <span className="font-mono text-sm text-[#2a1f14] w-4">
                 {form.dangerLevel}
               </span>
             </div>
@@ -302,19 +292,17 @@ export default function SubmissionForm({ onSuccess }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-            History & description
-          </label>
+          <label className="submit-label block mb-2">History & description</label>
           <textarea
             required
             rows={5}
             value={form.history || ""}
             onChange={(e) => setForm({ ...form, history: e.target.value })}
-            className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors resize-none"
+            className="submit-input submit-textarea w-full py-2.5 px-3 text-sm"
             placeholder="Document what you know about this place..."
             maxLength={2000}
           />
-          <div className="text-right text-[10px] text-ash/40 font-mono mt-1">
+          <div className="text-right text-[10px] text-[#8b7355] font-mono mt-1">
             {(form.history?.length || 0)}/2000
           </div>
         </motion.div>
@@ -325,9 +313,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-            Spectral accounts (optional)
-          </label>
+          <label className="submit-label block mb-2">Spectral accounts (optional)</label>
           <textarea
             rows={3}
             value={(form.hauntingReports || []).join("\n")}
@@ -339,7 +325,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
                   .filter((r) => r.trim()),
               })
             }
-            className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors resize-none"
+            className="submit-input submit-textarea w-full py-2.5 px-3 text-sm"
             placeholder="One report per line..."
           />
         </motion.div>
@@ -350,25 +336,21 @@ export default function SubmissionForm({ onSuccess }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
         >
-          <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-            Visual evidence (max 5)
-          </label>
+          <label className="submit-label block mb-2">Visual evidence (max 5)</label>
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-none ${
-              isDragActive
-                ? "border-bone bg-fog/20"
-                : "border-fog/40 hover:border-ash/50"
+            className={`submit-dropzone p-8 text-center cursor-pointer ${
+              isDragActive ? "active" : ""
             }`}
           >
             <input {...getInputProps()} />
-            <Upload size={24} className="mx-auto text-ash mb-2" />
-            <p className="text-sm text-ash">
+            <Upload size={24} className="mx-auto text-[#8b7355] mb-2" />
+            <p className="text-sm text-[#5a4a3a]">
               {isDragActive
                 ? "Drop the evidence here..."
                 : "Drag & drop photos, or click to select"}
             </p>
-            <p className="text-[11px] text-ash/50 mt-1 font-mono">
+            <p className="text-[11px] text-[#8b7355] mt-1 font-mono">
               JPG, PNG up to 5MB each
             </p>
           </div>
@@ -376,7 +358,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           {form.photos && form.photos.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {form.photos.map((photo, i) => (
-                <div key={photo} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                <div key={photo} className="relative w-20 h-20 rounded-lg overflow-hidden group border border-[rgba(139,115,85,0.2)]">
                   <Image
                     src={photo}
                     alt={`Upload ${i + 1}`}
@@ -392,7 +374,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
                         photos: form.photos?.filter((_, idx) => idx !== i),
                       })
                     }
-                    className="absolute top-1 right-1 w-5 h-5 bg-void/80 rounded-full flex items-center justify-center text-ash hover:text-bone opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 w-5 h-5 bg-[#2a1f14]/80 rounded-full flex items-center justify-center text-[#c9b896] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X size={10} />
                   </button>
@@ -409,9 +391,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-              Your name
-            </label>
+            <label className="submit-label block mb-2">Your name</label>
             <input
               type="text"
               required
@@ -419,7 +399,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
               onChange={(e) =>
                 setForm({ ...form, contributorName: e.target.value })
               }
-              className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors"
+              className="submit-input w-full py-2.5 px-3 text-sm"
               placeholder="How shall we credit you?"
             />
           </motion.div>
@@ -429,9 +409,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
           >
-            <label className="block font-cinzel text-xs uppercase tracking-widest text-ash mb-2">
-              Email
-            </label>
+            <label className="submit-label block mb-2">Email</label>
             <input
               type="email"
               required
@@ -439,7 +417,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
               onChange={(e) =>
                 setForm({ ...form, contributorEmail: e.target.value })
               }
-              className="w-full py-2 bg-transparent border-b border-fog/40 text-bone placeholder:text-ash/30 focus:border-bone transition-colors"
+              className="submit-input w-full py-2.5 px-3 text-sm"
               placeholder="For verification only"
             />
           </motion.div>
@@ -455,7 +433,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           <button
             type="submit"
             disabled={submitting || uploading}
-            className="w-full py-4 bg-ember/20 border border-ember/40 rounded-lg font-cinzel text-sm uppercase tracking-[0.2em] text-bone hover:bg-ember/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+            className="submit-btn w-full py-4 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? (
               <span className="animate-pulse">Logging to archives...</span>

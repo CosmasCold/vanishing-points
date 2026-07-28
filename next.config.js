@@ -34,7 +34,7 @@ const nextConfig = {
       { protocol: "https", hostname: "cdn.pexels.com" },
       { protocol: "https", hostname: "cdn.pixabay.com" },
       
-      // WordPress / Blogger (common for urbex blogs)
+      // WordPress / Blogger
       { protocol: "https", hostname: "*.wp.com" },
       { protocol: "https", hostname: "*.files.wordpress.com" },
       { protocol: "https", hostname: "*.bp.blogspot.com" },
@@ -42,10 +42,11 @@ const nextConfig = {
       
       // Google / Dropbox / generic CDNs
       { protocol: "https", hostname: "*.googleusercontent.com" },
+      { protocol: "https", hostname: "*.gstatic.com" },
       { protocol: "https", hostname: "dl.dropboxusercontent.com" },
       { protocol: "https", hostname: "*.dropbox.com" },
       
-      // AWS S3 (many sites host here)
+      // AWS S3
       { protocol: "https", hostname: "*.s3.amazonaws.com" },
       { protocol: "https", hostname: "*.s3.*.amazonaws.com" },
       
@@ -53,9 +54,38 @@ const nextConfig = {
       { protocol: "https", hostname: "archive.org" },
       { protocol: "https", hostname: "*.archive.org" },
       
-      // Dev / raw sources
+      // GitHub
       { protocol: "https", hostname: "raw.githubusercontent.com" },
       { protocol: "https", hostname: "*.githubusercontent.com" },
+      
+      // Geograph (UK photography archive)
+      { protocol: "https", hostname: "geograph.org.uk" },
+      { protocol: "https", hostname: "*.geograph.org.uk" },
+      
+      // Squarespace
+      { protocol: "https", hostname: "images.squarespace-cdn.com" },
+      { protocol: "https", hostname: "*.squarespace-cdn.com" },
+      
+      // News / Media
+      { protocol: "https", hostname: "eluniversal.com.mx" },
+      { protocol: "https", hostname: "*.eluniversal.com.mx" },
+      { protocol: "https", hostname: "i.huffpost.com" },
+      { protocol: "https", hostname: "*.huffpost.com" },
+      { protocol: "https", hostname: "media.wnyc.org" },
+      
+      // Government / Institutional
+      { protocol: "https", hostname: "doc.govt.nz" },
+      { protocol: "https", hostname: "*.doc.govt.nz" },
+      
+      // Tourism / Regional
+      { protocol: "https", hostname: "amazonasemais.com.br" },
+      { protocol: "https", hostname: "*.amazonasemais.com.br" },
+      { protocol: "https", hostname: "brasiltotalreceptivos.com.br" },
+      { protocol: "https", hostname: "*.brasiltotalreceptivos.com.br" },
+      
+      // Urban Exploration Blogs
+      { protocol: "https", hostname: "abandonedsoutheast.com" },
+      { protocol: "https", hostname: "*.abandonedsoutheast.com" },
       
       // Placeholders (remove later)
       { protocol: "https", hostname: "picsum.photos" },

@@ -175,13 +175,13 @@
 .map-frame {
   position: relative;
   background: #0f0c09;
-  /* Leather binding frame */
+  /* Leather binding frame — lighter, more refined */
   box-shadow:
-    inset 0 0 0 1px rgba(139, 115, 85, 0.15),
-    inset 0 0 0 8px #1a1410,
-    inset 0 0 0 9px rgba(139, 115, 85, 0.08),
-    inset 0 0 60px rgba(0, 0, 0, 0.6),
-    0 0 40px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 1px rgba(139, 115, 85, 0.12),
+    inset 0 0 0 6px #16120e,
+    inset 0 0 0 7px rgba(139, 115, 85, 0.06),
+    inset 0 0 40px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 0, 0, 0.4);
   border-radius: 2px;
 }
 
@@ -190,7 +190,7 @@
   position: relative;
 }
 
-/* Heavy vignette — like a spyglass or table edge in lamplight */
+/* Vignette — lighter, so the map remains readable */
 .map-parchment::after {
   content: "";
   position: absolute;
@@ -200,11 +200,11 @@
   background: radial-gradient(
     ellipse at center,
     transparent 0%,
-    transparent 30%,
-    rgba(15, 12, 9, 0.5) 60%,
-    rgba(10, 8, 6, 0.95) 100%
+    transparent 45%,
+    rgba(15, 12, 9, 0.35) 70%,
+    rgba(10, 8, 6, 0.75) 100%
   );
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.7);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.5);
 }
 
 /* Paper grain texture overlay */
@@ -214,36 +214,35 @@
   inset: 0;
   pointer-events: none;
   z-index: 12;
-  opacity: 0.035;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
 }
 
-/* Canvas treatment: multiply blend for ink-on-paper feel */
+/* Canvas treatment: NO multiply blend — just warm filter */
 .map-parchment .mapboxgl-canvas-container canvas {
-  filter: contrast(0.92) brightness(0.94) saturate(0.75);
-  mix-blend-mode: multiply;
+  filter: sepia(0.25) contrast(0.95) brightness(1.0) saturate(0.8);
 }
 
-/* Faint nautical grid — longitude/latitude */
+/* Faint nautical grid */
 .map-parchment .mapboxgl-canvas-container::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 9;
-  opacity: 0.025;
+  opacity: 0.02;
   background-image:
     linear-gradient(rgba(62, 43, 26, 0.5) 1px, transparent 1px),
     linear-gradient(90deg, rgba(62, 43, 26, 0.5) 1px, transparent 1px);
   background-size: 80px 80px;
 }
 
-/* Heat shimmer for haunted markers — subtle, not pulsing */
+/* Heat shimmer for haunted markers */
 @keyframes heat-shimmer {
-  0%, 100% { transform: scale(1); opacity: 0.12; }
-  50% { transform: scale(1.4); opacity: 0; }
+  0%, 100% { transform: scale(1); opacity: 0.1; }
+  50% { transform: scale(1.5); opacity: 0; }
 }
 
 /* Map controls: brass and leather */
@@ -282,20 +281,23 @@
    ============================================================ */
 
 .drawer-shell {
-  position: relative;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
   background: linear-gradient(
     180deg,
     #1a0f0a 0%,
     #140c08 50%,
     #1a0f0a 100%
   );
-  /* Mahogany wood grain suggestion */
   box-shadow:
     inset 0 1px 0 rgba(139, 115, 85, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    -8px 0 30px rgba(0, 0, 0, 0.6),
+    -12px 0 40px rgba(0, 0, 0, 0.7),
     -2px 0 0 rgba(139, 115, 85, 0.1);
   border-left: 1px solid rgba(139, 115, 85, 0.2);
+  z-index: 50;
 }
 
 /* Brass trim along the edge */
@@ -367,7 +369,7 @@
     #bfae88 100%
   );
   box-shadow:
-    inset 0 0 40px rgba(60, 40, 20, 0.15),
+    inset 0 0 40px rgba(60, 40, 20, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(139, 115, 85, 0.25);
 }
@@ -380,10 +382,10 @@
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(60, 40, 20, 0.06) 0%,
+    rgba(60, 40, 20, 0.05) 0%,
     transparent 8%,
     transparent 92%,
-    rgba(60, 40, 20, 0.06) 100%
+    rgba(60, 40, 20, 0.05) 100%
   );
 }
 
@@ -393,7 +395,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
@@ -408,7 +410,7 @@
   height: 200px;
   background: radial-gradient(
     circle,
-    rgba(255, 180, 80, 0.08) 0%,
+    rgba(255, 180, 80, 0.06) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -488,10 +490,11 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .drawer-close:hover {
-  background: linear-gradient(135deg, #c4a43a, #8b6914);
+  background: linear-gradient(135deg, #c4a43a, #8b6910);
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,0.3),
     0 2px 8px rgba(0,0,0,0.4),
@@ -516,33 +519,198 @@
   background: rgba(139, 115, 85, 0.5);
 }
 
-/* Drawer animation — heavy, weighted, like wood on runners */
-@keyframes drawer-slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0.8;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+/* ============================================================
+   ARCHIVE & LIST VIEW — SHIP CABIN THEME
+   ============================================================ */
+
+.archive-page {
+  background: linear-gradient(180deg, #0f0c09 0%, #1a1410 100%);
+  min-height: 100vh;
 }
 
-@keyframes drawer-slide-out {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0.8;
-  }
+.archive-header {
+  border-bottom: 1px solid rgba(139, 115, 85, 0.15);
 }
 
-.drawer-enter {
-  animation: drawer-slide-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.archive-card {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    #d4c4a8 0%,
+    #c9b896 50%,
+    #bfae88 100%
+  );
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  box-shadow:
+    inset 0 0 30px rgba(60, 40, 20, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.drawer-exit {
-  animation: drawer-slide-out 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.archive-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 0 30px rgba(60, 40, 20, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(139, 115, 85, 0.4);
+}
+
+.archive-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  border-radius: inherit;
+}
+
+.archive-title {
+  font-family: var(--font-cinzel), "Cinzel", serif;
+  color: #2a1f14;
+}
+
+.archive-body {
+  color: #3a2a1a;
+}
+
+.archive-meta {
+  font-family: var(--font-mono), monospace;
+  color: #5a4a3a;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Filter bar */
+.archive-filter {
+  background: rgba(26, 20, 16, 0.6);
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.archive-input {
+  background: transparent;
+  border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+  color: #c9b896;
+  font-family: var(--font-mono);
+}
+
+.archive-input::placeholder {
+  color: rgba(139, 115, 85, 0.5);
+}
+
+.archive-input:focus {
+  border-color: #c9b896;
+  outline: none;
+}
+
+.archive-select {
+  background: #1a1410;
+  border: 1px solid rgba(139, 115, 85, 0.3);
+  color: #c9b896;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ============================================================
+   SUBMISSION FORM — SHIP CABIN THEME
+   ============================================================ */
+
+.submit-page {
+  background: linear-gradient(180deg, #0f0c09 0%, #1a1410 100%);
+  min-height: 100vh;
+}
+
+.submit-card {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    #d4c4a8 0%,
+    #c9b896 50%,
+    #bfae88 100%
+  );
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  box-shadow:
+    inset 0 0 40px rgba(60, 40, 20, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.submit-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  border-radius: inherit;
+}
+
+.submit-label {
+  font-family: var(--font-cinzel), "Cinzel", serif;
+  color: #4a3a28;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.submit-input {
+  background: rgba(60, 40, 20, 0.06);
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  border-radius: 6px;
+  color: #2a1f14;
+  transition: all 0.3s ease;
+}
+
+.submit-input:focus {
+  border-color: #8b7355;
+  background: rgba(60, 40, 20, 0.03);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.1);
+}
+
+.submit-input::placeholder {
+  color: rgba(90, 74, 58, 0.5);
+}
+
+.submit-textarea {
+  resize: none;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #6b5010, #8b6914);
+  border: 1px solid #5a4010;
+  color: #d4c4a8;
+  font-family: var(--font-cinzel), "Cinzel", serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.15),
+    0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #8b6914, #a67c1a);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.2),
+    0 4px 12px rgba(0,0,0,0.4),
+    0 0 16px rgba(196, 164, 58, 0.15);
+}
+
+.submit-dropzone {
+  border: 2px dashed rgba(139, 115, 85, 0.3);
+  border-radius: 12px;
+  background: rgba(60, 40, 20, 0.04);
+  transition: all 0.3s ease;
+}
+
+.submit-dropzone:hover,
+.submit-dropzone.active {
+  border-color: #8b7355;
+  background: rgba(139, 115, 85, 0.08);
 }

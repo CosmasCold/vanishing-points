@@ -20,9 +20,9 @@ export default function PlaceCard({ place, index }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.5 }}
       whileHover={{ y: -4 }}
-      className="group bg-shadow border border-fog/40 rounded-xl overflow-hidden hover:border-ash/30 transition-all duration-300 hover:shadow-lg hover:shadow-void/50"
+      className="archive-card rounded-xl overflow-hidden group"
     >
-      <Link href={`/place/${place.slug}`} className="block">
+      <Link href={`/place/${place.slug}`} className="block relative z-10">
         <div className="relative h-48 overflow-hidden">
           {place.photos[0] ? (
             <Image
@@ -34,33 +34,33 @@ export default function PlaceCard({ place, index }: Props) {
               priority={index < 3}
             />
           ) : (
-            <div className="w-full h-full bg-fog/30 flex items-center justify-center">
-              <span className="text-ash font-mono text-xs">No visual record</span>
+            <div className="w-full h-full bg-[rgba(60,40,20,0.1)] flex items-center justify-center">
+              <span className="text-[#8b7355] font-mono text-xs">No visual record</span>
             </div>
           )}
           <div className="absolute top-3 left-3">
             <StatusBadge category={place.category} />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-shadow via-transparent to-transparent opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(42,31,20,0.6)] via-transparent to-transparent opacity-60" />
         </div>
 
         <div className="p-5">
-          <h3 className="font-cinzel text-lg font-medium text-bone group-hover:text-bone/90 transition-colors">
+          <h3 className="archive-title text-lg font-medium group-hover:text-[#1a120b] transition-colors">
             {place.name}
           </h3>
-          <div className="flex items-center gap-1.5 mt-1.5 text-ash font-mono text-xs">
+          <div className="flex items-center gap-1.5 mt-1.5 archive-meta">
             <MapPin size={11} />
             <span>
               {place.address.city}, {place.address.country}
             </span>
           </div>
 
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-fog/30">
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[rgba(62,43,26,0.12)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-ash font-mono">Danger</span>
-              <DangerIndicator level={place.dangerLevel} />
+              <span className="text-[11px] text-[#5a4a3a] font-mono">Danger</span>
+              <DangerIndicator level={place.dangerLevel} variant="parchment" />
             </div>
-            <span className="flex items-center gap-1 text-ash text-xs font-mono group-hover:text-bone transition-colors">
+            <span className="flex items-center gap-1 text-[#5a4a3a] text-xs font-mono group-hover:text-[#2a1f14] transition-colors">
               Read archives
               <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
             </span>

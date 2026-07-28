@@ -1,92 +1,85 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@400;500&family=Space+Mono:wght@400;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --void: #0a0a0f;
-  --shadow: #12121a;
-  --fog: #1e1e2e;
-  --ash: #8b8b9a;
-  --bone: #c4c4b5;
-  --ember: #8b4513;
-  --specter: #4a6741;
-  --warning: #7c2d12;
+@layer base {
+  :root {
+    --void: #0a0a0f;
+    --shadow: #12121a;
+    --fog: #2a2a35;
+    --ash: #8b8b9a;
+    --bone: #e8e6e1;
+    --ember: #c4785a;
+    --cinzel: var(--font-cinzel);
+    --mono: var(--font-mono);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--void);
+    color: var(--bone);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    cursor: none;
+  }
+
+  ::selection {
+    background: rgba(196, 120, 90, 0.25);
+    color: var(--bone);
+  }
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--ash) var(--void);
-}
-
-*::-webkit-scrollbar {
-  width: 6px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--void);
-}
-
-*::-webkit-scrollbar-thumb {
-  background: var(--ash);
-  border-radius: 3px;
-}
-
-html {
-  background: var(--void);
-  color: var(--bone);
-}
-
-body {
-  font-family: "Inter", system-ui, sans-serif;
-  background: var(--void);
-  color: var(--bone);
-  overflow-x: hidden;
-}
-
-::selection {
-  background: rgba(139, 69, 19, 0.3);
-  color: var(--bone);
-}
-
+/* ============================================================
+   GRAIN OVERLAY
+   ============================================================ */
 .grain-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 256px 256px;
+  background-size: 128px 128px;
+}
+
+/* ============================================================
+   FOG EFFECT
+   ============================================================ */
+.fog-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
 }
 
 .fog-layer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 25vh;
-  pointer-events: none;
-  z-index: 50;
-  background: linear-gradient(
-    to top,
-    rgba(10, 10, 15, 0.6) 0%,
-    transparent 100%
-  );
-  animation: drift 20s ease-in-out infinite;
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 600'%3E%3Cdefs%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='3'/%3E%3CfeColorMatrix values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.3'/%3E%3C/svg%3E") repeat-x;
+  animation: fog-drift 60s linear infinite;
+  opacity: 0.15;
 }
 
-@keyframes drift {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(20px);
-  }
+.fog-layer:nth-child(2) {
+  animation-duration: 45s;
+  animation-direction: reverse;
+  opacity: 0.1;
+  top: 30%;
 }
 
+@keyframes fog-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
 .custom-cursor {
   position: fixed;
   width: 20px;
@@ -95,155 +88,461 @@ body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 10000;
-  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  transition: transform 0.15s ease, opacity 0.15s ease;
   mix-blend-mode: difference;
 }
 
 .custom-cursor.hovering {
-  transform: scale(2);
-  opacity: 0.5;
-  border-color: var(--bone);
+  transform: scale(1.8);
+  background: rgba(232, 230, 225, 0.1);
 }
 
-.mapboxgl-map {
-  font-family: "Inter", system-ui, sans-serif !important;
+.custom-cursor-dot {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: var(--bone);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10001;
 }
 
-.mapboxgl-popup-content {
-  background: var(--shadow) !important;
-  border: 1px solid var(--fog) !important;
-  border-radius: 8px !important;
-  color: var(--bone) !important;
-  padding: 12px 16px !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5) !important;
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.mapboxgl-popup-tip {
-  border-top-color: var(--fog) !important;
+::-webkit-scrollbar-track {
+  background: var(--void);
 }
 
-.mapboxgl-ctrl-group {
-  background: var(--shadow) !important;
-  border: 1px solid var(--fog) !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
+::-webkit-scrollbar-thumb {
+  background: var(--fog);
+  border-radius: 3px;
 }
 
-.mapboxgl-ctrl-group button {
-  background: transparent !important;
-  color: var(--ash) !important;
-  border-color: var(--fog) !important;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ash);
 }
 
-.mapboxgl-ctrl-group button:hover {
-  background: var(--fog) !important;
-  color: var(--bone) !important;
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-enter {
+  animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.mapboxgl-ctrl-scale {
-  background: var(--shadow) !important;
-  color: var(--ash) !important;
-  border-color: var(--fog) !important;
+.toast-exit {
+  animation: toast-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-input,
-textarea,
-select {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--ash);
-  color: var(--bone);
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.3s ease;
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  border-bottom-color: var(--bone);
-  box-shadow: 0 2px 8px -2px rgba(196, 196, 181, 0.08);
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: var(--ash);
-  opacity: 0.6;
+/* ============================================================
+   SKELETON
+   ============================================================ */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--shadow) 0%,
+    var(--fog) 50%,
+    var(--shadow) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.5s ease-in-out infinite;
 }
 
-button {
-  cursor: none;
+@keyframes skeleton-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .grain-overlay,
-  .fog-layer {
-    display: none;
-  }
+/* ============================================================
+   PREMIUM PARCHMENT CARTOGRAPHY — SHIP CABIN EDITION
+   ============================================================ */
+
+.map-frame {
+  position: relative;
+  background: #0f0c09;
+  /* Leather binding frame */
+  box-shadow:
+    inset 0 0 0 1px rgba(139, 115, 85, 0.15),
+    inset 0 0 0 8px #1a1410,
+    inset 0 0 0 9px rgba(139, 115, 85, 0.08),
+    inset 0 0 60px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
 }
 
-/* Map archival treatment */
-.map-container {
+/* The parchment surface */
+.map-parchment {
   position: relative;
 }
 
-.map-container::after {
+/* Heavy vignette — like a spyglass or table edge in lamplight */
+.map-parchment::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 10;
-  /* Heavy vignette + subtle warm tint */
   background: radial-gradient(
     ellipse at center,
     transparent 0%,
-    transparent 40%,
-    rgba(10, 10, 15, 0.4) 70%,
-    rgba(10, 10, 15, 0.95) 100%
+    transparent 30%,
+    rgba(15, 12, 9, 0.5) 60%,
+    rgba(10, 8, 6, 0.95) 100%
   );
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.7);
 }
 
-/* Desaturate and tint the map canvas for that old-chart feel */
-.map-container .mapboxgl-canvas-container canvas {
-  filter: sepia(0.15) contrast(1.05) saturate(0.85);
-}
-
-/* Optional: faint grid overlay for "classified document" feel */
-.map-container::before {
+/* Paper grain texture overlay */
+.map-parchment::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 11;
-  opacity: 0.03;
-  background-image: 
-    linear-gradient(rgba(196, 196, 181, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(196, 196, 181, 0.15) 1px, transparent 1px);
+  z-index: 12;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* Canvas treatment: multiply blend for ink-on-paper feel */
+.map-parchment .mapboxgl-canvas-container canvas {
+  filter: contrast(0.92) brightness(0.94) saturate(0.75);
+  mix-blend-mode: multiply;
+}
+
+/* Faint nautical grid — longitude/latitude */
+.map-parchment .mapboxgl-canvas-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0.025;
+  background-image:
+    linear-gradient(rgba(62, 43, 26, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(62, 43, 26, 0.5) 1px, transparent 1px);
   background-size: 80px 80px;
 }
 
-/* Dim Mapbox attribution even further */
-.mapboxgl-ctrl-attrib {
-  opacity: 0.3 !important;
-}
-.mapboxgl-ctrl-attrib a {
-  color: var(--ash) !important;
+/* Heat shimmer for haunted markers — subtle, not pulsing */
+@keyframes heat-shimmer {
+  0%, 100% { transform: scale(1); opacity: 0.12; }
+  50% { transform: scale(1.4); opacity: 0; }
 }
 
-/* Custom scrollbar for map controls if needed */
+/* Map controls: brass and leather */
 .mapboxgl-ctrl-group {
-  background: var(--shadow) !important;
-  border: 1px solid var(--fog) !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
+  background: #1a1410 !important;
+  border: 1px solid rgba(139, 115, 85, 0.3) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
 }
 .mapboxgl-ctrl-group button {
   background: transparent !important;
-  color: var(--ash) !important;
-  border-color: var(--fog) !important;
+  color: #8b7355 !important;
+  border-color: rgba(139, 115, 85, 0.2) !important;
 }
 .mapboxgl-ctrl-group button:hover {
-  background: var(--fog) !important;
-  color: var(--bone) !important;
+  background: rgba(139, 115, 85, 0.1) !important;
+  color: #c9b896 !important;
+}
+.mapboxgl-ctrl-group button + button {
+  border-top-color: rgba(139, 115, 85, 0.2) !important;
+}
+.mapboxgl-ctrl-icon {
+  filter: sepia(0.6) !important;
+}
+
+/* Attribution: barely visible */
+.mapboxgl-ctrl-attrib {
+  opacity: 0.2 !important;
+}
+.mapboxgl-ctrl-attrib a {
+  color: #5a4a3a !important;
+}
+
+/* ============================================================
+   CAPTAIN'S LOG DRAWER — PLACE PANEL
+   ============================================================ */
+
+.drawer-shell {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    #1a0f0a 0%,
+    #140c08 50%,
+    #1a0f0a 100%
+  );
+  /* Mahogany wood grain suggestion */
+  box-shadow:
+    inset 0 1px 0 rgba(139, 115, 85, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    -8px 0 30px rgba(0, 0, 0, 0.6),
+    -2px 0 0 rgba(139, 115, 85, 0.1);
+  border-left: 1px solid rgba(139, 115, 85, 0.2);
+}
+
+/* Brass trim along the edge */
+.drawer-shell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    #8b6914 0%,
+    #c4a43a 20%,
+    #8b6914 50%,
+    #6b5010 80%,
+    #8b6914 100%
+  );
+  box-shadow:
+    2px 0 4px rgba(0,0,0,0.4),
+    inset -1px 0 1px rgba(255,255,255,0.15);
+}
+
+/* Brass rivets */
+.drawer-rivet {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #d4b43a, #8b6914);
+  box-shadow:
+    inset 0 -1px 1px rgba(0,0,0,0.4),
+    0 1px 2px rgba(0,0,0,0.5);
+  left: 1px;
+}
+
+.drawer-rivet.top { top: 24px; }
+.drawer-rivet.bottom { bottom: 24px; }
+
+/* Brass pull handle */
+.drawer-handle {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 60px;
+  background: linear-gradient(
+    90deg,
+    #6b5010 0%,
+    #c4a43a 30%,
+    #d4b43a 50%,
+    #c4a43a 70%,
+    #6b5010 100%
+  );
+  border-radius: 4px 0 0 4px;
+  box-shadow:
+    -2px 0 6px rgba(0,0,0,0.4),
+    inset 0 1px 1px rgba(255,255,255,0.2);
+}
+
+/* Inner reference card */
+.drawer-card {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    #d4c4a8 0%,
+    #c9b896 40%,
+    #bfae88 100%
+  );
+  box-shadow:
+    inset 0 0 40px rgba(60, 40, 20, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(139, 115, 85, 0.25);
+}
+
+/* Card edge wear */
+.drawer-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(60, 40, 20, 0.06) 0%,
+    transparent 8%,
+    transparent 92%,
+    rgba(60, 40, 20, 0.06) 100%
+  );
+}
+
+/* Card paper grain */
+.drawer-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* Warm inner light on the card */
+.drawer-card-glow {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 180, 80, 0.08) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Typography inside the drawer */
+.drawer-title {
+  font-family: var(--font-cinzel), "Cinzel", serif;
+  color: #2a1f14;
+  letter-spacing: 0.02em;
+}
+
+.drawer-body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: #3a2a1a;
+  line-height: 1.7;
+}
+
+.drawer-meta {
+  font-family: var(--font-mono), monospace;
+  color: #5a4a3a;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Danger indicator for drawer — ink stamps */
+.danger-stamp {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b3020;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.3);
+}
+.danger-stamp.empty {
+  background: transparent;
+  border: 1px solid #8b7355;
+}
+
+/* Haunting report entries — like field notes */
+.field-note {
+  position: relative;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(107, 48, 32, 0.2);
+}
+
+.field-note::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: #8b7355;
+  font-family: var(--font-mono);
+}
+
+/* Photo gallery inside drawer — framed like specimens */
+.specimen-frame {
+  position: relative;
+  border: 1px solid rgba(139, 115, 85, 0.3);
+  box-shadow:
+    inset 0 0 0 2px #c9b896,
+    0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Close button — brass stud */
+.drawer-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b6914, #6b5010);
+  border: 1px solid #5a4010;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.2),
+    0 2px 4px rgba(0,0,0,0.3);
+  color: #1a0f0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.drawer-close:hover {
+  background: linear-gradient(135deg, #c4a43a, #8b6914);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.3),
+    0 2px 8px rgba(0,0,0,0.4),
+    0 0 12px rgba(196, 164, 58, 0.2);
+}
+
+/* Scrollbar inside drawer — dark wood track */
+.drawer-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.drawer-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.drawer-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139, 115, 85, 0.3);
+  border-radius: 2px;
+}
+
+.drawer-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 115, 85, 0.5);
+}
+
+/* Drawer animation — heavy, weighted, like wood on runners */
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0.8;
+  }
+}
+
+.drawer-enter {
+  animation: drawer-slide-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.drawer-exit {
+  animation: drawer-slide-out 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

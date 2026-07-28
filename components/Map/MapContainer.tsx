@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Place } from "@/types";
-import CustomMarker from "./CustomMarker";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -24,53 +23,79 @@ export default function MapContainer({ places, onSelectPlace, loading }: Props) 
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: "mapbox://styles/mapbox/light-v11",
       center: [10, 45],
-      zoom: 2.5,
-      pitch: 30,
+      zoom: 2.4,
+      pitch: 28,
+      bearing: -8,
       attributionControl: false,
-      // Desaturate the entire render for a bleached, archival look
-      // Note: transformRequest is not for CSS, we handle that via container class
+      antialias: true,
     });
 
     map.current.on("load", () => {
       setMapLoaded(true);
 
-      // Mute the ocean to near-black
-      map.current?.setPaintProperty("water", "fill-color", "#0c0c14");
-      map.current?.setPaintProperty("water", "fill-opacity", 0.6);
+      // Land: aged parchment
+      try { map.current?.setPaintProperty("land", "background-color", "#c9b896"); } catch {}
+      try { map.current?.setPaintProperty("landcover", "fill-color", "#bfae88"); } catch {}
 
-      // Desaturate land
-      map.current?.setPaintProperty("land", "background-color", "#0a0a0f");
+      // Water: dark tea stain
+      try { map.current?.setPaintProperty("water", "fill-color", "#7a6b52"); } catch {}
+      try { map.current?.setPaintProperty("water", "fill-opacity", 0.55); } catch {}
 
-      // Dim roads to ghost-lines
-      map.current?.setPaintProperty("road-simple", "line-color", "#1a1a25");
-      map.current?.setPaintProperty("road-simple", "line-opacity", 0.4);
+      // Buildings: pressed into the page
+      try { map.current?.setPaintProperty("building", "fill-color", "#b8a078"); } catch {}
+      try { map.current?.setPaintProperty("building-3d", "fill-color", "#a69068"); } catch {}
 
-      // Mute country borders
-      map.current?.setPaintProperty("admin-0-boundary", "line-color", "#2a2a35");
-      map.current?.setPaintProperty("admin-0-boundary", "line-opacity", 0.3);
-      map.current?.setPaintProperty("admin-1-boundary", "line-color", "#1e1e28");
-      map.current?.setPaintProperty("admin-1-boundary", "line-opacity", 0.2);
+      // Roads: faint ink scratches
+      const roadLayers = [
+        "road-motorway", "road-trunk", "road-primary", "road-secondary",
+        "road-street", "road-minor", "road-path", "road-service", "road-track",
+        "road-simple", "road-motorway-navigation", "road-primary-navigation"
+      ];
+      roadLayers.forEach(layer => {
+        try {
+          map.current?.setPaintProperty(layer, "line-color", "#6b5a42");
+          map.current?.setPaintProperty(layer, "line-opacity", 0.25);
+          map.current?.setPaintProperty(layer, "line-width", 0.5);
+        } catch {}
+      });
 
-      // Suppress city labels — they break the mood
-      map.current?.setLayoutProperty("settlement-label", "visibility", "none");
-      map.current?.setLayoutProperty("settlement-subdivision-label", "visibility", "none");
-      map.current?.setLayoutProperty("natural-point-label", "visibility", "none");
-      map.current?.setLayoutProperty("water-point-label", "visibility", "none");
-      map.current?.setLayoutProperty("road-label-simple", "visibility", "none");
+      // Boundaries: iron gall ink
+      const boundaryLayers = ["admin-0-boundary", "admin-0-boundary-bg", "admin-1-boundary", "admin-1-boundary-bg"];
+      boundaryLayers.forEach(layer => {
+        try {
+          map.current?.setPaintProperty(layer, "line-color", "#4a3a28");
+          map.current?.setPaintProperty(layer, "line-opacity", 0.35);
+          map.current?.setPaintProperty(layer, "line-width", 0.8);
+        } catch {}
+      });
 
-      // Oppressive fog
+      // Labels: copperplate engraving
+      const labelLayers = [
+        "settlement-major-label", "settlement-minor-label", "settlement-subdivision-label",
+        "natural-point-label", "water-point-label", "poi-label", "road-label",
+        "road-number-shield", "road-exit-shield"
+      ];
+      labelLayers.forEach(layer => {
+        try {
+          map.current?.setPaintProperty(layer, "text-color", "#3a2a1a");
+          map.current?.setPaintProperty(layer, "text-halo-color", "#c9b896");
+          map.current?.setPaintProperty(layer, "text-halo-width", 2);
+          map.current?.setPaintProperty(layer, "text-halo-blur", 1);
+        } catch {}
+      });
+
+      // Warm atmospheric haze — low, oppressive
       map.current?.setFog({
-        color: "#0a0a0f",
-        "high-color": "#0f0f18",
-        "horizon-blend": 0.6,
-        "space-color": "#05050a",
-        "star-intensity": 0.4,
+        color: "#b8a078",
+        "high-color": "#c9b896",
+        "horizon-blend": 0.45,
+        "space-color": "#7a6b52",
+        "star-intensity": 0,
       });
     });
 
-    // Minimal controls
     map.current.addControl(
       new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
       "bottom-right"
@@ -87,74 +112,92 @@ export default function MapContainer({ places, onSelectPlace, loading }: Props) 
     };
   }, []);
 
-  // Clear and recreate markers when places change
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    // Remove existing markers cleanly
     const existing = document.querySelectorAll(".custom-marker");
     existing.forEach((el) => el.remove());
 
     places.forEach((place) => {
       const el = document.createElement("div");
       el.className = "custom-marker";
-      const pin = document.createElement("div");
-      el.appendChild(pin);
 
       const isHaunted = place.category === "haunted" || place.category === "both";
-      const isAbandoned =
-        place.category === "abandoned" || place.category === "both";
+      const isAbandoned = place.category === "abandoned" || place.category === "both";
 
-      let bg = "#8b8b9a";
-      if (isHaunted && isAbandoned) bg = "linear-gradient(135deg, #8b4513, #4a6741)";
-      else if (isHaunted) bg = "#c4c4b5";
-      else if (isAbandoned) bg = "#8b4513";
+      // Brass tack / wax seal design
+      let innerColor = "#8b7355";
+      let outerColor = "#3e2b1a";
+      let glowColor = "rgba(139,115,85,0.25)";
 
-      pin.style.cssText = `
-        width: 14px;
-        height: 14px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        background: ${bg};
-        border: 1.5px solid #0a0a0f;
-        box-shadow: 0 0 10px ${isHaunted ? "rgba(196,196,181,0.2)" : "rgba(139,69,19,0.2)"};
-        transition: all 0.3s ease;
+      if (isHaunted && isAbandoned) {
+        innerColor = "conic-gradient(from 0deg, #8b6914, #3e4a32, #8b6914)";
+        glowColor = "rgba(139,105,20,0.2)";
+      } else if (isHaunted) {
+        innerColor = "#c4b5a0";
+        outerColor = "#5a4a3a";
+        glowColor = "rgba(196,181,160,0.2)";
+      } else if (isAbandoned) {
+        innerColor = "#6b3020";
+        glowColor = "rgba(107,48,32,0.2)";
+      }
+
+      el.innerHTML = `
+        <div style="
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${innerColor};
+          border: 2px solid ${outerColor};
+          box-shadow: 
+            inset 0 1px 2px rgba(255,255,255,0.2),
+            0 0 0 1px rgba(0,0,0,0.3),
+            0 2px 6px rgba(0,0,0,0.4),
+            0 0 12px ${glowColor};
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+        ">
+          ${isHaunted ? `<div style="
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid rgba(196,181,160,0.15);
+            animation: heat-shimmer 6s ease-in-out infinite;
+          "></div>` : ""}
+        </div>
       `;
 
-      if (isHaunted) {
-        const pulse = document.createElement("div");
-        pulse.style.cssText = `
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 6px; height: 6px;
-          background: rgba(196,196,181,0.5);
-          border-radius: 50%;
-          animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        `;
-        el.appendChild(pulse);
-      }
+      const pin = el.firstElementChild as HTMLElement;
 
       const marker = new mapboxgl.Marker({
         element: el,
-        anchor: "bottom",
-        offset: [0, -7],
+        anchor: "center",
       })
         .setLngLat(place.coordinates)
         .addTo(map.current!);
 
       el.addEventListener("mouseenter", () => {
-        pin.style.transform = "rotate(-45deg) scale(1.4)";
-        pin.style.boxShadow = isHaunted
-          ? "0 0 18px rgba(196,196,181,0.35)"
-          : "0 0 18px rgba(139,69,19,0.35)";
+        if (pin) {
+          pin.style.transform = "scale(1.5)";
+          pin.style.boxShadow = `
+            inset 0 1px 2px rgba(255,255,255,0.3),
+            0 0 0 1px rgba(0,0,0,0.3),
+            0 4px 12px rgba(0,0,0,0.5),
+            0 0 20px ${glowColor.replace("0.2", "0.45")}
+          `;
+        }
       });
 
       el.addEventListener("mouseleave", () => {
-        pin.style.transform = "rotate(-45deg) scale(1)";
-        pin.style.boxShadow = isHaunted
-          ? "0 0 10px rgba(196,196,181,0.2)"
-          : "0 0 10px rgba(139,69,19,0.2)";
+        if (pin) {
+          pin.style.transform = "scale(1)";
+          pin.style.boxShadow = `
+            inset 0 1px 2px rgba(255,255,255,0.2),
+            0 0 0 1px rgba(0,0,0,0.3),
+            0 2px 6px rgba(0,0,0,0.4),
+            0 0 12px ${glowColor}
+          `;
+        }
       });
 
       el.addEventListener("click", (e) => {
@@ -165,12 +208,13 @@ export default function MapContainer({ places, onSelectPlace, loading }: Props) 
   }, [places, mapLoaded, onSelectPlace]);
 
   return (
-    <div className="relative w-full h-full map-container">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div className="relative w-full h-full map-frame">
+      <div ref={mapContainer} className="w-full h-full map-parchment" />
+      
       {!mapLoaded && (
-        <div className="absolute inset-0 bg-void flex items-center justify-center z-10">
-          <div className="text-ash font-mono text-sm animate-pulse">
-            Rendering topography...
+        <div className="absolute inset-0 bg-[#1a1510] flex items-center justify-center z-30">
+          <div className="text-[#8b7355] font-mono text-sm tracking-widest uppercase">
+            Unfurling the charts...
           </div>
         </div>
       )}

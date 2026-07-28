@@ -714,3 +714,94 @@
   border-color: #8b7355;
   background: rgba(139, 115, 85, 0.08);
 }
+
+/* ============================================================
+   INPUT AUTOFILL — Override browser dark-blue default
+   ============================================================ */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #2a1f14 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #e0d0b8 inset !important;
+  box-shadow: 0 0 0px 1000px #e0d0b8 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Remove default browser focus rings in favor of our warm theme */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
+
+/* Range slider track */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(139, 115, 85, 0.2);
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6b3020;
+  border: 2px solid #d4c4a8;
+  cursor: pointer;
+}
+
+/* ============================================================
+   FILTER BAR — Better contrast
+   ============================================================ */
+
+.archive-filter input,
+.archive-filter select {
+  color: #c9b896;
+}
+
+.archive-filter input::placeholder {
+  color: rgba(139, 115, 85, 0.6);
+}
+
+/* ============================================================
+   STATUS BADGE — Archive card overlay protection
+   ============================================================ */
+
+.badge-overlay {
+  position: relative;
+  z-index: 5;
+}
+
+/* ============================================================
+   SKELETON CARDS — Warm theme
+   ============================================================ */
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(60, 40, 20, 0.08) 0%,
+    rgba(139, 115, 85, 0.15) 50%,
+    rgba(60, 40, 20, 0.08) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* ============================================================
+   PHOTO GALLERY — Warm lightbox
+   ============================================================ */
+
+.lightbox-backdrop {
+  background: rgba(15, 12, 9, 0.95);
+  backdrop-filter: blur(4px);
+}

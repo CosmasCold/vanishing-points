@@ -38,10 +38,13 @@ export default function PlaceCard({ place, index }: Props) {
               <span className="text-[#8b7355] font-mono text-xs">No visual record</span>
             </div>
           )}
-          <div className="absolute top-3 left-3">
-            <StatusBadge category={place.category} />
+          
+          {/* Dark gradient overlay for badge readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,8,6,0.5)] via-transparent to-[rgba(42,31,20,0.6)]" />
+          
+          <div className="absolute top-3 left-3 badge-overlay">
+            <StatusBadge category={place.category} variant="light" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(42,31,20,0.6)] via-transparent to-transparent opacity-60" />
         </div>
 
         <div className="p-5">

@@ -22,7 +22,7 @@ export default function PhotoGallery({ photos }: Props) {
             key={photo}
             whileHover={{ scale: 1.03 }}
             transition={{ duration: 0.3 }}
-            className="relative flex-shrink-0 w-48 h-32 rounded-lg overflow-hidden cursor-none group"
+            className="relative flex-shrink-0 w-48 h-32 rounded-lg overflow-hidden cursor-pointer group"
             onClick={() => setLightbox(i)}
           >
             <Image
@@ -33,7 +33,7 @@ export default function PhotoGallery({ photos }: Props) {
               sizes="192px"
               loading={i === 0 ? "eager" : "lazy"}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-void/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(10,8,6,0.5)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </motion.div>
         ))}
       </div>
@@ -44,11 +44,11 @@ export default function PhotoGallery({ photos }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-void/95 backdrop-blur-sm flex items-center justify-center"
+            className="fixed inset-0 z-[100] lightbox-backdrop flex items-center justify-center"
             onClick={() => setLightbox(null)}
           >
             <button
-              className="absolute top-6 right-6 text-ash hover:text-bone transition-colors"
+              className="absolute top-6 right-6 text-[#8b7355] hover:text-[#c9b896] transition-colors"
               onClick={() => setLightbox(null)}
             >
               <X size={24} />
@@ -56,7 +56,7 @@ export default function PhotoGallery({ photos }: Props) {
 
             {lightbox > 0 && (
               <button
-                className="absolute left-6 top-1/2 -translate-y-1/2 text-ash hover:text-bone transition-colors"
+                className="absolute left-6 top-1/2 -translate-y-1/2 text-[#8b7355] hover:text-[#c9b896] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox - 1);
@@ -68,7 +68,7 @@ export default function PhotoGallery({ photos }: Props) {
 
             {lightbox < photos.length - 1 && (
               <button
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-ash hover:text-bone transition-colors"
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-[#8b7355] hover:text-[#c9b896] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox + 1);
@@ -96,7 +96,7 @@ export default function PhotoGallery({ photos }: Props) {
               />
             </motion.div>
 
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-xs text-ash">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-xs text-[#8b7355]">
               {lightbox + 1} / {photos.length}
             </div>
           </motion.div>

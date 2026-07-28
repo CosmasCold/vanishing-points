@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "verified";
     const category = searchParams.get("category");
-    const limit = parseInt(searchParams.get("limit") || "100");
+    const limit = parseInt(searchParams.get("limit") || "1000"); // Raised from 100
 
     const query: any = { status };
     if (category && category !== "all") query.category = category;
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     const body: PlaceInput = await request.json();
 
-    // Validation
     if (!body.name || !body.coordinates || !body.history) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting check (simple IP-based)
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     const recentSubmissions = await PlaceModel.countDocuments({
       "contributor.email": body.contributorEmail,

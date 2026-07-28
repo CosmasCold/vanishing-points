@@ -25,7 +25,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/places?limit=30")
+    fetch("/api/places")   // Removed ?limit=30
       .then((r) => r.json())
       .then((data) => {
         setPlaces(data.places || []);

@@ -17,7 +17,7 @@ export default function ListPage() {
   const [sort, setSort] = useState<"recent" | "danger" | "views">("recent");
 
   useEffect(() => {
-    fetch("/api/places?limit=30")
+    fetch("/api/places")   // Removed ?limit=30
       .then((r) => r.json())
       .then((data) => {
         setPlaces(data.places || []);

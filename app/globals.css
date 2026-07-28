@@ -181,3 +181,69 @@ button {
     display: none;
   }
 }
+
+/* Map archival treatment */
+.map-container {
+  position: relative;
+}
+
+.map-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  /* Heavy vignette + subtle warm tint */
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 40%,
+    rgba(10, 10, 15, 0.4) 70%,
+    rgba(10, 10, 15, 0.95) 100%
+  );
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.8);
+}
+
+/* Desaturate and tint the map canvas for that old-chart feel */
+.map-container .mapboxgl-canvas-container canvas {
+  filter: sepia(0.15) contrast(1.05) saturate(0.85);
+}
+
+/* Optional: faint grid overlay for "classified document" feel */
+.map-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  opacity: 0.03;
+  background-image: 
+    linear-gradient(rgba(196, 196, 181, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 196, 181, 0.15) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Dim Mapbox attribution even further */
+.mapboxgl-ctrl-attrib {
+  opacity: 0.3 !important;
+}
+.mapboxgl-ctrl-attrib a {
+  color: var(--ash) !important;
+}
+
+/* Custom scrollbar for map controls if needed */
+.mapboxgl-ctrl-group {
+  background: var(--shadow) !important;
+  border: 1px solid var(--fog) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.mapboxgl-ctrl-group button {
+  background: transparent !important;
+  color: var(--ash) !important;
+  border-color: var(--fog) !important;
+}
+.mapboxgl-ctrl-group button:hover {
+  background: var(--fog) !important;
+  color: var(--bone) !important;
+}

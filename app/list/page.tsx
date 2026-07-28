@@ -70,21 +70,21 @@ export default function ListPage() {
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-[#8b7355] hover:text-[#c9b896] transition-colors text-sm font-mono mb-4"
+              className="inline-flex items-center gap-2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors text-sm font-mono mb-4"
             >
               <ArrowLeft size={14} />
               Return to atlas
             </Link>
-            <h1 className="archive-title text-3xl font-medium text-[#c9b896] mt-2">
+            <h1 className="archive-title text-3xl font-medium text-[#d4c8b4] mt-2">
               The archives
             </h1>
-            <p className="text-[#8b7355] text-sm mt-1 font-mono">
+            <p className="text-[#9a8a72] text-sm mt-1 font-mono">
               {filtered.length} documented locations
             </p>
           </div>
           <Link
             href="/"
-            className="flex items-center gap-2 px-4 py-2 bg-[#1a1410] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#8b7355] hover:text-[#c9b896] hover:border-[rgba(139,115,85,0.4)] transition-all text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#252018] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#9a8a72] hover:text-[#d4c8b4] hover:border-[rgba(139,115,85,0.4)] transition-all text-sm"
           >
             <MapIcon size={16} />
             <span className="hidden sm:inline font-mono text-xs uppercase">
@@ -116,11 +116,11 @@ export default function ListPage() {
             animate={{ opacity: 1 }}
             className="text-center py-24"
           >
-            <Grid3X3 size={32} className="mx-auto text-[#5a4a3a] mb-4" />
-            <p className="text-[#8b7355] font-cinzel text-lg">
+            <Grid3X3 size={32} className="mx-auto text-[#7a6e5e] mb-4" />
+            <p className="text-[#9a8a72] font-cinzel text-lg">
               No records match your query.
             </p>
-            <p className="text-[#5a4a3a] text-sm mt-1 font-mono">
+            <p className="text-[#7a6e5e] text-sm mt-1 font-mono">
               The archives are silent on this matter.
             </p>
           </motion.div>

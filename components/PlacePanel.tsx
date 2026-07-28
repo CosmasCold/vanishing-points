@@ -49,7 +49,7 @@ export default function PlacePanel({ place, onClose }: Props) {
       <div className="relative h-full overflow-y-auto drawer-scroll pl-[3px]">
         <div className="min-h-full flex flex-col">
           {/* Header bar */}
-          <div className="sticky top-0 z-10 px-6 pt-6 pb-4 bg-gradient-to-b from-[#1a0f0a] to-transparent">
+          <div className="sticky top-0 z-10 px-6 pt-6 pb-4 bg-gradient-to-b from-[#252018] to-transparent">
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-4">
                 <StatusBadge category={place.category} />
@@ -82,17 +82,17 @@ export default function PlacePanel({ place, onClose }: Props) {
               <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[rgba(62,43,26,0.12)]">
                 {place.yearAbandoned && (
                   <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-[#8b7355]" />
+                    <Calendar size={12} className="text-[#9a8a72]" />
                     <span className="drawer-meta">Abandoned {place.yearAbandoned}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">
-                  <AlertTriangle size={12} className="text-[#8b7355]" />
+                  <AlertTriangle size={12} className="text-[#9a8a72]" />
                   <span className="drawer-meta">Danger</span>
                   <DangerIndicator level={place.dangerLevel} variant="parchment" />
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
-                  <Eye size={12} className="text-[#8b7355]" />
+                  <Eye size={12} className="text-[#9a8a72]" />
                   <span className="drawer-meta">{place.viewCount || 0} views</span>
                 </div>
               </div>
@@ -111,7 +111,7 @@ export default function PlacePanel({ place, onClose }: Props) {
               {place.hauntingReports && place.hauntingReports.length > 0 && (
                 <div className="mb-6">
                   <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em] flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#6b3020]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
                     Spectral Accounts
                   </h3>
                   <div className="space-y-3">
@@ -130,7 +130,7 @@ export default function PlacePanel({ place, onClose }: Props) {
                   <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em]">
                     Visual Evidence
                   </h3>
-                  <div className="specimen-frame rounded-lg overflow-hidden bg-[#c9b896]">
+                  <div className="specimen-frame rounded-lg overflow-hidden bg-[#d4c8b4]">
                     <PhotoGallery photos={place.photos} />
                   </div>
                 </div>
@@ -147,8 +147,8 @@ export default function PlacePanel({ place, onClose }: Props) {
                       key={i}
                       className={`w-1.5 h-1.5 rounded-full ${
                         i < place.dangerLevel
-                          ? "bg-[#6b3020]"
-                          : "border border-[#8b7355] bg-transparent"
+                          ? "bg-[#7a3a2a]"
+                          : "border border-[#9a8a72] bg-transparent"
                       }`}
                     />
                   ))}

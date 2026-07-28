@@ -48,7 +48,7 @@ export default function PhotoGallery({ photos }: Props) {
             onClick={() => setLightbox(null)}
           >
             <button
-              className="absolute top-6 right-6 text-[#8b7355] hover:text-[#c9b896] transition-colors"
+              className="absolute top-6 right-6 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
               onClick={() => setLightbox(null)}
             >
               <X size={24} />
@@ -56,7 +56,7 @@ export default function PhotoGallery({ photos }: Props) {
 
             {lightbox > 0 && (
               <button
-                className="absolute left-6 top-1/2 -translate-y-1/2 text-[#8b7355] hover:text-[#c9b896] transition-colors"
+                className="absolute left-6 top-1/2 -translate-y-1/2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox - 1);
@@ -68,7 +68,7 @@ export default function PhotoGallery({ photos }: Props) {
 
             {lightbox < photos.length - 1 && (
               <button
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-[#8b7355] hover:text-[#c9b896] transition-colors"
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox + 1);
@@ -96,7 +96,7 @@ export default function PhotoGallery({ photos }: Props) {
               />
             </motion.div>
 
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-xs text-[#8b7355]">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-xs text-[#9a8a72]">
               {lightbox + 1} / {photos.length}
             </div>
           </motion.div>

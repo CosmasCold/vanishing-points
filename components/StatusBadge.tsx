@@ -16,14 +16,14 @@ export default function StatusBadge({ category, variant = "dark" }: Props) {
 
   const styles = {
     dark: {
-      abandoned: "bg-[#5c2118] text-[#d4c4a8] border-[#8b4513]",
-      haunted: "bg-[#3e4a32] text-[#c4c4b5] border-[#5a6b4a]",
-      both: "bg-[#4a3a28] text-[#d4c4a8] border-[#6b5a42]",
+      abandoned: "bg-[#5a4a32] text-[#ddd0bc] border-[#7a6b52]",
+      haunted: "bg-[#4a5a42] text-[#d4c8b4] border-[#6b7a5a]",
+      both: "bg-[#4a4232] text-[#ddd0bc] border-[#6b5a42]",
     },
     light: {
-      abandoned: "bg-[#6b3020] text-[#d4c4a8] border-[#8b4513]",
-      haunted: "bg-[#3e4a32] text-[#c4c4b5] border-[#5a6b4a]",
-      both: "bg-[#4a3a28] text-[#d4c4a8] border-[#6b5a42]",
+      abandoned: "bg-[#5a4a32] text-[#e8dcc8] border-[#7a6b52]",
+      haunted: "bg-[#4a5a42] text-[#e8dcc8] border-[#6b7a5a]",
+      both: "bg-[#4a4232] text-[#e8dcc8] border-[#6b5a42]",
     },
   };
 
@@ -33,5 +33,6 @@ export default function StatusBadge({ category, variant = "dark" }: Props) {
     >
       {labels[category]}
     </span>
-  );
+ 
+);
 }

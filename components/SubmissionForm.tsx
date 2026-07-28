@@ -176,8 +176,8 @@ export default function SubmissionForm({ onSuccess }: Props) {
                 onClick={() => setForm({ ...form, category: cat })}
                 className={`px-4 py-2 rounded-lg border text-xs font-mono uppercase tracking-wider transition-all ${
                   form.category === cat
-                    ? "bg-[#3a2a1a] border-[#3a2a1a] text-[#d4c4a8]"
-                    : "border-[rgba(139,115,85,0.3)] text-[#5a4a3a] hover:border-[#8b7355]"
+                    ? "bg-[#4a3e32] border-[#4a3e32] text-[#ddd0bc]"
+                    : "border-[rgba(139,115,85,0.3)] text-[#7a6e5e] hover:border-[#9a8a72]"
                 }`}
               >
                 {cat}
@@ -198,7 +198,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             <div className="relative flex-1">
               <MapPin
                 size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b7355]"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9a8a72]"
               />
               <input
                 type="text"
@@ -212,7 +212,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             <button
               type="button"
               onClick={handleAddressSearch}
-              className="px-4 py-2 bg-[rgba(60,40,20,0.08)] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#5a4a3a] text-xs font-mono hover:text-[#2a1f14] hover:border-[#8b7355] transition-all"
+              className="px-4 py-2 bg-[rgba(60,40,20,0.08)] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#7a6e5e] text-xs font-mono hover:text-[#3d3228] hover:border-[#9a8a72] transition-all"
             >
               Locate
             </button>
@@ -225,7 +225,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
                   key={i}
                   type="button"
                   onClick={() => selectAddress(result)}
-                  className="w-full px-4 py-3 text-left text-sm text-[#3a2a1a] hover:bg-[rgba(139,115,85,0.1)] hover:text-[#1a120b] transition-colors border-b border-[rgba(139,115,85,0.15)] last:border-0"
+                  className="w-full px-4 py-3 text-left text-sm text-[#4a3e32] hover:bg-[rgba(139,115,85,0.1)] hover:text-[#1a120b] transition-colors border-b border-[rgba(139,115,85,0.15)] last:border-0"
                 >
                   {result.place_name}
                 </button>
@@ -265,7 +265,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           >
             <label className="submit-label block mb-2">Danger level</label>
             <div className="flex items-center gap-3">
-              <AlertTriangle size={14} className="text-[#8b7355]" />
+              <AlertTriangle size={14} className="text-[#9a8a72]" />
               <input
                 type="range"
                 min={1}
@@ -277,9 +277,9 @@ export default function SubmissionForm({ onSuccess }: Props) {
                     dangerLevel: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5,
                   })
                 }
-                className="flex-1 accent-[#6b3020]"
+                className="flex-1 accent-[#7a3a2a]"
               />
-              <span className="font-mono text-sm text-[#2a1f14] w-4">
+              <span className="font-mono text-sm text-[#3d3228] w-4">
                 {form.dangerLevel}
               </span>
             </div>
@@ -302,7 +302,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             placeholder="Document what you know about this place..."
             maxLength={2000}
           />
-          <div className="text-right text-[10px] text-[#8b7355] font-mono mt-1">
+          <div className="text-right text-[10px] text-[#9a8a72] font-mono mt-1">
             {(form.history?.length || 0)}/2000
           </div>
         </motion.div>
@@ -344,13 +344,13 @@ export default function SubmissionForm({ onSuccess }: Props) {
             }`}
           >
             <input {...getInputProps()} />
-            <Upload size={24} className="mx-auto text-[#8b7355] mb-2" />
-            <p className="text-sm text-[#5a4a3a]">
+            <Upload size={24} className="mx-auto text-[#9a8a72] mb-2" />
+            <p className="text-sm text-[#7a6e5e]">
               {isDragActive
                 ? "Drop the evidence here..."
                 : "Drag & drop photos, or click to select"}
             </p>
-            <p className="text-[11px] text-[#8b7355] mt-1 font-mono">
+            <p className="text-[11px] text-[#9a8a72] mt-1 font-mono">
               JPG, PNG up to 5MB each
             </p>
           </div>
@@ -374,7 +374,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
                         photos: form.photos?.filter((_, idx) => idx !== i),
                       })
                     }
-                    className="absolute top-1 right-1 w-5 h-5 bg-[#2a1f14]/80 rounded-full flex items-center justify-center text-[#c9b896] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 w-5 h-5 bg-[#3d3228]/80 rounded-full flex items-center justify-center text-[#d4c8b4] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X size={10} />
                   </button>

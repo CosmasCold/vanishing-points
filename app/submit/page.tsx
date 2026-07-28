@@ -16,7 +16,7 @@ export default function SubmitPage() {
         >
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-[#8b7355] hover:text-[#c9b896] transition-colors text-sm font-mono mb-6"
+            className="inline-flex items-center gap-2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors text-sm font-mono mb-6"
           >
             <ArrowLeft size={14} />
             Return to atlas
@@ -24,10 +24,10 @@ export default function SubmitPage() {
 
           <div className="submit-card rounded-xl p-8 relative overflow-hidden">
             <div className="relative z-10">
-              <h1 className="font-cinzel text-2xl font-medium text-[#2a1f14] mb-1">
+              <h1 className="font-cinzel text-2xl font-medium text-[#3d3228] mb-1">
                 Log a Discovery
               </h1>
-              <p className="text-[#5a4a3a] text-sm mb-8 font-mono">
+              <p className="text-[#7a6e5e] text-sm mb-8 font-mono">
                 Document a location for the archives. All submissions are verified before publication.
               </p>
 

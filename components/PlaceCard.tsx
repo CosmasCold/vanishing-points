@@ -35,7 +35,7 @@ export default function PlaceCard({ place, index }: Props) {
             />
           ) : (
             <div className="w-full h-full bg-[rgba(60,40,20,0.1)] flex items-center justify-center">
-              <span className="text-[#8b7355] font-mono text-xs">No visual record</span>
+              <span className="text-[#9a8a72] font-mono text-xs">No visual record</span>
             </div>
           )}
           
@@ -60,10 +60,10 @@ export default function PlaceCard({ place, index }: Props) {
 
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-[rgba(62,43,26,0.12)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-[#5a4a3a] font-mono">Danger</span>
+              <span className="text-[11px] text-[#7a6e5e] font-mono">Danger</span>
               <DangerIndicator level={place.dangerLevel} variant="parchment" />
             </div>
-            <span className="flex items-center gap-1 text-[#5a4a3a] text-xs font-mono group-hover:text-[#2a1f14] transition-colors">
+            <span className="flex items-center gap-1 text-[#7a6e5e] text-xs font-mono group-hover:text-[#3d3228] transition-colors">
               Read archives
               <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
             </span>

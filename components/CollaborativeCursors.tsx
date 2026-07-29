@@ -1,114 +1,105 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users } from "lucide-react";
+import { Flame } from "lucide-react";
 
 interface Cursor {
   id: string;
   x: number;
   y: number;
   color: string;
-  lastSeen: number;
 }
 
-const COLORS = ["#c4a882", "#8a9a7a", "#a48a7a", "#7a8a9a", "#9a8a6a"];
+const COLORS = ["#9a8a72", "#7a3a2a", "#a67c52", "#6b7a5a", "#8a7a6a"];
 
 export default function CollaborativeCursors() {
-  const [cursors, setCursors] = useState<Record<string, Cursor>>({});
-  const [enabled, setEnabled] = useState(false);
+  const [show, setShow] = useState(false);
+  const [cursors, setCursors] = useState<Cursor[]>([]);
   const bcRef = useRef<BroadcastChannel | null>(null);
-  const idRef = useRef(`cursor-${Math.random().toString(36).slice(2, 8)}`);
+  const idRef = useRef(Math.random().toString(36).slice(2, 8));
   const colorRef = useRef(COLORS[Math.floor(Math.random() * COLORS.length)]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!("BroadcastChannel" in window)) return;
-    if (!enabled) return;
-
-    const bc = new BroadcastChannel("vp-cursors");
+    const bc = new BroadcastChannel("vp_lanterns");
     bcRef.current = bc;
 
-    const handleMouse = (e: MouseEvent) => {
-      bc.postMessage({
-        type: "cursor",
+    const handleMessage = (e: MessageEvent) => {
+      const data = e.data as { id: string; x: number; y: number; color: string };
+      if (data.id === idRef.current) return;
+      setCursors((prev) => {
+        const filtered = prev.filter((c) => c.id !== data.id);
+        return [...filtered, { ...data, id: data.id }];
+      });
+      setTimeout(() => {
+        setCursors((prev) => prev.filter((c) => c.id !== data.id));
+      }, 2000);
+    };
+
+    bc.addEventListener("message", handleMessage);
+    return () => bc.close();
+  }, []);
+
+  const sendPosition = useCallback(
+    (e: MouseEvent) => {
+      if (!show || !bcRef.current) return;
+      bcRef.current.postMessage({
         id: idRef.current,
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
+        x: e.clientX,
+        y: e.clientY,
         color: colorRef.current,
       });
-    };
+    },
+    [show]
+  );
 
-    bc.onmessage = (ev) => {
-      if (ev.data.id === idRef.current) return;
-      setCursors((prev) => ({
-        ...prev,
-        [ev.data.id]: {
-          id: ev.data.id,
-          x: ev.data.x,
-          y: ev.data.y,
-          color: ev.data.color,
-          lastSeen: Date.now(),
-        },
-      }));
-    };
-
-    window.addEventListener("mousemove", handleMouse);
-
-    const cleanup = setInterval(() => {
-      setCursors((prev) => {
-        const now = Date.now();
-        const next: Record<string, Cursor> = {};
-        Object.values(prev).forEach((c) => {
-          if (now - c.lastSeen < 8000) next[c.id] = c;
-        });
-        return next;
-      });
-    }, 3000);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouse);
-      clearInterval(cleanup);
-      bc.close();
-    };
-  }, [enabled]);
+  useEffect(() => {
+    if (!show) return;
+    window.addEventListener("mousemove", sendPosition);
+    return () => window.removeEventListener("mousemove", sendPosition);
+  }, [show, sendPosition]);
 
   return (
     <>
       <button
-        onClick={() => setEnabled(!enabled)}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-3 py-1.5 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-full text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] hover:text-[#ddd0bc] transition-all shadow-lg"
-        title="Toggle collaborative cursors (opens another tab to test)"
+        onClick={() => setShow((s) => !s)}
+        className={`fixed left-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 px-2.5 py-4 bg-[#252018]/80 backdrop-blur-sm border rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all shadow-lg ${
+          show
+            ? "border-[#9a8a72] text-[#ddd0bc] shadow-[0_0_15px_rgba(154,138,114,0.3)]"
+            : "border-[rgba(122,107,82,0.25)] text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72]"
+        }`}
+        title="Toggle collaborative lanterns"
       >
-        <Users size={12} />
-        {enabled ? `Lanterns: ${Object.keys(cursors).length}` : "Show Lanterns"}
+        <Flame size={14} className={show ? "text-[#a67c52]" : ""} />
+        <span className="[writing-mode:vertical-lr] rotate-180 tracking-[0.15em]">
+          {show ? "Lit" : "Lanterns"}
+        </span>
       </button>
 
-      {enabled && (
-        <div className="fixed inset-0 pointer-events-none z-[9996] overflow-hidden">
-          <AnimatePresence>
-            {Object.values(cursors).map((c) => (
-              c.x < 0 ? null : (
-                <motion.div
-                  key={c.id}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 0.7, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute"
-                  style={{ left: `${c.x}%`, top: `${c.y}%`, transform: "translate(-50%, -50%)" }}
-                >
-                  <div className="w-4 h-4 rounded-full blur-md" style={{ background: c.color }} />
-                  <div className="w-2 h-2 rounded-full absolute top-1 left-1" style={{ background: c.color }} />
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-[#9a8a72] whitespace-nowrap opacity-50">
-                    explorer-{c.id.slice(-4)}
-                  </div>
-                </motion.div>
-              )
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+      <AnimatePresence>
+        {cursors.map((cursor) => (
+          <motion.div
+            key={cursor.id}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 0.7, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            className="fixed pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2"
+            style={{ left: cursor.x, top: cursor.y }}
+          >
+            <div
+              className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]"
+              style={{ backgroundColor: cursor.color, color: cursor.color }}
+            />
+            <div
+              className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono whitespace-nowrap"
+              style={{ color: cursor.color }}
+            >
+              {cursor.id}
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </>
   );
 }

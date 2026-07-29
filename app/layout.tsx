@@ -9,6 +9,8 @@ import CollaborativeCursors from "@/components/CollaborativeCursors";
 import PageTransition from "@/components/PageTransition";
 import ToastProvider from "@/components/ToastProvider";
 import CorruptionManager from "@/components/CorruptionManager";
+import DustCorruption from "@/components/DustCorruption";
+import BunkerAudioBridge from "@/components/BunkerAudioBridge";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -61,6 +63,8 @@ export default function RootLayout({
         <CorruptionManager />
         <PageTransition>{children}</PageTransition>
         <ToastProvider />
+        <DustCorruption />
+<BunkerAudioBridge />
       </body>
     </html>
   );

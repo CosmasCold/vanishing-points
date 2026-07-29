@@ -18,6 +18,7 @@ import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
+import { accumulateDust } from "@/hooks/useDustLevel";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -107,6 +108,11 @@ export default function Home() {
     );
   }, [places]);
 
+  const openPlace = useCallback((place: Place) => {
+    accumulateDust(3);
+    setSelectedPlace(place);
+  }, []);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -163,12 +169,6 @@ export default function Home() {
             setNearest(null);
           }
           break;
-          case "b":
-  if (e.shiftKey) {
-    e.preventDefault();
-    router.push("/echoes");
-  }
-  break;
       }
     };
 
@@ -208,7 +208,7 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="flex items-center gap-3 pointer-events-auto"
         >
-          <RandomDestination places={places} onSelect={setSelectedPlace} />
+          <RandomDestination places={places} onSelect={openPlace} />
           <button
             onClick={() => setShowLog(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
@@ -253,33 +253,33 @@ export default function Home() {
       </header>
 
       <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 1, duration: 1 }}
-  className="absolute bottom-6 left-6 z-40 pointer-events-none space-y-2"
->
-  <div className="flex items-center gap-4 text-[#9a8a72] font-mono text-xs">
-    <span className="flex items-center gap-1.5">
-      <Eye size={12} />
-      {places.length} documented
-    </span>
-    <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-    <span>
-      {places.filter((p) => p.category === "haunted").length} spectral
-    </span>
-    <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-    <span>
-      {places.filter((p) => p.category === "abandoned").length} forsaken
-    </span>
-  </div>
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 1 }}
+        className="absolute bottom-6 left-6 z-40 pointer-events-none space-y-2"
+      >
+        <div className="flex items-center gap-4 text-[#9a8a72] font-mono text-xs">
+          <span className="flex items-center gap-1.5">
+            <Eye size={12} />
+            {places.length} documented
+          </span>
+          <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
+          <span>
+            {places.filter((p) => p.category === "haunted").length} spectral
+          </span>
+          <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
+          <span>
+            {places.filter((p) => p.category === "abandoned").length} forsaken
+          </span>
+        </div>
 
-  <Link
-    href="/echoes"
-    className="inline-block text-[9px] font-mono text-[#5a4e42] hover:text-[#33ff00] transition-colors duration-500 tracking-[0.2em] uppercase opacity-30 hover:opacity-100 pointer-events-auto"
-  >
-    [ Anomalous Signal ]
-  </Link>
-</motion.div>
+        <Link
+          href="/echoes"
+          className="inline-block text-[9px] font-mono text-[#5a4e42] hover:text-[#33ff00] transition-colors duration-500 tracking-[0.2em] uppercase opacity-30 hover:opacity-100 pointer-events-auto"
+        >
+          [ Anomalous Signal ]
+        </Link>
+      </motion.div>
 
       {/* NEAR ME */}
       <div className="absolute top-24 right-6 z-40">
@@ -317,7 +317,7 @@ export default function Home() {
             </div>
             <button
               onClick={() => {
-                setSelectedPlace(nearest.place);
+                openPlace(nearest.place);
                 setNearest(null);
               }}
               className="px-3 py-1.5 bg-[rgba(122,107,82,0.15)] border border-[rgba(122,107,82,0.25)] rounded text-[10px] font-mono uppercase text-[#c4b8a4] hover:bg-[rgba(122,107,82,0.25)] transition-colors"
@@ -336,13 +336,13 @@ export default function Home() {
 
       <MapSearch
         places={places}
-        onSelect={setSelectedPlace}
+        onSelect={openPlace}
         onFlyTo={(coords) => setMapCenter(coords)}
       />
 
       <MapContainer
         places={places}
-        onSelectPlace={setSelectedPlace}
+        onSelectPlace={openPlace}
         loading={loading}
         center={mapCenter}
         anniversarySlugs={places

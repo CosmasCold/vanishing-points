@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Radio, Terminal, Play, Lock, Unlock } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
+import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 
 const LOGS = [
   {
@@ -58,6 +59,8 @@ export default function EchoesPage() {
   const [activeVideo, setActiveVideo] = useState<{ src: string; label: string } | null>(null);
 
   useEffect(() => {
+    markEchoesVisited(); // ← ADD THIS LINE
+  accumulateDust(10);  // ← AND THIS: visiting the bunker adds significant dust
     const t = setTimeout(() => setBooted(true), 800);
     return () => clearTimeout(t);
   }, []);

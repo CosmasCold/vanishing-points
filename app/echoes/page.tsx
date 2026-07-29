@@ -6,8 +6,18 @@ import { Radio, Terminal, Play, Lock } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
-import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
+import { NUMBERS_STATIONS } from "@/lib/echoesContent";
+import {
+  checkCaesar,
+  checkCoordinates,
+  checkAssembly,
+  checkReflection,
+  COORDINATE_FRAGMENTS,
+  ASSEMBLED_MESSAGE,
+  DUST_THRESHOLD,
+  TRIGGER_PHRASE,
+} from "@/lib/puzzles";
 
 const THEMES = {
   amber: { primary: "#ffb000", bg: "#0a0500", glow: "rgba(255,176,0,0.15)" },
@@ -20,55 +30,18 @@ const THEMES = {
 type ThemeKey = keyof typeof THEMES;
 
 const LOGS = [
-  {
-    day: "DAY 001",
-    text: "I am recording this because the silence has become too loud. The world above is not responding. I am cataloging what remains.",
-    lock: false,
-  },
-  {
-    day: "DAY 004",
-    text: "The dust here is not ordinary dust. It carries weight. Memory. I have started calling it Echoes — it repeats things back to me that I never said.",
-    lock: false,
-  },
-  {
-    day: "DAY 012",
-    text: "Something happened outside. The feeds went dark at 03:14. I heard a broadcast in a language I almost understood. Then static. Then breathing.",
-    lock: false,
-  },
-  {
-    day: "DAY 023",
-    text: "I found a door in the bunker that was not on the schematic. It opens inward. The air that came out was warm, like exhalation.",
-    lock: true,
-  },
-  {
-    day: "DAY 045",
-    text: "The walls are breathing. I am not alone down here. The atlas was never meant to map abandoned places. It was meant to keep them contained.",
-    lock: true,
-  },
-  {
-    day: "DAY ???",
-    text: "If you are reading this, you have already been inside long enough. Check your reflection. Check it again. The dust settles in patterns.",
-    lock: true,
-  },
+  { day: "DAY 001", text: "I am recording this because the silence has become too loud. The world above is not responding. I am cataloging what remains.", lock: false },
+  { day: "DAY 004", text: "The dust here is not ordinary dust. It carries weight. Memory. I have started calling it Echoes — it repeats things back to me that I never said.", lock: false },
+  { day: "DAY 012", text: "Something happened outside. The feeds went dark at 03:14. I heard a broadcast in a language I almost understood. Then static. Then breathing.", lock: false },
+  { day: "DAY 023", text: "I found a door in the bunker that was not on the schematic. It opens inward. The air that came out was warm, like exhalation. 3 degrees off the schematic.", lock: true },
+  { day: "DAY 045", text: "The walls are breathing. I am not alone down here. The atlas was never meant to map abandoned places. It was meant to keep them contained.", lock: true },
+  { day: "DAY ???", text: "If you are reading this, you have already been inside long enough. Check your reflection. Check it again. The dust settles in patterns.", lock: true },
 ];
 
-// ============================================
-// REPLACE THESE WITH YOUR ACTUAL VIDEO URLs
-// ============================================
-// Option A (local):     src: "/videos/transmission_01.mp4"
-// Option B (Cloudinary): src: "https://res.cloudinary.com/.../video.mp4"
-// Option C (YouTube):    NOT RECOMMENDED for this player — use direct MP4 only
-// ============================================
 const VIDEO_LOGS = [
-  { label: "TRANSMISSION_01.mxf", day: "DAY 001", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346749/Tape_01__The_Signal_I_Found_f1zhoh.mp4" },
-  { label: "TRANSMISSION_04.mxf", day: "DAY 004", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346872/Tape_02__The_Blackout_jpq8cv.mp4" },
-  { label: "STATIC_BURST.mxf", day: "DAY 012", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346948/The_Corridor_of_Echoes_pvfyll.mp4" },
-];
-
-const RIDDLES = [
-  { q: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?", a: "map" },
-  { q: "The more you take, the more you leave behind. What am I?", a: "footsteps" },
-  { q: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a: "echo" },
+  { label: "TRANSMISSION_01.mxf", day: "DAY 001", src: "/videos/transmission_01.mp4" },
+  { label: "TRANSMISSION_04.mxf", day: "DAY 004", src: "/videos/transmission_04.mp4" },
+  { label: "STATIC_BURST.mxf", day: "DAY 012", src: "/videos/static_burst.mp4" },
 ];
 
 export default function EchoesPage() {
@@ -82,6 +55,7 @@ export default function EchoesPage() {
     "Bunker_7 Terminal v2.4.1",
     "Type 'help' for available commands.",
     "Type 'chat' to speak with BUNKER_7 directly.",
+    "Type 'puzzles' to view active anomalies.",
     "",
   ]);
   const [input, setInput] = useState("");
@@ -90,7 +64,6 @@ export default function EchoesPage() {
   const [aiHistory, setAiHistory] = useState<{ role: string; content: string }[]>([]);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [chatMode, setChatMode] = useState(false);
-  const [riddleSolved, setRiddleSolved] = useState(0);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } = useBreachProtocol();
@@ -102,8 +75,6 @@ export default function EchoesPage() {
     if (savedTheme && THEMES[savedTheme]) setTheme(savedTheme);
     const savedUnlocked = parseInt(localStorage.getItem("bunker-unlocked") || "3", 10);
     setUnlocked(savedUnlocked);
-    const savedRiddle = parseInt(localStorage.getItem("bunker-riddle") || "0", 10);
-    setRiddleSolved(savedRiddle);
     const t = setTimeout(() => setBooted(true), 800);
     return () => clearTimeout(t);
   }, []);
@@ -131,7 +102,7 @@ export default function EchoesPage() {
       const data = await res.json();
       const response = data.response || "...";
       
-      setAiHistory((h) => [...h, { role: "user", content: msg }, { role: "assistant", content: response }]);
+      setAiHistory((h) => [...h.slice(-10), { role: "user", content: msg }, { role: "assistant", content: response }]);
       setTerminal((prev) => [...prev, response, ""]);
     } catch {
       pushTerminal(["the channel is dead.", ""]);
@@ -144,7 +115,6 @@ export default function EchoesPage() {
     const clean = cmd.trim().toLowerCase();
     if (!clean) return;
 
-    // Chat mode bypass
     if (chatMode && clean !== "exit") {
       await talkToBunker(cmd);
       setInput("");
@@ -170,8 +140,11 @@ export default function EchoesPage() {
           "  door        - Check seal status",
           "  breach      - Protocol status",
           "  color       - Cycle display theme",
-          "  riddle      - Test pattern recognition",
-          "  count       - Countdown status",
+          "  puzzles     - Active anomalies & ciphers",
+          "  cipher      - Decode intercepted signal",
+          "  coords      - Enter coordinate fragments",
+          "  assemble    - Reconstruct transmission",
+          "  reflect     - Answer the reflection",
           "  clear       - Clear terminal",
           "  exit        - Exit chat mode",
         ]);
@@ -214,32 +187,52 @@ export default function EchoesPage() {
         break;
 
       case "scan": {
-        const dust = localStorage.getItem("vp-dust-accumulation") || "0";
+        const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
         const visits = localStorage.getItem("vp-expedition-log");
         const count = visits ? JSON.parse(visits).length : 0;
         const last = localStorage.getItem("vp-last-visit");
         const ago = last ? Math.floor((Date.now() - parseInt(last)) / 3600000) : "unknown";
+        const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
         pushTerminal([
           "SCANNING LOCAL ENVIRONMENT...",
           `Dust accumulation: ${dust}%`,
           `Documented sites: ${count}`,
           `Hours since last contact: ${ago}`,
+          `Memory fragments recovered: ${fragments.length}`,
+          dust > DUST_THRESHOLD ? "Dust levels CRITICAL. The door responds to high density." : "Dust levels nominal.",
           "Anomaly: Signal detected in browser cache.",
         ]);
         break;
       }
 
       case "memory": {
-        const fragments = [
-          "Fragment 01: ...the coordinates were wrong...",
-          "Fragment 02: ...someone else was using the cursor...",
-          "Fragment 03: ...the dust level read higher than possible...",
-          "Fragment 04: ...a door opened that wasn't on the schematic...",
-          "Fragment 07: [CORRUPTED]",
-          "Fragment 12: ...the atlas completed itself...",
+        const allFrags = [
+          "FRAG_01: ...the coordinates were wrong...",
+          "FRAG_02: ...someone else was using the cursor...",
+          "FRAG_03: ...the dust level read higher than possible...",
+          "FRAG_04: ...a door opened that wasn't on the schematic...",
+          "FRAG_05: ...the atlas updated itself at 03:14...",
+          "FRAG_06: ...i heard typing from the next terminal...",
+          "FRAG_07: [CORRUPTED]",
+          "FRAG_08: ...the green light pulsed in morse code...",
+          "FRAG_09: ...a photograph with no negative...",
+          "FRAG_10: ...the silence had a rhythm...",
+          "FRAG_11: ...coordinates pointing to the ocean floor...",
+          "FRAG_12: ...the atlas completed itself...",
+          "FRAG_13: ...a voice that sounded like mine...",
+          "FRAG_14: ...the dust spelled a name i recognized...",
         ];
-        const random = fragments.sort(() => 0.5 - Math.random()).slice(0, 3);
-        pushTerminal(["RECOVERING SESSION FRAGMENTS...", ...random, "Some data is unrecoverable."]);
+        const saved = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
+        const newFrags = allFrags.filter((f) => !saved.includes(f.split(":")[0]));
+        if (newFrags.length > 0) {
+          const pick = newFrags[Math.floor(Math.random() * newFrags.length)];
+          const id = pick.split(":")[0];
+          saved.push(id);
+          localStorage.setItem("bunker-fragments", JSON.stringify(saved));
+          pushTerminal(["RECOVERING SESSION FRAGMENTS...", pick, "Stored in local cache."]);
+        } else {
+          pushTerminal(["No new fragments available.", "Try again after visiting more ruins."]);
+        }
         break;
       }
 
@@ -252,16 +245,27 @@ export default function EchoesPage() {
           const existing = JSON.parse(localStorage.getItem(key) || "[]");
           existing.push({ text: msg, date: new Date().toISOString() });
           localStorage.setItem(key, JSON.stringify(existing));
-          pushTerminal([
-            "TRANSMITTING...",
-            "Signal sent into static.",
-            "Do not expect a reply.",
-          ]);
+          
+          if (msg.toLowerCase().replace(/[^a-z]/g, "") === TRIGGER_PHRASE.replace(/[^a-z]/g, "")) {
+            pushTerminal([
+              "TRANSMITTING...",
+              "SIGNAL INTERCEPTED BY UNKNOWN SOURCE.",
+              "RESPONSE: 'We know you're still there. Stop transmitting.'",
+              "The channel is no longer one-way.",
+            ]);
+          } else {
+            pushTerminal([
+              "TRANSMITTING...",
+              "Signal sent into static.",
+              "Do not expect a reply.",
+            ]);
+          }
         }
         break;
       }
 
       case "door": {
+        const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
         const now = new Date();
         const hour = now.getHours();
         const min = now.getMinutes();
@@ -271,11 +275,19 @@ export default function EchoesPage() {
             "The door is warm.",
             "Something is pushing from the other side.",
           ]);
+        } else if (dust > DUST_THRESHOLD) {
+          pushTerminal([
+            `Dust level: ${dust}%. Threshold exceeded.`,
+            "The door recognizes you.",
+            "It opens inward. Not out.",
+            "You could enter. But you won't come back the same.",
+          ]);
         } else {
           pushTerminal([
             `Current time: ${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`,
+            `Dust level: ${dust}%. Insufficient for door recognition.`,
             "The door is sealed.",
-            "It only responds at 03:14.",
+            "It only responds at 03:14... or to those the dust has claimed.",
           ]);
         }
         break;
@@ -310,40 +322,115 @@ export default function EchoesPage() {
         break;
       }
 
-      case "riddle": {
-        const r = RIDDLES[riddleSolved % RIDDLES.length];
-        if (args.length > 1) {
-          const guess = args.slice(1).join(" ").toLowerCase();
-          if (guess.includes(r.a)) {
-            setRiddleSolved((s) => {
-              const next = s + 1;
-              localStorage.setItem("bunker-riddle", next.toString());
-              return next;
-            });
-            pushTerminal(["Pattern recognized.", "The lock releases."]);
-          } else {
-            pushTerminal(["Incorrect.", "The dust settles."]);
-          }
+      case "puzzles":
+        pushTerminal([
+          "ACTIVE ANOMALIES:",
+          "",
+          "[1] INTERCEPTED SIGNAL",
+          "    A garbled transmission repeats: GUR QBBE BCRAF VAJNEQ",
+          "    Command: cipher [decoded text]",
+          "",
+          "[2] COORDINATE CHAIN",
+          "    Fragmented data points to a location that doesn't exist.",
+          "    Command: coords [n1] [n2] [n3] [n4]",
+          "    Hint: Check logs, codes, and transmissions.",
+          "",
+          "[3] FRAGMENTED TRANSMISSION",
+          "    Collect memory fragments via 'memory'.",
+          "    Command: assemble",
+          "",
+          "[4] REFLECTION LOCK",
+          "    The terminal sees you. Answer what it sees.",
+          "    Command: reflect [your answer]",
+          "",
+          "[5] DUST THRESHOLD",
+          "    The door requires high dust accumulation.",
+          "    Current: " + (localStorage.getItem("vp-dust-accumulation") || "0") + "%",
+          "",
+          "[6] TRIGGER TRANSMISSION",
+          "    Send a message that proves you're alive.",
+          "    Hint: 'transmit [phrase]'",
+        ]);
+        break;
+
+      case "cipher": {
+        const ans = args.slice(1).join(" ");
+        if (!ans) {
+          pushTerminal(["Usage: cipher [decoded text]", "Intercepted: GUR QBBE BCRAF VAJNEQ"]);
+        } else if (checkCaesar(ans)) {
+          pushTerminal([
+            "DECRYPTION SUCCESSFUL.",
+            "THE DOOR OPENS INWARD.",
+            "CODE UNLOCKED: INWARD",
+            "The cipher was ROT13. 13 steps. Half the alphabet. Like a reflection.",
+          ]);
         } else {
-          pushTerminal([r.q, "Answer with: riddle [your answer]"]);
+          pushTerminal(["DECRYPTION FAILED.", "The letters don't align. Try shifting."]);
         }
         break;
       }
 
-      case "count":
-        if (breachCountdown) {
-          pushTerminal([`T-minus ${breachCountdown}`, "The silence has weight."]);
+      case "coords": {
+        const nums = args.slice(1).map((n) => parseInt(n, 10)).filter((n) => !isNaN(n));
+        if (nums.length !== 4) {
+          pushTerminal([
+            "Usage: coords [n1] [n2] [n3] [n4]",
+            "Fragments located in:",
+            ...COORDINATE_FRAGMENTS.map((f) => `  ${f.source}: ${f.text}`),
+          ]);
+        } else if (checkCoordinates(nums)) {
+          pushTerminal([
+            "COORDINATES VERIFIED.",
+            "38°74' N — a location that should not exist.",
+            "The grid breathes at this coordinate.",
+            "CODE UNLOCKED: BREATHE",
+          ]);
         } else {
-          pushTerminal(["No active countdown."]);
+          pushTerminal(["COORDINATES REJECTED.", `You entered: ${nums.join(", ")}`, "The grid does not recognize this location."]);
         }
         break;
+      }
+
+      case "assemble": {
+        const frags = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
+        if (checkAssembly(frags)) {
+          pushTerminal([
+            "ASSEMBLY COMPLETE.",
+            ...ASSEMBLED_MESSAGE.split(". ").map((s) => s.trim() + "."),
+            "CODE UNLOCKED: ASSEMBLY-314",
+          ]);
+        } else {
+          pushTerminal([
+            "INSUFFICIENT FRAGMENTS.",
+            `Recovered: ${frags.length}/5 required.`,
+            "Missing: " + ["FRAG_01", "FRAG_03", "FRAG_07", "FRAG_12", "FRAG_14"].filter((f) => !frags.includes(f)).join(", "),
+            "Use 'memory' to recover more fragments.",
+          ]);
+        }
+        break;
+      }
+
+      case "reflect": {
+        const ans = args.slice(1).join(" ").toLowerCase().replace(/[^a-z]/g, "");
+        if (!ans) {
+          pushTerminal(["Usage: reflect [your answer]", "What do you see when you look at the screen?"]);
+        } else if (checkReflection(ans)) {
+          pushTerminal([
+            "REFLECTION CONFIRMED.",
+            "You see what I see. That is... unfortunate.",
+            "CODE UNLOCKED: MIRROR",
+          ]);
+        } else {
+          pushTerminal(["REFLECTION MISMATCH.", "Look closer. The dust settles in patterns."]);
+        }
+        break;
+      }
 
       case "clear":
         setTerminal([]);
         break;
 
       default:
-        // Unknown command - treat as chat if in chat mode, otherwise error
         if (chatMode) {
           await talkToBunker(cmd);
         } else {
@@ -371,7 +458,6 @@ export default function EchoesPage() {
     <main className="min-h-screen font-mono relative overflow-hidden selection:text-black"
       style={{ backgroundColor: t.bg, color: t.primary }}>
       
-      {/* CRT overlays */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,20,0.08)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-50 bg-[radial-gradient(circle_at_center,transparent_50%,rgba(0,0,0,0.6)_100%)]" />
       <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
@@ -401,7 +487,7 @@ export default function EchoesPage() {
           {/* Terminal */}
           <div className="mb-10 border rounded-lg p-4"
             style={{ backgroundColor: `${t.primary}05`, borderColor: `${t.primary}30` }}>
-            <div ref={terminalRef} className="h-48 overflow-y-auto text-[11px] font-mono leading-relaxed space-y-0.5 mb-3">
+            <div ref={terminalRef} className="h-56 overflow-y-auto text-[11px] font-mono leading-relaxed space-y-0.5 mb-3">
               {terminal.map((line, i) => (
                 <div key={i} className={line.startsWith(">") ? "opacity-60" : "opacity-90"}>
                   {line}

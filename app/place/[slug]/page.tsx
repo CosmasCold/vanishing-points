@@ -6,6 +6,9 @@ import dbConnect, { PlaceModel } from "@/lib/db";
 import PhotoGallery from "@/components/PhotoGallery";
 import DangerIndicator from "@/components/DangerIndicator";
 import StatusBadge from "@/components/StatusBadge";
+import TypewriterText from "@/components/TypewriterText";
+import ClassifiedText from "@/components/ClassifiedText";
+import MarginaliaComments from "@/components/MarginaliaComments";
 import { Place } from "@/types";
 
 interface Props {
@@ -22,6 +25,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${place.name} | Vanishing Points`,
     description: place.history.slice(0, 160),
+    openGraph: {
+      title: place.name,
+      description: `${place.address.city}, ${place.address.country} · Abandoned ${place.yearAbandoned || "Unknown"} · Danger ${place.dangerLevel}/5`,
+      images: place.photos?.[0] ? [{ url: place.photos[0], width: 1200, height: 800 }] : [],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: place.name,
+      description: place.history.slice(0, 120),
+      images: place.photos?.[0] ? [place.photos[0]] : [],
+    },
   };
 }
 
@@ -37,7 +52,7 @@ export default async function PlacePage({ params }: Props) {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Link
           href="/list"
-          className="inline-flex items-center gap-2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors text-sm font-mono mb-6"
+          className="inline-flex items-center gap-2 text-[#9a8a72] hover:text-[#c4b8a4] transition-colors text-sm font-mono mb-6"
         >
           <ArrowLeft size={14} />
           Return to archives
@@ -45,7 +60,6 @@ export default async function PlacePage({ params }: Props) {
 
         <div className="submit-card rounded-xl p-8 relative overflow-hidden">
           <div className="relative z-10">
-            {/* Header */}
             <div className="flex items-start justify-between mb-6">
               <div>
                 <StatusBadge category={place.category} variant="light" />
@@ -61,8 +75,7 @@ export default async function PlacePage({ params }: Props) {
               </div>
             </div>
 
-            {/* Meta bar */}
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[rgba(62,43,26,0.12)]">
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[rgba(62,50,40,0.1)]">
               {place.yearAbandoned && (
                 <div className="flex items-center gap-1.5">
                   <Calendar size={12} className="text-[#9a8a72]" />
@@ -86,29 +99,26 @@ export default async function PlacePage({ params }: Props) {
               </div>
             </div>
 
-            {/* Photos */}
             {place.photos && place.photos.length > 0 && (
               <div className="mb-8">
                 <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3">
                   Visual Evidence
                 </h3>
-                <div className="specimen-frame rounded-lg overflow-hidden bg-[#d4c8b4]">
+                <div className="specimen-frame rounded-lg overflow-hidden bg-[#c9b896]">
                   <PhotoGallery photos={place.photos} />
                 </div>
               </div>
             )}
 
-            {/* History */}
             <div className="mb-8">
               <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3">
                 Historical Record
               </h3>
               <p className="text-[#4a3e32] text-sm leading-[1.8]">
-                {place.history}
+                <TypewriterText text={place.history} speed={12} />
               </p>
             </div>
 
-            {/* Haunting Reports */}
             {place.hauntingReports && place.hauntingReports.length > 0 && (
               <div className="mb-8">
                 <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3 flex items-center gap-2">
@@ -119,20 +129,21 @@ export default async function PlacePage({ params }: Props) {
                   {place.hauntingReports.map((report: string, i: number) => (
                     <p
                       key={i}
-                      className="relative pl-4 text-[#4a3e32] text-sm italic leading-[1.7] border-l border-[rgba(107,48,32,0.2)]"
+                      className="relative pl-4 text-[#4a3e32] text-sm leading-[1.7] border-l border-[rgba(122,82,72,0.15)]"
                     >
                       <span className="absolute left-0 text-[#9a8a72] font-mono">
                         —
                       </span>
-                      {report}
+                      <ClassifiedText text={report} />
                     </p>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Footer stamp */}
-            <div className="pt-4 border-t border-[rgba(62,43,26,0.1)] flex items-center justify-between">
+            <MarginaliaComments placeSlug={place.slug} />
+
+            <div className="pt-4 border-t border-[rgba(62,50,40,0.08)] flex items-center justify-between mt-6">
               <span className="font-mono text-[9px] text-[#9a8a72] tracking-[0.2em] uppercase opacity-60">
                 Ref. {place.slug?.toUpperCase() || "UNKNOWN"}
               </span>

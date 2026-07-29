@@ -4,6 +4,8 @@ import "./globals.css";
 import GrainOverlay from "@/components/GrainOverlay";
 import FogEffect from "@/components/FogEffect";
 import CustomCursor from "@/components/CustomCursor";
+import BackgroundAudio from "@/components/BackgroundAudio";
+import CollaborativeCursors from "@/components/CollaborativeCursors";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,9 +31,7 @@ export const metadata: Metadata = {
   title: "Vanishing Points | An Atlas of the Forgotten",
   description:
     "An interactive map of abandoned and haunted places worldwide. Explore the forgotten, the decayed, and the spectral.",
-  icons: {
-    icon: "/favicon.svg",
-  },
+  icons: { icon: "/favicon.svg" },
   openGraph: {
     title: "Vanishing Points",
     description: "An Atlas of the Forgotten",
@@ -49,10 +49,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${cinzel.variable} ${spaceMono.variable}`}
     >
-      <body className="antialiased min-h-screen bg-void text-bone">
+      <body className="antialiased min-h-screen bg-[#1a1612] text-[#ddd0bc]">
         <GrainOverlay />
         <FogEffect />
         <CustomCursor />
+        <BackgroundAudio />
+        <CollaborativeCursors />
         {children}
       </body>
     </html>

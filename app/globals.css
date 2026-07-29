@@ -752,3 +752,87 @@ input[type="range"]::-webkit-slider-thumb {
   position: relative;
   z-index: 5;
 }
+
+/* ============================================================
+   PRINT STYLES — Field Guide Edition
+   ============================================================ */
+
+@media print {
+  .grain-overlay,
+  .fog-container,
+  .custom-cursor,
+  .custom-cursor-dot,
+  .mapboxgl-ctrl-group,
+  .mapboxgl-ctrl-attrib,
+  .drawer-handle,
+  .drawer-rivet,
+  .drawer-close,
+  .badge-overlay,
+  .collaborative-cursors {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: #1a120b !important;
+    cursor: auto !important;
+  }
+
+  .map-frame {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .drawer-shell {
+    position: static !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+  }
+
+  .drawer-card,
+  .archive-card,
+  .submit-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    background: white !important;
+    page-break-inside: avoid;
+  }
+
+  .drawer-title,
+  .archive-title {
+    color: #1a120b !important;
+  }
+
+  .drawer-body,
+  .archive-body {
+    color: #333 !important;
+  }
+
+  a {
+    text-decoration: none !important;
+    color: #333 !important;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+}

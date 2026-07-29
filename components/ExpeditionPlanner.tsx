@@ -1,0 +1,117 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Route, X, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Place } from "@/types";
+
+interface Props {
+  places: Place[];
+  onClose: () => void;
+}
+
+export default function ExpeditionPlanner({ places, onClose }: Props) {
+  const [selected, setSelected] = useState<Place[]>([]);
+
+  const toggle = (place: Place) => {
+    setSelected((prev) => {
+      const exists = prev.find((p) => p._id === place._id);
+      if (exists) return prev.filter((p) => p._id !== place._id);
+      if (prev.length >= 6) return prev;
+      return [...prev, place];
+    });
+  };
+
+  const totalDistance = () => {
+    if (selected.length < 2) return 0;
+    let dist = 0;
+    for (let i = 1; i < selected.length; i++) {
+      const [lon1, lat1] = selected[i - 1].coordinates;
+      const [lon2, lat2] = selected[i].coordinates;
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) ** 2;
+      dist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    return Math.round(dist);
+  };
+
+  const avgDanger = selected.length
+    ? (selected.reduce((s, p) => s + p.dangerLevel, 0) / selected.length).toFixed(1)
+    : "0";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-[rgba(15,12,9,0.85)] backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="submit-card rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+      >
+        <div className="p-6 border-b border-[rgba(122,107,82,0.15)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Route size={18} className="text-[#9a8a72]" />
+            <h2 className="font-cinzel text-lg text-[#3d3228]">Expedition Planner</h2>
+          </div>
+          <button onClick={onClose} className="text-[#9a8a72] hover:text-[#5a4e42]">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {selected.length > 0 && (
+            <div className="mb-6 p-4 bg-[rgba(90,78,66,0.06)] rounded-lg border border-[rgba(122,107,82,0.15)]">
+              <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e]">
+                <span>{selected.length} sites</span>
+                <span>{totalDistance()} km route</span>
+                <span className="flex items-center gap-1">
+                  <AlertTriangle size={10} />
+                  Avg danger {avgDanger}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {places.map((place) => {
+              const isSelected = selected.find((p) => p._id === place._id);
+              return (
+                <button
+                  key={place._id}
+                  onClick={() => toggle(place)}
+                  className={`
+                    text-left p-3 rounded-lg border transition-all text-sm
+                    ${isSelected
+                      ? "bg-[rgba(90,78,66,0.08)] border-[#9a8a72] text-[#3d3228]"
+                      : "bg-transparent border-[rgba(122,107,82,0.15)] text-[#5a4e42] hover:border-[rgba(122,107,82,0.3)]"
+                    }
+                  `}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-cinzel text-xs">{place.name}</span>
+                    {isSelected ? <Trash2 size={12} /> : <Plus size={12} />}
+                  </div>
+                  <span className="text-[10px] font-mono text-[#9a8a72]">
+                    {place.address.country} · Danger {place.dangerLevel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}

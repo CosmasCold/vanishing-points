@@ -31,7 +31,6 @@ export default async function DossierPage({
   return (
     <main className="min-h-screen bg-[#e8dcc8] text-[#2a2018] font-mono p-8 md:p-16 print:p-8">
       <div className="max-w-3xl mx-auto border-2 border-[#3d3228] p-8 md:p-12 relative">
-        {/* Stamp */}
         <div className="absolute top-6 right-6 border-2 border-[#7a3a2a] text-[#7a3a2a] px-3 py-1 text-[10px] font-bold tracking-widest uppercase rotate-3 opacity-70">
           ARCHIVED
         </div>
@@ -50,49 +49,35 @@ export default async function DossierPage({
 
         <div className="grid grid-cols-2 gap-6 mb-10 text-xs">
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Reference
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Reference</p>
             <p className="font-bold">{ref}</p>
           </div>
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Date Compiled
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Date Compiled</p>
             <p>{now.toLocaleDateString("en-GB")}</p>
           </div>
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Coordinates
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Coordinates</p>
             <p className="blur-sm hover:blur-none transition-all cursor-help select-none">
               {formatCoord(place.coordinates[1], true)} {formatCoord(place.coordinates[0], false)}
             </p>
           </div>
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Classification
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Classification</p>
             <p className="uppercase">{place.category}</p>
           </div>
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Danger Level
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Danger Level</p>
             <p>{"★".repeat(place.dangerLevel)}{"☆".repeat(5 - place.dangerLevel)}</p>
           </div>
           <div>
-            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">
-              Status
-            </p>
+            <p className="uppercase tracking-wider text-[10px] opacity-50 mb-1">Status</p>
             <p>{place.yearAbandoned ? `Abandoned ${place.yearAbandoned}` : "Date unknown"}</p>
           </div>
         </div>
 
         <section className="mb-10">
-          <h2 className="font-cinzel text-lg border-b border-[#3d3228]/30 pb-2 mb-4">
-            Historical Record
-          </h2>
+          <h2 className="font-cinzel text-lg border-b border-[#3d3228]/30 pb-2 mb-4">Historical Record</h2>
           <p className="text-sm leading-relaxed whitespace-pre-line">{place.history}</p>
         </section>
 
@@ -112,9 +97,7 @@ export default async function DossierPage({
         )}
 
         <section className="mb-10">
-          <h2 className="font-cinzel text-lg border-b border-[#3d3228]/30 pb-2 mb-4">
-            Field Notes
-          </h2>
+          <h2 className="font-cinzel text-lg border-b border-[#3d3228]/30 pb-2 mb-4">Field Notes</h2>
           <div className="h-32 border border-[#3d3228]/20 p-4 text-sm italic opacity-50">
             [ Personal observations to be recorded in the field. ]
           </div>

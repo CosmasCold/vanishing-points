@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Radio } from "lucide-react";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
 import { useDustLevel } from "@/hooks/useDustLevel";
@@ -18,12 +18,21 @@ const STATIC_ATLAS = [
   "Coordinates verified by satellite",
 ];
 
+// Minimum quiet time between any transmissions
+const MIN_QUIET_MS = 18000; // 18 seconds
+// Maximum time before a forced update
+const MAX_INTERVAL_MS = 45000; // 45 seconds
+// Chance a bunker transmission appears (only if echoes visited)
+const BUNKER_CHANCE = 0.15; // 15%
+
 export default function TransmissionFeed({ places }: { places: Place[] }) {
-  const { visited, count } = useVisitedPlaces();
+  const { count } = useVisitedPlaces();
   const { echoesVisited } = useDustLevel();
   const [line, setLine] = useState("");
   const [isBunker, setIsBunker] = useState(false);
   const [glitch, setGlitch] = useState(false);
+  const lastBunkerRef = useRef(0);
+  const poolRef = useRef<string[]>([]);
 
   useEffect(() => {
     const real = count > 0
@@ -34,34 +43,63 @@ export default function TransmissionFeed({ places }: { places: Place[] }) {
       ? [`${places.length} ruins documented`]
       : [];
 
-    const pool = echoesVisited
-      ? [...real, ...placeBased, ...STATIC_ATLAS, ...BUNKER_TRANSMISSIONS]
-      : [...real, ...placeBased, ...STATIC_ATLAS];
+    poolRef.current = [...real, ...placeBased, ...STATIC_ATLAS];
+  }, [count, places]);
 
-    let i = 0;
-    const setNext = () => {
-      const next = pool[i];
-      setLine(next);
-      const bunker = echoesVisited && BUNKER_TRANSMISSIONS.includes(next);
-      setIsBunker(bunker);
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
 
-      if (bunker) {
-        setGlitch(true);
-        setTimeout(() => setGlitch(false), 400);
-        window.dispatchEvent(new CustomEvent("bunker-transmission", {
-          detail: { message: next },
-        }));
-      }
+    const scheduleNext = () => {
+      const delay = MIN_QUIET_MS + Math.random() * (MAX_INTERVAL_MS - MIN_QUIET_MS);
+
+      timeout = setTimeout(() => {
+        const basePool = poolRef.current;
+        if (basePool.length === 0) {
+          scheduleNext();
+          return;
+        }
+
+        // Decide if this should be a bunker transmission
+        const now = Date.now();
+        const timeSinceLastBunker = now - lastBunkerRef.current;
+        const canBunker = echoesVisited && timeSinceLastBunker > 120000; // Min 2 min between bunker msgs
+
+        let next: string;
+        let bunker = false;
+
+        if (canBunker && Math.random() < BUNKER_CHANCE) {
+          next = BUNKER_TRANSMISSIONS[Math.floor(Math.random() * BUNKER_TRANSMISSIONS.length)];
+          bunker = true;
+          lastBunkerRef.current = now;
+        } else {
+          next = basePool[Math.floor(Math.random() * basePool.length)];
+        }
+
+        setLine(next);
+        setIsBunker(bunker);
+
+        if (bunker) {
+          setGlitch(true);
+          setTimeout(() => setGlitch(false), 400);
+          window.dispatchEvent(new CustomEvent("bunker-transmission", {
+            detail: { message: next },
+          }));
+        }
+
+        scheduleNext();
+      }, delay);
     };
 
-    setNext();
-    const interval = setInterval(() => {
-      i = (i + 1) % pool.length;
-      setNext();
-    }, 6000);
+    // Initial line
+    if (poolRef.current.length > 0) {
+      setLine(poolRef.current[0]);
+    }
+    scheduleNext();
 
-    return () => clearInterval(interval);
-  }, [visited, count, places, echoesVisited]);
+    return () => clearTimeout(timeout);
+  }, [echoesVisited]);
+
+  if (!line) return null;
 
   return (
     <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-40">

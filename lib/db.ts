@@ -58,7 +58,7 @@ const PlaceSchema = new Schema<PlaceDocument>(
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "approved", // Seeds go live. Form submissions still set "pending" explicitly.
+      default: "approved", // ← SEEDED DATA GOES LIVE IMMEDIATELY
     },
     contributorName: { type: String },
     contributorEmail: { type: String },

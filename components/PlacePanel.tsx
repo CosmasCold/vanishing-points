@@ -16,6 +16,7 @@ import MarginaliaComments from "./MarginaliaComments";
 import WeatherStamp from "./WeatherStamp";
 import DecayCounter from "./DecayCounter";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
+import FieldLogbook from "@/components/FieldLogbook";
 
 interface Props {
   place: Place;
@@ -150,6 +151,7 @@ export default function PlacePanel({ place, onClose }: Props) {
                   title={place.name}
                 />
                 <PrintButton />
+                <FieldLogbook placeSlug={place.slug} placeName={place.name} />
                 <BookmarkButton
                   place={{
                     _id: place._id,

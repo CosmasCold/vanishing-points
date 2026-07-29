@@ -20,6 +20,9 @@ import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
 import { accumulateDust } from "@/hooks/useDustLevel";
+import LyingCompass from "@/components/LyingCompass";
+import AbsenceGreeting from "@/components/AbsenceGreeting";
+import BreachOverlay from "@/components/BreachOverlay";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -384,6 +387,9 @@ export default function Home() {
       <TransmissionFeed places={places} />
       <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
       <ShortcutHint onClick={() => setShowHelp(true)} />
+        <LyingCompass places={places} />
+<AbsenceGreeting />
+<BreachOverlay />
     </main>
   );
 }

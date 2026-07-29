@@ -11,6 +11,7 @@ import TypewriterText from "./TypewriterText";
 import ClassifiedText from "./ClassifiedText";
 import ShareButton from "./ShareButton";
 import PrintButton from "./PrintButton";
+import BookmarkButton from "./BookmarkButton";
 import MarginaliaComments from "./MarginaliaComments";
 
 interface Props {
@@ -75,27 +76,45 @@ export default function PlacePanel({ place, onClose }: Props) {
             <div className="drawer-card rounded-lg p-5 relative overflow-hidden">
               <div className="drawer-card-glow" />
 
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[rgba(62,50,40,0.1)]">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[rgba(62,50,40,0.1)]">
                 {place.yearAbandoned && (
                   <div className="flex items-center gap-1.5">
                     <Calendar size={12} className="text-[#9a8a72]" />
-                    <span className="drawer-meta">Abandoned {place.yearAbandoned}</span>
+                    <span className="drawer-meta">
+                      Abandoned {place.yearAbandoned}
+                    </span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">
                   <AlertTriangle size={12} className="text-[#9a8a72]" />
                   <span className="drawer-meta">Danger</span>
-                  <DangerIndicator level={place.dangerLevel} variant="parchment" />
+                  <DangerIndicator
+                    level={place.dangerLevel}
+                    variant="parchment"
+                  />
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
                   <Eye size={12} className="text-[#9a8a72]" />
-                  <span className="drawer-meta">{place.viewCount || 0} views</span>
+                  <span className="drawer-meta">
+                    {place.viewCount || 0} views
+                  </span>
                 </div>
               </div>
 
-              <div className="flex gap-2 mb-5">
-                <ShareButton url={`/place/${place.slug}`} title={place.name} />
+              <div className="flex flex-wrap gap-2 mb-5">
+                <ShareButton
+                  url={`/place/${place.slug}`}
+                  title={place.name}
+                />
                 <PrintButton />
+                <BookmarkButton
+                  place={{
+                    _id: place._id,
+                    name: place.name,
+                    slug: place.slug,
+                  }}
+                  variant="light"
+                />
               </div>
 
               {place.photos && place.photos.length > 0 && (
@@ -114,33 +133,38 @@ export default function PlacePanel({ place, onClose }: Props) {
                   Historical Record
                 </h3>
                 <p className="drawer-body text-sm leading-relaxed">
-                  <TypewriterText 
-                    text={place.history} 
-                    speed={12} 
-                    onComplete={() => setHistoryDone(true)} 
+                  <TypewriterText
+                    text={place.history}
+                    speed={12}
+                    onComplete={() => setHistoryDone(true)}
                   />
                 </p>
               </div>
 
-              {place.hauntingReports && place.hauntingReports.length > 0 && historyDone && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em] flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
-                    Spectral Accounts
-                  </h3>
-                  <div className="space-y-3">
-                    {place.hauntingReports.map((report, i) => (
-                      <p key={i} className="field-note drawer-body text-sm italic">
-                        <ClassifiedText text={report} />
-                      </p>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+              {place.hauntingReports &&
+                place.hauntingReports.length > 0 &&
+                historyDone && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
+                      Spectral Accounts
+                    </h3>
+                    <div className="space-y-3">
+                      {place.hauntingReports.map((report, i) => (
+                        <p
+                          key={i}
+                          className="field-note drawer-body text-sm italic"
+                        >
+                          <ClassifiedText text={report} />
+                        </p>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
 
               <MarginaliaComments placeSlug={place.slug} />
 

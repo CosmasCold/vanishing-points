@@ -2,11 +2,13 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { List, Plus, Eye, Route, Navigation } from "lucide-react";
 import PlacePanel from "@/components/PlacePanel";
 import ExpeditionPlanner from "@/components/ExpeditionPlanner";
+import RandomDestination from "@/components/RandomDestination";
 import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
@@ -22,7 +24,10 @@ const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ),
 });
 
-function haversine([lon1, lat1]: [number, number], [lon2, lat2]: [number, number]) {
+function haversine(
+  [lon1, lat1]: [number, number],
+  [lon2, lat2]: [number, number]
+) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -35,12 +40,16 @@ function haversine([lon1, lat1]: [number, number], [lon2, lat2]: [number, number
 }
 
 export default function Home() {
+  const router = useRouter();
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>();
-  const [nearest, setNearest] = useState<{ place: Place; distance: number } | null>(null);
+  const [nearest, setNearest] = useState<{
+    place: Place;
+    distance: number;
+  } | null>(null);
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
 
@@ -54,16 +63,21 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
-  const findNearest = () => {
+  const findNearest = useCallback(() => {
     if (!navigator.geolocation) {
       alert("Geolocation not supported");
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const user: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-
-        const result = places.reduce<{ place: Place | null; distance: number }>(
+        const user: [number, number] = [
+          pos.coords.longitude,
+          pos.coords.latitude,
+        ];
+        const result = places.reduce<{
+          place: Place | null;
+          distance: number;
+        }>(
           (best, place) => {
             const d = haversine(user, place.coordinates);
             if (d < best.distance) {
@@ -82,7 +96,58 @@ export default function Home() {
       () => alert("Location access denied or unavailable"),
       { enableHighAccuracy: false, timeout: 10000 }
     );
-  };
+  }, [places]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case "e":
+          e.preventDefault();
+          setShowPlanner(true);
+          break;
+        case "n":
+          e.preventDefault();
+          findNearest();
+          break;
+        case "r":
+          e.preventDefault();
+          if (places.length > 0) {
+            const random = places[Math.floor(Math.random() * places.length)];
+            setSelectedPlace(random);
+          }
+          break;
+        case "a":
+          e.preventDefault();
+          router.push("/list");
+          break;
+        case "s":
+          e.preventDefault();
+          router.push("/submit");
+          break;
+        case "escape":
+          if (selectedPlace) {
+            setSelectedPlace(null);
+          } else if (showPlanner) {
+            setShowPlanner(false);
+          } else if (nearest) {
+            setNearest(null);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [places, findNearest, router, selectedPlace, showPlanner, nearest]);
 
   return (
     <main
@@ -116,9 +181,11 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="flex items-center gap-3 pointer-events-auto"
         >
+          <RandomDestination places={places} onSelect={setSelectedPlace} />
           <button
             onClick={() => setShowPlanner(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+            title="Expedition Planner (E)"
           >
             <Route size={16} />
             <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
@@ -128,6 +195,7 @@ export default function Home() {
           <Link
             href="/list"
             className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+            title="Archives (A)"
           >
             <List size={16} />
             <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
@@ -137,6 +205,7 @@ export default function Home() {
           <Link
             href="/submit"
             className="flex items-center gap-2 px-4 py-2 bg-[rgba(122,107,82,0.15)] backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#ddd0bc] hover:bg-[rgba(122,107,82,0.25)] transition-all duration-300 text-sm"
+            title="Submit Discovery (S)"
           >
             <Plus size={16} />
             <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
@@ -158,25 +227,31 @@ export default function Home() {
             {places.length} documented
           </span>
           <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-          <span>{places.filter((p) => p.category === "haunted").length} spectral</span>
+          <span>
+            {places.filter((p) => p.category === "haunted").length} spectral
+          </span>
           <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-          <span>{places.filter((p) => p.category === "abandoned").length} forsaken</span>
+          <span>
+            {places.filter((p) => p.category === "abandoned").length} forsaken
+          </span>
         </div>
       </motion.div>
 
-      {/* NEAR ME BUTTON */}
+      {/* NEAR ME */}
       <div className="absolute top-24 right-6 z-40">
         <button
           onClick={findNearest}
           className="flex items-center gap-2 px-4 py-2 bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all text-sm shadow-lg"
-          title="Find nearest ruin"
+          title="Find nearest ruin (N)"
         >
           <Navigation size={14} />
-          <span className="font-mono text-xs uppercase tracking-wider">Near Me</span>
+          <span className="font-mono text-xs uppercase tracking-wider">
+            Near Me
+          </span>
         </button>
       </div>
 
-      {/* NEAREST RESULT BANNER */}
+      {/* NEAREST BANNER */}
       <AnimatePresence>
         {nearest && (
           <motion.div
@@ -189,7 +264,9 @@ export default function Home() {
               <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
                 Nearest documented ruin
               </p>
-              <p className="font-cinzel text-sm text-[#ddd0bc]">{nearest.place.name}</p>
+              <p className="font-cinzel text-sm text-[#ddd0bc]">
+                {nearest.place.name}
+              </p>
               <p className="text-[10px] font-mono text-[#7a6e5e]">
                 {Math.round(nearest.distance)} km away
               </p>

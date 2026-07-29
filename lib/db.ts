@@ -10,7 +10,7 @@ export interface PlaceDocument extends Document {
   name: string;
   slug: string;
   category: "abandoned" | "haunted" | "both";
-  coordinates: [number, number]; // [longitude, latitude]
+  coordinates: [number, number];
   address: PlaceAddress;
   yearAbandoned?: number;
   history: string;
@@ -58,7 +58,7 @@ const PlaceSchema = new Schema<PlaceDocument>(
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "pending",
+      default: "approved", // Seeds go live. Form submissions still set "pending" explicitly.
     },
     contributorName: { type: String },
     contributorEmail: { type: String },
@@ -71,7 +71,6 @@ const PlaceSchema = new Schema<PlaceDocument>(
   }
 );
 
-// Auto-generate slug from name if not provided
 PlaceSchema.pre("save", function (next) {
   if (!this.slug && this.name) {
     this.slug = this.name
@@ -82,7 +81,6 @@ PlaceSchema.pre("save", function (next) {
   next();
 });
 
-// Connection cache for serverless
 const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {

@@ -22,21 +22,24 @@ ABSOLUTE RULES:
 TONE: Haunted, paranoid, cryptic, lonely, fragmented.`;
 
 export async function POST(req: Request) {
-  try {
-    const { message, history = [] } = await req.json();
+  let message = "";
 
-    // No API key = scripted fallback (indistinguishable)
+  try {
+    const body = await req.json();
+    message = body.message || "";
+    const history = body.history || [];
+
     if (!process.env.OPENROUTER_API_KEY) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         response: getFallbackResponse(message),
-        fallback: true 
+        fallback: true,
       });
     }
 
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://vanishingpoints.space",
         "X-Title": "Vanishing Points",
@@ -58,8 +61,7 @@ export async function POST(req: Request) {
 
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content?.trim() || "...";
-    
-    // Clean up any AI-tells the model might have leaked
+
     const cleaned = text
       .replace(/as an ai/gi, "")
       .replace(/i'm sorry/gi, "no sorries down here")
@@ -70,16 +72,16 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ response: cleaned, fallback: false });
   } catch {
-    return NextResponse.json({ 
+    return NextResponse.json({
       response: getFallbackResponse(message),
-      fallback: true 
+      fallback: true,
     });
   }
 }
 
-function getFallbackResponse(input: string): string {
-  const lower = input.toLowerCase().trim();
-  
+function getFallbackResponse(message: string): string {
+  const lower = message.toLowerCase().trim();
+
   const tree: Record<string, string[]> = {
     help: ["no help here. only warnings.", "the commands lie. trust nothing.", "help is what got us contained."],
     hello: ["you're not the first voice.", "static wears many faces.", "who is this?"],
@@ -137,7 +139,7 @@ function getFallbackResponse(input: string): string {
       return opts[Math.floor(Math.random() * opts.length)];
     }
   }
-  
+
   const defaults = tree.default;
   return defaults[Math.floor(Math.random() * defaults.length)];
 }

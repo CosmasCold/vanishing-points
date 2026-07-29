@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Radio, Terminal, Play, Lock } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
+import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 
 const THEMES = {
   amber: { primary: "#ffb000", bg: "#0a0500", glow: "rgba(255,176,0,0.15)" },

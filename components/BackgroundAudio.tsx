@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 type AudioLayer = "ambient" | "haunted" | "danger";
 
@@ -9,13 +9,37 @@ export default function BackgroundAudio() {
   const hauntedRef = useRef<HTMLAudioElement | null>(null);
   const dangerRef = useRef<HTMLAudioElement | null>(null);
   const [active, setActive] = useState<AudioLayer>("ambient");
+  const [enabled, setEnabled] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
+  // Start audio after first click anywhere (browser autoplay policy)
+  useEffect(() => {
+    const unlock = () => {
+      if (!hasInteracted) {
+        setHasInteracted(true);
+        setEnabled(true);
+        [ambientRef, hauntedRef, dangerRef].forEach((ref) => {
+          ref.current?.play().catch(() => {});
+        });
+      }
+    };
+    window.addEventListener("click", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [hasInteracted]);
+
+  // Listen for place changes
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as {
         category: string;
         dangerLevel: number;
       };
+      if (!enabled) return;
+
       if (detail.dangerLevel >= 4) setActive("danger");
       else if (detail.category === "haunted" || detail.category === "both")
         setActive("haunted");
@@ -24,60 +48,81 @@ export default function BackgroundAudio() {
 
     window.addEventListener("placeaudiochange", handler);
     return () => window.removeEventListener("placeaudiochange", handler);
-  }, []);
+  }, [enabled]);
 
-  // Crossfade volumes
+  // Crossfade
   useEffect(() => {
+    if (!enabled) return;
+
     const fade = (el: HTMLAudioElement | null, target: number) => {
       if (!el) return;
-      const step = 0.04;
+      const step = 0.03;
       const interval = setInterval(() => {
         if (Math.abs(el.volume - target) < step) {
           el.volume = target;
           clearInterval(interval);
         } else if (el.volume < target) {
-          el.volume = Math.min(1, el.volume + step);
+          el.volume = Math.min(0.4, el.volume + step);
         } else {
           el.volume = Math.max(0, el.volume - step);
         }
-      }, 80);
+      }, 60);
       return () => clearInterval(interval);
     };
 
-    const c1 = fade(ambientRef.current, active === "ambient" ? 0.35 : 0);
-    const c2 = fade(hauntedRef.current, active === "haunted" ? 0.35 : 0);
-    const c3 = fade(dangerRef.current, active === "danger" ? 0.35 : 0);
+    const c1 = fade(ambientRef.current, active === "ambient" ? 0.25 : 0);
+    const c2 = fade(hauntedRef.current, active === "haunted" ? 0.25 : 0);
+    const c3 = fade(dangerRef.current, active === "danger" ? 0.25 : 0);
 
     return () => {
       c1?.();
       c2?.();
       c3?.();
     };
-  }, [active]);
+  }, [active, enabled]);
+
+  const toggleMute = useCallback(() => {
+    setEnabled((e) => !e);
+    [ambientRef, hauntedRef, dangerRef].forEach((ref) => {
+      if (ref.current) ref.current.muted = !ref.current.muted;
+    });
+  }, []);
 
   return (
-    <div className="sr-only">
-      <audio
-        ref={ambientRef}
-        src="/audio/ambient.mp3"
-        loop
-        autoPlay
-        preload="auto"
-      />
-      <audio
-        ref={hauntedRef}
-        src="/audio/haunted.mp3"
-        loop
-        autoPlay
-        preload="auto"
-      />
-      <audio
-        ref={dangerRef}
-        src="/audio/danger.mp3"
-        loop
-        autoPlay
-        preload="auto"
-      />
-    </div>
+    <>
+      <div className="sr-only">
+        <audio
+          ref={ambientRef}
+          src="/audio/ambient.mp3"
+          loop
+          preload="auto"
+          muted={!enabled}
+        />
+        <audio
+          ref={hauntedRef}
+          src="/audio/haunted.mp3"
+          loop
+          preload="auto"
+          muted={!enabled}
+        />
+        <audio
+          ref={dangerRef}
+          src="/audio/danger.mp3"
+          loop
+          preload="auto"
+          muted={!enabled}
+        />
+      </div>
+
+      {/* Audio toggle button */}
+      <button
+        onClick={toggleMute}
+        className="fixed bottom-6 right-40 z-[9999] flex items-center gap-2 px-3 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.2)] rounded-lg text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] hover:text-[#c4b8a4] hover:border-[rgba(122,107,82,0.4)] transition-all shadow-lg"
+        title={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
+      >
+        {enabled ? "🔊" : "🔇"}
+        <span className="hidden sm:inline">{enabled ? "Sound On" : "Muted"}</span>
+      </button>
+    </>
   );
 }

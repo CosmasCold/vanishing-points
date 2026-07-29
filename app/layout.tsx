@@ -4,8 +4,10 @@ import "./globals.css";
 import GrainOverlay from "@/components/GrainOverlay";
 import FogEffect from "@/components/FogEffect";
 import CustomCursor from "@/components/CustomCursor";
+import BackgroundAudio from "@/components/BackgroundAudio";
 import CollaborativeCursors from "@/components/CollaborativeCursors";
 import PageTransition from "@/components/PageTransition";
+import ToastProvider from "@/components/ToastProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +32,7 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "Vanishing Points | An Atlas of the Forgotten",
   description:
-    "An interactive map of abandoned and haunted places worldwide. Explore the forgotten, the decayed, and the spectral.",
+    "An interactive map of abandoned and haunted places worldwide.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     title: "Vanishing Points",
@@ -53,8 +55,10 @@ export default function RootLayout({
         <GrainOverlay />
         <FogEffect />
         <CustomCursor />
+        <BackgroundAudio />
         <CollaborativeCursors />
         <PageTransition>{children}</PageTransition>
+        <ToastProvider />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { Bookmark } from "lucide-react";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { showToast } from "@/lib/toast";
 
 interface Props {
   place: { _id: string; name: string; slug: string };
@@ -12,12 +13,20 @@ export default function BookmarkButton({ place, variant = "light" }: Props) {
   const { isBookmarked, toggle } = useBookmarks();
   const active = isBookmarked(place._id);
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggle(place);
+    showToast(
+      active
+        ? `Removed ${place.name} from log`
+        : `Added ${place.name} to expedition log`,
+      "success"
+    );
+  };
+
   return (
     <button
-      onClick={(e) => {
-        e.stopPropagation();
-        toggle(place);
-      }}
+      onClick={handleClick}
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[10px] font-mono uppercase tracking-wider transition-all ${
         active
           ? variant === "light"

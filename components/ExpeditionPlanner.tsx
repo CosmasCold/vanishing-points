@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Route, X, Plus, Trash2, AlertTriangle, MapPin, Download, Clock, Globe, Shield } from "lucide-react";
 import { Place } from "@/types";
+import { showToast } from "@/lib/toast";
 
 interface Props {
   places: Place[];
@@ -80,6 +81,7 @@ export default function ExpeditionPlanner({ places, onClose, onFlyTo }: Props) {
   const refNum = `VPX-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
   const exportItinerary = () => {
+    showToast("Expedition briefing downloaded", "success");
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-GB", {
       day: "2-digit",

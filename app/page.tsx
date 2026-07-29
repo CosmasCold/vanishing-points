@@ -16,6 +16,7 @@ import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
+import MapSearch from "@/components/MapSearch";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -243,6 +244,12 @@ export default function Home() {
           </Link>
         </motion.nav>
       </header>
+
+      <MapSearch
+  places={places}
+  onSelect={setSelectedPlace}
+  onFlyTo={(coords) => setMapCenter(coords)}
+/>
 
       <motion.div
         initial={{ opacity: 0 }}

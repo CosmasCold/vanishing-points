@@ -26,10 +26,26 @@ export default function PlacePanel({ place, onClose }: Props) {
   const [historyDone, setHistoryDone] = useState(false);
   const { visit, isVisited } = useVisitedPlaces();
 
+  // Stamp passport
   useEffect(() => {
     visit({ _id: place._id, name: place.name, slug: place.slug });
   }, [place._id, place.name, place.slug, visit]);
 
+  // Increment live view counter
+  useEffect(() => {
+    fetch(`/api/places/${place.slug}/view`, { method: "POST" }).catch(() => {});
+  }, [place.slug]);
+
+  // Dispatch reactive audio layer
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("placeaudiochange", {
+        detail: { category: place.category, dangerLevel: place.dangerLevel },
+      })
+    );
+  }, [place.category, place.dangerLevel]);
+
+  // Close on Esc
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -48,7 +64,10 @@ export default function PlacePanel({ place, onClose }: Props) {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="drawer-shell w-full sm:w-[480px] lg:w-[520px]"
     >
-      <div className="absolute inset-0 -left-full w-full h-full sm:hidden" onClick={onClose} />
+      <div
+        className="absolute inset-0 -left-full w-full h-full sm:hidden"
+        onClick={onClose}
+      />
       <div className="drawer-rivet top" />
       <div className="drawer-rivet bottom" />
       <div className="drawer-handle" />
@@ -77,7 +96,11 @@ export default function PlacePanel({ place, onClose }: Props) {
                   </span>
                 </div>
               </div>
-              <button onClick={onClose} className="drawer-close flex-shrink-0 mt-1" aria-label="Close drawer">
+              <button
+                onClick={onClose}
+                className="drawer-close flex-shrink-0 mt-1"
+                aria-label="Close drawer"
+              >
                 <X size={14} strokeWidth={2.5} />
               </button>
             </div>
@@ -91,7 +114,9 @@ export default function PlacePanel({ place, onClose }: Props) {
                 {place.yearAbandoned && (
                   <div className="flex items-center gap-1.5">
                     <Calendar size={12} className="text-[#9a8a72]" />
-                    <span className="drawer-meta">Abandoned {place.yearAbandoned}</span>
+                    <span className="drawer-meta">
+                      Abandoned {place.yearAbandoned}
+                    </span>
                   </div>
                 )}
                 {place.yearAbandoned && (
@@ -100,26 +125,46 @@ export default function PlacePanel({ place, onClose }: Props) {
                 <div className="flex items-center gap-1.5">
                   <AlertTriangle size={12} className="text-[#9a8a72]" />
                   <span className="drawer-meta">Danger</span>
-                  <DangerIndicator level={place.dangerLevel} variant="parchment" />
+                  <DangerIndicator
+                    level={place.dangerLevel}
+                    variant="parchment"
+                  />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Eye size={12} className="text-[#9a8a72]" />
-                  <span className="drawer-meta">{place.viewCount || 0} views</span>
+                  <span className="drawer-meta">
+                    {place.viewCount || 0} views
+                  </span>
                 </div>
                 <div className="w-full">
-                  <WeatherStamp lat={place.coordinates[1]} lon={place.coordinates[0]} />
+                  <WeatherStamp
+                    lat={place.coordinates[1]}
+                    lon={place.coordinates[0]}
+                  />
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-5">
-                <ShareButton url={`/place/${place.slug}`} title={place.name} />
+                <ShareButton
+                  url={`/place/${place.slug}`}
+                  title={place.name}
+                />
                 <PrintButton />
-                <BookmarkButton place={{ _id: place._id, name: place.name, slug: place.slug }} variant="light" />
+                <BookmarkButton
+                  place={{
+                    _id: place._id,
+                    name: place.name,
+                    slug: place.slug,
+                  }}
+                  variant="light"
+                />
               </div>
 
               {place.photos && place.photos.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em]">Visual Evidence</h3>
+                  <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em]">
+                    Visual Evidence
+                  </h3>
                   <div className="specimen-frame rounded-lg overflow-hidden bg-[#c9b896]">
                     <PhotoGallery photos={place.photos} />
                   </div>
@@ -127,27 +172,42 @@ export default function PlacePanel({ place, onClose }: Props) {
               )}
 
               <div className="mb-6">
-                <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em]">Historical Record</h3>
+                <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em]">
+                  Historical Record
+                </h3>
                 <p className="drawer-body text-sm leading-relaxed">
-                  <TypewriterText text={place.history} speed={12} onComplete={() => setHistoryDone(true)} />
+                  <TypewriterText
+                    text={place.history}
+                    speed={12}
+                    onComplete={() => setHistoryDone(true)}
+                  />
                 </p>
               </div>
 
-              {place.hauntingReports && place.hauntingReports.length > 0 && historyDone && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-                  <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em] flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
-                    Spectral Accounts
-                  </h3>
-                  <div className="space-y-3">
-                    {place.hauntingReports.map((report, i) => (
-                      <p key={i} className="field-note drawer-body text-sm italic">
-                        <ClassifiedText text={report} />
-                      </p>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+              {place.hauntingReports &&
+                place.hauntingReports.length > 0 &&
+                historyDone && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <h3 className="drawer-meta mb-3 text-[10px] tracking-[0.15em] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
+                      Spectral Accounts
+                    </h3>
+                    <div className="space-y-3">
+                      {place.hauntingReports.map((report, i) => (
+                        <p
+                          key={i}
+                          className="field-note drawer-body text-sm italic"
+                        >
+                          <ClassifiedText text={report} />
+                        </p>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
 
               <MarginaliaComments placeSlug={place.slug} />
 
@@ -160,7 +220,9 @@ export default function PlacePanel({ place, onClose }: Props) {
                     <div
                       key={i}
                       className={`w-1.5 h-1.5 rounded-full ${
-                        i < place.dangerLevel ? "bg-[#7a3a2a]" : "border border-[#9a8a72] bg-transparent"
+                        i < place.dangerLevel
+                          ? "bg-[#7a3a2a]"
+                          : "border border-[#9a8a72] bg-transparent"
                       }`}
                     />
                   ))}

@@ -5,13 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Plus, Eye, Route, Navigation } from "lucide-react";
+import { List, Plus, Eye, Route, Navigation, BookOpen } from "lucide-react";
 import PlacePanel from "@/components/PlacePanel";
 import ExpeditionPlanner from "@/components/ExpeditionPlanner";
+import ExpeditionLog from "@/components/ExpeditionLog";
 import RandomDestination from "@/components/RandomDestination";
+import HelpOverlay from "@/components/HelpOverlay";
+import ShortcutHint from "@/components/ShortcutHint";
 import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
+import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -45,6 +49,8 @@ export default function Home() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>();
   const [nearest, setNearest] = useState<{
     place: Place;
@@ -52,6 +58,7 @@ export default function Home() {
   } | null>(null);
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
+  const { count: visitedCount } = useVisitedPlaces();
 
   useEffect(() => {
     fetch("/api/places")
@@ -133,11 +140,23 @@ export default function Home() {
           e.preventDefault();
           router.push("/submit");
           break;
+        case "l":
+          e.preventDefault();
+          setShowLog(true);
+          break;
+        case "?":
+          e.preventDefault();
+          setShowHelp((h) => !h);
+          break;
         case "escape":
-          if (selectedPlace) {
+          if (showHelp) {
+            setShowHelp(false);
+          } else if (selectedPlace) {
             setSelectedPlace(null);
           } else if (showPlanner) {
             setShowPlanner(false);
+          } else if (showLog) {
+            setShowLog(false);
           } else if (nearest) {
             setNearest(null);
           }
@@ -147,7 +166,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [places, findNearest, router, selectedPlace, showPlanner, nearest]);
+  }, [places, findNearest, router, selectedPlace, showPlanner, showLog, nearest, showHelp]);
 
   return (
     <main
@@ -182,6 +201,16 @@ export default function Home() {
           className="flex items-center gap-3 pointer-events-auto"
         >
           <RandomDestination places={places} onSelect={setSelectedPlace} />
+          <button
+            onClick={() => setShowLog(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+            title="Your Expedition Log (L)"
+          >
+            <BookOpen size={16} />
+            <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
+              Log{visitedCount > 0 ? ` (${visitedCount})` : ""}
+            </span>
+          </button>
           <button
             onClick={() => setShowPlanner(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
@@ -228,11 +257,11 @@ export default function Home() {
           </span>
           <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
           <span>
-            {places.filter((p) => p.category === "haunted").length} spectral
+            {places.filter((p: Place) => p.category === "haunted").length} spectral
           </span>
           <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
           <span>
-            {places.filter((p) => p.category === "abandoned").length} forsaken
+            {places.filter((p: Place) => p.category === "abandoned").length} forsaken
           </span>
         </div>
       </motion.div>
@@ -296,8 +325,8 @@ export default function Home() {
         loading={loading}
         center={mapCenter}
         anniversarySlugs={places
-          .filter((p) => isAnniversary(p.slug))
-          .map((p) => p.slug)}
+          .filter((p: Place) => isAnniversary(p.slug))
+          .map((p: Place) => p.slug)}
       />
 
       <AnimatePresence mode="wait">
@@ -319,6 +348,13 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
+      </AnimatePresence>
+
+      <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
+      <ShortcutHint onClick={() => setShowHelp(true)} />
     </main>
   );
 }

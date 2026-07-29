@@ -5,7 +5,6 @@ import GrainOverlay from "@/components/GrainOverlay";
 import FogEffect from "@/components/FogEffect";
 import CustomCursor from "@/components/CustomCursor";
 import CollaborativeCursors from "@/components/CollaborativeCursors";
-import HelpOverlay from "@/components/HelpOverlay";
 import PageTransition from "@/components/PageTransition";
 
 const inter = Inter({
@@ -55,7 +54,6 @@ export default function RootLayout({
         <FogEffect />
         <CustomCursor />
         <CollaborativeCursors />
-        <HelpOverlay />
         <PageTransition>{children}</PageTransition>
       </body>
     </html>

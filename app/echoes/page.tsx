@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Radio, Terminal, Play, Lock, Unlock } from "lucide-react";
+import { Radio, Terminal, Play, Lock } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
+import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 
 const LOGS = [
   {

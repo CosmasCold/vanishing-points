@@ -8,6 +8,7 @@ import BackgroundAudio from "@/components/BackgroundAudio";
 import CollaborativeCursors from "@/components/CollaborativeCursors";
 import PageTransition from "@/components/PageTransition";
 import ToastProvider from "@/components/ToastProvider";
+import CorruptionManager from "@/components/CorruptionManager";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -57,6 +58,7 @@ export default function RootLayout({
         <CustomCursor />
         <BackgroundAudio />
         <CollaborativeCursors />
+        <CorruptionManager />
         <PageTransition>{children}</PageTransition>
         <ToastProvider />
       </body>

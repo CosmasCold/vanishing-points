@@ -55,6 +55,13 @@ export default function MapContainer({
         (canvas as HTMLElement).style.filter =
           "sepia(0.5) contrast(1.05) brightness(0.85) saturate(0.8)";
       }
+
+      // Signal degradation zoom listener
+      map.current!.on("zoom", () => {
+        const zoom = map.current!.getZoom();
+        const intensity = Math.max(0, Math.min(1, (zoom - 10) / 6));
+        mapContainer.current?.style.setProperty("--degrade", intensity.toString());
+      });
     });
 
     return () => {
@@ -150,6 +157,16 @@ export default function MapContainer({
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Signal degradation overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-500"
+        style={{ opacity: "var(--degrade, 0)" }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,#0f0c09_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,20,0.15)_50%,transparent_50%)] bg-[length:100%_3px]" />
+      </div>
+
       {hovered && (
         <div
           className="absolute z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full"

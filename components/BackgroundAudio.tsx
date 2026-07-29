@@ -12,7 +12,6 @@ export default function BackgroundAudio() {
   const [enabled, setEnabled] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  // Start audio after first click anywhere (browser autoplay policy)
   useEffect(() => {
     const unlock = () => {
       if (!hasInteracted) {
@@ -31,7 +30,6 @@ export default function BackgroundAudio() {
     };
   }, [hasInteracted]);
 
-  // Listen for place changes
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as {
@@ -50,7 +48,6 @@ export default function BackgroundAudio() {
     return () => window.removeEventListener("placeaudiochange", handler);
   }, [enabled]);
 
-  // Crossfade
   useEffect(() => {
     if (!enabled) return;
 
@@ -114,13 +111,12 @@ export default function BackgroundAudio() {
         />
       </div>
 
-      {/* Audio toggle button */}
       <button
         onClick={toggleMute}
-        className="fixed bottom-6 right-40 z-[9999] flex items-center gap-2 px-3 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.2)] rounded-lg text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] hover:text-[#c4b8a4] hover:border-[rgba(122,107,82,0.4)] transition-all shadow-lg"
+        className="fixed bottom-16 right-6 z-[9999] flex items-center gap-2 px-3 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.2)] rounded-lg text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] hover:text-[#c4b8a4] hover:border-[rgba(122,107,82,0.4)] transition-all shadow-lg"
         title={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
       >
-        {enabled ? "🔊" : "🔇"}
+        <span className="text-sm leading-none">{enabled ? "🔊" : "🔇"}</span>
         <span className="hidden sm:inline">{enabled ? "Sound On" : "Muted"}</span>
       </button>
     </>

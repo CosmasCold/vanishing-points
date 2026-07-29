@@ -12,11 +12,12 @@ import ExpeditionLog from "@/components/ExpeditionLog";
 import RandomDestination from "@/components/RandomDestination";
 import HelpOverlay from "@/components/HelpOverlay";
 import ShortcutHint from "@/components/ShortcutHint";
+import MapSearch from "@/components/MapSearch";
+import TransmissionFeed from "@/components/TransmissionFeed";
 import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
-import MapSearch from "@/components/MapSearch";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -162,6 +163,12 @@ export default function Home() {
             setNearest(null);
           }
           break;
+          case "b":
+  if (e.shiftKey) {
+    e.preventDefault();
+    router.push("/echoes");
+  }
+  break;
       }
     };
 
@@ -245,33 +252,34 @@ export default function Home() {
         </motion.nav>
       </header>
 
-      <MapSearch
-  places={places}
-  onSelect={setSelectedPlace}
-  onFlyTo={(coords) => setMapCenter(coords)}
-/>
-
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-6 left-6 z-40 pointer-events-none"
-      >
-        <div className="flex items-center gap-4 text-[#9a8a72] font-mono text-xs">
-          <span className="flex items-center gap-1.5">
-            <Eye size={12} />
-            {places.length} documented
-          </span>
-          <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-          <span>
-            {places.filter((p: Place) => p.category === "haunted").length} spectral
-          </span>
-          <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-          <span>
-            {places.filter((p: Place) => p.category === "abandoned").length} forsaken
-          </span>
-        </div>
-      </motion.div>
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 1, duration: 1 }}
+  className="absolute bottom-6 left-6 z-40 pointer-events-none space-y-2"
+>
+  <div className="flex items-center gap-4 text-[#9a8a72] font-mono text-xs">
+    <span className="flex items-center gap-1.5">
+      <Eye size={12} />
+      {places.length} documented
+    </span>
+    <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
+    <span>
+      {places.filter((p) => p.category === "haunted").length} spectral
+    </span>
+    <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
+    <span>
+      {places.filter((p) => p.category === "abandoned").length} forsaken
+    </span>
+  </div>
+
+  <Link
+    href="/echoes"
+    className="inline-block text-[9px] font-mono text-[#5a4e42] hover:text-[#33ff00] transition-colors duration-500 tracking-[0.2em] uppercase opacity-30 hover:opacity-100 pointer-events-auto"
+  >
+    [ Anomalous Signal ]
+  </Link>
+</motion.div>
 
       {/* NEAR ME */}
       <div className="absolute top-24 right-6 z-40">
@@ -326,14 +334,20 @@ export default function Home() {
         )}
       </AnimatePresence>
 
+      <MapSearch
+        places={places}
+        onSelect={setSelectedPlace}
+        onFlyTo={(coords) => setMapCenter(coords)}
+      />
+
       <MapContainer
         places={places}
         onSelectPlace={setSelectedPlace}
         loading={loading}
         center={mapCenter}
         anniversarySlugs={places
-          .filter((p: Place) => isAnniversary(p.slug))
-          .map((p: Place) => p.slug)}
+          .filter((p) => isAnniversary(p.slug))
+          .map((p) => p.slug)}
       />
 
       <AnimatePresence mode="wait">
@@ -360,6 +374,7 @@ export default function Home() {
         {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
       </AnimatePresence>
 
+      <TransmissionFeed places={places} />
       <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
       <ShortcutHint onClick={() => setShowHelp(true)} />
     </main>

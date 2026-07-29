@@ -4,7 +4,6 @@ import "./globals.css";
 import GrainOverlay from "@/components/GrainOverlay";
 import FogEffect from "@/components/FogEffect";
 import CustomCursor from "@/components/CustomCursor";
-import BackgroundAudio from "@/components/BackgroundAudio";
 import CollaborativeCursors from "@/components/CollaborativeCursors";
 
 const inter = Inter({
@@ -53,7 +52,6 @@ export default function RootLayout({
         <GrainOverlay />
         <FogEffect />
         <CustomCursor />
-        <BackgroundAudio />
         <CollaborativeCursors />
         {children}
       </body>

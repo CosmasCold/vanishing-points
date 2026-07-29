@@ -33,6 +33,7 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vanishingpoints.space"),
   title: "Vanishing Points | An Atlas of the Forgotten",
   description:
     "An interactive map of abandoned and haunted places worldwide.",

@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect, { PlaceModel } from "@/lib/db";
-import { slugify } from "@/lib/utils";
-import { PlaceInput } from "@/types";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status") || "verified";
-    const category = searchParams.get("category");
-    const limit = parseInt(searchParams.get("limit") || "1000"); // Raised from 100
 
-    const query: any = { status };
-    if (category && category !== "all") query.category = category;
-
-    const places = await PlaceModel.find(query)
+    // Return approved places + legacy places without a status field
+    const places = await PlaceModel.find({
+      $or: [{ status: "approved" }, { status: { $exists: false } }],
+    })
       .sort({ submittedAt: -1 })
-      .limit(limit)
       .lean();
 
     return NextResponse.json({ places });
   } catch (error) {
+    console.error("GET /api/places error:", error);
     return NextResponse.json(
       { error: "Failed to fetch places" },
       { status: 500 }
@@ -28,49 +22,56 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    const body: PlaceInput = await request.json();
+    const body = await req.json();
 
-    if (!body.name || !body.coordinates || !body.history) {
+    // Validate required fields
+    if (!body.name || !body.coordinates || !body.address || !body.history) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
-    const recentSubmissions = await PlaceModel.countDocuments({
-      "contributor.email": body.contributorEmail,
-      submittedAt: { $gte: new Date(Date.now() - 3600000) },
-    });
+    // Generate slug if not provided
+    const slug =
+      body.slug ||
+      body.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
-    if (recentSubmissions >= 5) {
+    // Check for duplicate slug
+    const existing = await PlaceModel.findOne({ slug }).lean();
+    if (existing) {
       return NextResponse.json(
-        { message: "Rate limit exceeded. Try again later." },
-        { status: 429 }
+        { error: "A place with this name already exists" },
+        { status: 409 }
       );
     }
 
-    const slug = slugify(body.name);
-    const existing = await PlaceModel.findOne({ slug }).lean();
-    const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
-
     const place = await PlaceModel.create({
       ...body,
-      slug: finalSlug,
-      status: "pending",
+      slug,
+      status: "pending", // All user submissions start as pending
       viewCount: 0,
+      submittedAt: new Date(),
     });
 
     return NextResponse.json(
-      { message: "Place submitted for review", place },
+      {
+        place,
+        message:
+          "Your discovery has been logged in the archives. Awaiting verification.",
+      },
       { status: 201 }
     );
   } catch (error) {
+    console.error("POST /api/places error:", error);
     return NextResponse.json(
-      { message: "Failed to submit place" },
+      { error: "Failed to create place" },
       { status: 500 }
     );
   }

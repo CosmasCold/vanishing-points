@@ -1,75 +1,126 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+export interface PlaceAddress {
+  city: string;
+  country: string;
+  formatted?: string;
 }
 
-async function dbConnect() {
-  if (!MONGODB_URI) {
-    throw new Error("Please define MONGODB_URI in .env.local");
-  }
-
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(MONGODB_URI, {
-        bufferCommands: false,
-      })
-      .then((mongoose) => mongoose);
-  }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
+export interface PlaceDocument extends Document {
+  name: string;
+  slug: string;
+  category: "abandoned" | "haunted" | "both";
+  coordinates: [number, number]; // [longitude, latitude]
+  address: PlaceAddress;
+  yearAbandoned?: number;
+  history: string;
+  dangerLevel: number;
+  photos: string[];
+  hauntingReports?: string[];
+  viewCount: number;
+  status: "pending" | "approved" | "rejected";
+  contributorName?: string;
+  contributorEmail?: string;
+  submittedAt: Date;
 }
 
-const placeSchema = new mongoose.Schema(
+const PlaceSchema = new Schema<PlaceDocument>(
   {
     name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
+    slug: { type: String, required: true, unique: true, index: true },
     category: {
       type: String,
       enum: ["abandoned", "haunted", "both"],
       required: true,
     },
-    coordinates: { type: [Number], required: true },
-    address: {
-      city: String,
-      country: String,
-      formatted: String,
+    coordinates: {
+      type: [Number],
+      required: true,
+      index: "2dsphere",
     },
-    yearAbandoned: Number,
+    address: {
+      city: { type: String, required: true },
+      country: { type: String, required: true },
+      formatted: { type: String },
+    },
+    yearAbandoned: { type: Number },
     history: { type: String, required: true },
-    hauntingReports: [String],
-    dangerLevel: { type: Number, min: 1, max: 5, default: 1 },
-    photos: [String],
+    dangerLevel: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+      default: 1,
+    },
+    photos: { type: [String], default: [] },
+    hauntingReports: { type: [String], default: [] },
+    viewCount: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["verified", "pending", "rejected"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    contributor: {
-      name: String,
-      email: String,
-    },
+    contributorName: { type: String },
+    contributorEmail: { type: String },
     submittedAt: { type: Date, default: Date.now },
-    verifiedAt: Date,
-    verifiedBy: String,
-    viewCount: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
-// Indexes declared only here, not in the field definitions
-placeSchema.index({ coordinates: "2dsphere" });
-placeSchema.index({ status: 1, category: 1 });
-placeSchema.index({ slug: 1 });
+// Auto-generate slug from name if not provided
+PlaceSchema.pre("save", function (next) {
+  if (!this.slug && this.name) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+  next();
+});
 
-export const PlaceModel =
-  mongoose.models.Place || mongoose.model("Place", placeSchema);
+// Connection cache for serverless
+const MONGODB_URI = process.env.MONGODB_URI!;
+
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable");
+}
+
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect(): Promise<typeof mongoose> {
+  if (cached!.conn) {
+    return cached!.conn;
+  }
+
+  if (!cached!.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+    cached!.promise = mongoose.connect(MONGODB_URI, opts);
+  }
+
+  cached!.conn = await cached!.promise;
+  return cached!.conn;
+}
+
+export const PlaceModel: Model<PlaceDocument> =
+  mongoose.models.Place || mongoose.model<PlaceDocument>("Place", PlaceSchema);
 
 export default dbConnect;

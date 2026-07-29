@@ -75,7 +75,7 @@ export default function ExpeditionPlanner({ places, onClose, onFlyTo }: Props) {
     ? (selected.reduce((s, p) => s + p.dangerLevel, 0) / selected.length).toFixed(1)
     : "0";
   const maxDanger = selected.length ? Math.max(...selected.map((p) => p.dangerLevel)) : 0;
-  const countries = [...new Set(selected.map((p) => p.address.country))];
+  const countries = Array.from(new Set(selected.map((p) => p.address.country)));
   const highDangerCount = selected.filter((p) => p.dangerLevel >= 4).length;
   const refNum = `VPX-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 

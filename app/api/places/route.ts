@@ -11,14 +11,15 @@ export async function GET() {
 
     // Show EVERYTHING except explicitly rejected
     const places = await PlaceModel.find({
-      $or: [
-        { status: "approved" },
-        { status: "pending" },
-        { status: { $exists: false } },
-        { status: null },
-        { status: "" },
-      ],
-    })
+  $or: [
+    { status: "approved" },
+    { status: "verified" },
+    { status: "pending" },
+    { status: { $exists: false } },
+    { status: null },
+    { status: "" },
+  ],
+})
       .sort({ submittedAt: -1 })
       .lean();
 

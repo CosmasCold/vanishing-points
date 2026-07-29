@@ -4,9 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Map as MapIcon, List, Plus, Eye, Route } from "lucide-react";
+import { List, Plus, Eye, Route, Navigation } from "lucide-react";
 import PlacePanel from "@/components/PlacePanel";
-import NearMeButton from "@/components/NearMeButton";
 import ExpeditionPlanner from "@/components/ExpeditionPlanner";
 import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
@@ -23,12 +22,25 @@ const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ),
 });
 
+function haversine([lon1, lat1]: [number, number], [lon2, lat2]: [number, number]) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function Home() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>();
+  const [nearest, setNearest] = useState<{ place: Place; distance: number } | null>(null);
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
 
@@ -41,6 +53,36 @@ export default function Home() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const findNearest = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const user: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+
+        const result = places.reduce<{ place: Place | null; distance: number }>(
+          (best, place) => {
+            const d = haversine(user, place.coordinates);
+            if (d < best.distance) {
+              return { place, distance: d };
+            }
+            return best;
+          },
+          { place: null, distance: Infinity }
+        );
+
+        if (result.place) {
+          setNearest({ place: result.place, distance: result.distance });
+          setMapCenter(result.place.coordinates);
+        }
+      },
+      () => alert("Location access denied or unavailable"),
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  };
 
   return (
     <main
@@ -122,18 +164,63 @@ export default function Home() {
         </div>
       </motion.div>
 
+      {/* NEAR ME BUTTON */}
+      <div className="absolute top-24 right-6 z-40">
+        <button
+          onClick={findNearest}
+          className="flex items-center gap-2 px-4 py-2 bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all text-sm shadow-lg"
+          title="Find nearest ruin"
+        >
+          <Navigation size={14} />
+          <span className="font-mono text-xs uppercase tracking-wider">Near Me</span>
+        </button>
+      </div>
+
+      {/* NEAREST RESULT BANNER */}
+      <AnimatePresence>
+        {nearest && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg px-5 py-3 shadow-xl flex items-center gap-4"
+          >
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                Nearest documented ruin
+              </p>
+              <p className="font-cinzel text-sm text-[#ddd0bc]">{nearest.place.name}</p>
+              <p className="text-[10px] font-mono text-[#7a6e5e]">
+                {Math.round(nearest.distance)} km away
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedPlace(nearest.place);
+                setNearest(null);
+              }}
+              className="px-3 py-1.5 bg-[rgba(122,107,82,0.15)] border border-[rgba(122,107,82,0.25)] rounded text-[10px] font-mono uppercase text-[#c4b8a4] hover:bg-[rgba(122,107,82,0.25)] transition-colors"
+            >
+              Open
+            </button>
+            <button
+              onClick={() => setNearest(null)}
+              className="text-[#9a8a72] hover:text-[#ddd0bc] text-lg leading-none"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <MapContainer
         places={places}
         onSelectPlace={setSelectedPlace}
         loading={loading}
         center={mapCenter}
-        anniversarySlugs={places.filter((p) => isAnniversary(p.slug)).map((p) => p.slug)}
-      />
-
-      <NearMeButton
-        places={places}
-        onCenter={(coords) => setMapCenter(coords)}
-        onSelect={setSelectedPlace}
+        anniversarySlugs={places
+          .filter((p) => isAnniversary(p.slug))
+          .map((p) => p.slug)}
       />
 
       <AnimatePresence mode="wait">
@@ -148,7 +235,11 @@ export default function Home() {
 
       <AnimatePresence>
         {showPlanner && (
-          <ExpeditionPlanner places={places} onClose={() => setShowPlanner(false)} />
+          <ExpeditionPlanner
+            places={places}
+            onClose={() => setShowPlanner(false)}
+            onFlyTo={(coords) => setMapCenter(coords)}
+          />
         )}
       </AnimatePresence>
     </main>

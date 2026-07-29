@@ -10,6 +10,8 @@ import TypewriterText from "@/components/TypewriterText";
 import ClassifiedText from "@/components/ClassifiedText";
 import MarginaliaComments from "@/components/MarginaliaComments";
 import { Place } from "@/types";
+import ShareButton from "@/components/ShareButton";
+import PrintButton from "@/components/PrintButton";
 
 interface Props {
   params: { slug: string };
@@ -97,6 +99,8 @@ export default async function PlacePage({ params }: Props) {
                   {place.viewCount || 0} views
                 </span>
               </div>
+              <ShareButton url={`/place/${place.slug}`} title={place.name} />
+              <PrintButton />
             </div>
 
             {place.photos && place.photos.length > 0 && (

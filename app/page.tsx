@@ -14,6 +14,7 @@ import HelpOverlay from "@/components/HelpOverlay";
 import ShortcutHint from "@/components/ShortcutHint";
 import MapSearch from "@/components/MapSearch";
 import TransmissionFeed from "@/components/TransmissionFeed";
+import NumbersStation from "@/components/NumbersStation";
 import { Place } from "@/types";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useSeasonalHauntings } from "@/hooks/useSeasonalHauntings";
@@ -61,7 +62,7 @@ export default function Home() {
   } | null>(null);
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
-  const { count: visitedCount } = useVisitedPlaces();
+  const { count: visitedCount, visitGhost } = useVisitedPlaces();
 
   useEffect(() => {
     fetch("/api/places")
@@ -112,6 +113,10 @@ export default function Home() {
     accumulateDust(3);
     setSelectedPlace(place);
   }, []);
+
+  const handleGhostCapture = useCallback((ghost: { name: string; slug: string; coords: string }) => {
+    visitGhost(ghost);
+  }, [visitGhost]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -348,6 +353,7 @@ export default function Home() {
         anniversarySlugs={places
           .filter((p) => isAnniversary(p.slug))
           .map((p) => p.slug)}
+        onGhostCapture={handleGhostCapture}
       />
 
       <AnimatePresence mode="wait">
@@ -374,6 +380,7 @@ export default function Home() {
         {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
       </AnimatePresence>
 
+      <NumbersStation />
       <TransmissionFeed places={places} />
       <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
       <ShortcutHint onClick={() => setShowHelp(true)} />

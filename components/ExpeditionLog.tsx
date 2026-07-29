@@ -69,7 +69,7 @@ export default function ExpeditionLog({ onClose }: Props) {
                       <p className="text-sm text-[#3d3228] font-cinzel truncate">{v.name}</p>
                       <p className="text-[10px] font-mono text-[#9a8a72] flex items-center gap-1">
                         <Calendar size={9} />
-                        {new Date(v.visitedAt).toLocaleDateString("en-GB", {
+                        {new Date(v.addedAt).toLocaleDateString("en-GB", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",

@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+const KEY = "vp-expedition-log";
+
 export interface VisitRecord {
   _id: string;
   name: string;
   slug: string;
-  visitedAt: string;
+  addedAt: string;
+  isGhost?: boolean;
+  coords?: string;
 }
-
-const KEY = "vp-expedition-log";
 
 export function useVisitedPlaces() {
   const [visited, setVisited] = useState<VisitRecord[]>([]);
@@ -23,12 +25,38 @@ export function useVisitedPlaces() {
     setLoaded(true);
   }, []);
 
-  const visit = useCallback((place: { _id: string; name: string; slug: string }) => {
+  const save = useCallback((next: VisitRecord[]) => {
+    setVisited(next);
+    localStorage.setItem(KEY, JSON.stringify(next));
+  }, []);
+
+  const visit = useCallback(
+    (place: { _id: string; name: string; slug: string }) => {
+      setVisited((prev) => {
+        if (prev.some((b) => b._id === place._id)) return prev;
+        const next = [
+          ...prev,
+          { _id: place._id, name: place.name, slug: place.slug, addedAt: new Date().toISOString() },
+        ];
+        localStorage.setItem(KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    []
+  );
+
+  const visitGhost = useCallback((ghost: { name: string; slug: string; coords: string }) => {
     setVisited((prev) => {
-      if (prev.some((v) => v._id === place._id)) return prev;
       const next = [
         ...prev,
-        { _id: place._id, name: place.name, slug: place.slug, visitedAt: new Date().toISOString() },
+        {
+          _id: `ghost-${Date.now()}`,
+          name: ghost.name,
+          slug: ghost.slug,
+          addedAt: new Date().toISOString(),
+          isGhost: true,
+          coords: ghost.coords,
+        },
       ];
       localStorage.setItem(KEY, JSON.stringify(next));
       return next;
@@ -45,5 +73,5 @@ export function useVisitedPlaces() {
     setVisited([]);
   }, []);
 
-  return { visited, visit, isVisited, clearLog, loaded, count: visited.length };
+  return { visited, visit, visitGhost, isVisited, clearLog, loaded, count: visited.length };
 }

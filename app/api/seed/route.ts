@@ -1592,7 +1592,7 @@ export async function GET(request: NextRequest) {
       status: "verified" as const,
       contributor: {
         name: "The Archivist",
-        email: "archivist@vanishingpoints.app",
+        email: "coldcosmas@gmail.com",
       },
       viewCount: Math.floor(Math.random() * 5000) + 100,
       submittedAt: new Date(),

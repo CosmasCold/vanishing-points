@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import dbConnect, { PlaceModel } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 async function checkAuth() {
   const cookieStore = await cookies();
-  if (cookieStore.get("vp_admin")?.value !== "1") {
-    return false;
-  }
-  return true;
+  return cookieStore.get("vp_admin")?.value === "1";
 }
 
 export async function GET() {

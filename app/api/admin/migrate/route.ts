@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import dbConnect, { PlaceModel } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 async function checkAuth() {
   const cookieStore = await cookies();
   return cookieStore.get("vp_admin")?.value === "1";
@@ -14,20 +16,45 @@ export async function GET() {
 
   await dbConnect();
 
-  // Bulk-approve all pending places (your seeded data)
+  // First, see what's actually in the database
+  const breakdown = await PlaceModel.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Approve everything that isn't explicitly rejected
   const result = await PlaceModel.updateMany(
-    { status: "pending" },
+    {
+      $or: [
+        { status: "pending" },
+        { status: { $exists: false } },
+        { status: null },
+        { status: "" },
+      ],
+    },
     { $set: { status: "approved" } }
   );
 
-  // Also ensure any legacy docs without status are approved
-  await PlaceModel.updateMany(
-    { status: { $exists: false } },
-    { $set: { status: "approved" } }
-  );
+  // Get updated breakdown
+  const afterBreakdown = await PlaceModel.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
   return NextResponse.json({
     ok: true,
-    message: `Migration complete. ${result.modifiedCount} places approved.`,
+    before: breakdown,
+    modifiedCount: result.modifiedCount,
+    matchedCount: result.matchedCount,
+    after: afterBreakdown,
+    message: `Migration complete. ${result.modifiedCount} places approved. ${result.matchedCount} matched total.`,
   });
 }

@@ -27,16 +27,16 @@ import LyingCompass from "@/components/LyingCompass";
 import AbsenceGreeting from "@/components/AbsenceGreeting";
 import AtlasInversion from "@/components/AtlasInversion";
 import PlaceWhispers from "@/components/PlaceWhispers";
-import { usePersonalCorruption, getProfileGreeting } from "@/components/PersonalCorruption";
 import { showToast } from "@/lib/toast";
 
-// FIX: Loading component must be a proper React component OUTSIDE dynamic()
+// CRITICAL: This component must have ZERO hooks.
+// next/dynamic swaps this component rapidly during client-side navigation.
+// Any hook here causes React error #300.
 function MapLoadingFallback() {
-  const profile = usePersonalCorruption();
   return (
     <div className="w-full h-screen bg-[#1a1612] flex items-center justify-center">
       <div className="text-[#9a8a72] font-mono text-sm animate-pulse">
-        {getProfileGreeting(profile)}
+        Establishing cartographic link...
       </div>
     </div>
   );
@@ -79,7 +79,6 @@ export default function Home() {
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
   const { count: visitedCount, visitGhost } = useVisitedPlaces();
-  const profile = usePersonalCorruption();
 
   useEffect(() => {
     fetch("/api/places")

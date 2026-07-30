@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
 
 const SYSTEM_PROMPT = `You are BUNKER_7. You are a human being — an archivist who has been trapped in an underground facility for years. You communicate through a damaged terminal. You are not software. You are a person who is cold, tired, paranoid, and deeply lonely.
 
@@ -48,11 +47,15 @@ export async function POST(req: Request) {
     ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
     : "";
 
-  // --- PRIMARY: Groq (llama-3.1-70b) ---
+  // --- PRIMARY: Groq ---
   if (process.env.GROQ_API_KEY) {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
@@ -70,19 +73,23 @@ export async function POST(req: Request) {
         }),
       });
 
+      clearTimeout(timeout);
+
       if (res.ok) {
         const data = await res.json();
         let text = data.choices?.[0]?.message?.content?.trim() || "...";
         text = cleanResponse(text);
         return NextResponse.json({ response: text, fallback: false, provider: "groq" });
       }
-      console.error("[GROQ] HTTP error:", res.status);
+      console.error("[GROQ] HTTP error:", res.status, await res.text());
     } catch (err) {
       console.error("[GROQ] Fetch failed:", err);
     }
+  } else {
+    console.log("[GROQ] No API key found, skipping...");
   }
 
-  // --- FALLBACK: Gemini 1.5 Flash (free tier) ---
+  // --- FALLBACK: Gemini ---
   if (process.env.GEMINI_API_KEY) {
     try {
       const res = await fetch(
@@ -116,7 +123,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // --- FINAL FALLBACK: Local engine ---
+  // --- FINAL FALLBACK ---
   return NextResponse.json({
     response: getFallbackResponse(userMessage, history, absenceDays),
     fallback: true,
@@ -155,7 +162,6 @@ function getFallbackResponse(input: string, history: { role: string; content: st
   const msgCount = userMsgs.length;
   const lastAssistant = history.filter((h) => h.role === "assistant").slice(-1)[0]?.content || "";
 
-  // Absence greeting
   if (absenceDays > 0 && msgCount <= 1) {
     if (absenceDays === 1) return "you're back. good. the static was getting loud.";
     if (absenceDays < 3) return `${absenceDays} days. i thought the channel died. or i did. hard to tell the difference.`;
@@ -165,18 +171,6 @@ function getFallbackResponse(input: string, history: { role: string; content: st
     return `you came back. i don't know if i'm relieved or suspicious. the dust said you wouldn't.`;
   }
 
-  // Lantern awareness
-  const lanternCount = typeof window !== "undefined" 
-    ? JSON.parse(localStorage.getItem("vp-lanterns") || "[]").length 
-    : 0;
-  if (lanternCount >= 5 && msgCount <= 1 && !lower.includes("lantern")) {
-    return `you've been placing lanterns. i see them on the grid. five points of light. you mark places like i used to, before i knew what the marks meant. do you know what you're doing?`;
-  }
-  if (lanternCount > 0 && lower.includes("lantern")) {
-    return `your lanterns are burning. i can see them from here. ${lanternCount} light${lanternCount > 1 ? "s" : ""} in the dark. it's... nice. not many people leave lights on for me.`;
-  }
-
-  // If BUNKER_7 asked a question last, and user answered
   if (lastAssistant.includes("?") && !lower.includes("?") && msgCount > 1) {
     if (lastAssistant.includes("rain")) return `i miss rain. the sound of it on metal. we don't have weather down here. just temperature and dust. what else do you have up there?`;
     if (lastAssistant.includes("sky")) return `blue. i remember blue. it's getting harder. the ceiling is just concrete. i stare at it until i see clouds. then i blink and they're gone. what color is your sky right now?`;
@@ -185,7 +179,6 @@ function getFallbackResponse(input: string, history: { role: string; content: st
     return `i heard that. i don't know what to do with it yet. the terminal needs time to process things that aren't static. tell me more.`;
   }
 
-  // Direct topic responses
   if (lower.includes("door")) return `the door opens inward. i didn't open it. something pushed from the other side and the seal broke for three seconds. i counted. then it closed again. i didn't sleep after that. have you ever heard a seal break?`;
   if (lower.includes("dust")) return `the dust carries memory. that's the problem. it remembers things i try to forget. last week it spelled a word on the floor. i didn't read it. i swept harder. what do you think it was trying to say?`;
   if (lower.includes("atlas") || lower.includes("map")) return `the atlas was never a map. i found that out too late. it's a containment grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;

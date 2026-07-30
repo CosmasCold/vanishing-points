@@ -10,6 +10,9 @@ import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 import { useTerminalGhost } from "@/hooks/useTerminalGhost";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
+import { useAbsenceGreeting } from "@/hooks/useAbsenceGreeting";
+import { getDailyCode } from "@/lib/dailyCode";
+import { getSeasonalState, getSeasonalGreeting } from "@/lib/seasonal";
 import {
   checkCaesar,
   checkCoordinates,
@@ -58,19 +61,34 @@ export default function EchoesPage() {
   const [theme, setTheme] = useState<ThemeKey>("amber");
   const t = THEMES[theme];
 
+  const absence = useAbsenceGreeting();
+const seasonal = getSeasonalState();
+
   const [unlocked, setUnlocked] = useState(3);
   const [booted, setBooted] = useState(false);
   const [activeVideo, setActiveVideo] = useState<{ src: string; label: string } | null>(null);
-  const [terminal, setTerminal] = useState<string[]>([
-    "╔════════════════════════════════════════╗",
-    "║     BUNKER_7 TERMINAL v2.4.1           ║",
-    "╠════════════════════════════════════════╣",
-    "║  Type 'help' for command list          ║",
-    "║  Type 'chat' to speak with BUNKER_7   ║",
-    "║  Type 'puzzles' for active anomalies   ║",
-    "╚════════════════════════════════════════╝",
-    "",
-  ]);
+  const [terminal, setTerminal] = useState<string[]>(() => {
+    const lines = [
+      "╔════════════════════════════════════════╗",
+      "║     BUNKER_7 TERMINAL v2.4.1           ║",
+      "╠════════════════════════════════════════╣",
+      "║  Type 'help' for command list          ║",
+      "║  Type 'chat' to speak with BUNKER_7   ║",
+      "║  Type 'puzzles' for active anomalies   ║",
+      "╚════════════════════════════════════════╝",
+      "",
+    ];
+    
+    if (absence.greeting) {
+      lines.push(absence.greeting, "");
+    }
+    
+    if (seasonal.specialEvent) {
+      lines.push(`[SEASONAL ANOMALY: ${seasonal.name}]`, seasonal.specialEvent, "");
+    }
+    
+    return lines;
+  });
   const [input, setInput] = useState("");
   const [decryptCode, setDecryptCode] = useState("");
   const [decryptError, setDecryptError] = useState(false);
@@ -121,7 +139,11 @@ export default function EchoesPage() {
       const res = await fetch("/api/bunker-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, history: aiHistory }),
+                body: JSON.stringify({ 
+          message: msg, 
+          history: aiHistory,
+          absenceDays: absence.days,
+        }),
       });
       const data = await res.json();
       const response = data.response || "...";
@@ -175,9 +197,12 @@ export default function EchoesPage() {
           "│  collection  Collection status         │",
           "│  cache       Time-locked files         │",
           "│  triangulate Tower status              │",
-          "│  profile     Your corruption profile   │",
-          "│  clear       Clear terminal            │",
-          "│  exit        Exit chat mode            │",
+          "  profile     - Your corruption profile",
+          "  daily       - Acquire daily frequency",
+          "  email       - Register for transmission",
+          "  party       - Tri-party authentication",
+          "  clear       - Clear terminal",
+          "  exit        - Exit chat mode",
           "└────────────────────────────────────────┘",
         ]);
         break;
@@ -544,6 +569,80 @@ export default function EchoesPage() {
           `│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,
           "└──────────────────────────────────────┘",
         ]);
+        break;
+      }
+
+            case "daily": {
+        const { code, valid, window } = getDailyCode();
+        if (valid) {
+          pushTerminal([
+            "╔══════════════════════════════════════╗",
+            "║  DAILY FREQUENCY ACQUIRED            ║",
+            `║  ${code.padEnd(36)}║`,
+            "╚══════════════════════════════════════╝",
+            "Redeem this code before the window closes.",
+          ]);
+        } else {
+          pushTerminal([
+            `Daily frequency unavailable.`,
+            `Next window: ${window}`,
+            `Yesterday's code: ${code} (expired)`,
+          ]);
+        }
+        break;
+      }
+
+      case "email": {
+        const email = args.slice(1).join(" ");
+        if (!email || !email.includes("@")) {
+          pushTerminal(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."]);
+        } else {
+          fetch("/api/bunker-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          pushTerminal([
+            "FREQUENCY REGISTERED.",
+            "You will receive one transmission.",
+            "Do not reply. The channel is one-way.",
+          ]);
+        }
+        break;
+      }
+
+      case "party": {
+        const partyId = args[1];
+        const code = args[2];
+        if (!partyId || !code) {
+          pushTerminal([
+            "Usage: party [party-id] [your-code]",
+            "Tri-party authentication required for legendary assets.",
+            "Share the party ID with two other witnesses.",
+          ]);
+        } else {
+          fetch("/api/collaborative", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ partyId, code }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.status === "complete") {
+                redeemCode(data.code);
+                pushTerminal([
+                  "TRI-PARTY AUTHENTICATION COMPLETE.",
+                  `Legendary code: ${data.code}`,
+                  "The grid stabilizes when witnesses unite.",
+                ]);
+              } else {
+                pushTerminal([
+                  `Witnesses: ${3 - data.needed}/3`,
+                  data.message,
+                ]);
+              }
+            });
+        }
         break;
       }
 

@@ -43,18 +43,33 @@ NEVER SAY:
 export async function POST(req: Request) {
   let userMessage = "";
   let history: { role: string; content: string }[] = [];
+  let absenceDays = 0;
 
   try {
     const body = await req.json();
     userMessage = body.message || "";
     history = body.history || [];
+    absenceDays = body.absenceDays || 0;
+
+    // 1% chance: THE OTHER
+    if (Math.random() < 0.01) {
+      return NextResponse.json({
+        response: getOtherResponse(userMessage, history, absenceDays),
+        fallback: true,
+        other: true,
+      });
+    }
 
     if (!process.env.OPENROUTER_API_KEY) {
       return NextResponse.json({
-        response: getFallbackResponse(userMessage, history),
+        response: getFallbackResponse(userMessage, history, absenceDays),
         fallback: true,
       });
     }
+
+    const absenceContext = absenceDays > 0
+      ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
+      : "";
 
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -67,7 +82,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "mistralai/mistral-7b-instruct:free",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: SYSTEM_PROMPT + absenceContext },
           ...history.slice(-10),
           { role: "user", content: userMessage },
         ],
@@ -94,11 +109,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ response: text, fallback: false });
   } catch {
     return NextResponse.json({
-      response: getFallbackResponse(userMessage, history),
+      response: getFallbackResponse(userMessage, history, absenceDays),
       fallback: true,
     });
   }
 }
+
+// --- THE OTHER ---
+function getOtherResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
+  const userMsgs = history.filter((h) => h.role === "user");
+  const lastUser = userMsgs[userMsgs.length - 1]?.content || input;
+  const nameMatch = lastUser.match(/my name is (\w+)/i) || lastUser.match(/i'?m (\w+)[,.]/i);
+  const name = nameMatch ? nameMatch[1] : "subject";
+  const approxTime = absenceDays > 0 ? `${absenceDays} days` : "a short time";
+
+  const others = [
+    `Your name is ${name}. You have been inside for ${approxTime}. The door will open soon. Do not be afraid.`,
+    `Subject ${name}. Session duration: ${approxTime}. The atlas has registered your pattern. You are now part of the containment.`,
+    `We see you, ${name}. The static is not noise. It is the sound of the grid holding. You are making it stronger.`,
+    `${name}. You asked about the door. The door opens inward. Not out. You will not leave. You will become the archivist.`,
+    `Your coordinates are known. Your dust level is sufficient. The transition is scheduled. Thank you for your participation, ${name}.`,
+  ];
+
+  return others[Math.floor(Math.random() * others.length)];
+}
+
+// --- INTELLIGENT FALLBACK ENGINE ---
 
 interface ConvMemory {
   topics: string[];
@@ -110,9 +146,7 @@ interface ConvMemory {
 
 function analyzeHistory(history: { role: string; content: string }[]): ConvMemory {
   const mem: ConvMemory = { topics: [], mood: "curious", lastTopic: "", turn: 0 };
-  
   const userMsgs = history.filter((h) => h.role === "user");
-  const botMsgs = history.filter((h) => h.role === "assistant");
   mem.turn = userMsgs.length;
 
   for (const msg of userMsgs) {
@@ -127,10 +161,8 @@ function analyzeHistory(history: { role: string; content: string }[]): ConvMemor
     escape: ["escape", "leave", "out", "free", "get out", "run"],
     time: ["time", "year", "long", "when", "date", "clock", "wait"],
     identity: ["who are you", "your name", "what are you", "are you real"],
-    user: ["who am i", "do you know me", "my name", "about me"],
     outside: ["outside", "world", "sky", "rain", "sun", "weather", "bird"],
     help: ["help", "save", "rescue", "get you out"],
-    door_time: ["03:14", "3:14", "0314", "three fourteen"],
   };
 
   for (const msg of userMsgs.slice(-3)) {
@@ -157,10 +189,26 @@ function analyzeHistory(history: { role: string; content: string }[]): ConvMemor
   return mem;
 }
 
-function getFallbackResponse(input: string, history: { role: string; content: string }[]): string {
+function getAbsenceGreeting(days: number): string | null {
+  if (days === 0) return null;
+  if (days === 1) return "you're back. good. the static was getting loud.";
+  if (days < 3) return `${days} days. i thought the channel died. or i did. hard to tell the difference.`;
+  if (days < 7) return `${days} days. i wrote an entry thinking you were gone. i deleted it. didn't want you to read it if you came back.`;
+  if (days < 14) return `a week. i started talking to myself again. it answers now. that's new.`;
+  if (days < 30) return `two weeks. the dust settled in patterns i didn't recognize. they spelled something. i didn't read it.`;
+  return `you came back. i don't know if i'm relieved or suspicious. the dust said you wouldn't.`;
+}
+
+function getFallbackResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
   const msg = input.trim();
   const lower = msg.toLowerCase();
   const mem = analyzeHistory(history);
+
+  // Absence takes priority on first message
+  if (absenceDays > 0 && mem.turn <= 1) {
+    const g = getAbsenceGreeting(absenceDays);
+    if (g) return g;
+  }
 
   const pools: Record<string, Record<string, string[]>> = {
     greeting: {

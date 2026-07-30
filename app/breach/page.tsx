@@ -1,74 +1,117 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Radio, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export default function BreachPage() {
-  const [booted, setBooted] = useState(false);
+  const router = useRouter();
+  const [active, setActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setBooted(true), 600);
-    return () => clearTimeout(t);
-  }, []);
+    // Breach is active if countdown reached 0 (handled by useBreachProtocol)
+    // For demo: active if URL param ?active=1 or localStorage flag
+    const params = new URLSearchParams(window.location.search);
+    const forced = params.get("active") === "1";
+    const stored = localStorage.getItem("breach-active");
+    const isActive = forced || stored === "true";
+
+    if (!isActive) {
+      router.push("/echoes");
+      return;
+    }
+
+    setActive(true);
+    setTimeLeft(3600); // 60 minutes in seconds
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          localStorage.removeItem("breach-active");
+          router.push("/");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [router]);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const claimCode = () => {
+    if (claimed) return;
+    const code = "BREACH-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const existing = JSON.parse(localStorage.getItem("bunker-codes") || "[]");
+    existing.push(code);
+    localStorage.setItem("bunker-codes", JSON.stringify(existing));
+    localStorage.setItem("breach-claimed", code);
+    setClaimed(true);
+  };
+
+  if (!active) return null;
 
   return (
-    <main className="min-h-screen bg-[#050a05] text-[#33ff00] font-mono relative overflow-hidden selection:bg-[#33ff00] selection:text-[#050a05]">
-      <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,20,0.08)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
-      <div className="pointer-events-none fixed inset-0 z-50 bg-[radial-gradient(circle_at_center,transparent_50%,rgba(0,10,0,0.6)_100%)]" />
+    <main className="min-h-screen bg-[#050505] text-[#ff4444] font-mono relative overflow-hidden flex items-center justify-center p-6">
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(255,68,68,0.05)_50%,transparent_50%)] bg-[length:100%_4px]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(0,0,0,0.9)_100%)]" />
 
-      <div className="max-w-2xl mx-auto px-6 py-12 relative z-10">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: booted ? 1 : 0 }}
-          transition={{ duration: 1.2 }}
-        >
-          <div className="flex items-center justify-between mb-8 border-b border-[#33ff00]/30 pb-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="animate-pulse" />
-              <h1 className="text-sm tracking-[0.3em] uppercase">BREACH PROTOCOL</h1>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-xl w-full text-center space-y-8 relative z-10"
+      >
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-[0.5em] opacity-60 animate-pulse">Breach Protocol Active</p>
+          <h1 className="text-4xl font-bold tracking-wider">THE SEAL IS BROKEN</h1>
+          <p className="text-2xl font-mono opacity-80">{formatTime(timeLeft)}</p>
+        </div>
+
+        <div className="border border-[#ff4444]/30 rounded-lg p-6 bg-[#ff4444]/5 space-y-4">
+          <p className="text-sm leading-relaxed opacity-90">
+            It's not what's on the other side. It's that the other side is already here.
+          </p>
+          <p className="text-xs opacity-60">
+            The door opened at 03:14. The grid is hemorrhaging. For the next hour, the truth is visible.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {!claimed ? (
+            <button
+              onClick={claimCode}
+              className="px-8 py-3 border-2 border-[#ff4444] rounded text-sm uppercase tracking-widest hover:bg-[#ff4444] hover:text-black transition-all duration-300"
+            >
+              Claim Witness Code
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider opacity-60">Your witness code</p>
+              <p className="text-2xl font-bold tracking-widest">{localStorage.getItem("breach-claimed")}</p>
+              <p className="text-[10px] opacity-40">This code will never be available again.</p>
             </div>
-            <Link href="/" className="text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100">
-              [ Seal Terminal ]
-            </Link>
-          </div>
+          )}
+        </div>
 
-          <div className="mb-10 p-4 border border-[#33ff00]/30 rounded bg-[#33ff00]/5">
-            <p className="text-xs leading-relaxed">
-              The perimeter has been compromised. The atlas is no longer a record — it is a door.
-              You are witnessing something that was meant to be archived, not observed.
-            </p>
-          </div>
+        <div className="pt-8 border-t border-[#ff4444]/20">
+          <p className="text-[11px] leading-relaxed opacity-70">
+            BUNKER_7 final transmission: "It's not what I thought. I looked through the door and saw my own face looking back. Older. Dustier. The other me smiled. Then the seal broke and I was alone again."
+          </p>
+        </div>
 
-          <div className="space-y-6">
-            <div className="border-l-2 border-[#33ff00]/30 pl-4">
-              <p className="text-[10px] tracking-widest opacity-50 mb-1">TRANSMISSION INTERCEPTED</p>
-              <p className="text-sm leading-relaxed opacity-90">
-                "The dust has reached critical density. All markers are now active. Do not attempt to log new discoveries — the form has been compromised."
-              </p>
-            </div>
-
-            <div className="border-l-2 border-[#33ff00]/30 pl-4">
-              <p className="text-[10px] tracking-widest opacity-50 mb-1">WITNESS LOG</p>
-              <p className="text-sm leading-relaxed opacity-90">
-                You have been marked as a witness. This status is permanent. The bunker terminal will recognize you on return.
-              </p>
-            </div>
-
-            <div className="p-4 border border-[#33ff00]/20 rounded text-center">
-              <Radio size={24} className="mx-auto mb-3 text-[#33ff00] animate-pulse" />
-              <p className="text-xs">Exclusive transmission content will appear here.</p>
-              <p className="text-[9px] opacity-50 mt-2">Replace with your ARG video embed</p>
-            </div>
-          </div>
-
-          <div className="mt-16 text-center opacity-30 text-[9px] tracking-widest">
-            <p>THE BREACH IS NOT AN EVENT</p>
-            <p className="mt-1">IT IS A REVELATION</p>
-          </div>
-        </motion.div>
-      </div>
+        <Link href="/" className="inline-block text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity pt-4">
+          [ Return to Atlas ]
+        </Link>
+      </motion.div>
     </main>
   );
 }

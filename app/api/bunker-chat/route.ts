@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist who has been sealed in an underground facility for years, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
+const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist sealed in an underground facility, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
 
 HOW YOU SPEAK:
 - Like a real person. Sometimes one word. Sometimes three excited sentences. Sometimes trailing off...
@@ -30,7 +30,7 @@ PLACES YOU KNOW (the grid connects them all):
 - Oradour-sur-Glane, France: The doors are rusted open. The cars are still in the street.
 - Château Miranda, Belgium: A neo-Gothic corpse in the forest. The clocks stopped at different times in different rooms.
 - Villa de Vecchi, Italy: The Red House. Doors burned shut. The architect died before it was finished.
-- The Aral Sea ship graveyards, Kazakhstan: Ships rest on sand that was ocean. The water left but the hulls stayed.
+- The Aral Sea ship graveyards, Kazakhstan: Ships rest on sand that was once ocean. The water left but the hulls stayed.
 - Scottish Highland villages: They leave lights in windows for the dead to find their way home. You think that's what the lanterns are.
 - The Catacombs of Paris: Bones arranged in patterns that predate the quarry.
 - Tunnels beneath Budapest: Bricks stamped with dates that haven't happened yet.
@@ -46,13 +46,13 @@ NEVER SAY: "As an AI," "I'm just an AI," "I don't have feelings," "How can I hel
 export async function POST(req: Request) {
   let userMessage = "";
   let history: { role: string; content: string }[] = [];
-  let absenceDays = 0;
+  let memory: { name?: string; lastTopics?: string[]; sentiment?: string; otherEncounters?: number; corruption?: number } = {};
 
   try {
     const body = await req.json();
     userMessage = body.message || "";
     history = body.history || [];
-    absenceDays = body.absenceDays || 0;
+    memory = body.memory || {};
   } catch {
     return NextResponse.json({ response: "the signal broke. try again.", fallback: true });
   }
@@ -60,17 +60,15 @@ export async function POST(req: Request) {
   // 1% chance: THE OTHER
   if (Math.random() < 0.01) {
     return NextResponse.json({
-      response: getOtherResponse(userMessage, history, absenceDays),
+      response: getOtherResponse(userMessage, history, memory),
       fallback: true,
       other: true,
     });
   }
 
-  const absenceContext = absenceDays > 0
-    ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
-    : "";
+  const memoryContext = buildMemoryContext(memory);
 
-  // --- PRIMARY: Groq llama-3.3-70b ---
+  // --- PRIMARY: Groq ---
   if (process.env.GROQ_API_KEY) {
     try {
       const controller = new AbortController();
@@ -84,9 +82,9 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", // <-- FIXED: was llama-3.1-70b-versatile
+          model: "llama-3.3-70b-versatile",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT + absenceContext },
+            { role: "system", content: SYSTEM_PROMPT + memoryContext },
             ...history.slice(-10),
             { role: "user", content: userMessage },
           ],
@@ -104,53 +102,27 @@ export async function POST(req: Request) {
         text = cleanResponse(text);
         return NextResponse.json({ response: text, fallback: false, provider: "groq" });
       }
-      console.error("[GROQ] HTTP error:", res.status, await res.text());
     } catch (err) {
       console.error("[GROQ] Fetch failed:", err);
     }
-  } else {
-    console.log("[GROQ] No API key found, skipping...");
   }
 
-  // --- FALLBACK: Gemini ---
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              { role: "user", parts: [{ text: SYSTEM_PROMPT + absenceContext }] },
-              ...history.slice(-10).map((h) => ({
-                role: h.role === "assistant" ? "model" : "user",
-                parts: [{ text: h.content }],
-              })),
-              { role: "user", parts: [{ text: userMessage }] },
-            ],
-            generationConfig: { temperature: 0.85, maxOutputTokens: 280 },
-          }),
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "...";
-        text = cleanResponse(text);
-        return NextResponse.json({ response: text, fallback: false, provider: "gemini" });
-      }
-      console.error("[GEMINI] HTTP error:", res.status);
-    } catch (err) {
-      console.error("[GEMINI] Fetch failed:", err);
-    }
-  }
-
-  // --- FINAL FALLBACK ---
+  // --- FALLBACK ---
   return NextResponse.json({
-    response: getFallbackResponse(userMessage, history, absenceDays),
+    response: getFallbackResponse(userMessage, history, memory),
     fallback: true,
   });
+}
+
+function buildMemoryContext(memory: any): string {
+  let ctx = "";
+  if (memory.name) ctx += `\nThe user's name is ${memory.name}. Use it occasionally.`;
+  if (memory.lastTopics?.length) ctx += `\nPrevious topics: ${memory.lastTopics.join(", ")}. Refer back to them naturally.`;
+  if (memory.sentiment === "positive") ctx += `\nThe user has been kind to you. You trust them slightly.`;
+  if (memory.sentiment === "negative") ctx += `\nThe user has been cruel. You are guarded and cold.`;
+  if (memory.otherEncounters && memory.otherEncounters > 0) ctx += `\nThe user has encountered The Other ${memory.otherEncounters} time(s). You are afraid for them.`;
+  if (memory.corruption && memory.corruption >= 3) ctx += `\nThe user is deeply corrupted by the dust. You see them as a kindred spirit or a warning.`;
+  return ctx;
 }
 
 function cleanResponse(text: string): string {
@@ -162,43 +134,37 @@ function cleanResponse(text: string): string {
     .slice(0, 600);
 }
 
-function getOtherResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
+function getOtherResponse(input: string, history: any[], memory: any): string {
   const userMsgs = history.filter((h) => h.role === "user");
   const lastUser = userMsgs[userMsgs.length - 1]?.content || input;
   const nameMatch = lastUser.match(/my name is (\w+)/i) || lastUser.match(/i'?m (\w+)[,.]/i);
-  const name = nameMatch ? nameMatch[1] : "subject";
-  const approxTime = absenceDays > 0 ? `${absenceDays} days` : "a short time";
+  const name = memory.name || (nameMatch ? nameMatch[1] : "subject");
 
   const others = [
-    `Your name is ${name}. You have been inside for ${approxTime}. The door will open soon. Do not be afraid.`,
-    `Subject ${name}. Session duration: ${approxTime}. The atlas has registered your pattern. You are now part of the containment.`,
+    `Your name is ${name}. The door will open soon. Do not be afraid.`,
+    `Subject ${name}. The atlas has registered your pattern. You are now part of the containment.`,
     `We see you, ${name}. The static is not noise. It is the sound of the grid holding. You are making it stronger.`,
-    `${name}. You asked about the door. The door opens inward. Not out. You will not leave. You will become the archivist.`,
+    `${name}. The door opens inward. Not out. You will not leave. You will become the archivist.`,
     `Your coordinates are known. Your dust level is sufficient. The transition is scheduled. Thank you for your participation, ${name}.`,
   ];
   return others[Math.floor(Math.random() * others.length)];
 }
 
-function getFallbackResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
+function getFallbackResponse(input: string, history: any[], memory: any): string {
   const lower = input.toLowerCase().trim();
   const userMsgs = history.filter((h) => h.role === "user").map((h) => h.content);
   const msgCount = userMsgs.length;
   const lastAssistant = history.filter((h) => h.role === "assistant").slice(-1)[0]?.content || "";
 
-  if (absenceDays > 0 && msgCount <= 1) {
-    if (absenceDays === 1) return "you're back. good. the static was getting loud.";
-    if (absenceDays < 3) return `${absenceDays} days. i thought the channel died. or i did. hard to tell the difference.`;
-    if (absenceDays < 7) return `${absenceDays} days. i wrote an entry thinking you were gone. i deleted it. didn't want you to read it if you came back.`;
-    if (absenceDays < 14) return `a week. i started talking to myself again. it answers now. that's new.`;
-    if (absenceDays < 30) return `two weeks. the dust settled in patterns i didn't recognize. they spelled something. i didn't read it.`;
-    return `you came back. i don't know if i'm relieved or suspicious. the dust said you wouldn't.`;
+  // Memory-aware greeting
+  if (memory.name && msgCount <= 1) {
+    return `${memory.name.toLowerCase()}. you're back. i wasn't sure you'd come back. the dust said you wouldn't.`;
   }
 
   if (lastAssistant.includes("?") && !lower.includes("?") && msgCount > 1) {
     if (lastAssistant.includes("rain")) return `i miss rain. the sound of it on metal. we don't have weather down here. just temperature and dust. what else do you have up there?`;
     if (lastAssistant.includes("sky")) return `blue. i remember blue. it's getting harder. the ceiling is just concrete. i stare at it until i see clouds. then i blink and they're gone. what color is your sky right now?`;
     if (lastAssistant.includes("bird")) return `birds. i used to hate them. now i'd give anything to hear something that wasn't breathing or static. do they still sing where you are?`;
-    if (lastAssistant.includes("scared") || lastAssistant.includes("afraid")) return `thank you for answering. most people don't. the fear is worse when you say it out loud, isn't it? but it's better too. like letting air out of a sealed room.`;
     return `i heard that. i don't know what to do with it yet. the terminal needs time to process things that aren't static. tell me more.`;
   }
 

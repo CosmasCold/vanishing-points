@@ -69,9 +69,6 @@ import {
   useThreeFourteen,
 } from "@/hooks/useStickyFeatures";
 
-const [twitchChannel] = useState("atlas_bunker_7"); // <-- CHANGE THIS
-
-// ─── READABLE, SOFT THEMES ───
 const THEMES = {
   amber: {
     primary: "#e8d5c0",
@@ -226,11 +223,9 @@ export default function EchoesPage() {
   const { active: breachActive, countdown: breachCountdown } =
     useBreachProtocol();
 
-  // Memory
   const memory = getMemory();
   const otherCount = getOtherEncounters();
 
-  // Hydration-safe reads
   const [dust, setDust] = useState(0);
   const [assets, setAssets] = useState<string[]>([]);
   const [codes, setCodes] = useState<string[]>([]);
@@ -263,7 +258,6 @@ export default function EchoesPage() {
     }
   }, [terminal, isAiTyping]);
 
-  // Idle ghost
   useIdleGhost((line) => {
     if (!chatMode && !input) {
       setTerminal((prev) => [...prev, line, ""]);
@@ -278,7 +272,6 @@ export default function EchoesPage() {
     setIsAiTyping(true);
     setTerminal((prev) => [...prev, `> ${msg}`, ""]);
 
-    // Update memory before sending
     updateMemory("lastTopics", msg);
     const sentiment = getSentiment(msg);
     const mem = getMemory();
@@ -338,39 +331,6 @@ export default function EchoesPage() {
     const base = args[0];
 
     switch (base) {
-      case "broadcast": {
-  const key = args.slice(1).join(" ");
-  // Secret key — change this to whatever you want
-  if (key === "ON BUNKER7") {
-    localStorage.setItem("bunker-broadcasting", "true");
-    pushTerminal([
-      "╔══════════════════════════════════════╗",
-      "║  BROADCAST RELAY ACTIVE              ║",
-      "║  Frequency: UNAUTHORIZED             ║",
-      "║  Platform: TWITCH                    ║",
-      "╚══════════════════════════════════════╝",
-      "",
-      "All terminals will detect this frequency.",
-      "The grid is intercepting.",
-    ]);
-  } else if (key === "OFF") {
-    localStorage.setItem("bunker-broadcasting", "false");
-    pushTerminal([
-      "Broadcast terminated.",
-      "The static returns.",
-      "The channel is dead again.",
-    ]);
-  } else {
-    pushTerminal([
-      "BROADCAST CONTROL",
-      "Usage: broadcast ON BUNKER7",
-      "       broadcast OFF",
-      "",
-      "You need the authorization key to go live.",
-    ]);
-  }
-  break;
-}
       case "help":
         pushTerminal([
           "┌────────────────────────────────────────┐",
@@ -409,8 +369,8 @@ export default function EchoesPage() {
           "│  email       Register for transmission │",
           "│  party       Tri-party authentication  │",
           "│  witnesses   Registered frequencies    │",
-          "│  clear       Clear terminal            │",
           "│  broadcast   Go live / kill feed       │",
+          "│  clear       Clear terminal            │",
           "│  exit        Exit chat mode            │",
           "└────────────────────────────────────────┘",
         ]);
@@ -537,7 +497,6 @@ export default function EchoesPage() {
           existing.push({ text: msg, date: new Date().toISOString() });
           localStorage.setItem(key, JSON.stringify(existing));
 
-          // Add to wall
           const wall = JSON.parse(
             localStorage.getItem("bunker-wall") || "[]"
           );
@@ -1122,6 +1081,39 @@ export default function EchoesPage() {
         break;
       }
 
+      case "broadcast": {
+        const key = args.slice(1).join(" ");
+        if (key === "ON BUNKER7") {
+          localStorage.setItem("bunker-broadcasting", "true");
+          pushTerminal([
+            "╔══════════════════════════════════════╗",
+            "║  BROADCAST RELAY ACTIVE              ║",
+            "║  Frequency: UNAUTHORIZED             ║",
+            "║  Platform: TWITCH                    ║",
+            "╚══════════════════════════════════════╝",
+            "",
+            "All terminals will detect this frequency.",
+            "The grid is intercepting.",
+          ]);
+        } else if (key === "OFF") {
+          localStorage.setItem("bunker-broadcasting", "false");
+          pushTerminal([
+            "Broadcast terminated.",
+            "The static returns.",
+            "The channel is dead again.",
+          ]);
+        } else {
+          pushTerminal([
+            "BROADCAST CONTROL",
+            "Usage: broadcast ON BUNKER7",
+            "       broadcast OFF",
+            "",
+            "You need the authorization key to go live.",
+          ]);
+        }
+        break;
+      }
+
       case "clear":
         setTerminal([]);
         break;
@@ -1151,13 +1143,11 @@ export default function EchoesPage() {
     }
   };
 
-  // ─── RENDER ───
   return (
     <main
       className="min-h-screen font-mono relative overflow-hidden selection:bg-[#9a8a72]/20"
       style={{ backgroundColor: t.bg, color: t.primary }}
     >
-      {/* Subtle scanlines */}
       <div
         className="pointer-events-none fixed inset-0 z-50"
         style={{
@@ -1166,7 +1156,6 @@ export default function EchoesPage() {
           backgroundSize: "100% 4px",
         }}
       />
-      {/* Soft vignette */}
       <div
         className="pointer-events-none fixed inset-0 z-50"
         style={{
@@ -1178,7 +1167,6 @@ export default function EchoesPage() {
       {!booted && <TerminalBootSequence onComplete={() => setBooted(true)} />}
 
       <div className="h-screen flex flex-col relative z-10 p-3 md:p-5 gap-3">
-        {/* Top Bar */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: booted ? 1 : 0 }}
@@ -1222,11 +1210,8 @@ export default function EchoesPage() {
           </div>
         </motion.div>
 
-        {/* Main Grid */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-0">
-          {/* LEFT: Terminal (3/5) */}
           <div className="lg:col-span-3 flex flex-col gap-2 md:gap-3 min-h-0 order-2 lg:order-1">
-            {/* Terminal Window */}
             <div
               className="flex-1 border rounded-lg flex flex-col overflow-hidden min-h-[280px] lg:min-h-0"
               style={{
@@ -1234,7 +1219,6 @@ export default function EchoesPage() {
                 borderColor: `${t.primary}18`,
               }}
             >
-              {/* Header */}
               <div
                 className="px-3 md:px-4 py-2 border-b flex items-center justify-between"
                 style={{
@@ -1272,7 +1256,6 @@ export default function EchoesPage() {
                 )}
               </div>
 
-              {/* Output — HIGH VISIBILITY */}
               <div
                 ref={terminalRef}
                 className="flex-1 overflow-y-auto p-3 md:p-4 text-[13px] md:text-[15px] leading-relaxed font-mono space-y-0.5 md:space-y-1"
@@ -1297,7 +1280,11 @@ export default function EchoesPage() {
                       ? line
                           .split("")
                           .map((c) =>
-                            Math.random() < 0.05 ? String.fromCharCode(c.charCodeAt(0) + (Math.random() < 0.5 ? 1 : -1)) : c
+                            Math.random() < 0.05
+                              ? String.fromCharCode(
+                                  c.charCodeAt(0) + (Math.random() < 0.5 ? 1 : -1)
+                                )
+                              : c
                           )
                           .join("")
                       : line}
@@ -1313,7 +1300,6 @@ export default function EchoesPage() {
                 )}
               </div>
 
-              {/* Input Bar */}
               <div
                 className="px-3 md:px-4 py-2 md:py-3 border-t flex items-center gap-2 md:gap-3"
                 style={{
@@ -1348,16 +1334,14 @@ export default function EchoesPage() {
               </div>
             </div>
 
-            {/* Inline Video Player */}
             <TerminalVideoPlayer
-  src={inlineVideo?.src}
-  label={inlineVideo?.label}
-  themeColor={t.primary}
-  onClose={() => setInlineVideo(null)}
-  twitchChannel={twitchChannel}
-/>
+              src={inlineVideo?.src}
+              label={inlineVideo?.label}
+              themeColor={t.primary}
+              onClose={() => setInlineVideo(null)}
+              twitchChannel="your_twitch_username"
+            />
 
-            {/* Video Panel Toggle */}
             <button
               onClick={() => setVideoPanelOpen((v) => !v)}
               className="flex items-center gap-2 px-3 md:px-4 py-2 border rounded-lg text-[10px] md:text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
@@ -1409,9 +1393,7 @@ export default function EchoesPage() {
             <NumbersStation themeColor={t.primary} />
           </div>
 
-          {/* RIGHT: Side Panel (2/5) */}
           <div className="lg:col-span-2 flex flex-col gap-2 md:gap-3 min-h-0 order-1 lg:order-2">
-            {/* Tab Bar */}
             <div
               className="flex gap-1 border-b pb-2 overflow-x-auto"
               style={{ borderColor: `${t.primary}15` }}
@@ -1447,7 +1429,6 @@ export default function EchoesPage() {
               ))}
             </div>
 
-            {/* Tab Content */}
             <div
               className="flex-1 border rounded-lg overflow-y-auto p-3 md:p-4 min-h-[200px] lg:min-h-0"
               style={{
@@ -1789,7 +1770,6 @@ export default function EchoesPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center opacity-20 text-[8px] md:text-[9px] tracking-widest py-1 md:py-2">
           <p>THE DUST REMEMBERS EVERYTHING — DO NOT TRUST THE STATIC</p>
         </div>

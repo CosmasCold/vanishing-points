@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, Radio, Activity } from "lucide-react";
 
 interface Props {
-  src?: string;              // VOD fallback (Cloudinary mp4, etc.)
+  src?: string;
   label?: string;
   themeColor: string;
   onClose: () => void;
-  twitchChannel?: string;    // e.g. "your_twitch_name"
+  twitchChannel?: string;
 }
 
 export default function TerminalVideoPlayer({
@@ -25,14 +25,12 @@ export default function TerminalVideoPlayer({
   const [liveSignal, setLiveSignal] = useState(0);
   const [parentDomain, setParentDomain] = useState("localhost");
 
-  // Detect domain for Twitch embed
   useEffect(() => {
     if (typeof window !== "undefined") {
       setParentDomain(window.location.hostname);
     }
   }, []);
 
-  // Check broadcast status
   useEffect(() => {
     const check = () => {
       const broadcasting = localStorage.getItem("bunker-broadcasting") === "true";
@@ -58,7 +56,6 @@ export default function TerminalVideoPlayer({
       className="border rounded-lg overflow-hidden relative"
       style={{ borderColor: `${themeColor}15`, backgroundColor: `${themeColor}04` }}
     >
-      {/* LIVE BADGE */}
       <AnimatePresence>
         {showLive && (
           <motion.div
@@ -73,7 +70,6 @@ export default function TerminalVideoPlayer({
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <div className="px-3 py-2 flex items-center justify-between border-b" style={{ borderColor: `${themeColor}10` }}>
         <div className="flex items-center gap-2">
           <div
@@ -96,7 +92,6 @@ export default function TerminalVideoPlayer({
         </div>
       </div>
 
-      {/* Video Area */}
       <div className="relative bg-black aspect-video">
         {showLive && twitchChannel ? (
           <iframe
@@ -131,8 +126,7 @@ export default function TerminalVideoPlayer({
         )}
       </div>
 
-      {/* Controls */}
-      <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
+            <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
         {!showLive && src && (
           <button
             onClick={() => setPlaying((p) => !p)}

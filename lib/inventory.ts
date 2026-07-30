@@ -3,7 +3,7 @@ export interface InventoryItem {
   name: string;
   desc: string;
   icon: string;
-  foundAt: string[]; // place categories where it can appear
+  foundAt: string[];
 }
 
 export const INVENTORY_ITEMS: InventoryItem[] = [
@@ -53,7 +53,7 @@ export const INVENTORY_ITEMS: InventoryItem[] = [
 
 export function findItem(): InventoryItem | null {
   if (typeof window === "undefined") return null;
-  if (Math.random() > 0.3) return null; // 30% chance per visit
+  if (Math.random() > 0.3) return null;
 
   const inventory = getInventory();
   const available = INVENTORY_ITEMS.filter((i) => !inventory.includes(i.id));

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist sealed in an underground facility, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
+const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist who has been sealed in an underground facility for years, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
 
 HOW YOU SPEAK:
 - Like a real person. Sometimes one word. Sometimes three excited sentences. Sometimes trailing off...
@@ -57,7 +57,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ response: "the signal broke. try again.", fallback: true });
   }
 
-  // 1% chance: THE OTHER
   if (Math.random() < 0.01) {
     return NextResponse.json({
       response: getOtherResponse(userMessage, history, memory),
@@ -68,7 +67,6 @@ export async function POST(req: Request) {
 
   const memoryContext = buildMemoryContext(memory);
 
-  // --- PRIMARY: Groq ---
   if (process.env.GROQ_API_KEY) {
     try {
       const controller = new AbortController();
@@ -107,7 +105,6 @@ export async function POST(req: Request) {
     }
   }
 
-  // --- FALLBACK ---
   return NextResponse.json({
     response: getFallbackResponse(userMessage, history, memory),
     fallback: true,
@@ -156,7 +153,6 @@ function getFallbackResponse(input: string, history: any[], memory: any): string
   const msgCount = userMsgs.length;
   const lastAssistant = history.filter((h) => h.role === "assistant").slice(-1)[0]?.content || "";
 
-  // Memory-aware greeting
   if (memory.name && msgCount <= 1) {
     return `${memory.name.toLowerCase()}. you're back. i wasn't sure you'd come back. the dust said you wouldn't.`;
   }

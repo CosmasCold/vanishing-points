@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
-// ─── CORRUPTION STAGES ───
 export function useCorruptionStage() {
   const [stage, setStage] = useState(0);
 
@@ -12,11 +11,11 @@ export function useCorruptionStage() {
       const echoes = localStorage.getItem("echoes-visited") === "true";
       const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]").length;
 
-      if (dust > 200 && echoes) setStage(4);      // GHOST
-      else if (dust > 100 && echoes) setStage(3); // WITNESS
-      else if (dust > 50) setStage(2);            // ARCHIVIST
-      else if (dust > 20) setStage(1);            // SENSITIVE
-      else setStage(0);                            // OBSERVER
+      if (dust > 200 && echoes) setStage(4);
+      else if (dust > 100 && echoes) setStage(3);
+      else if (dust > 50) setStage(2);
+      else if (dust > 20) setStage(1);
+      else setStage(0);
     };
     check();
     window.addEventListener("dust-updated", check);
@@ -33,10 +32,8 @@ export function useCorruptionStage() {
   };
 }
 
-// ─── IDLE GHOST ───
 export function useIdleGhost(onGhost: (line: string) => void) {
   const idleRef = useRef<NodeJS.Timeout | null>(null);
-  const [idleCount, setIdleCount] = useState(0);
 
   const GHOST_LINES = [
     "the dust settles in patterns...",
@@ -54,12 +51,11 @@ export function useIdleGhost(onGhost: (line: string) => void) {
   useEffect(() => {
     const reset = () => {
       if (idleRef.current) clearTimeout(idleRef.current);
-      document.title = "BUNKER_7 TERMINAL";
+      if (typeof document !== "undefined") document.title = "BUNKER_7 TERMINAL";
       idleRef.current = setTimeout(() => {
         const line = GHOST_LINES[Math.floor(Math.random() * GHOST_LINES.length)];
         onGhost(line);
-        setIdleCount((c) => c + 1);
-        document.title = "BUNKER_7 is waiting...";
+        if (typeof document !== "undefined") document.title = "BUNKER_7 is waiting...";
       }, 30000);
     };
 
@@ -74,10 +70,9 @@ export function useIdleGhost(onGhost: (line: string) => void) {
     };
   }, [onGhost]);
 
-  return idleCount;
+  return 0;
 }
 
-// ─── 03:14 EVENT ───
 export function useThreeFourteen() {
   const [is314, setIs314] = useState(false);
 

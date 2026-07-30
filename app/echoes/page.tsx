@@ -49,9 +49,9 @@ const LOGS = [
 ];
 
 const VIDEO_LOGS = [
-  { label: "TRANSMISSION_01.mxf", day: "DAY 001", src: "/videos/transmission_01.mp4" },
-  { label: "TRANSMISSION_04.mxf", day: "DAY 004", src: "/videos/transmission_04.mp4" },
-  { label: "STATIC_BURST.mxf", day: "DAY 012", src: "/videos/static_burst.mp4" },
+  { label: "TRANSMISSION_01.mxf", day: "DAY 001", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346749/Tape_01__The_Signal_I_Found_f1zhoh.mp4" },
+  { label: "TRANSMISSION_04.mxf", day: "DAY 004", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346872/Tape_02__The_Blackout_jpq8cv.mp4" },
+  { label: "STATIC_BURST.mxf", day: "DAY 012", src: "https://res.cloudinary.com/qgtwp1m7/video/upload/v1785346948/The_Corridor_of_Echoes_pvfyll.mp4" },
 ];
 
 export default function EchoesPage() {

@@ -198,6 +198,7 @@ const seasonal = getSeasonalState();
           "│  cache       Time-locked files         │",
           "│  triangulate Tower status              │",
           "  profile     - Your corruption profile",
+          "  call        - Voice channel status",
           "  daily       - Acquire daily frequency",
           "  email       - Register for transmission",
           "  party       - Tri-party authentication",
@@ -572,6 +573,27 @@ const seasonal = getSeasonalState();
         break;
       }
 
+      case "call": {
+        pushTerminal([
+          "╔══════════════════════════════════════╗",
+          "║  VOICE CHANNEL                       ║",
+          "╠══════════════════════════════════════╣",
+          "║  Number: +1-503-825-0190             ║",
+          "║  Hours: 03:00 — 04:00 local time     ║",
+          "║  Status: INTERMITTENT                ║",
+          "╠══════════════════════════════════════╣",
+          "║  BUNKER_7 does not always answer.    ║",
+          "║  Sometimes the static answers.         ║",
+          "║  Sometimes no one answers.             ║",
+          "║  Sometimes someone breathes.         ║",
+          "╚══════════════════════════════════════╝",
+          "",
+          "If you reach voicemail, leave a frequency.",
+          "If you reach the archivist, do not waste his time.",
+        ]);
+        break;
+      }
+
             case "daily": {
         const { code, valid, window } = getDailyCode();
         if (valid) {
@@ -642,6 +664,21 @@ const seasonal = getSeasonalState();
                 ]);
               }
             });
+        }
+        break;
+      }
+
+            case "witnesses": {
+        const all = JSON.parse(localStorage.getItem("bunker-emails") || "[]");
+        if (all.length === 0) {
+          pushTerminal(["No witnesses registered."]);
+        } else {
+          pushTerminal([
+            "REGISTERED FREQUENCIES:",
+            ...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),
+            "",
+            `${all.length} total witnesses.`,
+          ]);
         }
         break;
       }

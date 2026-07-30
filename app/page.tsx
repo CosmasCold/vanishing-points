@@ -26,6 +26,7 @@ import AtlasInversion from "@/components/AtlasInversion";
 import PlaceWhispers from "@/components/PlaceWhispers";
 import { usePersonalCorruption, getProfileGreeting } from "@/components/PersonalCorruption";
 import { showToast } from "@/lib/toast";
+import DustOverlay from "@/components/DustOverlay";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
@@ -404,6 +405,7 @@ export default function Home() {
       <ShortcutHint onClick={() => setShowHelp(true)} />
       <LyingCompass places={places} />
       <AbsenceGreeting />
+      <DustOverlay />
     </main>
   );
 }

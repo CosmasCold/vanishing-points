@@ -28,6 +28,7 @@ import AbsenceGreeting from "@/components/AbsenceGreeting";
 import AtlasInversion from "@/components/AtlasInversion";
 import PlaceWhispers from "@/components/PlaceWhispers";
 import { showToast } from "@/lib/toast";
+import LiveSignalOverlay from "@/components/LiveSignalOverlay";
 
 // CRITICAL: This component must have ZERO hooks.
 // next/dynamic swaps this component rapidly during client-side navigation.
@@ -415,6 +416,7 @@ export default function Home() {
         <ShortcutHint onClick={() => setShowHelp(true)} />
         <LyingCompass places={places} />
         <AbsenceGreeting />
+        <LiveSignalOverlay twitchChannel="atlas_bunker_7" />
       </main>
     </>
   );

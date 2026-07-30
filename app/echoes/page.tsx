@@ -1710,7 +1710,7 @@ export default function EchoesPage() {
               label={inlineVideo.label}
               themeColor={t.primary}
               onClose={() => setInlineVideo(null)}
-              twitchChannel="atlas_bunker_7"
+              
             />
           </div>
         )}

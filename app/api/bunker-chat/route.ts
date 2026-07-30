@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
     : "";
 
-  // --- PRIMARY: Groq ---
+  // --- PRIMARY: Groq llama-3.3-70b ---
   if (process.env.GROQ_API_KEY) {
     try {
       const controller = new AbortController();
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.1-70b-versatile",
+          model: "llama-3.3-70b-versatile", // <-- FIXED: was llama-3.1-70b-versatile
           messages: [
             { role: "system", content: SYSTEM_PROMPT + absenceContext },
             ...history.slice(-10),

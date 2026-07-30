@@ -1,16 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel, Space_Mono } from "next/font/google";
 import "./globals.css";
-import GrainOverlay from "@/components/GrainOverlay";
-import FogEffect from "@/components/FogEffect";
-import CustomCursor from "@/components/CustomCursor";
-import BackgroundAudio from "@/components/BackgroundAudio";
-import CollaborativeCursors from "@/components/CollaborativeCursors";
-import PageTransition from "@/components/PageTransition";
-import ToastProvider from "@/components/ToastProvider";
-import CorruptionManager from "@/components/CorruptionManager";
-import DustCorruption from "@/components/DustCorruption";
-import BunkerAudioBridge from "@/components/BunkerAudioBridge";
+import ClientProviders from "@/components/ClientProviders";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,16 +47,7 @@ export default function RootLayout({
       className={`${inter.variable} ${cinzel.variable} ${spaceMono.variable}`}
     >
       <body className="antialiased min-h-screen bg-[#1a1612] text-[#ddd0bc]">
-        <GrainOverlay />
-        <FogEffect />
-        <CustomCursor />
-        <BackgroundAudio />
-        <CollaborativeCursors />
-        <CorruptionManager />
-        <PageTransition>{children}</PageTransition>
-        <ToastProvider />
-        <DustCorruption />
-<BunkerAudioBridge />
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

@@ -1339,7 +1339,7 @@ export default function EchoesPage() {
               label={inlineVideo?.label}
               themeColor={t.primary}
               onClose={() => setInlineVideo(null)}
-              twitchChannel="your_twitch_username"
+              twitchChannel="atlas_bunker_7"
             />
 
             <button

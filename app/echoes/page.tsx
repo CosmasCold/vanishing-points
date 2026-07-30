@@ -6,6 +6,8 @@ import { Radio, Terminal, Play, Lock, Unlock, Image, BookOpen, Shield, Zap, Help
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import AssetGallery from "@/components/AssetGallery";
+import TerminalBootSequence from "@/components/TerminalBootSequence";
+import NumbersStation from "@/components/NumbersStation";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 import { useTerminalGhost } from "@/hooks/useTerminalGhost";
@@ -31,12 +33,13 @@ import {
   unlockAsset,
 } from "@/lib/assets";
 
+// SOFTER, LESS JARRING THEMES
 const THEMES = {
-  amber: { primary: "#ffb000", bg: "#0a0500", glow: "rgba(255,176,0,0.15)" },
-  cyan: { primary: "#00e5ff", bg: "#050a0a", glow: "rgba(0,229,255,0.15)" },
-  red: { primary: "#ff4444", bg: "#0a0000", glow: "rgba(255,68,68,0.15)" },
-  white: { primary: "#e0e0e0", bg: "#0a0a0a", glow: "rgba(224,224,224,0.15)" },
-  phosphor: { primary: "#33ff00", bg: "#050a05", glow: "rgba(51,255,0,0.15)" },
+  amber: { primary: "#c4a882", bg: "#0c0a08", glow: "rgba(196,168,130,0.12)", accent: "#a67c52" },
+  cyan: { primary: "#8ab4b8", bg: "#080a0a", glow: "rgba(138,180,184,0.12)", accent: "#6a9a9e" },
+  red: { primary: "#b08070", bg: "#0a0808", glow: "rgba(176,128,112,0.12)", accent: "#906050" },
+  white: { primary: "#b8b0a8", bg: "#0a0a0a", glow: "rgba(184,176,168,0.12)", accent: "#989088" },
+  phosphor: { primary: "#7a9a6a", bg: "#050a05", glow: "rgba(122,154,106,0.12)", accent: "#5a7a4a" },
 };
 
 type ThemeKey = keyof typeof THEMES;
@@ -62,7 +65,7 @@ export default function EchoesPage() {
   const t = THEMES[theme];
 
   const absence = useAbsenceGreeting();
-const seasonal = getSeasonalState();
+  const seasonal = getSeasonalState();
 
   const [unlocked, setUnlocked] = useState(3);
   const [booted, setBooted] = useState(false);
@@ -78,15 +81,12 @@ const seasonal = getSeasonalState();
       "╚════════════════════════════════════════╝",
       "",
     ];
-    
     if (absence.greeting) {
       lines.push(absence.greeting, "");
     }
-    
     if (seasonal.specialEvent) {
       lines.push(`[SEASONAL ANOMALY: ${seasonal.name}]`, seasonal.specialEvent, "");
     }
-    
     return lines;
   });
   const [input, setInput] = useState("");
@@ -103,6 +103,11 @@ const seasonal = getSeasonalState();
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } = useBreachProtocol();
 
+  // Hydration-safe localStorage reads
+  const [dust, setDust] = useState(0);
+  const [assets, setAssets] = useState<string[]>([]);
+  const [codes, setCodes] = useState<string[]>([]);
+
   useEffect(() => {
     markEchoesVisited();
     accumulateDust(10);
@@ -112,8 +117,10 @@ const seasonal = getSeasonalState();
     setUnlocked(savedUnlocked);
     const savedTri = localStorage.getItem("bunker-triangulated") === "true";
     setTriangulated(savedTri);
-    const t = setTimeout(() => setBooted(true), 600);
-    return () => clearTimeout(t);
+    
+    setDust(parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10));
+    setAssets(getUnlockedAssets());
+    setCodes(getRedeemedCodes());
   }, []);
 
   useEffect(() => {
@@ -132,7 +139,7 @@ const seasonal = getSeasonalState();
     setTerminal((prev) => [...prev, ...lines, ""]);
   }, []);
 
-    const talkToBunker = async (msg: string) => {
+      const talkToBunker = async (msg: string) => {
     setIsAiTyping(true);
     setTerminal((prev) => [...prev, `> ${msg}`, ""]);
     
@@ -203,13 +210,16 @@ const seasonal = getSeasonalState();
           "│  collection  Collection status         │",
           "│  cache       Time-locked files         │",
           "│  triangulate Tower status              │",
-          "  profile     - Your corruption profile",
-          "  call        - Voice channel status",
-          "  daily       - Acquire daily frequency",
-          "  email       - Register for transmission",
-          "  party       - Tri-party authentication",
-          "  clear       - Clear terminal",
-          "  exit        - Exit chat mode",
+          "│  lanterns    View placed lanterns      │",
+          "│  constellation Grid alignment          │",
+          "│  profile     Your corruption profile  │",
+          "│  call        Voice channel status      │",
+          "│  daily       Acquire daily frequency   │",
+          "│  email       Register for transmission │",
+          "│  party       Tri-party authentication  │",
+          "│  witnesses   Registered frequencies      │",
+          "│  clear       Clear terminal            │",
+          "│  exit        Exit chat mode            │",
           "└────────────────────────────────────────┘",
         ]);
         break;
@@ -254,7 +264,7 @@ const seasonal = getSeasonalState();
         break;
 
       case "scan": {
-        const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+        const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
         const visits = localStorage.getItem("vp-expedition-log");
         const count = visits ? JSON.parse(visits).length : 0;
         const last = localStorage.getItem("vp-last-visit");
@@ -262,11 +272,11 @@ const seasonal = getSeasonalState();
         const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
         pushTerminal([
           "┌─ ENVIRONMENT SCAN ───────────────────┐",
-          `│  Dust accumulation: ${String(dust).padEnd(3)}%           │`,
+          `│  Dust accumulation: ${String(dustLvl).padEnd(3)}%           │`,
           `│  Documented sites:  ${String(count).padEnd(3)}           │`,
           `│  Hours since contact: ${String(ago).padEnd(10)}      │`,
           `│  Fragments:         ${String(fragments.length).padEnd(3)}           │`,
-          dust > DUST_THRESHOLD ? "│  [!] DUST LEVELS CRITICAL            │" : "│  Dust levels nominal                 │",
+          dustLvl > DUST_THRESHOLD ? "│  [!] DUST LEVELS CRITICAL            │" : "│  Dust levels nominal                 │",
           "└──────────────────────────────────────┘",
         ]);
         break;
@@ -327,7 +337,7 @@ const seasonal = getSeasonalState();
       }
 
       case "door": {
-        const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+        const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
         const now = new Date();
         const hour = now.getHours();
         const min = now.getMinutes();
@@ -339,9 +349,9 @@ const seasonal = getSeasonalState();
             "║  Something pushes from the other side. ║",
             "╚══════════════════════════════════════╝",
           ]);
-        } else if (dust > DUST_THRESHOLD) {
+        } else if (dustLvl > DUST_THRESHOLD) {
           pushTerminal([
-            `Dust level: ${dust}%. Threshold exceeded.`,
+            `Dust level: ${dustLvl}%. Threshold exceeded.`,
             "The door recognizes you.",
             "It opens inward. Not out.",
             "You could enter. But you won't come back the same.",
@@ -349,7 +359,7 @@ const seasonal = getSeasonalState();
         } else {
           pushTerminal([
             `Time: ${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`,
-            `Dust: ${dust}%. Insufficient.`,
+            `Dust: ${dustLvl}%. Insufficient.`,
             "The door is sealed.",
             "It responds at 03:14 or to the dust-claimed.",
           ]);
@@ -388,7 +398,7 @@ const seasonal = getSeasonalState();
         setActiveTab("puzzles");
         pushTerminal([
           "Opening PUZZLES window...",
-          "8 active anomalies detected.",
+          "10 active anomalies detected.",
         ]);
         break;
 
@@ -505,13 +515,13 @@ const seasonal = getSeasonalState();
         break;
 
       case "collection": {
-        const assets = getUnlockedAssets();
-        const codes = getRedeemedCodes();
+        const assetsList = getUnlockedAssets();
+        const codesList = getRedeemedCodes();
         pushTerminal([
           "┌─ COLLECTION STATUS ──────────────────┐",
-          `│  Assets:    ${String(assets.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,
-          `│  Codes:     ${String(codes.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,
-          `│  Complete:  ${String(Math.floor((assets.length / STORY_ASSETS.length) * 100)).padEnd(3)}%${" ".repeat(19)}│`,
+          `│  Assets:    ${String(assetsList.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,
+          `│  Codes:     ${String(codesList.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,
+          `│  Complete:  ${String(Math.floor((assetsList.length / STORY_ASSETS.length) * 100)).padEnd(3)}%${" ".repeat(19)}│`,
           "└──────────────────────────────────────┘",
         ]);
         break;
@@ -562,15 +572,59 @@ const seasonal = getSeasonalState();
         }
         break;
 
+      // NEW: Lanterns command
+      case "lanterns": {
+        const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
+        if (lanterns.length === 0) {
+          pushTerminal([
+            "No lanterns detected on the grid.",
+            "Place them on the atlas. They burn in the dark.",
+            "cmd: Go to atlas → 'Lanterns' → 'Place' → click a ruin.",
+          ]);
+        } else {
+          pushTerminal([
+            `DETECTED: ${lanterns.length} lantern${lanterns.length > 1 ? "s" : ""}`,
+            ...lanterns.map((l: any) => `  ${l.placeName} — "${l.message || "No message"}"`),
+            "",
+            "The grid remembers light.",
+          ]);
+        }
+        break;
+      }
+
+      // NEW: Constellation command
+      case "constellation": {
+        const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
+        if (lanterns.length < 5) {
+          pushTerminal([
+            `Constellation incomplete.`,
+            `Lanterns placed: ${lanterns.length}/5`,
+            "Place 5 lanterns on the atlas to align the grid.",
+          ]);
+        } else {
+          pushTerminal([
+            "╔══════════════════════════════════════╗",
+            "║  CONSTELLATION ALIGNED               ║",
+            "╠══════════════════════════════════════╣",
+            "║  5 points of light. The grid holds.  ║",
+            "║  Legendary code: STAR-CHART-7        ║",
+            "║  The archivist used to map stars.    ║",
+            "║  Now he maps dust.                   ║",
+            "╚══════════════════════════════════════╝",
+          ]);
+        }
+        break;
+      }
+
       case "profile": {
-        const dust = localStorage.getItem("vp-dust-accumulation") || "0";
+        const dustLvl = localStorage.getItem("vp-dust-accumulation") || "0";
         const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
         const echoes = localStorage.getItem("echoes-visited") === "true";
-        const profile = parseInt(dust) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER";
+        const profile = parseInt(dustLvl) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER";
         pushTerminal([
           "┌─ PROFILE ────────────────────────────┐",
           `│  Class:  ${profile.padEnd(28)}│`,
-          `│  Dust:    ${String(dust).padEnd(3)}%${" ".repeat(25)}│`,
+          `│  Dust:    ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,
           `│  Sites:   ${String(visits.length).padEnd(3)}${" ".repeat(26)}│`,
           `│  Echoes:  ${echoes ? "YES" : "NO"}${" ".repeat(27)}│`,
           `│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,
@@ -600,7 +654,7 @@ const seasonal = getSeasonalState();
         break;
       }
 
-            case "daily": {
+      case "daily": {
         const { code, valid, window } = getDailyCode();
         if (valid) {
           pushTerminal([
@@ -620,18 +674,16 @@ const seasonal = getSeasonalState();
         break;
       }
 
-            case "email": {
+      case "email": {
         const email = args.slice(1).join(" ");
         if (!email || !email.includes("@")) {
           pushTerminal(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."]);
         } else {
-          // Store client-side (API route can't use localStorage)
           const key = "bunker-emails";
           const existing = JSON.parse(localStorage.getItem(key) || "[]");
           existing.push({ email, date: new Date().toISOString() });
           localStorage.setItem(key, JSON.stringify(existing));
 
-          // Send to server for the actual email
           fetch("/api/bunker-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -683,7 +735,7 @@ const seasonal = getSeasonalState();
         break;
       }
 
-            case "witnesses": {
+      case "witnesses": {
         const all = JSON.parse(localStorage.getItem("bunker-emails") || "[]");
         if (all.length === 0) {
           pushTerminal(["No witnesses registered."]);
@@ -727,10 +779,6 @@ const seasonal = getSeasonalState();
     }
   };
 
-  const dust = typeof window !== "undefined" ? parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10) : 0;
-  const assets = typeof window !== "undefined" ? getUnlockedAssets() : [];
-  const codes = typeof window !== "undefined" ? getRedeemedCodes() : [];
-
   return (
     <main className="min-h-screen font-mono relative overflow-hidden selection:text-black"
       style={{ backgroundColor: t.bg, color: t.primary }}>
@@ -741,88 +789,97 @@ const seasonal = getSeasonalState();
       <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
         style={{ backgroundImage: `url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmIwMDAiLz48L3N2Zz4=")` }} />
 
-      <div className="h-screen flex flex-col relative z-10 p-4 gap-4">
+      {/* BOOT SEQUENCE */}
+      {!booted && <TerminalBootSequence onComplete={() => setBooted(true)} />}
+
+      <div className="h-screen flex flex-col relative z-10 p-3 md:p-5 gap-3">
         
-        {/* Top Bar */}
+        {/* Top Bar — Mobile: stacked, Desktop: row */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: booted ? 1 : 0 }} transition={{ duration: 0.6 }}
-          className="flex items-center justify-between border-b pb-3" style={{ borderColor: `${t.primary}30` }}>
-          <div className="flex items-center gap-3">
-            <Terminal size={18} />
+          className="flex flex-col md:flex-row md:items-center justify-between border-b pb-2 md:pb-3 gap-2" 
+          style={{ borderColor: `${t.primary}30` }}>
+          <div className="flex items-center gap-2 md:gap-3">
+            <Terminal size={16} className="md:w-[18px]" />
             <div>
-              <h1 className="text-base tracking-[0.3em] uppercase font-bold">Bunker_7 Terminal</h1>
-              <p className="text-[10px] opacity-50 tracking-wider">Echoes & Dust // v2.4.1</p>
+              <h1 className="text-sm md:text-base tracking-[0.2em] md:tracking-[0.3em] uppercase font-bold">Bunker_7 Terminal</h1>
+              <p className="text-[9px] md:text-[10px] opacity-50 tracking-wider">Echoes & Dust // v2.4.1</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="opacity-60">Theme: {theme.toUpperCase()}</span>
-            <span className="opacity-60">Logs: {unlocked}/{LOGS.length}</span>
-            <span className="opacity-60">Assets: {assets.length}/{STORY_ASSETS.length}</span>
-            <Link href="/" className="opacity-40 hover:opacity-100 transition-opacity text-[10px] uppercase tracking-wider">
+          <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-[11px] overflow-x-auto">
+            <span className="opacity-60 whitespace-nowrap">Theme: {theme.toUpperCase()}</span>
+            <span className="opacity-60 whitespace-nowrap">Logs: {unlocked}/{LOGS.length}</span>
+            <span className="opacity-60 whitespace-nowrap hidden sm:inline">Assets: {assets.length}/{STORY_ASSETS.length}</span>
+            <Link href="/" className="opacity-40 hover:opacity-100 transition-opacity text-[9px] md:text-[10px] uppercase tracking-wider whitespace-nowrap">
               [ Return to Atlas ]
             </Link>
           </div>
         </motion.div>
 
-        {/* Main Grid */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0">
+        {/* Main Grid — Single column mobile, 5-col desktop */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-0">
           
-          {/* LEFT: Main Terminal (3/5 width) */}
-          <div className="lg:col-span-3 flex flex-col gap-3 min-h-0">
+          {/* LEFT: Main Terminal (3/5) */}
+          <div className="lg:col-span-3 flex flex-col gap-2 md:gap-3 min-h-0 order-2 lg:order-1">
             
             {/* Terminal Window */}
-            <div className="flex-1 border rounded-lg flex flex-col overflow-hidden" style={{ backgroundColor: `${t.primary}03`, borderColor: `${t.primary}25` }}>
+            <div className="flex-1 border rounded-lg flex flex-col overflow-hidden min-h-[280px] lg:min-h-0" 
+              style={{ backgroundColor: `${t.primary}03`, borderColor: `${t.primary}25` }}>
               {/* Window Header */}
-              <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}06` }}>
+              <div className="px-3 md:px-4 py-2 border-b flex items-center justify-between" 
+                style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}06` }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#ff4444]" />
-                  <div className="w-2 h-2 rounded-full bg-[#ffb000]" />
-                  <div className="w-2 h-2 rounded-full bg-[#33ff00]" />
-                  <span className="text-[10px] uppercase tracking-wider opacity-40 ml-2">
+                  <div className="w-2 h-2 rounded-full bg-[#a06050]/60" />
+                  <div className="w-2 h-2 rounded-full bg-[#c4a060]/60" />
+                  <div className="w-2 h-2 rounded-full bg-[#7a9a6a]/60" />
+                  <span className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-40 ml-2">
                     {chatMode ? "BUNKER_7 CHANNEL" : "COMMAND INTERFACE"}
                   </span>
                 </div>
                 {chatMode && (
                   <button onClick={() => { setChatMode(false); pushTerminal(["Channel closed."]); }}
-                    className="text-[9px] uppercase opacity-40 hover:opacity-100 transition-opacity">
-                    [x] Close Channel
+                    className="text-[8px] md:text-[9px] uppercase opacity-40 hover:opacity-100 transition-opacity">
+                    [x] Close
                   </button>
                 )}
               </div>
               
               {/* Terminal Output */}
-              <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 text-[13px] leading-relaxed font-mono space-y-1">
+              <div ref={terminalRef} 
+                className="flex-1 overflow-y-auto p-3 md:p-4 text-[12px] md:text-[13px] leading-relaxed font-mono space-y-0.5 md:space-y-1">
                 {terminal.map((line, i) => (
                   <div key={i} className={line.startsWith(">") ? "opacity-50" : "opacity-90 whitespace-pre-wrap"}>
                     {line}
                   </div>
                 ))}
-                {isAiTyping && <div className="opacity-50 animate-pulse mt-2">BUNKER_7 is typing...</div>}
+                {isAiTyping && <div className="opacity-50 animate-pulse mt-2 text-[11px] md:text-[13px]">BUNKER_7 is typing...</div>}
               </div>
 
               {/* Input Bar */}
-              <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}04` }}>
-                <span className="text-lg opacity-50 font-bold">{chatMode ? "~" : ">"}</span>
+              <div className="px-3 md:px-4 py-2 md:py-3 border-t flex items-center gap-2 md:gap-3" 
+                style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}04` }}>
+                <span className="text-base md:text-lg opacity-50 font-bold">{chatMode ? "~" : ">"}</span>
                 <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && runCommand(input)}
-                  className="flex-1 bg-transparent text-[14px] font-mono outline-none placeholder:opacity-20"
+                  className="flex-1 bg-transparent text-[13px] md:text-[14px] font-mono outline-none placeholder:opacity-20 min-w-0"
                   style={{ color: t.primary }}
                   placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command..."}
                   spellCheck={false}
                   autoFocus
                 />
-                {chatMode && <span className="text-[9px] opacity-30 uppercase px-2 py-1 rounded border" style={{ borderColor: `${t.primary}20` }}>Chat</span>}
+                {chatMode && <span className="text-[8px] md:text-[9px] opacity-30 uppercase px-2 py-1 rounded border whitespace-nowrap" 
+                  style={{ borderColor: `${t.primary}20` }}>Chat</span>}
               </div>
             </div>
 
             {/* Video Panel Toggle */}
             <button 
               onClick={() => setVideoPanelOpen((v) => !v)}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 border rounded-lg text-[10px] md:text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
               style={{ borderColor: `${t.primary}20`, color: t.primary, backgroundColor: `${t.primary}03` }}>
-              <Radio size={14} className={videoPanelOpen ? "animate-pulse" : ""} />
+              <Radio size={12} className={videoPanelOpen ? "animate-pulse" : ""} />
               {videoPanelOpen ? "Hide" : "Show"} Video Transmissions
             </button>
 
@@ -830,27 +887,32 @@ const seasonal = getSeasonalState();
               {videoPanelOpen && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {VIDEO_LOGS.map((v) => (
                       <button key={v.label} onClick={() => setActiveVideo({ src: v.src, label: v.label })}
-                        className="flex flex-col items-center gap-1 p-3 border rounded-lg hover:opacity-80 transition-opacity text-center"
+                        className="flex items-center sm:flex-col gap-2 sm:gap-1 p-2 md:p-3 border rounded-lg hover:opacity-80 transition-opacity text-left sm:text-center"
                         style={{ borderColor: `${t.primary}20`, backgroundColor: `${t.primary}03` }}>
-                        <Play size={16} className="opacity-50" />
-                        <span className="text-[10px]">{v.label}</span>
-                        <span className="text-[9px] opacity-40">{v.day}</span>
+                        <Play size={14} className="opacity-50 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-[10px] block truncate">{v.label}</span>
+                          <span className="text-[8px] md:text-[9px] opacity-40">{v.day}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Numbers Station */}
+            <NumbersStation themeColor={t.primary} />
           </div>
 
-          {/* RIGHT: Side Panel (2/5 width) */}
-          <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
+          {/* RIGHT: Side Panel (2/5) */}
+          <div className="lg:col-span-2 flex flex-col gap-2 md:gap-3 min-h-0 order-1 lg:order-2">
             
-            {/* Tab Bar */}
-            <div className="flex gap-1 border-b pb-2" style={{ borderColor: `${t.primary}20` }}>
+            {/* Tab Bar — Horizontal scroll on mobile */}
+            <div className="flex gap-1 border-b pb-2 overflow-x-auto" style={{ borderColor: `${t.primary}20` }}>
               {([
                 { id: "logs" as SideTab, label: "Logs", icon: BookOpen },
                 { id: "decrypt" as SideTab, label: "Decrypt", icon: Lock },
@@ -861,33 +923,33 @@ const seasonal = getSeasonalState();
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] uppercase tracking-wider rounded transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2 px-2 md:px-3 text-[9px] md:text-[10px] uppercase tracking-wider rounded transition-all whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id ? "opacity-100" : "opacity-40 hover:opacity-70"
                   }`}
-                  style={activeTab === tab.id ? { backgroundColor: `${t.primary}10`, borderBottom: `2px solid ${t.primary}` } : {}}
+                  style={activeTab === tab.id ? { backgroundColor: `${t.primary}10`, borderBottom: `2px solid ${t.accent || t.primary}` } : {}}
                 >
-                  <tab.icon size={12} />
+                  <tab.icon size={11} />
                   {tab.label}
                 </button>
               ))}
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 border rounded-lg overflow-y-auto p-4" style={{ borderColor: `${t.primary}20`, backgroundColor: `${t.primary}03` }}>
+            <div className="flex-1 border rounded-lg overflow-y-auto p-3 md:p-4 min-h-[200px] lg:min-h-0" 
+              style={{ borderColor: `${t.primary}20`, backgroundColor: `${t.primary}03` }}>
               <AnimatePresence mode="wait">
                 
-                {/* LOGS TAB */}
                 {activeTab === "logs" && (
-                  <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
-                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50 mb-3">Archived Logs</h3>
-                    {LOGS.slice(0, unlocked).map((log, i) => (
+                  <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 md:space-y-5">
+                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2 md:mb-3">Archived Logs</h3>
+                    {LOGS.slice(0, unlocked).map((log) => (
                       <div key={log.day} className="border-l-2 pl-3" style={{ borderColor: `${t.primary}30` }}>
-                        <p className="text-[11px] tracking-widest opacity-50 mb-1">{log.day}</p>
-                        <p className="text-[13px] leading-relaxed opacity-90">{log.text}</p>
+                        <p className="text-[10px] md:text-[11px] tracking-widest opacity-50 mb-1">{log.day}</p>
+                        <p className="text-[12px] md:text-[13px] leading-relaxed opacity-90">{log.text}</p>
                       </div>
                     ))}
                     {unlocked < LOGS.length && (
-                      <div className="flex items-center gap-2 text-[11px] opacity-40 py-4 border-t" style={{ borderColor: `${t.primary}10` }}>
+                      <div className="flex items-center gap-2 text-[10px] md:text-[11px] opacity-40 py-3 md:py-4 border-t" style={{ borderColor: `${t.primary}10` }}>
                         <Lock size={12} />
                         {LOGS.length - unlocked} entries encrypted
                       </div>
@@ -895,13 +957,12 @@ const seasonal = getSeasonalState();
                   </motion.div>
                 )}
 
-                {/* DECRYPT TAB */}
                 {activeTab === "decrypt" && (
-                  <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">Decryption Interface</h3>
+                  <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 md:space-y-4">
+                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">Decryption Interface</h3>
                     <div className="space-y-3">
-                      <p className="text-[12px] opacity-70 leading-relaxed">
-                        Enter codes acquired from the Numbers Station or discovered in the atlas. Each valid code unlocks the next log entry.
+                      <p className="text-[11px] md:text-[12px] opacity-70 leading-relaxed">
+                        Enter codes acquired from the Numbers Station or discovered in the atlas.
                       </p>
                       <div className="flex gap-2">
                         <input
@@ -909,26 +970,26 @@ const seasonal = getSeasonalState();
                           onChange={(e) => setDecryptCode(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && attemptDecrypt()}
                           placeholder="Enter code..."
-                          className="flex-1 bg-transparent border-b-2 text-[14px] font-mono outline-none py-1 placeholder:text-[10px]"
+                          className="flex-1 bg-transparent border-b-2 text-[13px] md:text-[14px] font-mono outline-none py-1 placeholder:text-[10px] min-w-0"
                           style={{ 
-                            borderColor: decryptError ? "#ff4444" : `${t.primary}40`,
-                            color: decryptError ? "#ff4444" : t.primary 
+                            borderColor: decryptError ? "#a05050" : `${t.primary}40`,
+                            color: decryptError ? "#a05050" : t.primary 
                           }}
                           spellCheck={false}
                         />
                         <button
                           onClick={attemptDecrypt}
-                          className="px-4 py-1.5 border rounded text-[11px] font-mono uppercase hover:opacity-80 transition-opacity"
+                          className="px-3 md:px-4 py-1.5 border rounded text-[10px] md:text-[11px] font-mono uppercase hover:opacity-80 transition-opacity flex-shrink-0"
                           style={{ borderColor: `${t.primary}30`, color: t.primary }}
                         >
                           Decrypt
                         </button>
                       </div>
-                      {decryptError && <p className="text-[11px] text-[#ff4444]">Invalid or already used code.</p>}
+                      {decryptError && <p className="text-[11px] text-[#a05050]">Invalid or already used code.</p>}
                       
-                      <div className="mt-6 pt-4 border-t" style={{ borderColor: `${t.primary}10` }}>
-                        <p className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Known Frequencies</p>
-                        <div className="space-y-1 text-[11px] opacity-60 font-mono">
+                      <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t" style={{ borderColor: `${t.primary}10` }}>
+                        <p className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-40 mb-2">Known Frequencies</p>
+                        <div className="space-y-1 text-[10px] md:text-[11px] opacity-60 font-mono">
                           <p>742 • REACTOR • DAYZERO</p>
                           <p>COUNT • DOOR • INWARD</p>
                           <p>BREATHE • MIRROR • ASSEMBLY-314</p>
@@ -938,13 +999,12 @@ const seasonal = getSeasonalState();
                   </motion.div>
                 )}
 
-                {/* ASSETS TAB */}
                 {activeTab === "assets" && (
-                  <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                  <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 md:space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">Recovered Assets</h3>
+                      <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">Recovered Assets</h3>
                       <button onClick={() => setGalleryOpen(true)}
-                        className="text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1">
+                        className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1">
                         <Image size={12} /> Open Gallery
                       </button>
                     </div>
@@ -953,86 +1013,54 @@ const seasonal = getSeasonalState();
                         const isUnlocked = assets.includes(asset.id);
                         return (
                           <div key={asset.id} 
-                            className={`p-2.5 border rounded text-center space-y-1 ${isUnlocked ? "opacity-100" : "opacity-30"}`}
+                            className={`p-2 md:p-2.5 border rounded text-center space-y-1 ${isUnlocked ? "opacity-100" : "opacity-30"}`}
                             style={{ borderColor: `${t.primary}20`, backgroundColor: isUnlocked ? `${t.primary}06` : "transparent" }}>
-                            <div className="text-[9px] uppercase tracking-wider" style={{ color: isUnlocked ? "#a855f7" : "inherit" }}>
+                            <div className="text-[8px] md:text-[9px] uppercase tracking-wider" style={{ color: isUnlocked ? "#a855f7" : "inherit" }}>
                               {asset.rarity}
                             </div>
-                            <div className="text-[11px] font-bold truncate">{asset.title}</div>
-                            <div className="text-[9px] opacity-60">{isUnlocked ? "RECOVERED" : "ENCRYPTED"}</div>
+                            <div className="text-[10px] md:text-[11px] font-bold truncate">{asset.title}</div>
+                            <div className="text-[8px] md:text-[9px] opacity-60">{isUnlocked ? "RECOVERED" : "ENCRYPTED"}</div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="text-center text-[11px] opacity-40 pt-2">
+                    <div className="text-center text-[10px] md:text-[11px] opacity-40 pt-2">
                       {assets.length} / {STORY_ASSETS.length} recovered
                     </div>
                   </motion.div>
                 )}
 
-                {/* PUZZLES TAB */}
                 {activeTab === "puzzles" && (
-                  <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 text-[12px] leading-relaxed">
-                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50 mb-3">Active Anomalies</h3>
+                  <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 md:space-y-4 text-[11px] md:text-[12px] leading-relaxed">
+                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2 md:mb-3">Active Anomalies</h3>
                     
-                    <div className="space-y-3">
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">01</span>
-                          <span className="font-bold text-[11px]">Intercepted Signal</span>
+                    <div className="space-y-2 md:space-y-3">
+                      {[
+                        { n: "01", title: "Intercepted Signal", body: "GUR QBBE BCRAF VAJNEQ", hint: "cmd: cipher [decoded]" },
+                        { n: "02", title: "Coordinate Chain", body: "cmd: coords [n1] [n2] [n3] [n4]", hint: null },
+                        { n: "03", title: "Fragmented Transmission", body: "cmd: assemble", hint: null },
+                        { n: "04", title: "Reflection Lock", body: "cmd: reflect [answer]", hint: null },
+                        { n: "05", title: "Dust Threshold", body: `Current: ${dust}% / ${DUST_THRESHOLD}% required`, hint: null },
+                        { n: "06", title: "Signal Triangulation", body: triangulated ? "COMPLETE" : "Find 3 towers on atlas", hint: null },
+                        { n: "07", title: "Lantern Constellation", body: "Place 5 lanterns on the atlas", hint: "cmd: constellation" },
+                      ].map((p) => (
+                        <div key={p.n} className="p-2 md:p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] md:text-[10px] opacity-40">{p.n}</span>
+                            <span className="font-bold text-[10px] md:text-[11px]">{p.title}</span>
+                          </div>
+                          <p className="opacity-70 text-[10px] md:text-[11px]">{p.body}</p>
+                          {p.hint && <p className="text-[9px] md:text-[10px] opacity-40 mt-1">{p.hint}</p>}
                         </div>
-                        <p className="opacity-70 text-[11px]">GUR QBBE BCRAF VAJNEQ</p>
-                        <p className="text-[10px] opacity-40 mt-1">cmd: cipher [decoded]</p>
-                      </div>
-
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">02</span>
-                          <span className="font-bold text-[11px]">Coordinate Chain</span>
-                        </div>
-                        <p className="opacity-70 text-[11px]">cmd: coords [n1] [n2] [n3] [n4]</p>
-                      </div>
-
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">03</span>
-                          <span className="font-bold text-[11px]">Fragmented Transmission</span>
-                        </div>
-                        <p className="opacity-70 text-[11px]">cmd: assemble</p>
-                      </div>
-
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">04</span>
-                          <span className="font-bold text-[11px]">Reflection Lock</span>
-                        </div>
-                        <p className="opacity-70 text-[11px]">cmd: reflect [answer]</p>
-                      </div>
-
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">05</span>
-                          <span className="font-bold text-[11px]">Dust Threshold</span>
-                        </div>
-                        <p className="opacity-70 text-[11px]">Current: {dust}% / {DUST_THRESHOLD}% required</p>
-                      </div>
-
-                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] opacity-40">06</span>
-                          <span className="font-bold text-[11px]">Signal Triangulation</span>
-                        </div>
-                        <p className="opacity-70 text-[11px]">{triangulated ? "COMPLETE" : "Find 3 towers on atlas"}</p>
-                      </div>
+                      ))}
                     </div>
                   </motion.div>
                 )}
 
-                {/* STATUS TAB */}
                 {activeTab === "status" && (
-                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 text-[12px] font-mono">
-                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">System Status</h3>
-                    <div className="space-y-2 opacity-80">
+                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 md:space-y-4 text-[11px] md:text-[12px] font-mono">
+                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">System Status</h3>
+                    <div className="space-y-1.5 md:space-y-2 opacity-80">
                       <p>TERMINAL_ID: BUNKER_7</p>
                       <p>STATUS: SEALED</p>
                       <p>ATMOSPHERE: BREATHABLE (QUESTIONABLE)</p>
@@ -1043,7 +1071,7 @@ const seasonal = getSeasonalState();
                       <p>ASSETS: {assets.length}/{STORY_ASSETS.length}</p>
                       <p>CODES: {codes.length}/{REDEEMABLE_CODES.length}</p>
                       <p>TRIANGULATED: {triangulated ? "YES" : "NO"}</p>
-                      <p className="animate-pulse pt-2">BUNKER_7 IS LISTENING</p>
+                      <p className="animate-pulse pt-1 md:pt-2">BUNKER_7 IS LISTENING</p>
                     </div>
                   </motion.div>
                 )}
@@ -1053,7 +1081,7 @@ const seasonal = getSeasonalState();
         </div>
 
         {/* Footer */}
-        <div className="text-center opacity-20 text-[9px] tracking-widest py-2">
+        <div className="text-center opacity-20 text-[8px] md:text-[9px] tracking-widest py-1 md:py-2">
           <p>THE DUST REMEMBERS EVERYTHING — DO NOT TRUST THE STATIC</p>
         </div>
       </div>

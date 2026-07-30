@@ -409,7 +409,7 @@ export default function Home() {
           {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
         </AnimatePresence>
 
-        <NumbersStation />
+        <NumbersStation themeColor="#9a8a72" />
         <TransmissionFeed places={places} />
         <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
         <ShortcutHint onClick={() => setShowHelp(true)} />

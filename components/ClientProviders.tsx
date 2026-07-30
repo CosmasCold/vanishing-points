@@ -19,13 +19,12 @@ export default function ClientProviders({ children }: { children: React.ReactNod
     setMounted(true);
   }, []);
 
-  // During SSR / initial hydration: render ONLY children, no client overlays
-  // This prevents any client component from taking the "0 hooks" SSR path
+  // CRITICAL: During SSR/hydration, render ONLY children.
+  // This guarantees zero client hooks run on the server.
   if (!mounted) {
     return <>{children}</>;
   }
 
-  // After mount: all client components render in a consistent hook environment
   return (
     <>
       <GrainOverlay />

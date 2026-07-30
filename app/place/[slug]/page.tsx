@@ -1,170 +1,100 @@
-import { notFound } from "next/navigation";
+"use client";
+
 import Link from "next/link";
-import { ArrowLeft, MapPin, Calendar, AlertTriangle, Eye } from "lucide-react";
-import { Metadata } from "next";
-import dbConnect, { PlaceModel } from "@/lib/db";
-import PhotoGallery from "@/components/PhotoGallery";
-import DangerIndicator from "@/components/DangerIndicator";
-import StatusBadge from "@/components/StatusBadge";
-import TypewriterText from "@/components/TypewriterText";
-import ClassifiedText from "@/components/ClassifiedText";
-import MarginaliaComments from "@/components/MarginaliaComments";
-import { Place } from "@/types";
-import ShareButton from "@/components/ShareButton";
-import PrintButton from "@/components/PrintButton";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ArrowLeft, MapPin, Ghost, Skull } from "lucide-react";
+import { useState, useEffect } from "react";
 
-interface Props {
-  params: { slug: string };
+interface Place {
+  _id: string;
+  name: string;
+  slug: string;
+  category: "abandoned" | "haunted" | "both";
+  coordinates: [number, number];
+  description?: string;
+  location?: string;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await dbConnect();
-  const doc = await PlaceModel.findOne({ slug: params.slug }).lean();
-  const place = doc as unknown as Place | null;
+export default function ArchivesPage() {
+  const router = useRouter();
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [filter, setFilter] = useState<"all" | "abandoned" | "haunted" | "both">("all");
 
-  if (!place) return { title: "Not Found | Vanishing Points" };
+  useEffect(() => {
+    fetch("/api/places")
+      .then((r) => r.json())
+      .then((d) => setPlaces(d.places || []))
+      .catch(() => setPlaces([]));
+  }, []);
 
-  return {
-    title: `${place.name} | Vanishing Points`,
-    description: place.history.slice(0, 160),
-    openGraph: {
-      title: place.name,
-      description: `${place.address.city}, ${place.address.country} · Abandoned ${place.yearAbandoned || "Unknown"} · Danger ${place.dangerLevel}/5`,
-      images: place.photos?.[0] ? [{ url: place.photos[0], width: 1200, height: 800 }] : [],
-      type: "article",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: place.name,
-      description: place.history.slice(0, 120),
-      images: place.photos?.[0] ? [place.photos[0]] : [],
-    },
-  };
-}
-
-export default async function PlacePage({ params }: Props) {
-  await dbConnect();
-  const doc = await PlaceModel.findOne({ slug: params.slug }).lean();
-  const place = doc as unknown as Place | null;
-
-  if (!place) notFound();
+  const filtered = filter === "all" ? places : places.filter((p) => p.category === filter);
 
   return (
-    <main className="submit-page min-h-screen">
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <Link
-          href="/list"
-          className="inline-flex items-center gap-2 text-[#9a8a72] hover:text-[#c4b8a4] transition-colors text-sm font-mono mb-6"
-        >
-          <ArrowLeft size={14} />
-          Return to archives
-        </Link>
-
-        <div className="submit-card rounded-xl p-8 relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <StatusBadge category={place.category} variant="light" />
-                <h1 className="font-cinzel text-3xl font-medium text-[#3d3228] mt-3 leading-tight">
-                  {place.name}
-                </h1>
-                <div className="flex items-center gap-1.5 mt-2 text-[#7a6e5e] font-mono text-xs">
-                  <MapPin size={11} />
-                  <span>
-                    {place.address.city}, {place.address.country}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[rgba(62,50,40,0.1)]">
-              {place.yearAbandoned && (
-                <div className="flex items-center gap-1.5">
-                  <Calendar size={12} className="text-[#9a8a72]" />
-                  <span className="font-mono text-[10px] text-[#7a6e5e] uppercase tracking-wider">
-                    Abandoned {place.yearAbandoned}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-[#9a8a72]" />
-                <span className="font-mono text-[10px] text-[#7a6e5e] uppercase tracking-wider">
-                  Danger
-                </span>
-                <DangerIndicator level={place.dangerLevel} variant="parchment" />
-              </div>
-              <div className="flex items-center gap-1.5 ml-auto">
-                <Eye size={12} className="text-[#9a8a72]" />
-                <span className="font-mono text-[10px] text-[#7a6e5e] uppercase tracking-wider">
-                  {place.viewCount || 0} views
-                </span>
-              </div>
-              <ShareButton url={`/place/${place.slug}`} title={place.name} />
-              <PrintButton />
-            </div>
-
-            {place.photos && place.photos.length > 0 && (
-              <div className="mb-8">
-                <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3">
-                  Visual Evidence
-                </h3>
-                <div className="specimen-frame rounded-lg overflow-hidden bg-[#c9b896]">
-                  <PhotoGallery photos={place.photos} />
-                </div>
-              </div>
-            )}
-
-            <div className="mb-8">
-              <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3">
-                Historical Record
-              </h3>
-              <p className="text-[#4a3e32] text-sm leading-[1.8]">
-                <TypewriterText text={place.history} speed={12} />
-              </p>
-            </div>
-
-            {place.hauntingReports && place.hauntingReports.length > 0 && (
-              <div className="mb-8">
-                <h3 className="font-cinzel text-[10px] uppercase tracking-[0.15em] text-[#5a4e42] mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#7a3a2a]" />
-                  Spectral Accounts
-                </h3>
-                <div className="space-y-3">
-                  {place.hauntingReports.map((report: string, i: number) => (
-                    <p
-                      key={i}
-                      className="relative pl-4 text-[#4a3e32] text-sm leading-[1.7] border-l border-[rgba(122,82,72,0.15)]"
-                    >
-                      <span className="absolute left-0 text-[#9a8a72] font-mono">
-                        —
-                      </span>
-                      <ClassifiedText text={report} />
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <MarginaliaComments placeSlug={place.slug} />
-
-            <div className="pt-4 border-t border-[rgba(62,50,40,0.08)] flex items-center justify-between mt-6">
-              <span className="font-mono text-[9px] text-[#9a8a72] tracking-[0.2em] uppercase opacity-60">
-                Ref. {place.slug?.toUpperCase() || "UNKNOWN"}
-              </span>
-              <div className="flex gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      i < place.dangerLevel
-                        ? "bg-[#7a3a2a]"
-                        : "border border-[#9a8a72] bg-transparent"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+    <main className="min-h-screen bg-[#0f0c09] text-[#ddd0bc] font-mono p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 border-b border-[rgba(122,107,82,0.2)] pb-4">
+          <div>
+            <h1 className="font-cinzel text-2xl md:text-3xl tracking-wide text-[#ddd0bc]">The Archives</h1>
+            <p className="text-[11px] text-[#9a8a72] mt-1 uppercase tracking-widest">All documented points of decay</p>
           </div>
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all text-sm"
+          >
+            <ArrowLeft size={14} />
+            <span className="hidden sm:inline text-xs uppercase tracking-wider">Back to Atlas</span>
+          </Link>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {(["all", "abandoned", "haunted", "both"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded border text-[10px] uppercase tracking-wider transition-all whitespace-nowrap ${
+                filter === f
+                  ? "border-[#9a8a72] text-[#ddd0bc] bg-[#9a8a72]/10"
+                  : "border-[rgba(122,107,82,0.2)] text-[#9a8a72] hover:border-[#9a8a72]/50"
+              }`}
+            >
+              {f === "all" && <span className="flex items-center gap-1.5"><MapPin size={10} /> All ({places.length})</span>}
+              {f === "abandoned" && <span className="flex items-center gap-1.5"><Skull size={10} /> Forsaken ({places.filter(p => p.category === "abandoned").length})</span>}
+              {f === "haunted" && <span className="flex items-center gap-1.5"><Ghost size={10} /> Spectral ({places.filter(p => p.category === "haunted").length})</span>}
+              {f === "both" && <span className="flex items-center gap-1.5">Both ({places.filter(p => p.category === "both").length})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* List */}
+        <div className="space-y-2">
+          {filtered.map((place, idx) => (
+            <motion.div
+              key={place._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03 }}
+              onClick={() => router.push(`/?place=${place.slug}`)}
+              className="group flex items-center justify-between p-3 md:p-4 bg-[#1a1612]/60 border border-[rgba(122,107,82,0.1)] rounded-lg hover:border-[#9a8a72]/40 hover:bg-[#1e1a14] transition-all cursor-pointer"
+            >
+              <div className="min-w-0">
+                <h3 className="font-cinzel text-sm md:text-base text-[#ddd0bc] group-hover:text-[#f0e6d8] transition-colors truncate">{place.name}</h3>
+                <p className="text-[10px] text-[#9a8a72] mt-0.5 uppercase tracking-wider">{place.location || "Unknown coordinates"}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                <span className={`text-[9px] uppercase tracking-wider px-2 py-1 rounded border ${
+                  place.category === "haunted" ? "border-[#7a3a2a]/40 text-[#a67c52]" :
+                  place.category === "both" ? "border-[#a67c52]/40 text-[#c4a882]" :
+                  "border-[#5a6a5a]/40 text-[#8a9a8a]"
+                }`}>
+                  {place.category}
+                </span>
+                <ArrowLeft size={12} className="rotate-180 text-[#9a8a72] opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </main>

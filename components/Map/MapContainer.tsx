@@ -33,12 +33,14 @@ export default function MapContainer({
   const markersRef = useRef<{ marker: mapboxgl.Marker; place: Place }[]>([]);
   const ghostMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const towerMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const lanternMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const [hovered, setHovered] = useState<{
     place: Place;
     left: number;
     top: number;
   } | null>(null);
   const [towersFound, setTowersFound] = useState<Set<number>>(new Set());
+  const [lanternKey, setLanternKey] = useState(0);
 
   // Init map
   useEffect(() => {
@@ -155,6 +157,10 @@ export default function MapContainer({
       });
 
       el.addEventListener("click", () => {
+        // DISPATCH DETAIL FOR LANTERNS
+        window.dispatchEvent(new CustomEvent("place-selected", { 
+          detail: { slug: place.slug, name: place.name, coords: place.coordinates } 
+        }));
         window.dispatchEvent(new CustomEvent("place-selected"));
         onSelectPlace(place);
       });
@@ -309,44 +315,69 @@ export default function MapContainer({
     };
   }, [places, onTowerFound]);
 
+  // RENDER LANTERNS
+  useEffect(() => {
+    if (!map.current) return;
+    
+    // Clear existing lantern markers
+    lanternMarkersRef.current.forEach((m) => m.remove());
+    lanternMarkersRef.current = [];
+
+    const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
+
+    lanterns.forEach((lantern: { coords: [number, number]; flicker: boolean; placeName: string }) => {
+      const el = document.createElement("div");
+      el.className = "relative cursor-pointer";
+      el.style.width = "16px";
+      el.style.height = "16px";
+
+      const flame = document.createElement("div");
+      flame.className = `w-full h-full rounded-full ${lantern.flicker ? "animate-pulse" : ""}`;
+      flame.style.backgroundColor = "#a67c52";
+      flame.style.boxShadow = lantern.flicker 
+        ? "0 0 12px rgba(166,124,82,0.8), 0 0 4px rgba(255,100,50,0.6)" 
+        : "0 0 8px rgba(166,124,82,0.5)";
+      el.appendChild(flame);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(lantern.coords)
+        .addTo(map.current!);
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showToast(`${lantern.placeName}: A lantern burns here.`, "info");
+      });
+
+      lanternMarkersRef.current.push(marker);
+    });
+
+    // Listen for new lanterns placed in other tabs
+    const handler = () => {
+      setLanternKey((k) => k + 1); // triggers re-render
+    };
+    window.addEventListener("lantern-placed", handler);
+
+    return () => {
+      lanternMarkersRef.current.forEach((m) => m.remove());
+      window.removeEventListener("lantern-placed", handler);
+    };
+  }, [places, lanternKey]);
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
-      
-      <div
-        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-500"
-        style={{ opacity: "var(--degrade, 0)" }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,#0f0c09_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,20,0.15)_50%,transparent_50%)] bg-[length:100%_3px]" />
-      </div>
 
       {hovered && (
         <div
-          className="absolute z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full"
-          style={{ left: hovered.left, top: hovered.top }}
+          className="absolute z-30 pointer-events-none bg-[#0f0c09]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded px-3 py-2 shadow-xl"
+          style={{ left: hovered.left, top: hovered.top, transform: "translate(-50%, -100%)" }}
         >
-          <div className="bg-[#252018] border border-[rgba(122,107,82,0.4)] rounded-lg px-3 py-2 shadow-xl mb-1.5">
-            <p className="font-cinzel text-xs text-[#ddd0bc] whitespace-nowrap">
-              {hovered.place.name}
-            </p>
-            <p className="text-[9px] font-mono text-[#9a8a72]">
-              {hovered.place.address.country} · Danger {hovered.place.dangerLevel}
-            </p>
-            <div className="flex gap-0.5 mt-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-1 h-1 rounded-full ${
-                    i < hovered.place.dangerLevel
-                      ? "bg-[#7a3a2a]"
-                      : "bg-[rgba(122,107,82,0.3)]"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="w-2 h-2 bg-[#252018] border-r border-b border-[rgba(122,107,82,0.4)] rotate-45 mx-auto -mt-2.5 relative z-10" />
+          <p className="font-cinzel text-xs text-[#ddd0bc] whitespace-nowrap">
+            {hovered.place.name}
+          </p>
+          <p className="text-[9px] font-mono text-[#9a8a72] uppercase tracking-wider mt-0.5">
+            {hovered.place.category}
+          </p>
         </div>
       )}
     </div>

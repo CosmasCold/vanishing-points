@@ -614,18 +614,27 @@ const seasonal = getSeasonalState();
         break;
       }
 
-      case "email": {
+            case "email": {
         const email = args.slice(1).join(" ");
         if (!email || !email.includes("@")) {
           pushTerminal(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."]);
         } else {
+          // Store client-side (API route can't use localStorage)
+          const key = "bunker-emails";
+          const existing = JSON.parse(localStorage.getItem(key) || "[]");
+          existing.push({ email, date: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(existing));
+
+          // Send to server for the actual email
           fetch("/api/bunker-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
           });
+
           pushTerminal([
             "FREQUENCY REGISTERED.",
+            `Relay: ${email}`,
             "You will receive one transmission.",
             "Do not reply. The channel is one-way.",
           ]);

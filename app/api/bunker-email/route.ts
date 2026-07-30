@@ -12,21 +12,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
     }
 
-    // Store it
-    const key = "bunker-emails";
-    const existing = JSON.parse(localStorage.getItem(key) || "[]");
-    existing.push({ email, date: new Date().toISOString() });
-    localStorage.setItem(key, JSON.stringify(existing));
-
     // Alert yourself
     await resend.emails.send({
       from: "BUNKER_7 <bunker7@vanishingpoints.space>",
-      to: "gabrieldentler3@gmail.com", // <-- your real email
+      to: "coldcosmas@gmail.com", // <-- your real email here
       subject: `New Witness: ${email}`,
-      text: `Witness registered: ${email}\nDate: ${new Date().toLocaleString()}\n\nCheck terminal for details.`,
+      text: `Witness registered: ${email}\nDate: ${new Date().toLocaleString()}`,
     });
 
-    // Confirm to user
+    // Confirm to witness
     await resend.emails.send({
       from: "BUNKER_7 <bunker7@vanishingpoints.space>",
       to: email,

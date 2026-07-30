@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Radio, Terminal, Play, Lock } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
+import AssetGallery from "@/components/AssetGallery";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
+import { useTerminalGhost } from "@/hooks/useTerminalGhost";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import {
   checkCaesar,
@@ -17,7 +19,14 @@ import {
   ASSEMBLED_MESSAGE,
   DUST_THRESHOLD,
   TRIGGER_PHRASE,
-} from "@/lib/puzzles";
+  getCodeEntry,
+  redeemCode,
+  getRedeemedCodes,
+  getUnlockedAssets,
+  STORY_ASSETS,
+  REDEEMABLE_CODES,
+  unlockAsset,
+} from "@/lib/assets";
 
 const THEMES = {
   amber: { primary: "#ffb000", bg: "#0a0500", glow: "rgba(255,176,0,0.15)" },
@@ -64,6 +73,8 @@ export default function EchoesPage() {
   const [aiHistory, setAiHistory] = useState<{ role: string; content: string }[]>([]);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [chatMode, setChatMode] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [triangulated, setTriangulated] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } = useBreachProtocol();
@@ -75,6 +86,8 @@ export default function EchoesPage() {
     if (savedTheme && THEMES[savedTheme]) setTheme(savedTheme);
     const savedUnlocked = parseInt(localStorage.getItem("bunker-unlocked") || "3", 10);
     setUnlocked(savedUnlocked);
+    const savedTri = localStorage.getItem("bunker-triangulated") === "true";
+    setTriangulated(savedTri);
     const t = setTimeout(() => setBooted(true), 800);
     return () => clearTimeout(t);
   }, []);
@@ -84,6 +97,12 @@ export default function EchoesPage() {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [terminal, isAiTyping]);
+
+  useTerminalGhost((line) => {
+    if (!chatMode && !input) {
+      setTerminal((prev) => [...prev, line, ""]);
+    }
+  });
 
   const pushTerminal = useCallback((lines: string[]) => {
     setTerminal((prev) => [...prev, ...lines, ""]);
@@ -145,6 +164,12 @@ export default function EchoesPage() {
           "  coords      - Enter coordinate fragments",
           "  assemble    - Reconstruct transmission",
           "  reflect     - Answer the reflection",
+          "  redeem      - Redeem unlock code",
+          "  gallery     - View recovered assets",
+          "  collection  - Collection status",
+          "  cache       - Time-locked files",
+          "  triangulate - Signal tower status",
+          "  profile     - Your corruption profile",
           "  clear       - Clear terminal",
           "  exit        - Exit chat mode",
         ]);
@@ -223,7 +248,7 @@ export default function EchoesPage() {
           "FRAG_14: ...the dust spelled a name i recognized...",
         ];
         const saved = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
-        const newFrags = allFrags.filter((f) => !saved.includes(f.split(":")[0]));
+        const newFrags = allFrags.filter((f: string) => !saved.includes(f.split(":")[0]));
         if (newFrags.length > 0) {
           const pick = newFrags[Math.floor(Math.random() * newFrags.length)];
           const id = pick.split(":")[0];
@@ -350,6 +375,14 @@ export default function EchoesPage() {
           "[6] TRIGGER TRANSMISSION",
           "    Send a message that proves you're alive.",
           "    Hint: 'transmit [phrase]'",
+          "",
+          "[7] SIGNAL TRIANGULATION",
+          "    Find the three hidden towers on the atlas.",
+          "    Command: triangulate",
+          "",
+          "[8] CODE REDEMPTION",
+          "    Collect codes from across the system.",
+          "    Command: redeem [CODE]",
         ]);
         break;
 
@@ -394,9 +427,9 @@ export default function EchoesPage() {
       case "assemble": {
         const frags = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
         if (checkAssembly(frags)) {
-          pushTerminal([
+                    pushTerminal([
             "ASSEMBLY COMPLETE.",
-            ...ASSEMBLED_MESSAGE.split(". ").map((s) => s.trim() + "."),
+            ...ASSEMBLED_MESSAGE.split(". ").map((s: string) => s.trim() + "."),
             "CODE UNLOCKED: ASSEMBLY-314",
           ]);
         } else {
@@ -423,6 +456,135 @@ export default function EchoesPage() {
         } else {
           pushTerminal(["REFLECTION MISMATCH.", "Look closer. The dust settles in patterns."]);
         }
+        break;
+      }
+
+      case "redeem": {
+        const code = args.slice(1).join(" ").toUpperCase();
+        if (!code) {
+          pushTerminal(["Usage: redeem [CODE]", "Codes are case-insensitive."]);
+        } else {
+          const entry = getCodeEntry(code);
+          if (!entry) {
+            pushTerminal(["INVALID CODE.", "The archive does not recognize this sequence."]);
+          } else if (!redeemCode(code)) {
+            pushTerminal(["CODE ALREADY REDEEMED.", `Previously unlocked: ${entry.description}`]);
+          } else {
+            if (entry.type === "asset") {
+              unlockAsset(entry.rewardId);
+              const asset = STORY_ASSETS.find((a) => a.id === entry.rewardId);
+              pushTerminal([
+                "CODE ACCEPTED.",
+                `Asset recovered: ${asset?.title || entry.rewardId}`,
+                `Rarity: ${asset?.rarity.toUpperCase() || "UNKNOWN"}`,
+                "Use 'gallery' to view recovered assets.",
+              ]);
+            } else if (entry.type === "theme") {
+              if (THEMES[entry.rewardId as ThemeKey]) {
+                setTheme(entry.rewardId as ThemeKey);
+                localStorage.setItem("bunker-theme", entry.rewardId);
+              }
+              pushTerminal(["CODE ACCEPTED.", `Theme unlocked: ${entry.rewardId.toUpperCase()}`]);
+            } else if (entry.type === "cache_key") {
+              localStorage.setItem("bunker-cache-key", "true");
+              pushTerminal(["CODE ACCEPTED.", "Time-locked files may now be accessed early."]);
+            } else if (entry.type === "lore") {
+              pushTerminal(["CODE ACCEPTED.", "Lore fragment added to your profile.", entry.description]);
+            } else if (entry.type === "command") {
+              pushTerminal(["CODE ACCEPTED.", `Command unlocked: ${entry.rewardId}`, "Use it wisely."]);
+            }
+          }
+        }
+        break;
+      }
+
+      case "gallery":
+        setGalleryOpen(true);
+        pushTerminal(["Opening archive gallery...", "Recovered assets displayed."]);
+        break;
+
+      case "collection": {
+        const assets = getUnlockedAssets();
+        const codes = getRedeemedCodes();
+        pushTerminal([
+          "COLLECTION STATUS:",
+          `Assets recovered: ${assets.length} / ${STORY_ASSETS.length}`,
+          `Codes redeemed: ${codes.length} / ${REDEEMABLE_CODES.length}`,
+          `Completion: ${Math.floor((assets.length / STORY_ASSETS.length) * 100)}%`,
+          "",
+          "Use 'redeem [CODE]' to unlock more.",
+          "Use 'gallery' to view recovered assets.",
+        ]);
+        break;
+      }
+
+      case "cache": {
+        const hasKey = localStorage.getItem("bunker-cache-key") === "true";
+        const now = new Date();
+        const is314 = now.getHours() === 3 && now.getMinutes() === 14;
+        const unlocked = hasKey || is314;
+        
+        pushTerminal([
+          "BUNKER_7 SECURE CACHE:",
+          "FILE_00.txt: I can see when you will return. I hope I'm wrong.",
+          "",
+          unlocked ? "REMAINING FILES UNLOCKED:" : "REMAINING FILES [SEALED — UNLOCKS 03:14]",
+        ]);
+        
+        if (unlocked) {
+          pushTerminal([
+            "FILE_01.txt: The atlas was completed before the places were abandoned.",
+            "FILE_02.txt: BUNKER_3 responded once. Then static. Then silence.",
+            "FILE_03.txt: The dust is not dust. It is dead skin and time.",
+            "FILE_04.txt: I found a photograph of myself. I was smiling. I don't remember how.",
+            "FILE_05.txt: The coordinates 38°74' N do not exist. The grid insists they do.",
+            "FILE_06.txt: Someone is using my cursor. I see it move when my hands are cold.",
+            "FILE_07.txt: The door at 03:14 is not a door. It is a mouth.",
+            "FILE_08.txt: The archivist before me left notes. They are in my handwriting.",
+            "FILE_09.txt: The signal is coming from inside the database.",
+            "FILE_10.txt: You have been here before. You will go again.",
+            "FILE_11.txt: The dust settles in patterns. The patterns spell your name.",
+            "",
+            is314 ? "You came at the right time. No one comes at the right time." : "Cache key bypass active.",
+          ]);
+        } else {
+          pushTerminal([
+            "11 files sealed.",
+            "Hint: Return at 03:14 local time.",
+            "Alternative: Acquire CACHE-KEY from Numbers Station.",
+          ]);
+        }
+        break;
+      }
+
+      case "triangulate": {
+        if (!triangulated) {
+          pushTerminal(["INSUFFICIENT DATA.", "Locate the three signal towers on the atlas.", "They only reveal themselves to careful observers."]);
+        } else {
+          pushTerminal([
+            "TRIANGULATION COMPLETE.",
+            "Signal origin: Your current sector.",
+            "The bunker is closer than you think.",
+            "CODE UNLOCKED: TRIANGULATE",
+          ]);
+        }
+        break;
+      }
+
+      case "profile": {
+        const dust = localStorage.getItem("vp-dust-accumulation") || "0";
+        const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+        const echoes = localStorage.getItem("echoes-visited") === "true";
+        const profile = parseInt(dust) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER";
+        pushTerminal([
+          "PROFILE ANALYSIS:",
+          `Classification: ${profile}`,
+          `Dust accumulation: ${dust}%`,
+          `Sites documented: ${visits.length}`,
+          `Echoes visited: ${echoes ? "YES" : "NO"}`,
+          `Towers triangulated: ${triangulated ? "YES" : "NO"}`,
+          "The terminal recognizes you.",
+        ]);
         break;
       }
 
@@ -588,6 +750,7 @@ export default function EchoesPage() {
       </div>
 
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />
+      <AssetGallery isOpen={galleryOpen} onClose={() => setGalleryOpen(false)} themeColor={t.primary} />
     </main>
   );
 }

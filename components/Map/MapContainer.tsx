@@ -16,6 +16,7 @@ interface Props {
   center?: [number, number];
   anniversarySlugs: string[];
   onGhostCapture?: (ghost: { name: string; slug: string; coords: string }) => void;
+  onTowerFound?: () => void;
 }
 
 export default function MapContainer({
@@ -25,17 +26,19 @@ export default function MapContainer({
   center,
   anniversarySlugs,
   onGhostCapture,
+  onTowerFound,
 }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{ marker: mapboxgl.Marker; place: Place }[]>([]);
   const ghostMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const towerMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const [hovered, setHovered] = useState<{
     place: Place;
     left: number;
     top: number;
   } | null>(null);
+  const [towersFound, setTowersFound] = useState<Set<number>>(new Set());
 
   // Init map
   useEffect(() => {
@@ -152,6 +155,7 @@ export default function MapContainer({
       });
 
       el.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("place-selected"));
         onSelectPlace(place);
       });
 
@@ -192,7 +196,6 @@ export default function MapContainer({
 
       ghostMarkerRef.current = marker;
 
-      // Drift toward nearest real place
       let step = 0;
       const driftInterval = setInterval(() => {
         step++;
@@ -228,7 +231,6 @@ export default function MapContainer({
         showToast("Anomaly logged in expedition record", "warning");
       });
 
-      // Auto-remove after 90s if not clicked
       setTimeout(() => {
         if (ghostMarkerRef.current === marker) {
           clearInterval(driftInterval);
@@ -238,14 +240,11 @@ export default function MapContainer({
       }, 90000);
     };
 
-    // Initial spawn after random delay
-    const initialDelay = 240000 + Math.random() * 180000; // 4-7 min
+    const initialDelay = 240000 + Math.random() * 180000;
     const timer = setTimeout(spawnGhost, initialDelay);
-
-    // Recurring
     const recurring = setInterval(() => {
       if (!ghostMarkerRef.current) spawnGhost();
-    }, 300000 + Math.random() * 300000); // 5-10 min
+    }, 300000 + Math.random() * 300000);
 
     return () => {
       clearTimeout(timer);
@@ -255,6 +254,60 @@ export default function MapContainer({
       }
     };
   }, [places, onGhostCapture]);
+
+  // Signal Triangulation Towers
+  useEffect(() => {
+    if (!map.current || places.length === 0) return;
+    if (towerMarkersRef.current.length > 0) return;
+
+    const towerPositions: [number, number][] = [
+      [-74.006, 40.7128],
+      [139.6917, 35.6895],
+      [-0.1276, 51.5074],
+    ];
+
+    towerPositions.forEach((coords, idx) => {
+      const el = document.createElement("div");
+      el.className = "absolute cursor-pointer opacity-0 hover:opacity-60 transition-opacity duration-500";
+      el.style.width = "20px";
+      el.style.height = "20px";
+
+      const pulse = document.createElement("div");
+      pulse.className = "w-full h-full rounded-full border border-[#33ff00]/40 animate-ping";
+      el.appendChild(pulse);
+
+      const dot = document.createElement("div");
+      dot.className = "absolute inset-1 rounded-full bg-[#33ff00]/30";
+      el.appendChild(dot);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(coords)
+        .addTo(map.current!);
+
+      el.addEventListener("click", () => {
+        setTowersFound((prev) => {
+          const next = new Set(prev);
+          next.add(idx);
+          if (next.size === 3) {
+            localStorage.setItem("bunker-triangulated", "true");
+            onTowerFound?.();
+            showToast("Triangulation complete. Signal origin located.", "warning");
+          } else {
+            showToast(`Tower ${next.size}/3 acquired.`, "info");
+          }
+          return next;
+        });
+        el.style.opacity = "0.6";
+      });
+
+      towerMarkersRef.current.push(marker);
+    });
+
+    return () => {
+      towerMarkersRef.current.forEach((m) => m.remove());
+      towerMarkersRef.current = [];
+    };
+  }, [places, onTowerFound]);
 
   return (
     <div className="relative w-full h-full">

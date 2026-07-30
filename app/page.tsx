@@ -22,17 +22,23 @@ import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
 import { accumulateDust } from "@/hooks/useDustLevel";
 import LyingCompass from "@/components/LyingCompass";
 import AbsenceGreeting from "@/components/AbsenceGreeting";
-
+import AtlasInversion from "@/components/AtlasInversion";
+import PlaceWhispers from "@/components/PlaceWhispers";
+import { usePersonalCorruption, getProfileGreeting } from "@/components/PersonalCorruption";
+import { showToast } from "@/lib/toast";
 
 const MapContainer = dynamic(() => import("@/components/Map/MapContainer"), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-screen bg-[#1a1612] flex items-center justify-center">
-      <div className="text-[#9a8a72] font-mono text-sm animate-pulse">
-        Initializing cartography...
+  loading: () => {
+    const profile = usePersonalCorruption();
+    return (
+      <div className="w-full h-screen bg-[#1a1612] flex items-center justify-center">
+        <div className="text-[#9a8a72] font-mono text-sm animate-pulse">
+          {getProfileGreeting(profile)}
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 });
 
 function haversine(
@@ -66,6 +72,7 @@ export default function Home() {
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
   const { count: visitedCount, visitGhost } = useVisitedPlaces();
+  const profile = usePersonalCorruption();
 
   useEffect(() => {
     fetch("/api/places")
@@ -120,6 +127,10 @@ export default function Home() {
   const handleGhostCapture = useCallback((ghost: { name: string; slug: string; coords: string }) => {
     visitGhost(ghost);
   }, [visitGhost]);
+
+  const handleTowerFound = useCallback(() => {
+    showToast("Triangulation complete. Check the bunker terminal.", "warning");
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -196,6 +207,9 @@ export default function Home() {
           : "bg-[#1a1612]"
       }`}
     >
+      <AtlasInversion />
+      <PlaceWhispers />
+
       <header className="absolute top-0 left-0 right-0 z-40 px-6 py-5 flex items-center justify-between pointer-events-none">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -357,6 +371,7 @@ export default function Home() {
           .filter((p) => isAnniversary(p.slug))
           .map((p) => p.slug)}
         onGhostCapture={handleGhostCapture}
+        onTowerFound={handleTowerFound}
       />
 
       <AnimatePresence mode="wait">
@@ -387,8 +402,8 @@ export default function Home() {
       <TransmissionFeed places={places} />
       <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
       <ShortcutHint onClick={() => setShowHelp(true)} />
-        <LyingCompass places={places} />
-<AbsenceGreeting />
+      <LyingCompass places={places} />
+      <AbsenceGreeting />
     </main>
   );
 }

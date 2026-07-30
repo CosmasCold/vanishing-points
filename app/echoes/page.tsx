@@ -35,11 +35,11 @@ import {
 
 // SOFTER, LESS JARRING THEMES
 const THEMES = {
-  amber: { primary: "#c4a882", bg: "#0c0a08", glow: "rgba(196,168,130,0.12)", accent: "#a67c52" },
-  cyan: { primary: "#8ab4b8", bg: "#080a0a", glow: "rgba(138,180,184,0.12)", accent: "#6a9a9e" },
-  red: { primary: "#b08070", bg: "#0a0808", glow: "rgba(176,128,112,0.12)", accent: "#906050" },
-  white: { primary: "#b8b0a8", bg: "#0a0a0a", glow: "rgba(184,176,168,0.12)", accent: "#989088" },
-  phosphor: { primary: "#7a9a6a", bg: "#050a05", glow: "rgba(122,154,106,0.12)", accent: "#5a7a4a" },
+  amber: { primary: "#d4c4a8", bg: "#0c0a08", glow: "rgba(212,196,168,0.12)", accent: "#c4a882" },  // was #c4a882
+  cyan: { primary: "#a8c4c8", bg: "#080a0a", glow: "rgba(168,196,200,0.12)", accent: "#8ab4b8" },     // was #8ab4b8
+  red: { primary: "#c8a898", bg: "#0a0808", glow: "rgba(200,168,152,0.12)", accent: "#b08070" },       // was #b08070
+  white: { primary: "#c8c0b8", bg: "#0a0a0a", glow: "rgba(200,192,184,0.12)", accent: "#b8b0a8" },    // was #b8b0a8
+  phosphor: { primary: "#90b080", bg: "#050a05", glow: "rgba(144,176,128,0.12)", accent: "#7a9a6a" },   // was #7a9a6a
 };
 
 type ThemeKey = keyof typeof THEMES;

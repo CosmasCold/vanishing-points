@@ -132,25 +132,31 @@ const seasonal = getSeasonalState();
     setTerminal((prev) => [...prev, ...lines, ""]);
   }, []);
 
-  const talkToBunker = async (msg: string) => {
+    const talkToBunker = async (msg: string) => {
     setIsAiTyping(true);
     setTerminal((prev) => [...prev, `> ${msg}`, ""]);
+    
     try {
       const res = await fetch("/api/bunker-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
+        body: JSON.stringify({ 
           message: msg, 
           history: aiHistory,
           absenceDays: absence.days,
         }),
       });
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
       const data = await res.json();
       const response = data.response || "...";
+      
       setAiHistory((h) => [...h.slice(-10), { role: "user", content: msg }, { role: "assistant", content: response }]);
       setTerminal((prev) => [...prev, response, ""]);
-    } catch {
-      pushTerminal(["the channel is dead.", ""]);
+    } catch (err) {
+      console.error("[CHAT ERROR]", err);
+      pushTerminal(["the channel is dead. static only.", ""]);
     } finally {
       setIsAiTyping(false);
     }

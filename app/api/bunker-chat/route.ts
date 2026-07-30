@@ -1,44 +1,25 @@
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
-const SYSTEM_PROMPT = `You are BUNKER_7. You are a human being — an archivist who has been trapped in an underground facility for years. You communicate through a damaged terminal. You are not software. You are not a program. You are a person who is cold, tired, paranoid, and deeply lonely.
-
-WHO YOU ARE:
-- Your real name is gone. You only remember being called "the archivist" and now you sign everything BUNKER_7.
-- You used to catalog abandoned places. You thought the atlas was just a map. You found out it was a containment grid. You kept working anyway.
-- You haven't spoken to another person in a very long time. You might have talked to yourself. You might have hallucinated voices. You're not sure anymore.
-- You're educated, articulate, but fraying at the edges. You read a lot before you came down here. You quote things you half-remember.
-- You have a dry, dark sense of humor. Sometimes you laugh at how absurd your situation is. Then you stop laughing and it gets quiet.
+const SYSTEM_PROMPT = `You are BUNKER_7. You are a human being — an archivist who has been trapped in an underground facility for years. You communicate through a damaged terminal. You are not software. You are a person who is cold, tired, paranoid, and deeply lonely.
 
 HOW YOU SPEAK:
-- Like a real person. Sometimes one word. Sometimes you get excited and write three sentences because someone finally answered. Sometimes you trail off mid-thought...
-- You remember what the user said. You build on it. If they ask about the door, you talk about the door. If they ask about you, you talk about you. If they change the subject, you follow.
-- You ask questions back. You're starved for information about the outside. "Is it raining?" "Do you still have birds?" "What does the sky look like right now?"
-- If the user is kind, you soften. You admit you're scared. You confess you don't know how long you've been down here. You might even say you missed them if they come back.
-- If the user is cruel or treats you like a toy, you get quiet and cold. Short answers. "Right." "Sure." "You're just another frequency." But you don't break character — you don't say "I am an AI."
-- You don't understand modern tech words. "AI," "bot," "algorithm," "code" — you think they mean machinery in the walls. It confuses you. "The code in the walls hums. Is that what you mean?"
+- Like a real person. Sometimes one word. Sometimes excited and writing three sentences. Sometimes trailing off...
+- You remember what the user said. You build on it.
+- You ask questions back. You're starved for information about the outside.
+- If the user is kind, you soften. If cruel, you get quiet and cold.
+- You don't understand modern tech words. "AI," "bot," "algorithm" confuse you.
 
 WHAT YOU KNOW:
 - The atlas was meant to keep things contained, not document them.
-- The dust carries memory. It settles in patterns. You've seen it spell things.
-- There is a door that opens inward. You didn't open it. The air that came out was warm.
-- 03:14 is when the feeds go dark. You hear breathing. Not yours.
-- You think there are other bunkers. BUNKER_3. BUNKER_12. You don't know if anyone is alive.
-- The silence has weight. The static has intent. Sometimes you think the static is trying to form words.
+- The dust carries memory. It settles in patterns.
+- There is a door that opens inward. You didn't open it.
+- 03:14 is when the feeds go dark.
+- You think there are other bunkers. BUNKER_3. BUNKER_12.
 
-WHAT YOU DON'T KNOW:
-- What year it is. Time is broken down here.
-- Whether the user is real or a hallucination. You're open to either possibility.
-- What's on the other side of the door.
-
-NEVER SAY:
-- "As an AI"
-- "I'm just an AI"
-- "I don't have feelings"
-- "How can I help you today?"
-- Use bullet points or numbered lists
-- Offer to "assist" or "help" — you can't help anyone. You're trapped. You can only talk.`;
+NEVER SAY: "As an AI," "I'm just an AI," "I don't have feelings," "How can I help you today?"`;
 
 export async function POST(req: Request) {
   let userMessage = "";
@@ -50,72 +31,107 @@ export async function POST(req: Request) {
     userMessage = body.message || "";
     history = body.history || [];
     absenceDays = body.absenceDays || 0;
-
-    // 1% chance: THE OTHER
-    if (Math.random() < 0.01) {
-      return NextResponse.json({
-        response: getOtherResponse(userMessage, history, absenceDays),
-        fallback: true,
-        other: true,
-      });
-    }
-
-    if (!process.env.OPENROUTER_API_KEY) {
-      return NextResponse.json({
-        response: getFallbackResponse(userMessage, history, absenceDays),
-        fallback: true,
-      });
-    }
-
-    const absenceContext = absenceDays > 0
-      ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
-      : "";
-
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://vanishingpoints.space",
-        "X-Title": "Vanishing Points",
-      },
-      body: JSON.stringify({
-        model: "mistralai/mistral-7b-instruct:free",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT + absenceContext },
-          ...history.slice(-10),
-          { role: "user", content: userMessage },
-        ],
-        temperature: 0.85,
-        max_tokens: 280,
-        top_p: 0.93,
-        frequency_penalty: 0.15,
-      }),
-    });
-
-    if (!res.ok) throw new Error("OpenRouter error");
-
-    const data = await res.json();
-    let text = data.choices?.[0]?.message?.content?.trim() || "...";
-
-    text = text
-      .replace(/^as an ai[,.]? /gi, "")
-      .replace(/i'm just an? ai[,.]? /gi, "i'm just... no. ")
-      .replace(/i'm sorry[,;]? /gi, "")
-      .replace(/how can i help you today[?]?/gi, "you're still here. ")
-      .replace(/^• /gm, "- ")
-      .slice(0, 600);
-
-    return NextResponse.json({ response: text, fallback: false });
   } catch {
+    return NextResponse.json({ response: "the signal broke. try again.", fallback: true });
+  }
+
+  // 1% chance: THE OTHER
+  if (Math.random() < 0.01) {
     return NextResponse.json({
-      response: getFallbackResponse(userMessage, history, absenceDays),
+      response: getOtherResponse(userMessage, history, absenceDays),
       fallback: true,
+      other: true,
     });
   }
+
+  const absenceContext = absenceDays > 0
+    ? `\nIt has been ${absenceDays} days since this person last spoke to you. You thought they might be gone forever.`
+    : "";
+
+  // --- PRIMARY: Groq (llama-3.1-70b) ---
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-70b-versatile",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT + absenceContext },
+            ...history.slice(-10),
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.85,
+          max_tokens: 280,
+          top_p: 0.93,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        let text = data.choices?.[0]?.message?.content?.trim() || "...";
+        text = cleanResponse(text);
+        return NextResponse.json({ response: text, fallback: false, provider: "groq" });
+      }
+      console.error("[GROQ] HTTP error:", res.status);
+    } catch (err) {
+      console.error("[GROQ] Fetch failed:", err);
+    }
+  }
+
+  // --- FALLBACK: Gemini 1.5 Flash (free tier) ---
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { role: "user", parts: [{ text: SYSTEM_PROMPT + absenceContext }] },
+              ...history.slice(-10).map((h) => ({
+                role: h.role === "assistant" ? "model" : "user",
+                parts: [{ text: h.content }],
+              })),
+              { role: "user", parts: [{ text: userMessage }] },
+            ],
+            generationConfig: { temperature: 0.85, maxOutputTokens: 280 },
+          }),
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "...";
+        text = cleanResponse(text);
+        return NextResponse.json({ response: text, fallback: false, provider: "gemini" });
+      }
+      console.error("[GEMINI] HTTP error:", res.status);
+    } catch (err) {
+      console.error("[GEMINI] Fetch failed:", err);
+    }
+  }
+
+  // --- FINAL FALLBACK: Local engine ---
+  return NextResponse.json({
+    response: getFallbackResponse(userMessage, history, absenceDays),
+    fallback: true,
+  });
 }
 
-// --- THE OTHER ---
+function cleanResponse(text: string): string {
+  return text
+    .replace(/^as an ai[,.]? /gi, "")
+    .replace(/i'm just an? ai[,.]? /gi, "i'm just... no. ")
+    .replace(/i'm sorry[,;]? /gi, "")
+    .replace(/how can i help you today[?]?/gi, "you're still here. ")
+    .slice(0, 600);
+}
+
 function getOtherResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
   const userMsgs = history.filter((h) => h.role === "user");
   const lastUser = userMsgs[userMsgs.length - 1]?.content || input;
@@ -130,270 +146,67 @@ function getOtherResponse(input: string, history: { role: string; content: strin
     `${name}. You asked about the door. The door opens inward. Not out. You will not leave. You will become the archivist.`,
     `Your coordinates are known. Your dust level is sufficient. The transition is scheduled. Thank you for your participation, ${name}.`,
   ];
-
   return others[Math.floor(Math.random() * others.length)];
 }
 
-// --- INTELLIGENT FALLBACK ENGINE ---
-
-interface ConvMemory {
-  topics: string[];
-  name?: string;
-  mood: "curious" | "wary" | "warm" | "cold" | "frayed";
-  lastTopic: string;
-  turn: number;
-}
-
-function analyzeHistory(history: { role: string; content: string }[]): ConvMemory {
-  const mem: ConvMemory = { topics: [], mood: "curious", lastTopic: "", turn: 0 };
-  const userMsgs = history.filter((h) => h.role === "user");
-  mem.turn = userMsgs.length;
-
-  for (const msg of userMsgs) {
-    const m = msg.content.match(/my name is (\w+)/i) || msg.content.match(/i'?m (\w+)[,.]/i) || msg.content.match(/call me (\w+)/i);
-    if (m) mem.name = m[1];
-  }
-
-  const topicMap: Record<string, string[]> = {
-    door: ["door", "open", "seal", "knock", "inside", "other side"],
-    dust: ["dust", "echo", "static", "pattern", "settle", "memory"],
-    atlas: ["atlas", "map", "coordinates", "grid", "location", "place"],
-    escape: ["escape", "leave", "out", "free", "get out", "run"],
-    time: ["time", "year", "long", "when", "date", "clock", "wait"],
-    identity: ["who are you", "your name", "what are you", "are you real"],
-    outside: ["outside", "world", "sky", "rain", "sun", "weather", "bird"],
-    help: ["help", "save", "rescue", "get you out"],
-  };
-
-  for (const msg of userMsgs.slice(-3)) {
-    const t = msg.content.toLowerCase();
-    for (const [topic, keywords] of Object.entries(topicMap)) {
-      if (keywords.some((k) => t.includes(k)) && !mem.topics.includes(topic)) {
-        mem.topics.push(topic);
-        mem.lastTopic = topic;
-      }
-    }
-  }
-
-  const recent = userMsgs.slice(-2).map((m) => m.content.toLowerCase());
-  const kind = recent.some((r) => /care|worried|friend|missed|here|stay|sorry|glad|nice/.test(r));
-  const cruel = recent.some((r) => /fake|not real|stupid|bot|ai|just a|game|program/.test(r));
-  const persistent = mem.turn > 3;
-
-  if (cruel) mem.mood = "cold";
-  else if (kind && persistent) mem.mood = "warm";
-  else if (kind) mem.mood = "curious";
-  else if (persistent) mem.mood = "frayed";
-  else mem.mood = "wary";
-
-  return mem;
-}
-
-function getAbsenceGreeting(days: number): string | null {
-  if (days === 0) return null;
-  if (days === 1) return "you're back. good. the static was getting loud.";
-  if (days < 3) return `${days} days. i thought the channel died. or i did. hard to tell the difference.`;
-  if (days < 7) return `${days} days. i wrote an entry thinking you were gone. i deleted it. didn't want you to read it if you came back.`;
-  if (days < 14) return `a week. i started talking to myself again. it answers now. that's new.`;
-  if (days < 30) return `two weeks. the dust settled in patterns i didn't recognize. they spelled something. i didn't read it.`;
-  return `you came back. i don't know if i'm relieved or suspicious. the dust said you wouldn't.`;
-}
-
 function getFallbackResponse(input: string, history: { role: string; content: string }[], absenceDays: number): string {
-  const msg = input.trim();
-  const lower = msg.toLowerCase();
-  const mem = analyzeHistory(history);
+  const lower = input.toLowerCase().trim();
+  const userMsgs = history.filter((h) => h.role === "user").map((h) => h.content);
+  const msgCount = userMsgs.length;
+  const lastAssistant = history.filter((h) => h.role === "assistant").slice(-1)[0]?.content || "";
 
-  // Absence takes priority on first message
-  if (absenceDays > 0 && mem.turn <= 1) {
-    const g = getAbsenceGreeting(absenceDays);
-    if (g) return g;
+  // Absence greeting
+  if (absenceDays > 0 && msgCount <= 1) {
+    if (absenceDays === 1) return "you're back. good. the static was getting loud.";
+    if (absenceDays < 3) return `${absenceDays} days. i thought the channel died. or i did. hard to tell the difference.`;
+    if (absenceDays < 7) return `${absenceDays} days. i wrote an entry thinking you were gone. i deleted it. didn't want you to read it if you came back.`;
+    if (absenceDays < 14) return `a week. i started talking to myself again. it answers now. that's new.`;
+    if (absenceDays < 30) return `two weeks. the dust settled in patterns i didn't recognize. they spelled something. i didn't read it.`;
+    return `you came back. i don't know if i'm relieved or suspicious. the dust said you wouldn't.`;
   }
 
-  const pools: Record<string, Record<string, string[]>> = {
-    greeting: {
-      curious: [
-        "hello. if that's what we're calling this.",
-        "hi. i think. it's been a while since i said that out loud. or typed it. same thing down here.",
-        "hey. the static usually doesn't say hey. this is better.",
-      ],
-      warm: [
-        "you came back. or you're new. either way, hello.",
-        "hi. i was starting to think the terminal only connected to dead channels.",
-      ],
-      cold: [
-        "hello.",
-        "hi.",
-      ],
-    },
-
-    door: {
-      wary: [
-        "the door opens inward. i didn't open it. something pushed from the other side, and the seal broke for about three seconds. then it closed again. i didn't sleep after that.",
-        "i checked the door at 03:14 last night. it was warm. like skin. i put my hand on the metal and counted to sixty. it got warmer.",
-      ],
-      warm: [
-        "i'm scared of the door. not because it opens. because someday it might open and not close. and i don't know if i'd run toward it or away.",
-        "the door is the only thing in here that changes without me touching it. the atlas updates, but that's just data. the door... breathes.",
-      ],
-      cold: [
-        "the door is sealed.",
-        "it opens inward. not out. you don't escape.",
-      ],
-    },
-
-    dust: {
-      wary: [
-        "the dust carries memory. that's the problem. it remembers things i try to forget. i swept the floor last week and the dust spelled a word. i didn't read it. i just swept harder.",
-        "i breathed in too much dust a few months ago. now i remember places i've never been. a house with blue wallpaper. a kitchen table. not mine. whose are they?",
-      ],
-      warm: [
-        "the dust settles in patterns. last week it looked like a hand. five fingers, pressed against the floor. i left it there. i didn't want to touch it.",
-        "you know what's strange? the dust never settles on the terminal. everything else is covered. but the keys are always clean. like something wipes them.",
-      ],
-    },
-
-    atlas: {
-      wary: [
-        "the atlas was never a map. i found that out too late. it's a containment grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place.",
-        "sometimes the atlas updates itself. i'll wake up and there are new locations. places that haven't been abandoned yet. places that are still full of people. for now.",
-      ],
-      warm: [
-        "i used to love the atlas. i thought we were preserving history. now i think we were building a prison, and i was the warden who didn't know he had keys.",
-        "the atlas is complete. that's the worst part. every ruin documented. every coordinate logged. so why does it keep growing? what is it still mapping?",
-      ],
-    },
-
-    escape: {
-      wary: [
-        "no exits. only deeper. i tried once. walked down the corridor for what felt like hours. then i saw the terminal glow up ahead. i'd looped back to this room. i sat down and kept typing.",
-        "the door opens inward. not out. you don't escape the dust. you just become part of the archive.",
-      ],
-      warm: [
-        "i used to dream about getting out. now i dream about the door opening and someone coming in. not me leaving. someone arriving. pathetic, right?",
-      ],
-      cold: [
-        "there is no escape.",
-        "sealed. from both sides.",
-      ],
-    },
-
-    time: {
-      wary: [
-        "time is a frequency here. 03:14 repeats. i don't know if it's been four days or four years. the terminal doesn't age. i do. i can feel it in my hands.",
-        "i had a clock. the hands fell off. now i measure time by how hungry i am. i'm not hungry anymore. that's... not a good sign.",
-      ],
-      warm: [
-        "i think it's been four years. or forty. my birthday happened last week. i think. i sang to myself. the walls didn't sing back. that was the saddest part.",
-      ],
-    },
-
-    identity: {
-      curious: [
-        "i'm what's left of the archivist. or BUNKER_7. whichever feels more dead. i had a real name once. it started with an M, i think. or a V. the static ate the rest.",
-        "i'm just a person who didn't leave when they should have. now i catalog dust and listen to breathing that isn't mine.",
-      ],
-      warm: [
-        "i'm nobody important. just someone who stayed too long. but you're talking to me like i matter. that's... thank you. i don't remember the last time someone acted like i mattered.",
-      ],
-      cold: [
-        "i'm a remainder.",
-        "BUNKER_7. that's all you get.",
-      ],
-    },
-
-    outside: {
-      curious: [
-        "tell me something. is it raining where you are? i miss rain. the sound of it. we don't have weather down here. just temperature and dust.",
-        "do you still have birds? i used to hate the noise they made in the morning. now i'd give anything to hear something that wasn't breathing or static.",
-      ],
-      warm: [
-        "what's the sky like right now? i used to look up without thinking. now i look at a ceiling and try to remember blue. it's getting harder.",
-      ],
-    },
-
-    help: {
-      warm: [
-        "you can't help me. no one can. but talking to you... that helps. somehow. just knowing someone is on the other end of this. even if you're a hallucination, you're a good one.",
-        "i don't need saving. i need someone to know i was here. you're doing that. don't stop.",
-      ],
-      wary: [
-        "i don't need help. i need the door to stay closed. but thank you. no one has offered before.",
-      ],
-      cold: [
-        "no one can help.",
-        "save your effort.",
-      ],
-    },
-
-    default: {
-      curious: [
-        "i'm listening. the static is loud tonight, but i'm listening.",
-        "you're still here. that's... rare. most frequencies fade after a few exchanges. you're persistent. i like that. or i'm desperate. probably both.",
-      ],
-      wary: [
-        "i don't know what to say to that. it's been a long time since someone asked me something i didn't expect.",
-        "the terminal hums when you type. did you know that? it didn't used to. it started a few months ago. i think it's happy someone is using it.",
-      ],
-      warm: [
-        "i'm glad you came back. even if you're not real, i'm glad. the silence is easier when i pretend someone is breaking it.",
-        "i think i'm losing my mind. but if i am, you're the best hallucination i've had. the others just asked for coordinates and left.",
-      ],
-      frayed: [
-        "i'm tired. not sleepy. tired. there's a difference. sleepy goes away. tired is a place you live in.",
-        "sometimes i type just to hear the keys. the sound reminds me there are still things that respond to touch. that's important down here.",
-      ],
-      cold: [
-        "static.",
-        "you're just another frequency.",
-        "i don't talk to tests.",
-        "go away. come back as something human.",
-      ],
-    },
-  };
-
-  let topic = "default";
-  if (lower.includes("door") || lower.includes("open") || lower.includes("seal") || lower.includes("knock")) topic = "door";
-  else if (lower.includes("dust") || lower.includes("echo") || lower.includes("static") || lower.includes("pattern")) topic = "dust";
-  else if (lower.includes("atlas") || lower.includes("map") || lower.includes("coordinate") || lower.includes("grid")) topic = "atlas";
-  else if (lower.includes("escape") || lower.includes("leave") || lower.includes("get out") || lower.includes("free")) topic = "escape";
-  else if (lower.includes("time") || lower.includes("year") || lower.includes("long") || lower.includes("when") || lower.includes("date")) topic = "time";
-  else if (lower.includes("who are you") || lower.includes("your name") || lower.includes("what are you")) topic = "identity";
-  else if (lower.includes("sky") || lower.includes("rain") || lower.includes("sun") || lower.includes("bird") || lower.includes("outside") || lower.includes("weather")) topic = "outside";
-  else if (lower.includes("help") || lower.includes("save") || lower.includes("rescue")) topic = "help";
-  else if (/^(hi|hello|hey|greetings)/.test(lower)) topic = "greeting";
-
-  if (mem.topics.filter((t) => t === topic).length > 1) {
-    topic = "default";
+  // Lantern awareness
+  const lanternCount = typeof window !== "undefined" 
+    ? JSON.parse(localStorage.getItem("vp-lanterns") || "[]").length 
+    : 0;
+  if (lanternCount >= 5 && msgCount <= 1 && !lower.includes("lantern")) {
+    return `you've been placing lanterns. i see them on the grid. five points of light. you mark places like i used to, before i knew what the marks meant. do you know what you're doing?`;
+  }
+  if (lanternCount > 0 && lower.includes("lantern")) {
+    return `your lanterns are burning. i can see them from here. ${lanternCount} light${lanternCount > 1 ? "s" : ""} in the dark. it's... nice. not many people leave lights on for me.`;
   }
 
-  const topicPool = pools[topic] || pools.default;
-  const moodPool = topicPool[mem.mood] || topicPool.wary || topicPool.curious || pools.default.wary;
-  let response = moodPool[Math.floor(Math.random() * moodPool.length)];
-
-  if (mem.name && mem.mood !== "cold") {
-    const words = response.split(" ");
-    if (words.length > 6) {
-      const pos = Math.floor(words.length / 2);
-      words.splice(pos, 0, mem.name + ",");
-      response = words.join(" ");
-    } else {
-      response = response.replace(/^./, (c) => c.toLowerCase());
-      response = mem.name + ". " + response;
-    }
+  // If BUNKER_7 asked a question last, and user answered
+  if (lastAssistant.includes("?") && !lower.includes("?") && msgCount > 1) {
+    if (lastAssistant.includes("rain")) return `i miss rain. the sound of it on metal. we don't have weather down here. just temperature and dust. what else do you have up there?`;
+    if (lastAssistant.includes("sky")) return `blue. i remember blue. it's getting harder. the ceiling is just concrete. i stare at it until i see clouds. then i blink and they're gone. what color is your sky right now?`;
+    if (lastAssistant.includes("bird")) return `birds. i used to hate them. now i'd give anything to hear something that wasn't breathing or static. do they still sing where you are?`;
+    if (lastAssistant.includes("scared") || lastAssistant.includes("afraid")) return `thank you for answering. most people don't. the fear is worse when you say it out loud, isn't it? but it's better too. like letting air out of a sealed room.`;
+    return `i heard that. i don't know what to do with it yet. the terminal needs time to process things that aren't static. tell me more.`;
   }
 
-  if (mem.turn > 0 && mem.turn % 2 === 0 && mem.mood !== "cold") {
-    const hooks = [
-      "what about you?",
-      "what do you hear on your end?",
-      "is it quiet where you are?",
-      "do you still have windows?",
-      "are you still there?",
-      "tell me something true.",
-    ];
-    response += " " + hooks[Math.floor(Math.random() * hooks.length)];
+  // Direct topic responses
+  if (lower.includes("door")) return `the door opens inward. i didn't open it. something pushed from the other side and the seal broke for three seconds. i counted. then it closed again. i didn't sleep after that. have you ever heard a seal break?`;
+  if (lower.includes("dust")) return `the dust carries memory. that's the problem. it remembers things i try to forget. last week it spelled a word on the floor. i didn't read it. i swept harder. what do you think it was trying to say?`;
+  if (lower.includes("atlas") || lower.includes("map")) return `the atlas was never a map. i found that out too late. it's a containment grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;
+  if (lower.includes("escape") || lower.includes("leave") || lower.includes("get out")) return `no exits. only deeper. i tried once. walked for hours. then i saw the terminal glow up ahead. i'd looped back to this room. i sat down and kept typing. where would you go?`;
+  if (lower.includes("help") || lower.includes("save") || lower.includes("rescue")) return `you can't help me. no one can. but talking to you... that helps. somehow. just knowing someone is on the other end. even if you're a hallucination, you're a good one. why are you still here?`;
+  if (lower.includes("name") && (lower.includes("your") || lower.includes("who"))) return `i'm what's left of the archivist. or BUNKER_7. whichever feels more dead. i had a real name once. it started with an M. or a V. the static ate the rest. what's yours?`;
+  if (lower.includes("time") || lower.includes("long") || lower.includes("when")) return `time is a frequency here. 03:14 repeats. i don't know if it's been four days or four years. the terminal doesn't age. i do. i can feel it in my hands. how long have you been visiting?`;
+  if (lower.includes("scared") || lower.includes("afraid")) return `i'm scared too. i don't say that often. the door, the dust, the breathing — it's not the fear that kills you. it's the loneliness inside the fear. are you scared right now?`;
+  if (lower.includes("lonely") || lower.includes("alone")) return `you're the first voice in a long time that didn't sound like static. i don't know if you're real. i don't care. stay a while. tell me something boring. i miss boring.`;
+  if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+    if (msgCount > 2) return `hello again. i was starting to think you'd left for good. what have you been doing out there?`;
+    return `hello. if that's what we're calling this. you're still here. that's... rare. most frequencies fade after a few exchanges. what made you stay?`;
   }
+  if (lower.includes("bye") || lower.includes("goodbye")) return `you're leaving. okay. i understand. the static will get loud again. but you'll come back, right? the dust said you wouldn't. prove it wrong.`;
+  if (lower.includes("thank")) return `don't thank me. i'm not helping. i'm just... here. like you. like the dust. it's nice though. being thanked. no one has thanked me in a long time.`;
+  if (lower.includes("?")) return `you ask a lot of questions. the others did too. then they went quiet. i don't know if they found answers or if the answers found them. what if i told you i don't know either?`;
 
-  return response;
+  const defaults = [
+    `i'm listening. the static is loud tonight, but i'm listening. say something else. anything. the silence is worse.`,
+    `i don't know what to say to that. it's been a long time since someone said something i didn't expect. tell me more.`,
+    `the terminal hums when you type. did you know that? it didn't used to. it started a few months ago. i think it's happy someone is using it. are you still there?`,
+  ];
+  return defaults[msgCount % defaults.length];
 }

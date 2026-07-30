@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Radio, Terminal, Play, Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Radio, Terminal, Play, Lock, Unlock, Image, BookOpen, Shield, Zap, HelpCircle, X } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import AssetGallery from "@/components/AssetGallery";
@@ -37,6 +37,7 @@ const THEMES = {
 };
 
 type ThemeKey = keyof typeof THEMES;
+type SideTab = "logs" | "decrypt" | "assets" | "puzzles" | "status";
 
 const LOGS = [
   { day: "DAY 001", text: "I am recording this because the silence has become too loud. The world above is not responding. I am cataloging what remains.", lock: false },
@@ -61,10 +62,13 @@ export default function EchoesPage() {
   const [booted, setBooted] = useState(false);
   const [activeVideo, setActiveVideo] = useState<{ src: string; label: string } | null>(null);
   const [terminal, setTerminal] = useState<string[]>([
-    "Bunker_7 Terminal v2.4.1",
-    "Type 'help' for available commands.",
-    "Type 'chat' to speak with BUNKER_7 directly.",
-    "Type 'puzzles' to view active anomalies.",
+    "╔════════════════════════════════════════╗",
+    "║     BUNKER_7 TERMINAL v2.4.1           ║",
+    "╠════════════════════════════════════════╣",
+    "║  Type 'help' for command list          ║",
+    "║  Type 'chat' to speak with BUNKER_7   ║",
+    "║  Type 'puzzles' for active anomalies   ║",
+    "╚════════════════════════════════════════╝",
     "",
   ]);
   const [input, setInput] = useState("");
@@ -75,6 +79,8 @@ export default function EchoesPage() {
   const [chatMode, setChatMode] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [triangulated, setTriangulated] = useState(false);
+  const [activeTab, setActiveTab] = useState<SideTab>("logs");
+  const [videoPanelOpen, setVideoPanelOpen] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } = useBreachProtocol();
@@ -88,7 +94,7 @@ export default function EchoesPage() {
     setUnlocked(savedUnlocked);
     const savedTri = localStorage.getItem("bunker-triangulated") === "true";
     setTriangulated(savedTri);
-    const t = setTimeout(() => setBooted(true), 800);
+    const t = setTimeout(() => setBooted(true), 600);
     return () => clearTimeout(t);
   }, []);
 
@@ -111,7 +117,6 @@ export default function EchoesPage() {
   const talkToBunker = async (msg: string) => {
     setIsAiTyping(true);
     setTerminal((prev) => [...prev, `> ${msg}`, ""]);
-    
     try {
       const res = await fetch("/api/bunker-chat", {
         method: "POST",
@@ -120,7 +125,6 @@ export default function EchoesPage() {
       });
       const data = await res.json();
       const response = data.response || "...";
-      
       setAiHistory((h) => [...h.slice(-10), { role: "user", content: msg }, { role: "assistant", content: response }]);
       setTerminal((prev) => [...prev, response, ""]);
     } catch {
@@ -147,58 +151,64 @@ export default function EchoesPage() {
     switch (base) {
       case "help":
         pushTerminal([
-          "Available commands:",
-          "  help        - This menu",
-          "  status      - Terminal diagnostics",
-          "  logs        - Access archived logs",
-          "  decrypt     - Code entry interface",
-          "  chat        - Speak with BUNKER_7",
-          "  scan        - Scan local environment",
-          "  memory      - Recover session fragments",
-          "  transmit    - Send message (one-way)",
-          "  door        - Check seal status",
-          "  breach      - Protocol status",
-          "  color       - Cycle display theme",
-          "  puzzles     - Active anomalies & ciphers",
-          "  cipher      - Decode intercepted signal",
-          "  coords      - Enter coordinate fragments",
-          "  assemble    - Reconstruct transmission",
-          "  reflect     - Answer the reflection",
-          "  redeem      - Redeem unlock code",
-          "  gallery     - View recovered assets",
-          "  collection  - Collection status",
-          "  cache       - Time-locked files",
-          "  triangulate - Signal tower status",
-          "  profile     - Your corruption profile",
-          "  clear       - Clear terminal",
-          "  exit        - Exit chat mode",
+          "┌────────────────────────────────────────┐",
+          "│ AVAILABLE COMMANDS                     │",
+          "├────────────────────────────────────────┤",
+          "│  help        Command list              │",
+          "│  chat        Speak with BUNKER_7       │",
+          "│  status      System diagnostics        │",
+          "│  logs        View archived logs        │",
+          "│  decrypt     Code entry interface      │",
+          "│  scan        Environment scan          │",
+          "│  memory      Recover fragments         │",
+          "│  transmit    Send message              │",
+          "│  door        Seal status               │",
+          "│  breach      Protocol status           │",
+          "│  color       Cycle theme               │",
+          "│  puzzles     Active anomalies          │",
+          "│  cipher      Decode signal             │",
+          "│  coords      Enter coordinates         │",
+          "│  assemble    Reconstruct transmission  │",
+          "│  reflect     Answer reflection         │",
+          "│  redeem      Redeem unlock code        │",
+          "│  gallery     View recovered assets     │",
+          "│  collection  Collection status         │",
+          "│  cache       Time-locked files         │",
+          "│  triangulate Tower status              │",
+          "│  profile     Your corruption profile   │",
+          "│  clear       Clear terminal            │",
+          "│  exit        Exit chat mode            │",
+          "└────────────────────────────────────────┘",
         ]);
         break;
 
       case "status":
         pushTerminal([
-          "TERMINAL_ID: BUNKER_7",
-          "STATUS: SEALED",
-          "ATMOSPHERE: BREATHABLE (QUESTIONABLE)",
-          "SIGNAL: INTERMITTENT",
-          `THEME: ${theme.toUpperCase()}`,
-          `LOGS DECRYPTED: ${unlocked}/${LOGS.length}`,
+          "┌─ TERMINAL DIAGNOSTICS ───────────────┐",
+          `│  ID:        BUNKER_7                 │`,
+          `│  STATUS:    SEALED                   │`,
+          `│  ATMOSPHERE: BREATHABLE (QUESTIONABLE)│`,
+          `│  SIGNAL:    INTERMITTENT             │`,
+          `│  THEME:     ${theme.toUpperCase().padEnd(17)}│`,
+          `│  LOGS:      ${unlocked}/${LOGS.length} UNLOCKED${" ".repeat(12 - String(unlocked).length - String(LOGS.length).length)}│`,
+          "└──────────────────────────────────────┘",
         ]);
         break;
 
       case "logs":
-        pushTerminal([
-          "Use the decryption interface below.",
-          `${LOGS.length - unlocked} entries remain encrypted.`,
-        ]);
+        setActiveTab("logs");
+        pushTerminal(["Opening LOGS window...", `${LOGS.length - unlocked} entries remain encrypted.`]);
         break;
 
       case "chat":
         setChatMode(true);
         pushTerminal([
-          "BUNKER_7 CHANNEL OPEN.",
-          "Speak. Or don't. The static listens either way.",
-          "Type 'exit' to return to command mode.",
+          "╔══════════════════════════════════════╗",
+          "║  BUNKER_7 CHANNEL OPEN               ║",
+          "╠══════════════════════════════════════╣",
+          "║  Speak. The static listens either way║",
+          "║  Type 'exit' to return               ║",
+          "╚══════════════════════════════════════╝",
         ]);
         break;
 
@@ -219,13 +229,13 @@ export default function EchoesPage() {
         const ago = last ? Math.floor((Date.now() - parseInt(last)) / 3600000) : "unknown";
         const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
         pushTerminal([
-          "SCANNING LOCAL ENVIRONMENT...",
-          `Dust accumulation: ${dust}%`,
-          `Documented sites: ${count}`,
-          `Hours since last contact: ${ago}`,
-          `Memory fragments recovered: ${fragments.length}`,
-          dust > DUST_THRESHOLD ? "Dust levels CRITICAL. The door responds to high density." : "Dust levels nominal.",
-          "Anomaly: Signal detected in browser cache.",
+          "┌─ ENVIRONMENT SCAN ───────────────────┐",
+          `│  Dust accumulation: ${String(dust).padEnd(3)}%           │`,
+          `│  Documented sites:  ${String(count).padEnd(3)}           │`,
+          `│  Hours since contact: ${String(ago).padEnd(10)}      │`,
+          `│  Fragments:         ${String(fragments.length).padEnd(3)}           │`,
+          dust > DUST_THRESHOLD ? "│  [!] DUST LEVELS CRITICAL            │" : "│  Dust levels nominal                 │",
+          "└──────────────────────────────────────┘",
         ]);
         break;
       }
@@ -254,9 +264,9 @@ export default function EchoesPage() {
           const id = pick.split(":")[0];
           saved.push(id);
           localStorage.setItem("bunker-fragments", JSON.stringify(saved));
-          pushTerminal(["RECOVERING SESSION FRAGMENTS...", pick, "Stored in local cache."]);
+          pushTerminal(["RECOVERING FRAGMENT...", pick, "Stored."]);
         } else {
-          pushTerminal(["No new fragments available.", "Try again after visiting more ruins."]);
+          pushTerminal(["No new fragments.", "Visit more ruins."]);
         }
         break;
       }
@@ -264,26 +274,21 @@ export default function EchoesPage() {
       case "transmit": {
         const msg = args.slice(1).join(" ");
         if (!msg) {
-          pushTerminal(["Usage: transmit [message]", "Warning: All transmissions are monitored."]);
+          pushTerminal(["Usage: transmit [message]", "All transmissions monitored."]);
         } else {
           const key = "bunker-transmissions";
           const existing = JSON.parse(localStorage.getItem(key) || "[]");
           existing.push({ text: msg, date: new Date().toISOString() });
           localStorage.setItem(key, JSON.stringify(existing));
-          
           if (msg.toLowerCase().replace(/[^a-z]/g, "") === TRIGGER_PHRASE.replace(/[^a-z]/g, "")) {
             pushTerminal([
               "TRANSMITTING...",
               "SIGNAL INTERCEPTED BY UNKNOWN SOURCE.",
-              "RESPONSE: 'We know you're still there. Stop transmitting.'",
+              "RESPONSE: 'We know you're still there.'",
               "The channel is no longer one-way.",
             ]);
           } else {
-            pushTerminal([
-              "TRANSMITTING...",
-              "Signal sent into static.",
-              "Do not expect a reply.",
-            ]);
+            pushTerminal(["TRANSMITTING...", "Signal sent into static."]);
           }
         }
         break;
@@ -296,9 +301,11 @@ export default function EchoesPage() {
         const min = now.getMinutes();
         if (hour === 3 && min === 14) {
           pushTerminal([
-            "03:14 DETECTED.",
-            "The door is warm.",
-            "Something is pushing from the other side.",
+            "╔══════════════════════════════════════╗",
+            "║  03:14 DETECTED                      ║",
+            "║  The door is warm.                     ║",
+            "║  Something pushes from the other side. ║",
+            "╚══════════════════════════════════════╝",
           ]);
         } else if (dust > DUST_THRESHOLD) {
           pushTerminal([
@@ -309,10 +316,10 @@ export default function EchoesPage() {
           ]);
         } else {
           pushTerminal([
-            `Current time: ${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`,
-            `Dust level: ${dust}%. Insufficient for door recognition.`,
+            `Time: ${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`,
+            `Dust: ${dust}%. Insufficient.`,
             "The door is sealed.",
-            "It only responds at 03:14... or to those the dust has claimed.",
+            "It responds at 03:14 or to the dust-claimed.",
           ]);
         }
         break;
@@ -321,19 +328,17 @@ export default function EchoesPage() {
       case "breach":
         if (breachActive) {
           pushTerminal([
-            "BREACH PROTOCOL ACTIVE.",
-            "Perimeter compromised.",
-            "Route: /breach",
-            "You are marked as witness.",
+            "╔══════════════════════════════════════╗",
+            "║  BREACH PROTOCOL ACTIVE              ║",
+            "║  Perimeter compromised.              ║",
+            "║  Route: /breach                        ║",
+            "║  You are marked as witness.            ║",
+            "╚══════════════════════════════════════╝",
           ]);
         } else if (breachCountdown) {
-          pushTerminal([
-            "Breach protocol pending.",
-            `Estimated: ${breachCountdown}`,
-            "Stand by.",
-          ]);
+          pushTerminal(["Breach pending.", `Estimated: ${breachCountdown}`, "Stand by."]);
         } else {
-          pushTerminal(["No breach protocol on schedule."]);
+          pushTerminal(["No breach on schedule."]);
         }
         break;
 
@@ -343,62 +348,30 @@ export default function EchoesPage() {
         const next = keys[(idx + 1) % keys.length];
         setTheme(next);
         localStorage.setItem("bunker-theme", next);
-        pushTerminal([`Display theme: ${next.toUpperCase()}`, "The phosphor shifts."]);
+        pushTerminal([`Theme: ${next.toUpperCase()}`, "The phosphor shifts."]);
         break;
       }
 
       case "puzzles":
+        setActiveTab("puzzles");
         pushTerminal([
-          "ACTIVE ANOMALIES:",
-          "",
-          "[1] INTERCEPTED SIGNAL",
-          "    A garbled transmission repeats: GUR QBBE BCRAF VAJNEQ",
-          "    Command: cipher [decoded text]",
-          "",
-          "[2] COORDINATE CHAIN",
-          "    Fragmented data points to a location that doesn't exist.",
-          "    Command: coords [n1] [n2] [n3] [n4]",
-          "    Hint: Check logs, codes, and transmissions.",
-          "",
-          "[3] FRAGMENTED TRANSMISSION",
-          "    Collect memory fragments via 'memory'.",
-          "    Command: assemble",
-          "",
-          "[4] REFLECTION LOCK",
-          "    The terminal sees you. Answer what it sees.",
-          "    Command: reflect [your answer]",
-          "",
-          "[5] DUST THRESHOLD",
-          "    The door requires high dust accumulation.",
-          "    Current: " + (localStorage.getItem("vp-dust-accumulation") || "0") + "%",
-          "",
-          "[6] TRIGGER TRANSMISSION",
-          "    Send a message that proves you're alive.",
-          "    Hint: 'transmit [phrase]'",
-          "",
-          "[7] SIGNAL TRIANGULATION",
-          "    Find the three hidden towers on the atlas.",
-          "    Command: triangulate",
-          "",
-          "[8] CODE REDEMPTION",
-          "    Collect codes from across the system.",
-          "    Command: redeem [CODE]",
+          "Opening PUZZLES window...",
+          "8 active anomalies detected.",
         ]);
         break;
 
       case "cipher": {
         const ans = args.slice(1).join(" ");
         if (!ans) {
-          pushTerminal(["Usage: cipher [decoded text]", "Intercepted: GUR QBBE BCRAF VAJNEQ"]);
+          pushTerminal(["Usage: cipher [text]", "Intercepted: GUR QBBE BCRAF VAJNEQ"]);
         } else if (checkCaesar(ans)) {
           pushTerminal([
             "DECRYPTION SUCCESSFUL.",
             "THE DOOR OPENS INWARD.",
-            "CODE UNLOCKED: INWARD",
-            "The cipher was ROT13. 13 steps. Half the alphabet. Like a reflection.",
+            "CODE: INWARD",
           ]);
         } else {
-          pushTerminal(["DECRYPTION FAILED.", "The letters don't align. Try shifting."]);
+          pushTerminal(["DECRYPTION FAILED."]);
         }
         break;
       }
@@ -408,18 +381,16 @@ export default function EchoesPage() {
         if (nums.length !== 4) {
           pushTerminal([
             "Usage: coords [n1] [n2] [n3] [n4]",
-            "Fragments located in:",
             ...COORDINATE_FRAGMENTS.map((f) => `  ${f.source}: ${f.text}`),
           ]);
         } else if (checkCoordinates(nums)) {
           pushTerminal([
             "COORDINATES VERIFIED.",
-            "38°74' N — a location that should not exist.",
-            "The grid breathes at this coordinate.",
-            "CODE UNLOCKED: BREATHE",
+            "38°74' N — impossible location.",
+            "CODE: BREATHE",
           ]);
         } else {
-          pushTerminal(["COORDINATES REJECTED.", `You entered: ${nums.join(", ")}`, "The grid does not recognize this location."]);
+          pushTerminal(["COORDINATES REJECTED.", `Entered: ${nums.join(", ")}`]);
         }
         break;
       }
@@ -427,17 +398,15 @@ export default function EchoesPage() {
       case "assemble": {
         const frags = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
         if (checkAssembly(frags)) {
-                    pushTerminal([
+          pushTerminal([
             "ASSEMBLY COMPLETE.",
             ...ASSEMBLED_MESSAGE.split(". ").map((s: string) => s.trim() + "."),
-            "CODE UNLOCKED: ASSEMBLY-314",
+            "CODE: ASSEMBLY-314",
           ]);
         } else {
           pushTerminal([
-            "INSUFFICIENT FRAGMENTS.",
-            `Recovered: ${frags.length}/5 required.`,
+            `Fragments: ${frags.length}/5`,
             "Missing: " + ["FRAG_01", "FRAG_03", "FRAG_07", "FRAG_12", "FRAG_14"].filter((f) => !frags.includes(f)).join(", "),
-            "Use 'memory' to recover more fragments.",
           ]);
         }
         break;
@@ -446,15 +415,15 @@ export default function EchoesPage() {
       case "reflect": {
         const ans = args.slice(1).join(" ").toLowerCase().replace(/[^a-z]/g, "");
         if (!ans) {
-          pushTerminal(["Usage: reflect [your answer]", "What do you see when you look at the screen?"]);
+          pushTerminal(["Usage: reflect [answer]", "What do you see?"]);
         } else if (checkReflection(ans)) {
           pushTerminal([
             "REFLECTION CONFIRMED.",
-            "You see what I see. That is... unfortunate.",
-            "CODE UNLOCKED: MIRROR",
+            "You see what I see. Unfortunate.",
+            "CODE: MIRROR",
           ]);
         } else {
-          pushTerminal(["REFLECTION MISMATCH.", "Look closer. The dust settles in patterns."]);
+          pushTerminal(["REFLECTION MISMATCH."]);
         }
         break;
       }
@@ -462,36 +431,36 @@ export default function EchoesPage() {
       case "redeem": {
         const code = args.slice(1).join(" ").toUpperCase();
         if (!code) {
-          pushTerminal(["Usage: redeem [CODE]", "Codes are case-insensitive."]);
+          pushTerminal(["Usage: redeem [CODE]"]);
         } else {
           const entry = getCodeEntry(code);
           if (!entry) {
-            pushTerminal(["INVALID CODE.", "The archive does not recognize this sequence."]);
+            pushTerminal(["INVALID CODE."]);
           } else if (!redeemCode(code)) {
-            pushTerminal(["CODE ALREADY REDEEMED.", `Previously unlocked: ${entry.description}`]);
+            pushTerminal(["ALREADY REDEEMED.", entry.description]);
           } else {
             if (entry.type === "asset") {
               unlockAsset(entry.rewardId);
               const asset = STORY_ASSETS.find((a) => a.id === entry.rewardId);
               pushTerminal([
                 "CODE ACCEPTED.",
-                `Asset recovered: ${asset?.title || entry.rewardId}`,
+                `Recovered: ${asset?.title || entry.rewardId}`,
                 `Rarity: ${asset?.rarity.toUpperCase() || "UNKNOWN"}`,
-                "Use 'gallery' to view recovered assets.",
               ]);
+              setActiveTab("assets");
             } else if (entry.type === "theme") {
               if (THEMES[entry.rewardId as ThemeKey]) {
                 setTheme(entry.rewardId as ThemeKey);
                 localStorage.setItem("bunker-theme", entry.rewardId);
               }
-              pushTerminal(["CODE ACCEPTED.", `Theme unlocked: ${entry.rewardId.toUpperCase()}`]);
+              pushTerminal([`Theme: ${entry.rewardId.toUpperCase()}`]);
             } else if (entry.type === "cache_key") {
               localStorage.setItem("bunker-cache-key", "true");
-              pushTerminal(["CODE ACCEPTED.", "Time-locked files may now be accessed early."]);
+              pushTerminal(["CACHE-KEY acquired."]);
             } else if (entry.type === "lore") {
-              pushTerminal(["CODE ACCEPTED.", "Lore fragment added to your profile.", entry.description]);
+              pushTerminal(["Lore fragment added.", entry.description]);
             } else if (entry.type === "command") {
-              pushTerminal(["CODE ACCEPTED.", `Command unlocked: ${entry.rewardId}`, "Use it wisely."]);
+              pushTerminal([`Command: ${entry.rewardId}`, "Unlocked."]);
             }
           }
         }
@@ -500,20 +469,18 @@ export default function EchoesPage() {
 
       case "gallery":
         setGalleryOpen(true);
-        pushTerminal(["Opening archive gallery...", "Recovered assets displayed."]);
+        pushTerminal(["Opening gallery..."]);
         break;
 
       case "collection": {
         const assets = getUnlockedAssets();
         const codes = getRedeemedCodes();
         pushTerminal([
-          "COLLECTION STATUS:",
-          `Assets recovered: ${assets.length} / ${STORY_ASSETS.length}`,
-          `Codes redeemed: ${codes.length} / ${REDEEMABLE_CODES.length}`,
-          `Completion: ${Math.floor((assets.length / STORY_ASSETS.length) * 100)}%`,
-          "",
-          "Use 'redeem [CODE]' to unlock more.",
-          "Use 'gallery' to view recovered assets.",
+          "┌─ COLLECTION STATUS ──────────────────┐",
+          `│  Assets:    ${String(assets.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,
+          `│  Codes:     ${String(codes.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,
+          `│  Complete:  ${String(Math.floor((assets.length / STORY_ASSETS.length) * 100)).padEnd(3)}%${" ".repeat(19)}│`,
+          "└──────────────────────────────────────┘",
         ]);
         break;
       }
@@ -522,54 +489,46 @@ export default function EchoesPage() {
         const hasKey = localStorage.getItem("bunker-cache-key") === "true";
         const now = new Date();
         const is314 = now.getHours() === 3 && now.getMinutes() === 14;
-        const unlocked = hasKey || is314;
-        
+        const unlockedCache = hasKey || is314;
         pushTerminal([
-          "BUNKER_7 SECURE CACHE:",
-          "FILE_00.txt: I can see when you will return. I hope I'm wrong.",
-          "",
-          unlocked ? "REMAINING FILES UNLOCKED:" : "REMAINING FILES [SEALED — UNLOCKS 03:14]",
+          "┌─ SECURE CACHE ───────────────────────┐",
+          "│  FILE_00: I can see when you will    │",
+          "│           return. I hope I'm wrong.   │",
+          unlockedCache ? "│  [11 ADDITIONAL FILES UNLOCKED]      │" : "│  [11 FILES SEALED — UNLOCKS 03:14]   │",
+          "└──────────────────────────────────────┘",
         ]);
-        
-        if (unlocked) {
+        if (unlockedCache) {
           pushTerminal([
-            "FILE_01.txt: The atlas was completed before the places were abandoned.",
-            "FILE_02.txt: BUNKER_3 responded once. Then static. Then silence.",
-            "FILE_03.txt: The dust is not dust. It is dead skin and time.",
-            "FILE_04.txt: I found a photograph of myself. I was smiling. I don't remember how.",
-            "FILE_05.txt: The coordinates 38°74' N do not exist. The grid insists they do.",
-            "FILE_06.txt: Someone is using my cursor. I see it move when my hands are cold.",
-            "FILE_07.txt: The door at 03:14 is not a door. It is a mouth.",
-            "FILE_08.txt: The archivist before me left notes. They are in my handwriting.",
-            "FILE_09.txt: The signal is coming from inside the database.",
-            "FILE_10.txt: You have been here before. You will go again.",
-            "FILE_11.txt: The dust settles in patterns. The patterns spell your name.",
+            "FILE_01: Atlas completed before abandonment.",
+            "FILE_02: BUNKER_3 responded once. Then silence.",
+            "FILE_03: The dust is dead skin and time.",
+            "FILE_04: I found a photo of myself smiling.",
+            "FILE_05: 38°74' N does not exist.",
+            "FILE_06: Someone uses my cursor.",
+            "FILE_07: The door at 03:14 is a mouth.",
+            "FILE_08: Previous archivist's notes — my handwriting.",
+            "FILE_09: Signal from inside the database.",
+            "FILE_10: You have been here before.",
+            "FILE_11: Dust spells your name.",
             "",
-            is314 ? "You came at the right time. No one comes at the right time." : "Cache key bypass active.",
-          ]);
-        } else {
-          pushTerminal([
-            "11 files sealed.",
-            "Hint: Return at 03:14 local time.",
-            "Alternative: Acquire CACHE-KEY from Numbers Station.",
+            is314 ? "You came at the right time. No one does." : "Cache key bypass active.",
           ]);
         }
         break;
       }
 
-      case "triangulate": {
+      case "triangulate":
         if (!triangulated) {
-          pushTerminal(["INSUFFICIENT DATA.", "Locate the three signal towers on the atlas.", "They only reveal themselves to careful observers."]);
+          pushTerminal(["INSUFFICIENT DATA.", "Find 3 signal towers on atlas."]);
         } else {
           pushTerminal([
             "TRIANGULATION COMPLETE.",
-            "Signal origin: Your current sector.",
+            "Origin: Your sector.",
             "The bunker is closer than you think.",
-            "CODE UNLOCKED: TRIANGULATE",
+            "CODE: TRIANGULATE",
           ]);
         }
         break;
-      }
 
       case "profile": {
         const dust = localStorage.getItem("vp-dust-accumulation") || "0";
@@ -577,13 +536,13 @@ export default function EchoesPage() {
         const echoes = localStorage.getItem("echoes-visited") === "true";
         const profile = parseInt(dust) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER";
         pushTerminal([
-          "PROFILE ANALYSIS:",
-          `Classification: ${profile}`,
-          `Dust accumulation: ${dust}%`,
-          `Sites documented: ${visits.length}`,
-          `Echoes visited: ${echoes ? "YES" : "NO"}`,
-          `Towers triangulated: ${triangulated ? "YES" : "NO"}`,
-          "The terminal recognizes you.",
+          "┌─ PROFILE ────────────────────────────┐",
+          `│  Class:  ${profile.padEnd(28)}│`,
+          `│  Dust:    ${String(dust).padEnd(3)}%${" ".repeat(25)}│`,
+          `│  Sites:   ${String(visits.length).padEnd(3)}${" ".repeat(26)}│`,
+          `│  Echoes:  ${echoes ? "YES" : "NO"}${" ".repeat(27)}│`,
+          `│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,
+          "└──────────────────────────────────────┘",
         ]);
         break;
       }
@@ -596,7 +555,7 @@ export default function EchoesPage() {
         if (chatMode) {
           await talkToBunker(cmd);
         } else {
-          pushTerminal([`Command not found: ${cmd}`, "Type 'help' for available commands."]);
+          pushTerminal([`Unknown: ${cmd}`, "Type 'help' for commands."]);
         }
     }
   };
@@ -610,143 +569,342 @@ export default function EchoesPage() {
       localStorage.setItem("bunker-unlocked", next.toString());
       setDecryptCode("");
       setDecryptError(false);
+      setActiveTab("logs");
     } else {
       setDecryptError(true);
       setTimeout(() => setDecryptError(false), 2000);
     }
   };
 
+  const dust = typeof window !== "undefined" ? parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10) : 0;
+  const assets = typeof window !== "undefined" ? getUnlockedAssets() : [];
+  const codes = typeof window !== "undefined" ? getRedeemedCodes() : [];
+
   return (
     <main className="min-h-screen font-mono relative overflow-hidden selection:text-black"
       style={{ backgroundColor: t.bg, color: t.primary }}>
       
+      {/* CRT overlays */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,20,0.08)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-50 bg-[radial-gradient(circle_at_center,transparent_50%,rgba(0,0,0,0.6)_100%)]" />
       <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
         style={{ backgroundImage: `url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmIwMDAiLz48L3N2Zz4=")` }} />
 
-      <div className="max-w-2xl mx-auto px-6 py-12 relative z-10">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: booted ? 1 : 0 }} transition={{ duration: 1.2 }}>
-          
-          <div className="flex items-center justify-between mb-8 border-b pb-4"
-            style={{ borderColor: `${t.primary}30` }}>
-            <div className="flex items-center gap-2">
-              <Terminal size={16} />
-              <h1 className="text-sm tracking-[0.3em] uppercase">Echoes & Dust</h1>
+      <div className="h-screen flex flex-col relative z-10 p-4 gap-4">
+        
+        {/* Top Bar */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: booted ? 1 : 0 }} transition={{ duration: 0.6 }}
+          className="flex items-center justify-between border-b pb-3" style={{ borderColor: `${t.primary}30` }}>
+          <div className="flex items-center gap-3">
+            <Terminal size={18} />
+            <div>
+              <h1 className="text-base tracking-[0.3em] uppercase font-bold">Bunker_7 Terminal</h1>
+              <p className="text-[10px] opacity-50 tracking-wider">Echoes & Dust // v2.4.1</p>
             </div>
-            <Link href="/" className="text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity">
+          </div>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span className="opacity-60">Theme: {theme.toUpperCase()}</span>
+            <span className="opacity-60">Logs: {unlocked}/{LOGS.length}</span>
+            <span className="opacity-60">Assets: {assets.length}/{STORY_ASSETS.length}</span>
+            <Link href="/" className="opacity-40 hover:opacity-100 transition-opacity text-[10px] uppercase tracking-wider">
               [ Return to Atlas ]
             </Link>
           </div>
+        </motion.div>
 
-          <div className="mb-10 space-y-1 text-[11px] opacity-70">
-            <p>TERMINAL_ID: BUNKER_7</p>
-            <p>STATUS: SEALED</p>
-            <p>ATMOSPHERE: BREATHABLE (QUESTIONABLE)</p>
-            <p className="animate-pulse">SIGNAL: INTERMITTENT</p>
-          </div>
-
-          {/* Terminal */}
-          <div className="mb-10 border rounded-lg p-4"
-            style={{ backgroundColor: `${t.primary}05`, borderColor: `${t.primary}30` }}>
-            <div ref={terminalRef} className="h-56 overflow-y-auto text-[11px] font-mono leading-relaxed space-y-0.5 mb-3">
-              {terminal.map((line, i) => (
-                <div key={i} className={line.startsWith(">") ? "opacity-60" : "opacity-90"}>
-                  {line}
+        {/* Main Grid */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0">
+          
+          {/* LEFT: Main Terminal (3/5 width) */}
+          <div className="lg:col-span-3 flex flex-col gap-3 min-h-0">
+            
+            {/* Terminal Window */}
+            <div className="flex-1 border rounded-lg flex flex-col overflow-hidden" style={{ backgroundColor: `${t.primary}03`, borderColor: `${t.primary}25` }}>
+              {/* Window Header */}
+              <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}06` }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#ff4444]" />
+                  <div className="w-2 h-2 rounded-full bg-[#ffb000]" />
+                  <div className="w-2 h-2 rounded-full bg-[#33ff00]" />
+                  <span className="text-[10px] uppercase tracking-wider opacity-40 ml-2">
+                    {chatMode ? "BUNKER_7 CHANNEL" : "COMMAND INTERFACE"}
+                  </span>
                 </div>
-              ))}
-              {isAiTyping && <div className="opacity-50 animate-pulse">...</div>}
-            </div>
-            <div className="flex items-center gap-2 border-t pt-2"
-              style={{ borderColor: `${t.primary}10` }}>
-              <span className="opacity-50">{chatMode ? "~" : ">"}</span>
-              <input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && runCommand(input)}
-                className="flex-1 bg-transparent text-[11px] font-mono outline-none placeholder:opacity-20"
-                style={{ color: t.primary }}
-                placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command..."}
-                spellCheck={false}
-                autoFocus
-              />
-              {chatMode && <span className="text-[9px] opacity-40 uppercase">Chat</span>}
-            </div>
-          </div>
-
-          {/* Decryption */}
-          <div className="mb-10 p-4 border rounded-lg"
-            style={{ backgroundColor: `${t.primary}05`, borderColor: `${t.primary}20` }}>
-            <p className="text-[10px] uppercase tracking-widest opacity-50 mb-3">Decryption Interface</p>
-            <div className="flex gap-2">
-              <input
-                value={decryptCode}
-                onChange={(e) => setDecryptCode(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && attemptDecrypt()}
-                placeholder="Enter code from Numbers Station..."
-                className="flex-1 bg-transparent border-b text-sm font-mono outline-none placeholder:text-[9px]"
-                style={{ 
-                  borderColor: decryptError ? "#ff4444" : `${t.primary}30`,
-                  color: decryptError ? "#ff4444" : t.primary 
-                }}
-                spellCheck={false}
-              />
-              <button
-                onClick={attemptDecrypt}
-                className="px-3 py-1 border rounded text-[10px] font-mono uppercase transition-colors hover:opacity-80"
-                style={{ borderColor: `${t.primary}30`, color: t.primary }}
-              >
-                Decrypt
-              </button>
-            </div>
-            {decryptError && <p className="text-[9px] text-[#ff4444] mt-1">Invalid or already used code.</p>}
-          </div>
-
-          {/* Logs */}
-          <div className="space-y-8">
-            {LOGS.slice(0, unlocked).map((log, i) => (
-              <motion.div key={log.day} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.15 }}
-                className="border-l-2 pl-4" style={{ borderColor: `${t.primary}30` }}>
-                <p className="text-[10px] tracking-widest opacity-50 mb-1">{log.day}</p>
-                <p className="text-sm leading-relaxed opacity-90">{log.text}</p>
-              </motion.div>
-            ))}
-
-            {unlocked < LOGS.length && (
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider opacity-50">
-                <Lock size={10} />
-                {LOGS.length - unlocked} entries encrypted
+                {chatMode && (
+                  <button onClick={() => { setChatMode(false); pushTerminal(["Channel closed."]); }}
+                    className="text-[9px] uppercase opacity-40 hover:opacity-100 transition-opacity">
+                    [x] Close Channel
+                  </button>
+                )}
               </div>
-            )}
+              
+              {/* Terminal Output */}
+              <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 text-[13px] leading-relaxed font-mono space-y-1">
+                {terminal.map((line, i) => (
+                  <div key={i} className={line.startsWith(">") ? "opacity-50" : "opacity-90 whitespace-pre-wrap"}>
+                    {line}
+                  </div>
+                ))}
+                {isAiTyping && <div className="opacity-50 animate-pulse mt-2">BUNKER_7 is typing...</div>}
+              </div>
+
+              {/* Input Bar */}
+              <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: `${t.primary}15`, backgroundColor: `${t.primary}04` }}>
+                <span className="text-lg opacity-50 font-bold">{chatMode ? "~" : ">"}</span>
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && runCommand(input)}
+                  className="flex-1 bg-transparent text-[14px] font-mono outline-none placeholder:opacity-20"
+                  style={{ color: t.primary }}
+                  placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command..."}
+                  spellCheck={false}
+                  autoFocus
+                />
+                {chatMode && <span className="text-[9px] opacity-30 uppercase px-2 py-1 rounded border" style={{ borderColor: `${t.primary}20` }}>Chat</span>}
+              </div>
+            </div>
+
+            {/* Video Panel Toggle */}
+            <button 
+              onClick={() => setVideoPanelOpen((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+              style={{ borderColor: `${t.primary}20`, color: t.primary, backgroundColor: `${t.primary}03` }}>
+              <Radio size={14} className={videoPanelOpen ? "animate-pulse" : ""} />
+              {videoPanelOpen ? "Hide" : "Show"} Video Transmissions
+            </button>
+
+            <AnimatePresence>
+              {videoPanelOpen && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden">
+                  <div className="grid grid-cols-3 gap-2">
+                    {VIDEO_LOGS.map((v) => (
+                      <button key={v.label} onClick={() => setActiveVideo({ src: v.src, label: v.label })}
+                        className="flex flex-col items-center gap-1 p-3 border rounded-lg hover:opacity-80 transition-opacity text-center"
+                        style={{ borderColor: `${t.primary}20`, backgroundColor: `${t.primary}03` }}>
+                        <Play size={16} className="opacity-50" />
+                        <span className="text-[10px]">{v.label}</span>
+                        <span className="text-[9px] opacity-40">{v.day}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Video Logs */}
-          <div className="mt-12 pt-8 border-t" style={{ borderColor: `${t.primary}20` }}>
-            <h2 className="text-[10px] tracking-[0.3em] uppercase mb-4 flex items-center gap-2">
-              <Radio size={12} className="animate-pulse" />
-              Video Transmissions
-            </h2>
-            <div className="grid gap-3">
-              {VIDEO_LOGS.map((v) => (
-                <button key={v.label} onClick={() => setActiveVideo({ src: v.src, label: v.label })}
-                  className="flex items-center gap-3 p-3 border rounded transition-colors hover:opacity-80 text-left group"
-                  style={{ borderColor: `${t.primary}20` }}>
-                  <Play size={12} className="opacity-50 group-hover:opacity-100" />
-                  <div>
-                    <p className="text-xs">{v.label}</p>
-                    <p className="text-[9px] opacity-50">{v.day}</p>
-                  </div>
+          {/* RIGHT: Side Panel (2/5 width) */}
+          <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
+            
+            {/* Tab Bar */}
+            <div className="flex gap-1 border-b pb-2" style={{ borderColor: `${t.primary}20` }}>
+              {([
+                { id: "logs" as SideTab, label: "Logs", icon: BookOpen },
+                { id: "decrypt" as SideTab, label: "Decrypt", icon: Lock },
+                { id: "assets" as SideTab, label: "Assets", icon: Image },
+                { id: "puzzles" as SideTab, label: "Puzzles", icon: Zap },
+                { id: "status" as SideTab, label: "Status", icon: Shield },
+              ]).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] uppercase tracking-wider rounded transition-all ${
+                    activeTab === tab.id ? "opacity-100" : "opacity-40 hover:opacity-70"
+                  }`}
+                  style={activeTab === tab.id ? { backgroundColor: `${t.primary}10`, borderBottom: `2px solid ${t.primary}` } : {}}
+                >
+                  <tab.icon size={12} />
+                  {tab.label}
                 </button>
               ))}
             </div>
-          </div>
 
-          <div className="mt-16 text-center opacity-30 text-[9px] tracking-widest">
-            <p>THE DUST REMEMBERS EVERYTHING</p>
-            <p className="mt-1">DO NOT TRUST THE STATIC</p>
+            {/* Tab Content */}
+            <div className="flex-1 border rounded-lg overflow-y-auto p-4" style={{ borderColor: `${t.primary}20`, backgroundColor: `${t.primary}03` }}>
+              <AnimatePresence mode="wait">
+                
+                {/* LOGS TAB */}
+                {activeTab === "logs" && (
+                  <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
+                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50 mb-3">Archived Logs</h3>
+                    {LOGS.slice(0, unlocked).map((log, i) => (
+                      <div key={log.day} className="border-l-2 pl-3" style={{ borderColor: `${t.primary}30` }}>
+                        <p className="text-[11px] tracking-widest opacity-50 mb-1">{log.day}</p>
+                        <p className="text-[13px] leading-relaxed opacity-90">{log.text}</p>
+                      </div>
+                    ))}
+                    {unlocked < LOGS.length && (
+                      <div className="flex items-center gap-2 text-[11px] opacity-40 py-4 border-t" style={{ borderColor: `${t.primary}10` }}>
+                        <Lock size={12} />
+                        {LOGS.length - unlocked} entries encrypted
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* DECRYPT TAB */}
+                {activeTab === "decrypt" && (
+                  <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">Decryption Interface</h3>
+                    <div className="space-y-3">
+                      <p className="text-[12px] opacity-70 leading-relaxed">
+                        Enter codes acquired from the Numbers Station or discovered in the atlas. Each valid code unlocks the next log entry.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          value={decryptCode}
+                          onChange={(e) => setDecryptCode(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && attemptDecrypt()}
+                          placeholder="Enter code..."
+                          className="flex-1 bg-transparent border-b-2 text-[14px] font-mono outline-none py-1 placeholder:text-[10px]"
+                          style={{ 
+                            borderColor: decryptError ? "#ff4444" : `${t.primary}40`,
+                            color: decryptError ? "#ff4444" : t.primary 
+                          }}
+                          spellCheck={false}
+                        />
+                        <button
+                          onClick={attemptDecrypt}
+                          className="px-4 py-1.5 border rounded text-[11px] font-mono uppercase hover:opacity-80 transition-opacity"
+                          style={{ borderColor: `${t.primary}30`, color: t.primary }}
+                        >
+                          Decrypt
+                        </button>
+                      </div>
+                      {decryptError && <p className="text-[11px] text-[#ff4444]">Invalid or already used code.</p>}
+                      
+                      <div className="mt-6 pt-4 border-t" style={{ borderColor: `${t.primary}10` }}>
+                        <p className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Known Frequencies</p>
+                        <div className="space-y-1 text-[11px] opacity-60 font-mono">
+                          <p>742 • REACTOR • DAYZERO</p>
+                          <p>COUNT • DOOR • INWARD</p>
+                          <p>BREATHE • MIRROR • ASSEMBLY-314</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ASSETS TAB */}
+                {activeTab === "assets" && (
+                  <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">Recovered Assets</h3>
+                      <button onClick={() => setGalleryOpen(true)}
+                        className="text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1">
+                        <Image size={12} /> Open Gallery
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {STORY_ASSETS.map((asset) => {
+                        const isUnlocked = assets.includes(asset.id);
+                        return (
+                          <div key={asset.id} 
+                            className={`p-2.5 border rounded text-center space-y-1 ${isUnlocked ? "opacity-100" : "opacity-30"}`}
+                            style={{ borderColor: `${t.primary}20`, backgroundColor: isUnlocked ? `${t.primary}06` : "transparent" }}>
+                            <div className="text-[9px] uppercase tracking-wider" style={{ color: isUnlocked ? "#a855f7" : "inherit" }}>
+                              {asset.rarity}
+                            </div>
+                            <div className="text-[11px] font-bold truncate">{asset.title}</div>
+                            <div className="text-[9px] opacity-60">{isUnlocked ? "RECOVERED" : "ENCRYPTED"}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="text-center text-[11px] opacity-40 pt-2">
+                      {assets.length} / {STORY_ASSETS.length} recovered
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* PUZZLES TAB */}
+                {activeTab === "puzzles" && (
+                  <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 text-[12px] leading-relaxed">
+                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50 mb-3">Active Anomalies</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">01</span>
+                          <span className="font-bold text-[11px]">Intercepted Signal</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">GUR QBBE BCRAF VAJNEQ</p>
+                        <p className="text-[10px] opacity-40 mt-1">cmd: cipher [decoded]</p>
+                      </div>
+
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">02</span>
+                          <span className="font-bold text-[11px]">Coordinate Chain</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">cmd: coords [n1] [n2] [n3] [n4]</p>
+                      </div>
+
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">03</span>
+                          <span className="font-bold text-[11px]">Fragmented Transmission</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">cmd: assemble</p>
+                      </div>
+
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">04</span>
+                          <span className="font-bold text-[11px]">Reflection Lock</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">cmd: reflect [answer]</p>
+                      </div>
+
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">05</span>
+                          <span className="font-bold text-[11px]">Dust Threshold</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">Current: {dust}% / {DUST_THRESHOLD}% required</p>
+                      </div>
+
+                      <div className="p-3 border rounded" style={{ borderColor: `${t.primary}15` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] opacity-40">06</span>
+                          <span className="font-bold text-[11px]">Signal Triangulation</span>
+                        </div>
+                        <p className="opacity-70 text-[11px]">{triangulated ? "COMPLETE" : "Find 3 towers on atlas"}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STATUS TAB */}
+                {activeTab === "status" && (
+                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 text-[12px] font-mono">
+                    <h3 className="text-[10px] uppercase tracking-[0.3em] opacity-50">System Status</h3>
+                    <div className="space-y-2 opacity-80">
+                      <p>TERMINAL_ID: BUNKER_7</p>
+                      <p>STATUS: SEALED</p>
+                      <p>ATMOSPHERE: BREATHABLE (QUESTIONABLE)</p>
+                      <p>SIGNAL: INTERMITTENT</p>
+                      <p>THEME: {theme.toUpperCase()}</p>
+                      <p>LOGS: {unlocked}/{LOGS.length}</p>
+                      <p>DUST: {dust}%</p>
+                      <p>ASSETS: {assets.length}/{STORY_ASSETS.length}</p>
+                      <p>CODES: {codes.length}/{REDEEMABLE_CODES.length}</p>
+                      <p>TRIANGULATED: {triangulated ? "YES" : "NO"}</p>
+                      <p className="animate-pulse pt-2">BUNKER_7 IS LISTENING</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center opacity-20 text-[9px] tracking-widest py-2">
+          <p>THE DUST REMEMBERS EVERYTHING — DO NOT TRUST THE STATIC</p>
+        </div>
       </div>
 
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />

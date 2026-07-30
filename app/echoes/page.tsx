@@ -1083,7 +1083,7 @@ export default function EchoesPage() {
 
       case "broadcast": {
         const key = args.slice(1).join(" ");
-        if (key === "ON BUNKER7") {
+        if (key === "on bunker7") {
           localStorage.setItem("bunker-broadcasting", "true");
           pushTerminal([
             "╔══════════════════════════════════════╗",
@@ -1095,7 +1095,7 @@ export default function EchoesPage() {
             "All terminals will detect this frequency.",
             "The grid is intercepting.",
           ]);
-        } else if (key === "OFF") {
+        } else if (key === "off") {
           localStorage.setItem("bunker-broadcasting", "false");
           pushTerminal([
             "Broadcast terminated.",

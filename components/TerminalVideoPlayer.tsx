@@ -42,11 +42,10 @@ export default function TerminalVideoPlayer({
     return () => clearInterval(interval);
   }, []);
 
-  const toggleMute = () => setMuted((m) => !m);
-
-  if (!src && !twitchChannel) return null;
-
   const showLive = isLive && twitchChannel;
+
+  // ← THE FIX: Only render if there's actually something to show
+  if (!src && !showLive) return null;
 
   return (
     <motion.div
@@ -119,14 +118,10 @@ export default function TerminalVideoPlayer({
               </button>
             )}
           </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <p className="text-[11px] opacity-30 font-mono">NO SIGNAL</p>
-          </div>
-        )}
+        ) : null}
       </div>
 
-            <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
+      <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
         {!showLive && src && (
           <button
             onClick={() => setPlaying((p) => !p)}
@@ -135,7 +130,7 @@ export default function TerminalVideoPlayer({
             {playing ? <Pause size={14} /> : <Play size={14} />}
           </button>
         )}
-        <button onClick={toggleMute} className="opacity-60 hover:opacity-100 transition-opacity">
+        <button onClick={() => setMuted((m) => !m)} className="opacity-60 hover:opacity-100 transition-opacity">
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
 

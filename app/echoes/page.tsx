@@ -28,7 +28,6 @@ import NumbersStation from "@/components/NumbersStation";
 import TerminalVideoPlayer from "@/components/TerminalVideoPlayer";
 import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
-import { useTerminalGhost } from "@/hooks/useTerminalGhost";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import { getDailyCode } from "@/lib/dailyCode";
 import { getSeasonalState } from "@/lib/seasonal";
@@ -1148,6 +1147,7 @@ export default function EchoesPage() {
       className="min-h-screen font-mono relative overflow-hidden selection:bg-[#9a8a72]/20"
       style={{ backgroundColor: t.bg, color: t.primary }}
     >
+      {/* Subtle scanlines */}
       <div
         className="pointer-events-none fixed inset-0 z-50"
         style={{
@@ -1166,81 +1166,82 @@ export default function EchoesPage() {
 
       {!booted && <TerminalBootSequence onComplete={() => setBooted(true)} />}
 
-      <div className="h-screen flex flex-col relative z-10 p-3 md:p-5 gap-3">
+      {/* MOBILE: min-h-screen so page scrolls */}
+      <div className="min-h-screen flex flex-col relative z-10 p-2 md:p-5 gap-2 md:gap-3">
+
+        {/* ─── TOP BAR ─── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: booted ? 1 : 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-center justify-between border-b pb-2 md:pb-3 gap-2"
+          className="flex flex-col md:flex-row md:items-center justify-between border-b pb-2 gap-1 md:gap-2"
           style={{ borderColor: `${t.primary}20` }}
         >
-          <div className="flex items-center gap-2 md:gap-3">
-            <Terminal size={16} className="md:w-[18px]" />
+          <div className="flex items-center gap-2">
+            <Terminal size={14} className="md:w-[18px]" />
             <div>
-              <h1 className="text-sm md:text-base tracking-[0.2em] md:tracking-[0.3em] uppercase font-bold">
-                Bunker_7 Terminal
+              <h1 className="text-xs md:text-base tracking-[0.2em] md:tracking-[0.3em] uppercase font-bold">
+                Bunker_7
               </h1>
-              <p className="text-[9px] md:text-[10px] opacity-50 tracking-wider">
+              <p className="text-[8px] md:text-[10px] opacity-50 tracking-wider">
                 Echoes & Dust // v2.4.1
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-[11px] overflow-x-auto">
+          <div className="flex items-center gap-2 md:gap-4 text-[9px] md:text-[11px] overflow-x-auto">
             <span
               className="opacity-60 whitespace-nowrap"
               style={{ color: corruption.color }}
             >
               {corruption.label}
             </span>
-            <span className="opacity-60 whitespace-nowrap">
-              Theme: {theme.toUpperCase()}
+            <span className="opacity-60 whitespace-nowrap hidden sm:inline">
+              {theme.toUpperCase()}
             </span>
             <span className="opacity-60 whitespace-nowrap">
-              Logs: {unlocked}/{LOGS.length}
+              Logs:{unlocked}/{LOGS.length}
             </span>
             <span className="opacity-60 whitespace-nowrap hidden sm:inline">
-              Lanterns: {lanternCount}
+              L:{lanternCount}
             </span>
             <Link
               href="/"
-              className="opacity-40 hover:opacity-100 transition-opacity text-[9px] md:text-[10px] uppercase tracking-wider whitespace-nowrap flex items-center gap-1"
+              className="opacity-40 hover:opacity-100 transition-opacity text-[8px] md:text-[10px] uppercase tracking-wider whitespace-nowrap flex items-center gap-0.5"
             >
-              <ArrowLeft size={10} /> Back to Atlas
+              <ArrowLeft size={10} /> Atlas
             </Link>
           </div>
         </motion.div>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-0">
-          <div className="lg:col-span-3 flex flex-col gap-2 md:gap-3 min-h-0 order-2 lg:order-1">
+        {/* ─── MAIN GRID ─── */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-2 md:gap-3 min-h-0">
+
+          {/* LEFT: Terminal (3/5) */}
+          <div className="lg:col-span-3 flex flex-col gap-2 min-h-0">
+
+            {/* Terminal Window */}
             <div
-              className="flex-1 border rounded-lg flex flex-col overflow-hidden min-h-[280px] lg:min-h-0"
+              className="flex-1 border rounded-lg flex flex-col overflow-hidden"
               style={{
                 backgroundColor: `${t.primary}04`,
                 borderColor: `${t.primary}18`,
+                minHeight: "220px",
               }}
             >
+              {/* Header */}
               <div
-                className="px-3 md:px-4 py-2 border-b flex items-center justify-between"
+                className="px-2 md:px-4 py-1.5 md:py-2 border-b flex items-center justify-between"
                 style={{
                   borderColor: `${t.primary}10`,
                   backgroundColor: `${t.primary}05`,
                 }}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: "#a06050" }}
-                  />
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: "#c4a060" }}
-                  />
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: "#7a9a6a" }}
-                  />
-                  <span className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-40 ml-2">
-                    {chatMode ? "BUNKER_7 CHANNEL" : "COMMAND INTERFACE"}
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#a06050]/60" />
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#c4a060]/60" />
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#7a9a6a]/60" />
+                  <span className="text-[8px] md:text-[10px] uppercase tracking-wider opacity-40 ml-1 md:ml-2">
+                    {chatMode ? "BUNKER_7" : "CMD"}
                   </span>
                 </div>
                 {chatMode && (
@@ -1249,16 +1250,17 @@ export default function EchoesPage() {
                       setChatMode(false);
                       pushTerminal(["Channel closed."]);
                     }}
-                    className="text-[8px] md:text-[9px] uppercase opacity-40 hover:opacity-100 transition-opacity"
+                    className="text-[8px] uppercase opacity-40 hover:opacity-100 transition-opacity"
                   >
-                    [x] Close
+                    [x]
                   </button>
                 )}
               </div>
 
+              {/* Output */}
               <div
                 ref={terminalRef}
-                className="flex-1 overflow-y-auto p-3 md:p-4 text-[13px] md:text-[15px] leading-relaxed font-mono space-y-0.5 md:space-y-1"
+                className="flex-1 overflow-y-auto p-2 md:p-4 text-[11px] md:text-[15px] leading-relaxed font-mono space-y-0.5"
               >
                 {terminal.map((line, i) => (
                   <div
@@ -1292,7 +1294,7 @@ export default function EchoesPage() {
                 ))}
                 {isAiTyping && (
                   <div
-                    className="opacity-60 animate-pulse mt-2 text-[12px] md:text-[14px]"
+                    className="opacity-60 animate-pulse mt-1 md:mt-2 text-[10px] md:text-[14px]"
                     style={{ color: t.dim }}
                   >
                     BUNKER_7 is typing...
@@ -1300,14 +1302,15 @@ export default function EchoesPage() {
                 )}
               </div>
 
+              {/* Input Bar */}
               <div
-                className="px-3 md:px-4 py-2 md:py-3 border-t flex items-center gap-2 md:gap-3"
+                className="px-2 md:px-4 py-1.5 md:py-3 border-t flex items-center gap-2"
                 style={{
                   borderColor: `${t.primary}10`,
                   backgroundColor: `${t.primary}04`,
                 }}
               >
-                <span className="text-base md:text-lg opacity-50 font-bold">
+                <span className="text-sm md:text-lg opacity-50 font-bold">
                   {chatMode ? "~" : ">"}
                 </span>
                 <input
@@ -1315,7 +1318,7 @@ export default function EchoesPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && runCommand(input)}
-                  className="flex-1 bg-transparent text-[14px] md:text-[15px] font-mono outline-none placeholder:opacity-40 min-w-0"
+                  className="flex-1 bg-transparent text-[12px] md:text-[15px] font-mono outline-none placeholder:opacity-30 min-w-0"
                   style={{ color: t.primary }}
                   placeholder={
                     chatMode ? "Speak to BUNKER_7..." : "Enter command..."
@@ -1325,7 +1328,7 @@ export default function EchoesPage() {
                 />
                 {chatMode && (
                   <span
-                    className="text-[8px] md:text-[9px] opacity-30 uppercase px-2 py-1 rounded border whitespace-nowrap"
+                    className="text-[7px] md:text-[9px] opacity-30 uppercase px-1.5 py-0.5 md:px-2 md:py-1 rounded border whitespace-nowrap"
                     style={{ borderColor: `${t.primary}15` }}
                   >
                     Chat
@@ -1334,25 +1337,18 @@ export default function EchoesPage() {
               </div>
             </div>
 
-            <TerminalVideoPlayer
-              src={inlineVideo?.src}
-              label={inlineVideo?.label}
-              themeColor={t.primary}
-              onClose={() => setInlineVideo(null)}
-              twitchChannel="atlas_bunker_7"
-            />
-
+            {/* Video Panel Toggle */}
             <button
               onClick={() => setVideoPanelOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 md:px-4 py-2 border rounded-lg text-[10px] md:text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 px-2 md:px-4 py-1.5 md:py-2 border rounded-lg text-[9px] md:text-[11px] uppercase tracking-wider hover:opacity-80 transition-opacity"
               style={{
                 borderColor: `${t.primary}15`,
                 color: t.primary,
                 backgroundColor: `${t.primary}03`,
               }}
             >
-              <Radio size={12} className={videoPanelOpen ? "animate-pulse" : ""} />
-              {videoPanelOpen ? "Hide" : "Show"} Video Transmissions
+              <Radio size={10} className={videoPanelOpen ? "animate-pulse" : ""} />
+              {videoPanelOpen ? "Hide" : "Show"} Videos
             </button>
 
             <AnimatePresence>
@@ -1368,18 +1364,18 @@ export default function EchoesPage() {
                       <button
                         key={v.label}
                         onClick={() => setInlineVideo({ src: v.src, label: v.label })}
-                        className="flex items-center sm:flex-col gap-2 sm:gap-1 p-2 md:p-3 border rounded-lg hover:opacity-80 transition-opacity text-left sm:text-center"
+                        className="flex items-center sm:flex-col gap-1.5 sm:gap-1 p-1.5 md:p-3 border rounded-lg hover:opacity-80 transition-opacity text-left sm:text-center"
                         style={{
                           borderColor: `${t.primary}15`,
                           backgroundColor: `${t.primary}03`,
                         }}
                       >
-                        <Play size={14} className="opacity-50 flex-shrink-0" />
+                        <Play size={12} className="opacity-50 flex-shrink-0" />
                         <div className="min-w-0">
-                          <span className="text-[10px] block truncate">
+                          <span className="text-[9px] md:text-[10px] block truncate">
                             {v.label}
                           </span>
-                          <span className="text-[8px] md:text-[9px] opacity-40">
+                          <span className="text-[7px] md:text-[9px] opacity-40">
                             {v.day}
                           </span>
                         </div>
@@ -1393,23 +1389,26 @@ export default function EchoesPage() {
             <NumbersStation themeColor={t.primary} />
           </div>
 
-          <div className="lg:col-span-2 flex flex-col gap-2 md:gap-3 min-h-0 order-1 lg:order-2">
+          {/* RIGHT: Side Panel (2/5) */}
+          <div className="lg:col-span-2 flex flex-col gap-2 min-h-0">
+
+            {/* Tab Bar */}
             <div
-              className="flex gap-1 border-b pb-2 overflow-x-auto"
+              className="flex gap-1 border-b pb-1.5 overflow-x-auto"
               style={{ borderColor: `${t.primary}15` }}
             >
-              {[
+              {([
                 { id: "logs" as SideTab, label: "Logs", icon: BookOpen },
                 { id: "decrypt" as SideTab, label: "Decrypt", icon: Lock },
                 { id: "assets" as SideTab, label: "Assets", icon: Image },
                 { id: "puzzles" as SideTab, label: "Puzzles", icon: Zap },
                 { id: "status" as SideTab, label: "Status", icon: Shield },
                 { id: "wall" as SideTab, label: "Wall", icon: MessageSquare },
-              ].map((tab) => (
+              ]).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-2 md:px-3 text-[9px] md:text-[10px] uppercase tracking-wider rounded transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center justify-center gap-1 py-1.5 px-1.5 md:px-3 text-[8px] md:text-[10px] uppercase tracking-wider rounded transition-all whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
                       ? "opacity-100"
                       : "opacity-40 hover:opacity-70"
@@ -1423,17 +1422,19 @@ export default function EchoesPage() {
                       : {}
                   }
                 >
-                  <tab.icon size={11} />
-                  {tab.label}
+                  <tab.icon size={10} />
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
 
+            {/* Tab Content */}
             <div
-              className="flex-1 border rounded-lg overflow-y-auto p-3 md:p-4 min-h-[200px] lg:min-h-0"
+              className="flex-1 border rounded-lg overflow-y-auto p-2 md:p-4"
               style={{
                 borderColor: `${t.primary}15`,
                 backgroundColor: `${t.primary}03`,
+                minHeight: "160px",
               }}
             >
               <AnimatePresence mode="wait">
@@ -1443,31 +1444,31 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-4 md:space-y-5"
+                    className="space-y-3 md:space-y-5"
                   >
-                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2 md:mb-3">
+                    <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-1 md:mb-3">
                       Archived Logs
                     </h3>
                     {LOGS.slice(0, unlocked).map((log) => (
                       <div
                         key={log.day}
-                        className="border-l-2 pl-3"
+                        className="border-l-2 pl-2 md:pl-3"
                         style={{ borderColor: `${t.primary}25` }}
                       >
-                        <p className="text-[10px] md:text-[11px] tracking-widest opacity-50 mb-1">
+                        <p className="text-[9px] md:text-[11px] tracking-widest opacity-50 mb-0.5 md:mb-1">
                           {log.day}
                         </p>
-                        <p className="text-[12px] md:text-[14px] leading-relaxed opacity-95">
+                        <p className="text-[11px] md:text-[14px] leading-relaxed opacity-95">
                           {log.text}
                         </p>
                       </div>
                     ))}
                     {unlocked < LOGS.length && (
                       <div
-                        className="flex items-center gap-2 text-[10px] md:text-[11px] opacity-40 py-3 md:py-4 border-t"
+                        className="flex items-center gap-1.5 text-[9px] md:text-[11px] opacity-40 py-2 md:py-4 border-t"
                         style={{ borderColor: `${t.primary}08` }}
                       >
-                        <Lock size={12} />
+                        <Lock size={10} />
                         {LOGS.length - unlocked} entries encrypted
                       </div>
                     )}
@@ -1480,17 +1481,16 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-3 md:space-y-4"
+                    className="space-y-2 md:space-y-4"
                   >
-                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
-                      Decryption Interface
+                    <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
+                      Decrypt
                     </h3>
-                    <div className="space-y-3">
-                      <p className="text-[11px] md:text-[13px] opacity-80 leading-relaxed">
-                        Enter codes acquired from the Numbers Station or
-                        discovered in the atlas.
+                    <div className="space-y-2">
+                      <p className="text-[10px] md:text-[13px] opacity-80 leading-relaxed">
+                        Enter codes from the Numbers Station.
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <input
                           value={decryptCode}
                           onChange={(e) => setDecryptCode(e.target.value)}
@@ -1498,7 +1498,7 @@ export default function EchoesPage() {
                             e.key === "Enter" && attemptDecrypt()
                           }
                           placeholder="Enter code..."
-                          className="flex-1 bg-transparent border-b-2 text-[13px] md:text-[14px] outline-none py-1 placeholder:text-[10px] placeholder:opacity-40 min-w-0"
+                          className="flex-1 bg-transparent border-b-2 text-[11px] md:text-[14px] outline-none py-0.5 placeholder:text-[9px] placeholder:opacity-30 min-w-0"
                           style={{
                             borderColor: decryptError
                               ? "#a05050"
@@ -1509,7 +1509,7 @@ export default function EchoesPage() {
                         />
                         <button
                           onClick={attemptDecrypt}
-                          className="px-3 md:px-4 py-1.5 border rounded text-[10px] md:text-[11px] font-mono uppercase hover:opacity-80 transition-opacity flex-shrink-0"
+                          className="px-2 md:px-4 py-1 border rounded text-[9px] md:text-[11px] font-mono uppercase hover:opacity-80 transition-opacity flex-shrink-0"
                           style={{
                             borderColor: `${t.primary}25`,
                             color: t.primary,
@@ -1519,24 +1519,10 @@ export default function EchoesPage() {
                         </button>
                       </div>
                       {decryptError && (
-                        <p className="text-[11px] text-[#a05050]">
-                          Invalid or already used code.
+                        <p className="text-[10px] text-[#a05050]">
+                          Invalid code.
                         </p>
                       )}
-
-                      <div
-                        className="mt-4 md:mt-6 pt-3 md:pt-4 border-t"
-                        style={{ borderColor: `${t.primary}08` }}
-                      >
-                        <p className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-40 mb-2">
-                          Known Frequencies
-                        </p>
-                        <div className="space-y-1 text-[10px] md:text-[11px] opacity-60 font-mono">
-                          <p>742 • REACTOR • DAYZERO</p>
-                          <p>COUNT • DOOR • INWARD</p>
-                          <p>BREATHE • MIRROR • ASSEMBLY-314</p>
-                        </div>
-                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -1547,26 +1533,26 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-3 md:space-y-4"
+                    className="space-y-2 md:space-y-4"
                   >
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
-                        Recovered Assets
+                      <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
+                        Assets
                       </h3>
                       <button
                         onClick={() => setGalleryOpen(true)}
-                        className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+                        className="text-[8px] md:text-[10px] uppercase tracking-wider opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
                       >
-                        <Image size={12} /> Open Gallery
+                        <Image size={10} /> Gallery
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {STORY_ASSETS.map((asset) => {
                         const isUnlocked = assets.includes(asset.id);
                         return (
                           <div
                             key={asset.id}
-                            className={`p-2 md:p-2.5 border rounded text-center space-y-1 ${
+                            className={`p-1.5 md:p-2.5 border rounded text-center space-y-0.5 ${
                               isUnlocked ? "opacity-100" : "opacity-30"
                             }`}
                             style={{
@@ -1577,25 +1563,25 @@ export default function EchoesPage() {
                             }}
                           >
                             <div
-                              className="text-[8px] md:text-[9px] uppercase tracking-wider"
+                              className="text-[7px] md:text-[9px] uppercase tracking-wider"
                               style={{
                                 color: isUnlocked ? "#a855f7" : "inherit",
                               }}
                             >
                               {asset.rarity}
                             </div>
-                            <div className="text-[10px] md:text-[11px] font-bold truncate">
+                            <div className="text-[9px] md:text-[11px] font-bold truncate">
                               {asset.title}
                             </div>
-                            <div className="text-[8px] md:text-[9px] opacity-60">
+                            <div className="text-[7px] md:text-[9px] opacity-60">
                               {isUnlocked ? "RECOVERED" : "ENCRYPTED"}
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="text-center text-[10px] md:text-[11px] opacity-40 pt-2">
-                      {assets.length} / {STORY_ASSETS.length} recovered
+                    <div className="text-center text-[9px] md:text-[11px] opacity-40 pt-1">
+                      {assets.length} / {STORY_ASSETS.length}
                     </div>
                   </motion.div>
                 )}
@@ -1606,83 +1592,40 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-3 md:space-y-4 text-[11px] md:text-[13px] leading-relaxed"
+                    className="space-y-2 md:space-y-4 text-[10px] md:text-[13px] leading-relaxed"
                   >
-                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2 md:mb-3">
-                      Active Anomalies
+                    <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-1 md:mb-3">
+                      Anomalies
                     </h3>
-
-                    <div className="space-y-2 md:space-y-3">
+                    <div className="space-y-1.5 md:space-y-3">
                       {[
-                        {
-                          n: "01",
-                          title: "Intercepted Signal",
-                          body: "GUR QBBE BCRAF VAJNEQ",
-                          hint: "cmd: cipher [decoded]",
-                        },
-                        {
-                          n: "02",
-                          title: "Coordinate Chain",
-                          body: "cmd: coords [n1] [n2] [n3] [n4]",
-                          hint: null,
-                        },
-                        {
-                          n: "03",
-                          title: "Fragmented Transmission",
-                          body: "cmd: assemble",
-                          hint: null,
-                        },
-                        {
-                          n: "04",
-                          title: "Reflection Lock",
-                          body: "cmd: reflect [answer]",
-                          hint: null,
-                        },
-                        {
-                          n: "05",
-                          title: "Dust Threshold",
-                          body: `Current: ${dust}% / ${DUST_THRESHOLD}% required`,
-                          hint: null,
-                        },
-                        {
-                          n: "06",
-                          title: "Signal Triangulation",
-                          body: triangulated
-                            ? "COMPLETE"
-                            : "Find 3 towers on atlas",
-                          hint: null,
-                        },
-                        {
-                          n: "07",
-                          title: "Lantern Constellation",
-                          body: "Place 5 lanterns on the atlas",
-                          hint: "cmd: constellation",
-                        },
-                        {
-                          n: "08",
-                          title: "Inventory Hunt",
-                          body: `${inventory.length}/${INVENTORY_ITEMS.length} items found`,
-                          hint: "Visit ruins. cmd: inventory",
-                        },
+                        { n: "01", title: "Intercepted Signal", body: "GUR QBBE BCRAF VAJNEQ", hint: "cmd: cipher [decoded]" },
+                        { n: "02", title: "Coordinate Chain", body: "cmd: coords [n1] [n2] [n3] [n4]", hint: null },
+                        { n: "03", title: "Fragmented Transmission", body: "cmd: assemble", hint: null },
+                        { n: "04", title: "Reflection Lock", body: "cmd: reflect [answer]", hint: null },
+                        { n: "05", title: "Dust Threshold", body: `${dust}% / ${DUST_THRESHOLD}%`, hint: null },
+                        { n: "06", title: "Triangulation", body: triangulated ? "COMPLETE" : "Find 3 towers", hint: null },
+                        { n: "07", title: "Lantern Constellation", body: "Place 5 lanterns", hint: "cmd: constellation" },
+                        { n: "08", title: "Inventory", body: `${inventory.length}/${INVENTORY_ITEMS.length}`, hint: "cmd: inventory" },
                       ].map((p) => (
                         <div
                           key={p.n}
-                          className="p-2 md:p-3 border rounded"
+                          className="p-1.5 md:p-3 border rounded"
                           style={{ borderColor: `${t.primary}12` }}
                         >
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] md:text-[10px] opacity-40">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[8px] md:text-[10px] opacity-40">
                               {p.n}
                             </span>
-                            <span className="font-bold text-[10px] md:text-[11px]">
+                            <span className="font-bold text-[9px] md:text-[11px]">
                               {p.title}
                             </span>
                           </div>
-                          <p className="opacity-80 text-[10px] md:text-[11px]">
+                          <p className="opacity-80 text-[9px] md:text-[11px]">
                             {p.body}
                           </p>
                           {p.hint && (
-                            <p className="text-[9px] md:text-[10px] opacity-40 mt-1">
+                            <p className="text-[8px] md:text-[10px] opacity-40 mt-0.5">
                               {p.hint}
                             </p>
                           )}
@@ -1698,27 +1641,20 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-3 md:space-y-4 text-[11px] md:text-[13px] font-mono"
+                    className="space-y-1.5 md:space-y-4 text-[10px] md:text-[13px] font-mono"
                   >
-                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
-                      System Status
+                    <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50">
+                      Status
                     </h3>
-                    <div className="space-y-1.5 md:space-y-2 opacity-90">
-                      <p>TERMINAL_ID: BUNKER_7</p>
+                    <div className="space-y-0.5 md:space-y-2 opacity-90">
+                      <p>ID: BUNKER_7</p>
                       <p>STATUS: SEALED</p>
-                      <p>ATMOSPHERE: BREATHABLE (QUESTIONABLE)</p>
-                      <p>SIGNAL: INTERMITTENT</p>
                       <p>THEME: {theme.toUpperCase()}</p>
                       <p>LOGS: {unlocked}/{LOGS.length}</p>
                       <p>DUST: {dust}%</p>
                       <p>ASSETS: {assets.length}/{STORY_ASSETS.length}</p>
-                      <p>CODES: {codes.length}/{REDEEMABLE_CODES.length}</p>
-                      <p>TRIANGULATED: {triangulated ? "YES" : "NO"}</p>
                       <p>INVENTORY: {inventory.length}</p>
-                      <p>OTHER: {otherCount}</p>
-                      <p className="animate-pulse pt-1 md:pt-2">
-                        BUNKER_7 IS LISTENING
-                      </p>
+                      <p className="animate-pulse pt-1">LISTENING</p>
                     </div>
                   </motion.div>
                 )}
@@ -1729,34 +1665,30 @@ export default function EchoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-3"
+                    className="space-y-2 md:space-y-3"
                   >
-                    <h3 className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-2">
-                      Transmission Wall
+                    <h3 className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-50 mb-1">
+                      Wall
                     </h3>
-                    <p className="text-[10px] md:text-[11px] opacity-60 mb-3">
-                      Anonymous signals from the grid. Use{" "}
-                      <span className="font-mono opacity-80">
-                        transmit [message]
-                      </span>{" "}
-                      to add.
+                    <p className="text-[9px] md:text-[11px] opacity-60 mb-2">
+                      Use <span className="font-mono opacity-80">transmit [msg]</span> to add.
                     </p>
                     {wallMessages.length === 0 ? (
-                      <p className="text-[11px] opacity-30 italic">
-                        The static is silent. No one has spoken yet.
+                      <p className="text-[10px] opacity-30 italic">
+                        The static is silent.
                       </p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {wallMessages.slice(-20).map((m, i) => (
                           <div
                             key={i}
-                            className="border-l-2 pl-2 py-1"
+                            className="border-l-2 pl-1.5 py-0.5"
                             style={{ borderColor: `${t.primary}20` }}
                           >
-                            <p className="text-[11px] md:text-[12px] opacity-90 leading-relaxed">
+                            <p className="text-[10px] md:text-[12px] opacity-90 leading-relaxed">
                               {m.text}
                             </p>
-                            <p className="text-[8px] md:text-[9px] opacity-30 mt-0.5 font-mono">
+                            <p className="text-[7px] md:text-[9px] opacity-30 mt-0.5 font-mono">
                               {m.date}
                             </p>
                           </div>
@@ -1770,8 +1702,22 @@ export default function EchoesPage() {
           </div>
         </div>
 
-        <div className="text-center opacity-20 text-[8px] md:text-[9px] tracking-widest py-1 md:py-2">
-          <p>THE DUST REMEMBERS EVERYTHING — DO NOT TRUST THE STATIC</p>
+        {/* ─── VIDEO PLAYER BELOW GRID ─── */}
+        {inlineVideo && (
+          <div className="w-full max-w-3xl mx-auto">
+            <TerminalVideoPlayer
+              src={inlineVideo.src}
+              label={inlineVideo.label}
+              themeColor={t.primary}
+              onClose={() => setInlineVideo(null)}
+              twitchChannel="atlas_bunker_7"
+            />
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="text-center opacity-20 text-[7px] md:text-[9px] tracking-widest py-1">
+          <p>THE DUST REMEMBERS EVERYTHING</p>
         </div>
       </div>
 

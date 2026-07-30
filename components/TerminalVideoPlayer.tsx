@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, Radio, Activity } from "lucide-react";
 
@@ -19,6 +19,7 @@ export default function TerminalVideoPlayer({
   onClose,
   twitchChannel,
 }: Props) {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [isLive, setIsLive] = useState(false);
@@ -42,10 +43,31 @@ export default function TerminalVideoPlayer({
     return () => clearInterval(interval);
   }, []);
 
+  // Reset playing state when src changes
+  useEffect(() => {
+    setPlaying(false);
+  }, [src]);
+
   const showLive = isLive && twitchChannel;
 
-  // ← THE FIX: Only render if there's actually something to show
+  // Only render if there's actually something to show
   if (!src && !showLive) return null;
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (playing) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play();
+    }
+    setPlaying(!playing);
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !muted;
+    setMuted(!muted);
+  };
 
   return (
     <motion.div
@@ -73,7 +95,7 @@ export default function TerminalVideoPlayer({
         <div className="flex items-center gap-2">
           <div
             className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ backgroundColor: showLive ? "#a03030" : "#5a5a5a" }}
+            style={{ backgroundColor: showLive ? "#a03030" : playing ? "#7a9a6a" : "#5a5a5a" }}
           />
           <span className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-50 font-mono">
             {showLive ? "UNAUTHORIZED_BROADCAST.mxf" : (label || "ARCHIVED_SIGNAL")}
@@ -101,17 +123,18 @@ export default function TerminalVideoPlayer({
         ) : src ? (
           <>
             <video
+              ref={videoRef}
               src={src}
               className="w-full h-full"
               playsInline
               muted={muted}
-              autoPlay={playing}
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
+              onEnded={() => setPlaying(false)}
             />
             {!playing && (
               <button
-                onClick={() => setPlaying(true)}
+                onClick={togglePlay}
                 className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
               >
                 <Play size={32} style={{ color: themeColor, opacity: 0.8 }} />
@@ -124,13 +147,13 @@ export default function TerminalVideoPlayer({
       <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
         {!showLive && src && (
           <button
-            onClick={() => setPlaying((p) => !p)}
+            onClick={togglePlay}
             className="opacity-60 hover:opacity-100 transition-opacity"
           >
             {playing ? <Pause size={14} /> : <Play size={14} />}
           </button>
         )}
-        <button onClick={() => setMuted((m) => !m)} className="opacity-60 hover:opacity-100 transition-opacity">
+        <button onClick={toggleMute} className="opacity-60 hover:opacity-100 transition-opacity">
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
 

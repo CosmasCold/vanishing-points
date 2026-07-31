@@ -31,6 +31,7 @@ import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import { getDailyCode } from "@/lib/dailyCode";
 import { getSeasonalState } from "@/lib/seasonal";
+import SignalTab from "@/components/SignalTab";
 import {
   checkCaesar,
   checkCoordinates,
@@ -139,7 +140,7 @@ const THEMES = {
 };
 
 type ThemeKey = keyof typeof THEMES;
-type SideTab = "logs" | "decrypt" | "assets" | "puzzles" | "status" | "wall";
+type SideTab = "logs" | "decrypt" | "signal" | "assets" | "puzzles" | "status" | "wall";
 
 const LOGS = [
   {
@@ -1418,7 +1419,6 @@ export default function EchoesPage() {
               )}
             </AnimatePresence>
 
-            <NumbersStation />
           </div>
 
           {/* RIGHT: Side Panel (2/5) */}
@@ -1436,6 +1436,7 @@ export default function EchoesPage() {
                 { id: "puzzles" as SideTab, label: "Puzzles", icon: Zap },
                 { id: "status" as SideTab, label: "Status", icon: Shield },
                 { id: "wall" as SideTab, label: "Wall", icon: MessageSquare },
+                { id: "signal" as SideTab, label: "Signal", icon: Radio },
               ]).map((tab) => (
                 <button
                   key={tab.id}
@@ -1729,6 +1730,16 @@ export default function EchoesPage() {
                     )}
                   </motion.div>
                 )}
+                {activeTab === "signal" && (
+  <motion.div
+    key="signal"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  >
+    <SignalTab theme={t} onPushTerminal={pushTerminal} />
+  </motion.div>
+)}
               </AnimatePresence>
             </div>
           </div>

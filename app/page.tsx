@@ -14,7 +14,6 @@ import HelpOverlay from "@/components/HelpOverlay";
 import ShortcutHint from "@/components/ShortcutHint";
 import MapSearch from "@/components/MapSearch";
 import TransmissionFeed from "@/components/TransmissionFeed";
-import NumbersStation from "@/components/NumbersStation";
 import AtlasBootSequence from "@/components/AtlasBootSequence";
 import DustOverlay from "@/components/DustOverlay";
 import CollaborativeCursors from "@/components/CollaborativeCursors";
@@ -288,8 +287,7 @@ export default function Home() {
     </span>
   </Link>
 
-  {/* Numbers Station — compact dropdown */}
-  <NumbersStation compact />
+  
 </motion.nav>
         </header>
 
@@ -425,7 +423,7 @@ export default function Home() {
           {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
         </AnimatePresence>
 
-        <NumbersStation />
+        
         <TransmissionFeed />
         <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
         <ShortcutHint onClick={() => setShowHelp(true)} />

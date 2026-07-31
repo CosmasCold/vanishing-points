@@ -30,6 +30,7 @@ import PlaceWhispers from "@/components/PlaceWhispers";
 import { showToast } from "@/lib/toast";
 import LiveSignalOverlay from "@/components/LiveSignalOverlay";
 
+
 // CRITICAL: Zero hooks here. next/dynamic swaps this rapidly.
 function MapLoadingFallback() {
   return (
@@ -236,53 +237,60 @@ export default function Home() {
           </motion.div>
 
           <motion.nav
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: booted ? 1 : 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-2 md:gap-3 pointer-events-auto overflow-x-auto max-w-full pb-1 md:pb-0 no-scrollbar"
-          >
-            <RandomDestination places={places} onSelect={openPlace} />
-            <button
-              onClick={() => setShowLog(true)}
-              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
-              title="Your Expedition Log (L)"
-            >
-              <BookOpen size={14} className="md:w-4 md:h-4" />
-              <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
-                Log{visitedCount > 0 ? ` (${visitedCount})` : ""}
-              </span>
-            </button>
-            <button
-              onClick={() => setShowPlanner(true)}
-              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
-              title="Expedition Planner (E)"
-            >
-              <Route size={14} className="md:w-4 md:h-4" />
-              <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
-                Plan
-              </span>
-            </button>
-            <Link
-              href="/list"
-              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
-              title="Archives (A)"
-            >
-              <List size={14} className="md:w-4 md:h-4" />
-              <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
-                Archives
-              </span>
-            </Link>
-            <Link
-              href="/submit"
-              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[rgba(122,107,82,0.15)] backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#ddd0bc] hover:bg-[rgba(122,107,82,0.25)] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
-              title="Submit Discovery (S)"
-            >
-              <Plus size={14} className="md:w-4 md:h-4" />
-              <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
-                Log discovery
-              </span>
-            </Link>
-          </motion.nav>
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: booted ? 1 : 0 }}
+  transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+  className="flex items-center gap-2 md:gap-3 pointer-events-auto overflow-x-auto max-w-full pb-1 md:pb-0 no-scrollbar"
+>
+  <RandomDestination places={places} onSelect={openPlace} />
+  
+  <button
+    onClick={() => setShowLog(true)}
+    className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
+    title="Your Expedition Log (L)"
+  >
+    <BookOpen size={14} className="md:w-4 md:h-4" />
+    <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
+      Log{visitedCount > 0 ? ` (${visitedCount})` : ""}
+    </span>
+  </button>
+  
+  <button
+    onClick={() => setShowPlanner(true)}
+    className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
+    title="Expedition Planner (E)"
+  >
+    <Route size={14} className="md:w-4 md:h-4" />
+    <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
+      Plan
+    </span>
+  </button>
+  
+  <Link
+    href="/list"
+    className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
+    title="Archives (A)"
+  >
+    <List size={14} className="md:w-4 md:h-4" />
+    <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
+      Archives
+    </span>
+  </Link>
+  
+  <Link
+    href="/submit"
+    className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[rgba(122,107,82,0.15)] backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#ddd0bc] hover:bg-[rgba(122,107,82,0.25)] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
+    title="Submit Discovery (S)"
+  >
+    <Plus size={14} className="md:w-4 md:h-4" />
+    <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
+      Log discovery
+    </span>
+  </Link>
+
+  {/* Numbers Station — compact dropdown */}
+  <NumbersStation compact />
+</motion.nav>
         </header>
 
         {/* ─── BOTTOM LEFT STATS ─── */}
@@ -417,8 +425,8 @@ export default function Home() {
           {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
         </AnimatePresence>
 
-        <NumbersStation themeColor="#9a8a72" />
-        <TransmissionFeed places={places} />
+        <NumbersStation />
+        <TransmissionFeed />
         <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
         <ShortcutHint onClick={() => setShowHelp(true)} />
         <LyingCompass places={places} />

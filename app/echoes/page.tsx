@@ -72,37 +72,69 @@ const THEMES = {
   amber: {
     primary: "#e8d5c0",
     bg: "#0c0a08",
-    glow: "rgba(232,213,192,0.08)",
+    glow: "rgba(232,213,192,0.12)",
     accent: "#c4a882",
-    dim: "#8a7a6a",
+    dim: "#6a5a4a",
+    cursor: "#e8d5c0",
   },
   cyan: {
-    primary: "#c8dce0",
-    bg: "#080a0a",
-    glow: "rgba(200,220,224,0.08)",
-    accent: "#8ab4b8",
-    dim: "#6a8a8e",
+    primary: "#a8d8e8",
+    bg: "#080a0c",
+    glow: "rgba(168,216,232,0.12)",
+    accent: "#6ab4c8",
+    dim: "#4a7a8a",
+    cursor: "#a8d8e8",
   },
   red: {
-    primary: "#e0c0b8",
-    bg: "#0a0808",
-    glow: "rgba(224,192,184,0.08)",
-    accent: "#b08070",
-    dim: "#8a6058",
+    primary: "#e8a8a0",
+    bg: "#100808",
+    glow: "rgba(232,168,160,0.12)",
+    accent: "#c07060",
+    dim: "#8a5048",
+    cursor: "#e8a8a0",
   },
   white: {
-    primary: "#ddd8d0",
+    primary: "#d0d0d0",
     bg: "#0a0a0a",
-    glow: "rgba(221,216,208,0.08)",
-    accent: "#b8b0a8",
-    dim: "#888078",
+    glow: "rgba(208,208,208,0.12)",
+    accent: "#a0a0a0",
+    dim: "#707070",
+    cursor: "#d0d0d0",
   },
   phosphor: {
-    primary: "#c8d8b8",
+    primary: "#b8e8a0",
     bg: "#050a05",
-    glow: "rgba(200,216,184,0.08)",
-    accent: "#7a9a6a",
-    dim: "#5a7a4a",
+    glow: "rgba(184,232,160,0.12)",
+    accent: "#6aa85a",
+    dim: "#4a7a3a",
+    cursor: "#b8e8a0",
+  },
+  // NEW: Deep sea — bioluminescent
+  abyss: {
+    primary: "#88c0d0",
+    bg: "#020508",
+    glow: "rgba(136,192,208,0.15)",
+    accent: "#5e81ac",
+    dim: "#4c566a",
+    cursor: "#88c0d0",
+  },
+  // NEW: Dried blood — emergency broadcast
+  emergency: {
+    primary: "#ff6b6b",
+    bg: "#1a0505",
+    glow: "rgba(255,107,107,0.1)",
+    accent: "#ee5253",
+    dim: "#8a3a3a",
+    cursor: "#ff6b6b",
+  },
+  // NEW: Failing filament — warm tungsten
+  tungsten: {
+    primary: "#ffd8a8",
+    bg: "#0a0806",
+    glow: "rgba(255,216,168,0.12)",
+    accent: "#e8b87a",
+    dim: "#8a7050",
+    cursor: "#ffd8a8",
   },
 };
 
@@ -1386,7 +1418,7 @@ export default function EchoesPage() {
               )}
             </AnimatePresence>
 
-            <NumbersStation themeColor={t.primary} />
+            <NumbersStation />
           </div>
 
           {/* RIGHT: Side Panel (2/5) */}

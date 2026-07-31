@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Activity, Zap, Volume2, Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Radio, Activity, Zap, Volume2, Lock, Unlock, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface ThemeColors {
   primary: string;
@@ -161,33 +161,52 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   const [decodeResult, setDecodeResult] = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [showSpectral, setShowSpectral] = useState(false);
+  const [interference, setInterference] = useState(false);
 
   const audioCtx = useRef<AudioContext | null>(null);
   const noiseNode = useRef<AudioBufferSourceNode | null>(null);
-  const gainNode = useRef<GainNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const freq = FREQUENCIES[freqIndex];
 
-  // Signal strength derived from how close needle is to sweet spot
+  // Narrower sweet spot = harder to catch
+  const sweetSpotWidth = 10; // was 16
+
   const signalStrength = useMemo(() => {
     const dist = Math.abs(needle - sweetSpot);
-    return Math.max(0, Math.min(100, 100 - dist * 1.8));
+    return Math.max(0, Math.min(100, 100 - dist * (100 / sweetSpotWidth)));
   }, [needle, sweetSpot]);
 
-  // Sweet spot slowly drifts
+  // Fast drift + random interference bursts
   useEffect(() => {
     if (locked) return;
+
+    // Normal drift: fast, jittery
     const drift = setInterval(() => {
       setSweetSpot((prev) => {
-        const move = (Math.random() - 0.5) * 6;
-        return Math.max(10, Math.min(90, prev + move));
+        const jitter = (Math.random() - 0.5) * 12; // was 6
+        return Math.max(5, Math.min(95, prev + jitter));
       });
-    }, 2500);
-    return () => clearInterval(drift);
+    }, 900); // was 2500ms
+
+    // Interference burst: sudden jump + visual flash
+    const burst = setInterval(() => {
+      if (Math.random() > 0.6) {
+        setInterference(true);
+        setSweetSpot((prev) => {
+          const jump = (Math.random() - 0.5) * 35; // big jump
+          return Math.max(5, Math.min(95, prev + jump));
+        });
+        setTimeout(() => setInterference(false), 200);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(drift);
+      clearInterval(burst);
+    };
   }, [freqIndex, locked]);
 
-  // Audio context init
   const initAudio = useCallback(() => {
     if (audioEnabled) return;
     const AC = window.AudioContext || (window as any).webkitAudioContext;
@@ -215,7 +234,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     try {
       noiseNode.current?.stop();
       noiseNode.current?.disconnect();
-    } catch { /* already stopped */ }
+    } catch { }
     noiseNode.current = null;
   }, []);
 
@@ -238,7 +257,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     filter.Q.value = 0.5;
 
     const gain = ctx.createGain();
-    // Static volume inversely proportional to signal strength: weak signal = loud static
     gain.gain.value = 0.02 + (1 - signalStrength / 100) * 0.14;
 
     noise.connect(filter);
@@ -246,10 +264,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     gain.connect(ctx.destination);
     noise.start();
     noiseNode.current = noise;
-    gainNode.current = gain;
   }, [freqIndex, signalStrength, audioEnabled, stopStatic]);
 
-  // Update static volume as signal changes
   useEffect(() => {
     if (!audioEnabled || locked) return;
     startStatic();
@@ -264,7 +280,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     const isVowel = (c: string) => "aeiou".includes(c.toLowerCase());
     const isConsonant = (c: string) => /[bcdfghjklmnpqrstvwxyz]/.test(c.toLowerCase());
 
-    // Carrier drone
     const drone = ctx.createOscillator();
     const droneGain = ctx.createGain();
     drone.type = "sine";
@@ -358,17 +373,19 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   const selectFrequency = (index: number) => {
     setFreqIndex(index);
     setNeedle(50);
-    setSweetSpot(15 + Math.random() * 70);
+    setSweetSpot(10 + Math.random() * 80);
     setLocked(false);
     setDecoded(null);
     setDecodeResult(null);
     setFailedAttempts(0);
     setLog([]);
+    setInterference(false);
   };
 
+  // Smaller nudge = finer control needed
   const nudgeNeedle = (dir: number) => {
     initAudio();
-    setNeedle((n) => Math.max(0, Math.min(100, n + dir * 5)));
+    setNeedle((n) => Math.max(0, Math.min(100, n + dir * 3))); // was 5
     playTone(440 + dir * 100, 0.05, "sine");
   };
 
@@ -404,7 +421,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     }, 2000 + Math.random() * 1000);
   }, [signalStrength, freq, initAudio, playTone, speakRobotic, stopStatic]);
 
-  // Typewriter for encoded text
   useEffect(() => {
     if (!decoded) return;
     let i = 0;
@@ -456,7 +472,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     setLog((prev) => [...prev, "Transcript forwarded to terminal.", ""]);
   };
 
-  // Spectral canvas
   useEffect(() => {
     if (!showSpectral || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -494,14 +509,14 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   const meterColor = signalStrength >= 75 ? "#7a9a6a" : signalStrength >= 40 ? "#9a8a5a" : "#9a5a5a";
 
   return (
-    <div className="space-y-5 text-[11px] md:text-[13px] font-mono">
+    <div className="space-y-5 text-[11px] md:text-[13px] font-mono select-none">
       {/* Header */}
       <div>
         <p className="text-[10px] uppercase tracking-[0.25em] font-bold" style={{ color: theme.dim }}>
           Shortwave Signal Acquisition
         </p>
         <p className="text-[10px] mt-1 leading-relaxed" style={{ color: theme.dim }}>
-          Select a frequency. Adjust the tuner until signal strength peaks. Lock when the meter glows green.
+          The signal is unstable. It drifts and jumps. Track it, anticipate it, lock it before it vanishes.
         </p>
       </div>
 
@@ -552,57 +567,81 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
       </div>
 
       {/* Tuner */}
-      <div className="p-4 rounded-lg border space-y-3" style={{ borderColor: `${freq.color}15`, backgroundColor: `${freq.color}04` }}>
+      <div
+        className={`p-4 rounded-lg border space-y-3 transition-all ${interference ? "animate-pulse" : ""}`}
+        style={{
+          borderColor: interference ? "#9a5a5a80" : `${freq.color}15`,
+          backgroundColor: interference ? "rgba(154,90,90,0.05)" : `${freq.color}04`,
+        }}
+      >
         <div className="flex items-center justify-between">
           <span className="text-[9px] uppercase tracking-widest font-bold" style={{ color: freq.dimColor }}>
             Tuner // {freq.name}
           </span>
-          <span className="text-[10px]" style={{ color: theme.primary }}>
-            Needle: {needle.toFixed(0)}
-          </span>
+          <div className="flex items-center gap-2">
+            {interference && (
+              <span className="flex items-center gap-1 text-[9px] text-[#9a5a5a] animate-pulse">
+                <AlertTriangle size={10} />
+                INTERFERENCE
+              </span>
+            )}
+            <span className="text-[10px]" style={{ color: theme.primary }}>
+              Needle: {needle.toFixed(0)}
+            </span>
+          </div>
         </div>
 
         {/* Dial track */}
-        <div className="relative h-8 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
+        <div className="relative h-10 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
           {/* Ticks */}
           <div className="absolute inset-0 flex items-center justify-between px-2">
-            {Array.from({ length: 11 }, (_, i) => (
-              <div key={i} className="w-px h-2 bg-[#222]" />
+            {Array.from({ length: 21 }, (_, i) => (
+              <div key={i} className={`w-px ${i % 5 === 0 ? "h-3 bg-[#333]" : "h-1.5 bg-[#1a1a1a]"}`} />
             ))}
           </div>
-          {/* Sweet spot zone (hidden, visual hint only) */}
-          <div
-            className="absolute top-0 bottom-0 opacity-[0.06] rounded"
-            style={{
-              left: `${Math.max(0, sweetSpot - 8)}%`,
-              width: "16%",
-              backgroundColor: freq.color,
-            }}
-          />
           {/* Needle */}
           <motion.div
-            className="absolute top-0 bottom-0 w-px bg-white/60"
+            className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
             animate={{ left: `${needle}%` }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
           />
           <div
-            className="absolute top-0 bottom-0 w-3 blur-md"
-            style={{ left: `${needle}%`, backgroundColor: `${freq.color}30`, transform: "translateX(-50%)" }}
+            className="absolute top-0 bottom-0 w-4 blur-lg z-0"
+            style={{ left: `${needle}%`, backgroundColor: `${freq.color}25`, transform: "translateX(-50%)" }}
+          />
+          {/* Sweet spot ghost (very faint hint) */}
+          <div
+            className="absolute top-0 bottom-0 opacity-[0.04] rounded"
+            style={{
+              left: `${Math.max(0, sweetSpot - sweetSpotWidth / 2)}%`,
+              width: `${sweetSpotWidth}%`,
+              backgroundColor: freq.color,
+            }}
           />
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => nudgeNeedle(-1)}
-            className="flex-1 py-2 border border-[#222] rounded hover:border-[#444] transition-colors active:scale-95 flex items-center justify-center"
+            onMouseDown={() => {
+              nudgeNeedle(-1);
+              const interval = setInterval(() => nudgeNeedle(-1), 120);
+              const up = () => clearInterval(interval);
+              document.addEventListener("mouseup", up, { once: true });
+            }}
+            className="flex-1 py-2.5 border border-[#222] rounded hover:border-[#555] active:border-[#777] active:bg-[#1a1a1a] transition-all active:scale-95 flex items-center justify-center gap-1"
             style={{ color: theme.dim }}
           >
             <ChevronLeft size={14} /> Tune Left
           </button>
           <button
-            onClick={() => nudgeNeedle(1)}
-            className="flex-1 py-2 border border-[#222] rounded hover:border-[#444] transition-colors active:scale-95 flex items-center justify-center"
+            onMouseDown={() => {
+              nudgeNeedle(1);
+              const interval = setInterval(() => nudgeNeedle(1), 120);
+              const up = () => clearInterval(interval);
+              document.addEventListener("mouseup", up, { once: true });
+            }}
+            className="flex-1 py-2.5 border border-[#222] rounded hover:border-[#555] active:border-[#777] active:bg-[#1a1a1a] transition-all active:scale-95 flex items-center justify-center gap-1"
             style={{ color: theme.dim }}
           >
             Tune Right <ChevronRight size={14} />
@@ -618,34 +657,26 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
             </span>
             <span style={{ color: meterColor, fontWeight: signalStrength >= 75 ? 700 : 400 }}>
               {signalStrength.toFixed(0)}%
-              {signalStrength >= 75 ? " — STRONG" : signalStrength >= 40 ? " — MODERATE" : " — WEAK"}
+              {signalStrength >= 75 ? " — LOCK READY" : signalStrength >= 40 ? " — ACQUIRING" : " — NOISE"}
             </span>
           </div>
           <div className="h-3 bg-[#0a0a0a] rounded-full overflow-hidden border border-[#1a1a1a] relative">
-            {/* Zone markers */}
-            <div className="absolute left-[40%] top-0 bottom-0 w-px bg-[#222]" />
-            <div className="absolute left-[75%] top-0 bottom-0 w-px bg-[#222]" />
+            <div className="absolute left-[75%] top-0 bottom-0 w-px bg-[#333] z-10" />
             <motion.div
               className="h-full rounded-full relative"
               style={{ backgroundColor: meterColor }}
               animate={{ width: `${signalStrength}%` }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
             >
               {signalStrength >= 75 && (
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  animate={{ opacity: [0.4, 0.8, 0.4] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
+                  animate={{ opacity: [0.3, 0.9, 0.3] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
                   style={{ backgroundColor: "#7a9a6a" }}
                 />
               )}
             </motion.div>
-          </div>
-          <div className="flex justify-between text-[8px] uppercase tracking-wider text-[#333] px-1">
-            <span>0</span>
-            <span style={{ color: signalStrength >= 40 ? theme.dim : "#333" }}>40</span>
-            <span style={{ color: signalStrength >= 75 ? "#7a9a6a" : "#333" }}>75</span>
-            <span>100</span>
           </div>
         </div>
 
@@ -655,9 +686,9 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           disabled={signalStrength < 75 || locked}
           className="w-full py-3 rounded-lg border text-[11px] uppercase tracking-[0.15em] font-bold transition-all disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
           style={{
-            borderColor: signalStrength >= 75 ? `${meterColor}60` : "#222",
+            borderColor: signalStrength >= 75 ? `${meterColor}70` : "#222",
             color: signalStrength >= 75 ? meterColor : "#444",
-            backgroundColor: signalStrength >= 75 ? `${meterColor}10` : "transparent",
+            backgroundColor: signalStrength >= 75 ? `${meterColor}12` : "transparent",
             opacity: signalStrength < 75 ? 0.5 : 1,
           }}
         >

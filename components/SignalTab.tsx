@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Activity, Zap, Volume2, Lock, Unlock, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Radio, Activity, Zap, Volume2, VolumeX, Lock, Unlock, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface ThemeColors {
   primary: string;
@@ -156,6 +156,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   const [typed, setTyped] = useState("");
   const [log, setLog] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [muted, setMuted] = useState(false);
   const [cipherGuess, setCipherGuess] = useState("caesar");
   const [keyGuess, setKeyGuess] = useState("");
   const [decodeResult, setDecodeResult] = useState<string | null>(null);
@@ -164,59 +166,79 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   const [interference, setInterference] = useState(false);
 
   const audioCtx = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
   const noiseNode = useRef<AudioBufferSourceNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const freq = FREQUENCIES[freqIndex];
-
-  // Narrower sweet spot = harder to catch
-  const sweetSpotWidth = 10; // was 16
+  const sweetSpotWidth = 10;
 
   const signalStrength = useMemo(() => {
     const dist = Math.abs(needle - sweetSpot);
     return Math.max(0, Math.min(100, 100 - dist * (100 / sweetSpotWidth)));
   }, [needle, sweetSpot]);
 
-  // Fast drift + random interference bursts
+  // Fast drift + interference bursts
   useEffect(() => {
     if (locked) return;
-
-    // Normal drift: fast, jittery
     const drift = setInterval(() => {
       setSweetSpot((prev) => {
-        const jitter = (Math.random() - 0.5) * 12; // was 6
+        const jitter = (Math.random() - 0.5) * 12;
         return Math.max(5, Math.min(95, prev + jitter));
       });
-    }, 900); // was 2500ms
-
-    // Interference burst: sudden jump + visual flash
+    }, 900);
     const burst = setInterval(() => {
       if (Math.random() > 0.6) {
         setInterference(true);
         setSweetSpot((prev) => {
-          const jump = (Math.random() - 0.5) * 35; // big jump
+          const jump = (Math.random() - 0.5) * 35;
           return Math.max(5, Math.min(95, prev + jump));
         });
         setTimeout(() => setInterference(false), 200);
       }
     }, 3000);
-
     return () => {
       clearInterval(drift);
       clearInterval(burst);
     };
   }, [freqIndex, locked]);
 
+  // MASTER VOLUME: apply to master gain whenever volume/mute changes
+  useEffect(() => {
+    if (!masterGainRef.current || !audioCtx.current) return;
+    const effective = muted ? 0 : volume;
+    masterGainRef.current.gain.setTargetAtTime(effective, audioCtx.current.currentTime, 0.05);
+  }, [volume, muted]);
+
+  // TAB SWITCH CLEANUP: silence everything when this component unmounts
+  useEffect(() => {
+    return () => {
+      stopStatic();
+      if (masterGainRef.current && audioCtx.current) {
+        try {
+          masterGainRef.current.gain.setTargetAtTime(0, audioCtx.current.currentTime, 0.02);
+        } catch { /* suspended */ }
+      }
+    };
+  }, []);
+
   const initAudio = useCallback(() => {
     if (audioEnabled) return;
     const AC = window.AudioContext || (window as any).webkitAudioContext;
     if (!AC) return;
-    audioCtx.current = new AC();
+    const ctx = new AC();
+    audioCtx.current = ctx;
+
+    const master = ctx.createGain();
+    master.gain.value = muted ? 0 : volume;
+    master.connect(ctx.destination);
+    masterGainRef.current = master;
+
     setAudioEnabled(true);
-  }, [audioEnabled]);
+  }, [audioEnabled, volume, muted]);
 
   const playTone = useCallback((freqHz: number, duration: number, type: OscillatorType = "sine") => {
-    if (!audioCtx.current || !audioEnabled) return;
+    if (!audioCtx.current || !masterGainRef.current) return;
     const ctx = audioCtx.current;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -225,10 +247,10 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     gain.gain.setValueAtTime(0.08, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(masterGainRef.current);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  }, [audioEnabled]);
+  }, []);
 
   const stopStatic = useCallback(() => {
     try {
@@ -239,7 +261,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   }, []);
 
   const startStatic = useCallback(() => {
-    if (!audioCtx.current || !audioEnabled) return;
+    if (!audioCtx.current || !masterGainRef.current) return;
     stopStatic();
     const ctx = audioCtx.current;
     const bufferSize = 2 * ctx.sampleRate;
@@ -261,10 +283,10 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(masterGainRef.current);
     noise.start();
     noiseNode.current = noise;
-  }, [freqIndex, signalStrength, audioEnabled, stopStatic]);
+  }, [freqIndex, signalStrength, stopStatic]);
 
   useEffect(() => {
     if (!audioEnabled || locked) return;
@@ -273,7 +295,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   }, [signalStrength, freqIndex, locked, audioEnabled, startStatic, stopStatic]);
 
   const speakRobotic = useCallback((text: string) => {
-    if (!audioCtx.current || !audioEnabled) return;
+    if (!audioCtx.current || !masterGainRef.current) return;
     const ctx = audioCtx.current;
     let t = ctx.currentTime + 0.15;
 
@@ -286,7 +308,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     drone.frequency.value = 180 + freqIndex * 90;
     droneGain.gain.value = 0.015;
     drone.connect(droneGain);
-    droneGain.connect(ctx.destination);
+    droneGain.connect(masterGainRef.current);
     drone.start(t);
     drone.stop(t + text.length * 0.09 + 1);
 
@@ -321,7 +343,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         base.connect(filter);
         formant.connect(filter);
         filter.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
 
         base.start(t); base.stop(t + 0.1);
         formant.start(t); formant.stop(t + 0.1);
@@ -351,7 +373,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
         noise.connect(filter);
         filter.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
         noise.start(t);
       } else if (/[0-9]/.test(c)) {
         const osc = ctx.createOscillator();
@@ -361,14 +383,14 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         gain.gain.setValueAtTime(0.1, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
         osc.start(t);
         osc.stop(t + 0.2);
         t += 0.06;
       }
       t += 0.09;
     });
-  }, [audioEnabled, freqIndex]);
+  }, [freqIndex]);
 
   const selectFrequency = (index: number) => {
     setFreqIndex(index);
@@ -382,10 +404,9 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     setInterference(false);
   };
 
-  // Smaller nudge = finer control needed
   const nudgeNeedle = (dir: number) => {
     initAudio();
-    setNeedle((n) => Math.max(0, Math.min(100, n + dir * 3))); // was 5
+    setNeedle((n) => Math.max(0, Math.min(100, n + dir * 3)));
     playTone(440 + dir * 100, 0.05, "sine");
   };
 
@@ -520,8 +541,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         </p>
       </div>
 
-      {/* Audio enable */}
-      {!audioEnabled && (
+      {/* Audio controls */}
+      {!audioEnabled ? (
         <button
           onClick={initAudio}
           className="w-full py-2.5 border rounded text-[10px] uppercase tracking-wider transition-all active:scale-[0.98] flex items-center justify-center gap-2"
@@ -530,6 +551,34 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           <Volume2 size={12} />
           Enable Audio Receiver
         </button>
+      ) : (
+        <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ borderColor: `${theme.primary}15`, backgroundColor: `${theme.primary}04` }}>
+          <button
+            onClick={() => setMuted((m) => !m)}
+            className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95 hover:opacity-80"
+            style={{ borderColor: `${theme.primary}30`, color: theme.primary }}
+          >
+            {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center justify-between text-[9px] uppercase tracking-wider" style={{ color: theme.dim }}>
+              <span>Receiver Volume</span>
+              <span>{muted ? "MUTED" : `${Math.round(volume * 100)}%`}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => {
+                setVolume(parseFloat(e.target.value));
+                setMuted(false);
+              }}
+              className="w-full h-1 accent-[#9a8a72] cursor-pointer"
+            />
+          </div>
+        </div>
       )}
 
       {/* Frequency selector */}
@@ -593,13 +642,11 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
         {/* Dial track */}
         <div className="relative h-10 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
-          {/* Ticks */}
           <div className="absolute inset-0 flex items-center justify-between px-2">
             {Array.from({ length: 21 }, (_, i) => (
               <div key={i} className={`w-px ${i % 5 === 0 ? "h-3 bg-[#333]" : "h-1.5 bg-[#1a1a1a]"}`} />
             ))}
           </div>
-          {/* Needle */}
           <motion.div
             className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
             animate={{ left: `${needle}%` }}
@@ -609,7 +656,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
             className="absolute top-0 bottom-0 w-4 blur-lg z-0"
             style={{ left: `${needle}%`, backgroundColor: `${freq.color}25`, transform: "translateX(-50%)" }}
           />
-          {/* Sweet spot ghost (very faint hint) */}
           <div
             className="absolute top-0 bottom-0 opacity-[0.04] rounded"
             style={{

@@ -178,7 +178,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     return Math.max(0, Math.min(100, 100 - dist * (100 / sweetSpotWidth)));
   }, [needle, sweetSpot]);
 
-  // Fast drift + interference bursts
   useEffect(() => {
     if (locked) return;
     const drift = setInterval(() => {
@@ -203,21 +202,19 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     };
   }, [freqIndex, locked]);
 
-  // MASTER VOLUME: apply to master gain whenever volume/mute changes
   useEffect(() => {
     if (!masterGainRef.current || !audioCtx.current) return;
     const effective = muted ? 0 : volume;
     masterGainRef.current.gain.setTargetAtTime(effective, audioCtx.current.currentTime, 0.05);
   }, [volume, muted]);
 
-  // TAB SWITCH CLEANUP: silence everything when this component unmounts
   useEffect(() => {
     return () => {
       stopStatic();
       if (masterGainRef.current && audioCtx.current) {
         try {
           masterGainRef.current.gain.setTargetAtTime(0, audioCtx.current.currentTime, 0.02);
-        } catch { /* suspended */ }
+        } catch { }
       }
     };
   }, []);
@@ -238,8 +235,10 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   }, [audioEnabled, volume, muted]);
 
   const playTone = useCallback((freqHz: number, duration: number, type: OscillatorType = "sine") => {
-    if (!audioCtx.current || !masterGainRef.current) return;
     const ctx = audioCtx.current;
+    const master = masterGainRef.current;
+    if (!ctx || !master) return;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -247,7 +246,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     gain.gain.setValueAtTime(0.08, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(masterGainRef.current);
+    gain.connect(master);
     osc.start();
     osc.stop(ctx.currentTime + duration);
   }, []);
@@ -261,9 +260,12 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   }, []);
 
   const startStatic = useCallback(() => {
-    if (!audioCtx.current || !masterGainRef.current) return;
-    stopStatic();
     const ctx = audioCtx.current;
+    const master = masterGainRef.current;
+    if (!ctx || !master) return;
+
+    stopStatic();
+
     const bufferSize = 2 * ctx.sampleRate;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -283,7 +285,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(masterGainRef.current);
+    gain.connect(master);
     noise.start();
     noiseNode.current = noise;
   }, [freqIndex, signalStrength, stopStatic]);
@@ -295,10 +297,11 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
   }, [signalStrength, freqIndex, locked, audioEnabled, startStatic, stopStatic]);
 
   const speakRobotic = useCallback((text: string) => {
-    if (!audioCtx.current || !masterGainRef.current) return;
     const ctx = audioCtx.current;
-    let t = ctx.currentTime + 0.15;
+    const master = masterGainRef.current;
+    if (!ctx || !master) return;
 
+    let t = ctx.currentTime + 0.15;
     const isVowel = (c: string) => "aeiou".includes(c.toLowerCase());
     const isConsonant = (c: string) => /[bcdfghjklmnpqrstvwxyz]/.test(c.toLowerCase());
 
@@ -308,7 +311,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     drone.frequency.value = 180 + freqIndex * 90;
     droneGain.gain.value = 0.015;
     drone.connect(droneGain);
-    droneGain.connect(masterGainRef.current);
+    droneGain.connect(master);
     drone.start(t);
     drone.stop(t + text.length * 0.09 + 1);
 
@@ -343,7 +346,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         base.connect(filter);
         formant.connect(filter);
         filter.connect(gain);
-        gain.connect(masterGainRef.current);
+        gain.connect(master);
 
         base.start(t); base.stop(t + 0.1);
         formant.start(t); formant.stop(t + 0.1);
@@ -373,7 +376,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
         noise.connect(filter);
         filter.connect(gain);
-        gain.connect(masterGainRef.current);
+        gain.connect(master);
         noise.start(t);
       } else if (/[0-9]/.test(c)) {
         const osc = ctx.createOscillator();
@@ -383,7 +386,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         gain.gain.setValueAtTime(0.1, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
         osc.connect(gain);
-        gain.connect(masterGainRef.current);
+        gain.connect(master);
         osc.start(t);
         osc.stop(t + 0.2);
         t += 0.06;
@@ -531,7 +534,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
 
   return (
     <div className="space-y-5 text-[11px] md:text-[13px] font-mono select-none">
-      {/* Header */}
       <div>
         <p className="text-[10px] uppercase tracking-[0.25em] font-bold" style={{ color: theme.dim }}>
           Shortwave Signal Acquisition
@@ -541,7 +543,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         </p>
       </div>
 
-      {/* Audio controls */}
       {!audioEnabled ? (
         <button
           onClick={initAudio}
@@ -581,7 +582,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         </div>
       )}
 
-      {/* Frequency selector */}
       <div className="grid grid-cols-2 gap-2">
         {FREQUENCIES.map((f, i) => {
           const active = i === freqIndex;
@@ -615,7 +615,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         })}
       </div>
 
-      {/* Tuner */}
       <div
         className={`p-4 rounded-lg border space-y-3 transition-all ${interference ? "animate-pulse" : ""}`}
         style={{
@@ -640,7 +639,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           </div>
         </div>
 
-        {/* Dial track */}
         <div className="relative h-10 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-between px-2">
             {Array.from({ length: 21 }, (_, i) => (
@@ -666,7 +664,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           />
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-2">
           <button
             onMouseDown={() => {
@@ -694,7 +691,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           </button>
         </div>
 
-        {/* Signal meter */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[9px] uppercase tracking-wider">
             <span className="flex items-center gap-1.5" style={{ color: theme.dim }}>
@@ -726,7 +722,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
           </div>
         </div>
 
-        {/* Lock button */}
         <button
           onClick={lockSignal}
           disabled={signalStrength < 75 || locked}
@@ -743,14 +738,12 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         </button>
       </div>
 
-      {/* Lore */}
       <div className="border-l-2 pl-3 py-1" style={{ borderColor: `${freq.color}30` }}>
         <p className="text-xs leading-relaxed italic" style={{ color: freq.dimColor }}>
           {freq.lore}
         </p>
       </div>
 
-      {/* Decoding / Decoded */}
       <AnimatePresence>
         {decoding && (
           <motion.div
@@ -859,7 +852,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Spectral analysis */}
       <div className="space-y-2">
         <button
           onClick={() => setShowSpectral((s) => !s)}
@@ -907,7 +899,6 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Session log */}
       {log.length > 0 && (
         <div className="space-y-1 border-t border-[#1a1a1a] pt-3">
           <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: theme.dim }}>Session Log</p>

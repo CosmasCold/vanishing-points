@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function CustomCursor() {
+  const [isTouch, setIsTouch] = useState(false);
   const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cursor = cursorRef.current;
-    if (!cursor) return;
+    setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  }, []);
 
-    // Hide default cursor
+  useEffect(() => {
+    if (isTouch || !cursorRef.current) return;
+
+    const cursor = cursorRef.current;
     document.body.style.cursor = "none";
 
     const onMouseMove = (e: MouseEvent) => {
@@ -44,7 +48,9 @@ export default function CustomCursor() {
       document.removeEventListener("mouseover", onMouseOver);
       document.removeEventListener("mouseout", onMouseOut);
     };
-  }, []);
+  }, [isTouch]);
+
+  if (isTouch) return null;
 
   return <div ref={cursorRef} className="custom-cursor" aria-hidden="true" />;
 }

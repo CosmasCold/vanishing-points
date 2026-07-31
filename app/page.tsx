@@ -30,12 +30,10 @@ import PlaceWhispers from "@/components/PlaceWhispers";
 import { showToast } from "@/lib/toast";
 import LiveSignalOverlay from "@/components/LiveSignalOverlay";
 
-// CRITICAL: This component must have ZERO hooks.
-// next/dynamic swaps this component rapidly during client-side navigation.
-// Any hook here causes React error #300.
+// CRITICAL: Zero hooks here. next/dynamic swaps this rapidly.
 function MapLoadingFallback() {
   return (
-    <div className="w-full h-screen bg-[#1a1612] flex items-center justify-center">
+    <div className="w-full h-full bg-[#1a1612] flex items-center justify-center">
       <div className="text-[#9a8a72] font-mono text-sm animate-pulse">
         Establishing cartographic link...
       </div>
@@ -207,7 +205,7 @@ export default function Home() {
       {!booted && <AtlasBootSequence onComplete={() => setBooted(true)} />}
       
       <main
-        className={`relative w-full h-screen overflow-hidden transition-colors duration-[2000ms] ${
+        className={`relative w-full h-[100dvh] overflow-hidden transition-colors duration-[2000ms] select-none ${
           tod === "night"
             ? "bg-[#0f0c09]"
             : tod === "dusk"
@@ -222,16 +220,17 @@ export default function Home() {
         <PlaceWhispers />
         <CollaborativeCursors />
 
-        <header className="absolute top-0 left-0 right-0 z-40 px-6 py-5 flex items-center justify-between pointer-events-none">
+        {/* ─── HEADER ─── */}
+        <header className="absolute top-0 left-0 right-0 z-40 safe-top px-3 md:px-6 py-3 md:py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 pointer-events-none">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: booted ? 1 : 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="font-cinzel text-xl md:text-2xl font-medium tracking-wide text-[#ddd0bc] pointer-events-auto cursor-none">
+            <h1 className="font-cinzel text-lg md:text-2xl font-medium tracking-wide text-[#ddd0bc] pointer-events-auto">
               Vanishing Points
             </h1>
-            <p className="font-mono text-[11px] text-[#9a8a72] mt-1 tracking-wider uppercase">
+            <p className="font-mono text-[10px] md:text-[11px] text-[#9a8a72] mt-0.5 tracking-wider uppercase">
               An atlas of the forgotten
             </p>
           </motion.div>
@@ -240,45 +239,45 @@ export default function Home() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: booted ? 1 : 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3 pointer-events-auto"
+            className="flex items-center gap-2 md:gap-3 pointer-events-auto overflow-x-auto max-w-full pb-1 md:pb-0 no-scrollbar"
           >
             <RandomDestination places={places} onSelect={openPlace} />
             <button
               onClick={() => setShowLog(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
               title="Your Expedition Log (L)"
             >
-              <BookOpen size={16} />
+              <BookOpen size={14} className="md:w-4 md:h-4" />
               <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
                 Log{visitedCount > 0 ? ` (${visitedCount})` : ""}
               </span>
             </button>
             <button
               onClick={() => setShowPlanner(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
               title="Expedition Planner (E)"
             >
-              <Route size={16} />
+              <Route size={14} className="md:w-4 md:h-4" />
               <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
                 Plan
               </span>
             </button>
             <Link
               href="/list"
-              className="flex items-center gap-2 px-4 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-sm"
+              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.25)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
               title="Archives (A)"
             >
-              <List size={16} />
+              <List size={14} className="md:w-4 md:h-4" />
               <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
                 Archives
               </span>
             </Link>
             <Link
               href="/submit"
-              className="flex items-center gap-2 px-4 py-2 bg-[rgba(122,107,82,0.15)] backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#ddd0bc] hover:bg-[rgba(122,107,82,0.25)] transition-all duration-300 text-sm"
+              className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[rgba(122,107,82,0.15)] backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#ddd0bc] hover:bg-[rgba(122,107,82,0.25)] transition-all duration-300 text-xs md:text-sm flex-shrink-0 active:scale-95"
               title="Submit Discovery (S)"
             >
-              <Plus size={16} />
+              <Plus size={14} className="md:w-4 md:h-4" />
               <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
                 Log discovery
               </span>
@@ -286,106 +285,114 @@ export default function Home() {
           </motion.nav>
         </header>
 
+        {/* ─── BOTTOM LEFT STATS ─── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: booted ? 1 : 0 }}
           transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-6 left-6 z-40 pointer-events-none space-y-2"
+          className="absolute bottom-2 md:bottom-6 left-3 md:left-6 z-40 pointer-events-none safe-bottom space-y-1 md:space-y-2"
         >
-          <div className="flex items-center gap-4 text-[#9a8a72] font-mono text-xs">
-            <span className="flex items-center gap-1.5">
-              <Eye size={12} />
-              {places.length} documented
+          <div className="flex items-center gap-2 md:gap-4 text-[#9a8a72] font-mono text-[10px] md:text-xs">
+            <span className="flex items-center gap-1">
+              <Eye size={10} className="md:w-3 md:h-3" />
+              {places.length} doc
             </span>
-            <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-            <span>
+            <span className="w-px h-2.5 md:h-3 bg-[rgba(122,107,82,0.3)]" />
+            <span className="hidden sm:inline">
               {places.filter((p) => p.category === "haunted").length} spectral
             </span>
-            <span className="w-px h-3 bg-[rgba(122,107,82,0.3)]" />
-            <span>
+            <span className="w-px h-2.5 md:h-3 bg-[rgba(122,107,82,0.3)] hidden sm:inline" />
+            <span className="hidden sm:inline">
               {places.filter((p) => p.category === "abandoned").length} forsaken
             </span>
           </div>
 
           <Link
             href="/echoes"
-            className="inline-block text-[9px] font-mono text-[#5a4e42] hover:text-[#33ff00] transition-colors duration-500 tracking-[0.2em] uppercase opacity-30 hover:opacity-100 pointer-events-auto"
+            className="inline-block text-[8px] md:text-[9px] font-mono text-[#5a4e42] hover:text-[#33ff00] transition-colors duration-500 tracking-[0.2em] uppercase opacity-30 hover:opacity-100 pointer-events-auto"
           >
             [ Anomalous Signal ]
           </Link>
         </motion.div>
 
-        {/* NEAR ME */}
-        <div className="absolute top-24 right-6 z-40">
+        {/* ─── NEAR ME ─── */}
+        <div className="absolute top-16 md:top-24 right-3 md:right-6 z-40">
           <button
             onClick={findNearest}
-            className="flex items-center gap-2 px-4 py-2 bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all text-sm shadow-lg"
+            className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72] transition-all text-xs md:text-sm shadow-lg flex-shrink-0 active:scale-95"
             title="Find nearest ruin (N)"
           >
-            <Navigation size={14} />
-            <span className="font-mono text-xs uppercase tracking-wider">
+            <Navigation size={12} className="md:w-3.5 md:h-3.5" />
+            <span className="hidden sm:inline font-mono text-xs uppercase tracking-wider">
               Near Me
             </span>
           </button>
         </div>
 
-        {/* NEAREST BANNER */}
+        {/* ─── NEAREST BANNER ─── */}
         <AnimatePresence>
           {nearest && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-24 left-1/2 -translate-x-1/2 z-40 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg px-5 py-3 shadow-xl flex items-center gap-4"
+              className="absolute top-16 md:top-24 left-3 right-3 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg px-3 md:px-5 py-2 md:py-3 shadow-xl flex items-center justify-between md:justify-start gap-3"
             >
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+              <div className="min-w-0">
+                <p className="text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
                   Nearest documented ruin
                 </p>
-                <p className="font-cinzel text-sm text-[#ddd0bc]">
+                <p className="font-cinzel text-xs md:text-sm text-[#ddd0bc] truncate">
                   {nearest.place.name}
                 </p>
-                <p className="text-[10px] font-mono text-[#7a6e5e]">
+                <p className="text-[9px] md:text-[10px] font-mono text-[#7a6e5e]">
                   {Math.round(nearest.distance)} km away
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  openPlace(nearest.place);
-                  setNearest(null);
-                }}
-                className="px-3 py-1.5 bg-[rgba(122,107,82,0.15)] border border-[rgba(122,107,82,0.25)] rounded text-[10px] font-mono uppercase text-[#c4b8a4] hover:bg-[rgba(122,107,82,0.25)] transition-colors"
-              >
-                Open
-              </button>
-              <button
-                onClick={() => setNearest(null)}
-                className="text-[#9a8a72] hover:text-[#ddd0bc] text-lg leading-none"
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    openPlace(nearest.place);
+                    setNearest(null);
+                  }}
+                  className="px-2.5 md:px-3 py-1 md:py-1.5 bg-[rgba(122,107,82,0.15)] border border-[rgba(122,107,82,0.25)] rounded text-[9px] md:text-[10px] font-mono uppercase text-[#c4b8a4] hover:bg-[rgba(122,107,82,0.25)] transition-colors active:scale-95"
+                >
+                  Open
+                </button>
+                <button
+                  onClick={() => setNearest(null)}
+                  className="text-[#9a8a72] hover:text-[#ddd0bc] text-lg leading-none px-1"
+                >
+                  ×
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* ─── SEARCH ─── */}
         <MapSearch
           places={places}
           onSelect={openPlace}
           onFlyTo={(coords) => setMapCenter(coords)}
         />
 
-        <MapContainer
-          places={places}
-          onSelectPlace={openPlace}
-          loading={loading}
-          center={mapCenter}
-          anniversarySlugs={places
-            .filter((p) => isAnniversary(p.slug))
-            .map((p) => p.slug)}
-          onGhostCapture={handleGhostCapture}
-          onTowerFound={handleTowerFound}
-        />
+        {/* ─── MAP ─── */}
+        <div className="absolute inset-0 z-0">
+          <MapContainer
+            places={places}
+            onSelectPlace={openPlace}
+            loading={loading}
+            center={mapCenter}
+            anniversarySlugs={places
+              .filter((p) => isAnniversary(p.slug))
+              .map((p) => p.slug)}
+            onGhostCapture={handleGhostCapture}
+            onTowerFound={handleTowerFound}
+          />
+        </div>
 
+        {/* ─── OVERLAYS ─── */}
         <AnimatePresence mode="wait">
           {selectedPlace && (
             <PlacePanel

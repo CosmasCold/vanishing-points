@@ -60,7 +60,10 @@ export default function MapSearch({ places, onSelect, onFlyTo }: Props) {
   };
 
   return (
-    <div ref={containerRef} className="absolute top-24 left-6 z-40 w-72">
+    <div 
+      ref={containerRef} 
+      className="absolute top-16 md:top-24 left-3 md:left-6 z-40 w-[calc(100%-1.5rem)] max-w-xs sm:w-72"
+    >
       <div className="relative">
         <Search
           size={14}
@@ -74,8 +77,8 @@ export default function MapSearch({ places, onSelect, onFlyTo }: Props) {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Search the archives... (⌘K)"
-          className="w-full bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg py-2.5 pl-9 pr-8 text-sm text-[#ddd0bc] placeholder:text-[#5a4e42] focus:border-[#9a8a72] focus:outline-none shadow-lg"
+          placeholder="Search... (⌘K)"
+          className="w-full bg-[#252018]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded-lg py-2 md:py-2.5 pl-9 pr-8 text-sm text-[#ddd0bc] placeholder:text-[#5a4e42] focus:border-[#9a8a72] focus:outline-none shadow-lg"
         />
         {query && (
           <button
@@ -96,20 +99,20 @@ export default function MapSearch({ places, onSelect, onFlyTo }: Props) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="mt-2 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg shadow-xl overflow-hidden max-h-80 overflow-y-auto"
+            className="mt-2 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg shadow-xl overflow-hidden max-h-64 md:max-h-80 overflow-y-auto"
           >
             {results.map((place) => (
               <button
                 key={place._id}
                 onClick={() => handleSelect(place)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[rgba(122,107,82,0.1)] transition-colors border-b border-[rgba(122,107,82,0.1)] last:border-0"
+                className="w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 text-left hover:bg-[rgba(122,107,82,0.1)] transition-colors border-b border-[rgba(122,107,82,0.1)] last:border-0 active:bg-[rgba(122,107,82,0.15)]"
               >
                 <MapPin size={12} className="text-[#9a8a72] flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm text-[#ddd0bc] font-cinzel truncate">
+                  <p className="text-xs md:text-sm text-[#ddd0bc] font-cinzel truncate">
                     {place.name}
                   </p>
-                  <p className="text-[10px] font-mono text-[#7a6e5e]">
+                  <p className="text-[9px] md:text-[10px] font-mono text-[#7a6e5e]">
                     {place.address.city}, {place.address.country} · Danger{" "}
                     {place.dangerLevel}
                   </p>
@@ -123,9 +126,9 @@ export default function MapSearch({ places, onSelect, onFlyTo }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-2 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg shadow-xl p-4 text-center"
+            className="mt-2 bg-[#252018] border border-[rgba(122,107,82,0.3)] rounded-lg shadow-xl p-3 md:p-4 text-center"
           >
-            <p className="text-sm text-[#5a4e42] font-mono">
+            <p className="text-xs md:text-sm text-[#5a4e42] font-mono">
               No records match your query.
             </p>
           </motion.div>

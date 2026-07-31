@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Cinzel, Space_Mono } from "next/font/google";
 import "./globals.css";
 import ClientProviders from "@/components/ClientProviders";
@@ -15,10 +15,19 @@ export const metadata: Metadata = {
   openGraph: { title: "Vanishing Points", description: "An Atlas of the Forgotten", type: "website" },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0c0a08",
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${cinzel.variable} ${spaceMono.variable}`}>
-      <body className="antialiased min-h-screen bg-[#1a1612] text-[#ddd0bc]">
+      <body className="antialiased min-h-screen bg-[#1a1612] text-[#ddd0bc] overflow-x-hidden">
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

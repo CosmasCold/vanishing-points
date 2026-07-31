@@ -40,7 +40,7 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] bg-[#050a05]/95 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-[#050a05]/95 backdrop-blur-sm flex items-center justify-center p-3 md:p-4"
           onClick={onClose}
         >
           <motion.div
@@ -48,14 +48,14 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
             animate={{ scale: 1 }}
             exit={{ scale: 0.95 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl relative"
+            className="w-full max-w-3xl relative mx-auto"
           >
             <div className="border border-[#33ff00]/30 rounded-lg overflow-hidden bg-[#0a0f0a] shadow-[0_0_40px_rgba(51,255,0,0.1)]">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-[#33ff00]/20">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#33ff00]/70">
+              <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-[#33ff00]/20">
+                <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-[#33ff00]/70 truncate pr-2">
                   {label}
                 </span>
-                <button onClick={onClose} className="text-[#33ff00]/50 hover:text-[#33ff00]">
+                <button onClick={onClose} className="text-[#33ff00]/50 hover:text-[#33ff00] flex-shrink-0">
                   <X size={14} />
                 </button>
               </div>
@@ -67,6 +67,7 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
                   className="w-full h-full object-contain"
                   onEnded={() => setPlaying(false)}
                   onClick={togglePlay}
+                  playsInline
                 />
                 <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(51,255,0,0.03)_50%,transparent_50%)] bg-[length:100%_4px]" />
                 
@@ -75,12 +76,12 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
                     onClick={togglePlay}
                     className="absolute inset-0 flex items-center justify-center bg-black/40"
                   >
-                    <Play size={48} className="text-[#33ff00]/80" />
+                    <Play size={36} className="text-[#33ff00]/80 md:w-12 md:h-12" />
                   </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-4 px-4 py-3 border-t border-[#33ff00]/20">
+              <div className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 border-t border-[#33ff00]/20">
                 <button onClick={togglePlay} className="text-[#33ff00]/70 hover:text-[#33ff00]">
                   {playing ? <Pause size={14} /> : <Play size={14} />}
                 </button>
@@ -95,7 +96,7 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
                 >
                   {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                 </button>
-                <span className="text-[9px] font-mono text-[#33ff00]/40 ml-auto">
+                <span className="text-[8px] md:text-[9px] font-mono text-[#33ff00]/40 ml-auto">
                   ECHOES & DUST // CLASSIFIED
                 </span>
               </div>

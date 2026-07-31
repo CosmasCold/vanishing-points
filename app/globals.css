@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @layer base {
   :root {
     --void: #1a1612;
@@ -16,23 +24,75 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    /* Prevent pull-to-refresh on mobile browsers */
+    overscroll-behavior-y: none;
   }
 
   body {
     background-color: #1a1612;
     color: #ddd0bc;
     font-family: var(--font-inter), system-ui, sans-serif;
-    cursor: none;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll/wobble */
+    overscroll-behavior-x: none;
+    /* iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Default cursor for desktop, but NOT none (kills mobile touch feedback) */
+  @media (hover: hover) and (pointer: fine) {
+    body {
+      cursor: none;
+    }
   }
 
   ::selection {
     background: rgba(122, 107, 82, 0.25);
     color: #ddd0bc;
   }
+
+  /* CRITICAL: Prevent iOS input zoom — Safari zooms if font < 16px */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Remove grey tap flash on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* Faster tap response — removes 300ms delay */
+  button, a, [role="button"], input, textarea, select {
+    touch-action: manipulation;
+  }
+
+  /* Enable momentum scrolling on overflow containers */
+  .overflow-y-auto, .overflow-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* ============================================================
-   GRAIN OVERLAY
+   SAFE AREA UTILITIES (Notched phones)
+   ============================================================ */
+@supports (padding: max(0px)) {
+  .safe-top    { padding-top: max(0px, env(safe-area-inset-top)); }
+  .safe-bottom { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+  .safe-left   { padding-left: max(0px, env(safe-area-inset-left)); }
+  .safe-right  { padding-right: max(0px, env(safe-area-inset-right)); }
+
+  .inset-safe {
+    top: env(safe-area-inset-top);
+    bottom: env(safe-area-inset-bottom);
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+  }
+}
+
+/* ============================================================
+   GRAIN OVERLAY — Reduced on mobile for performance
    ============================================================ */
 .grain-overlay {
   position: fixed;
@@ -45,8 +105,16 @@
   background-size: 128px 128px;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .grain-overlay {
+    opacity: 0.015;
+    /* Smaller texture = less GPU work */
+    background-size: 64px 64px;
+  }
+}
+
 /* ============================================================
-   FOG EFFECT
+   FOG EFFECT — Disabled on mobile for battery/performance
    ============================================================ */
 .fog-container {
   position: fixed;
@@ -72,13 +140,20 @@
   top: 30%;
 }
 
+/* Kill fog on mobile — saves GPU/battery */
+@media (hover: none) and (pointer: coarse) {
+  .fog-container {
+    display: none;
+  }
+}
+
 @keyframes fog-drift {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
 /* ============================================================
-   CUSTOM CURSOR
+   CUSTOM CURSOR — Hidden on touch devices
    ============================================================ */
 .custom-cursor {
   position: fixed;
@@ -105,6 +180,14 @@
   border-radius: 50%;
   pointer-events: none;
   z-index: 10001;
+}
+
+/* Hide cursor system entirely on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .custom-cursor,
+  .custom-cursor-dot {
+    display: none !important;
+  }
 }
 
 /* ============================================================
@@ -238,24 +321,32 @@
   50% { transform: scale(1.5); opacity: 0; }
 }
 
+/* Mapbox controls — larger on mobile */
 .mapboxgl-ctrl-group {
   background: #252018 !important;
   border: 1px solid rgba(122, 107, 82, 0.3) !important;
   border-radius: 4px !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
 }
+
 .mapboxgl-ctrl-group button {
   background: transparent !important;
   color: #9a8a72 !important;
   border-color: rgba(122, 107, 82, 0.2) !important;
+  /* Minimum 44px touch target */
+  min-width: 44px !important;
+  min-height: 44px !important;
 }
+
 .mapboxgl-ctrl-group button:hover {
   background: rgba(122, 107, 82, 0.1) !important;
   color: #c4b8a4 !important;
 }
+
 .mapboxgl-ctrl-group button + button {
   border-top-color: rgba(122, 107, 82, 0.2) !important;
 }
+
 .mapboxgl-ctrl-icon {
   filter: sepia(0.5) brightness(0.9) !important;
 }
@@ -263,19 +354,30 @@
 .mapboxgl-ctrl-attrib {
   opacity: 0.2 !important;
 }
+
 .mapboxgl-ctrl-attrib a {
   color: #5a4e42 !important;
 }
 
+/* Mobile: move attribution to not conflict with bottom sheet */
+@media (max-width: 1023px) {
+  .mapboxgl-ctrl-attrib {
+    bottom: 8px !important;
+    right: 8px !important;
+    font-size: 9px !important;
+  }
+  .mapboxgl-ctrl-bottom-right {
+    bottom: 8px !important;
+  }
+}
+
 /* ============================================================
-   CAPTAIN'S LOG DRAWER — MUTED BRONZE HARDWARE
+   CAPTAIN'S LOG DRAWER — MOBILE BOTTOM SHEET + DESKTOP SIDE
    ============================================================ */
 
 .drawer-shell {
   position: fixed;
-  top: 0;
-  right: 0;
-  height: 100%;
+  z-index: 50;
   background: linear-gradient(
     180deg,
     #252018 0%,
@@ -288,10 +390,63 @@
     -12px 0 40px rgba(0, 0, 0, 0.7),
     -2px 0 0 rgba(122, 107, 82, 0.08);
   border-left: 1px solid rgba(122, 107, 82, 0.2);
-  z-index: 50;
 }
 
-/* Oxidized bronze trim */
+/* Desktop: right side panel */
+@media (min-width: 1024px) {
+  .drawer-shell {
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 420px;
+    transform: translateX(0);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .drawer-shell.closed {
+    transform: translateX(100%);
+  }
+}
+
+/* Mobile: bottom sheet */
+@media (max-width: 1023px) {
+  .drawer-shell {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    max-height: 85vh;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid rgba(122, 107, 82, 0.2);
+    border-radius: 16px 16px 0 0;
+    box-shadow:
+      0 -8px 40px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(122, 107, 82, 0.12);
+    transform: translateY(0);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Safe area for home indicator */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .drawer-shell.closed {
+    transform: translateY(100%);
+  }
+  /* Drag handle */
+  .drawer-shell::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(122, 107, 82, 0.3);
+    z-index: 60;
+  }
+}
+
+/* Oxidized bronze trim — desktop only */
 .drawer-shell::before {
   content: "";
   position: absolute;
@@ -312,6 +467,13 @@
     inset -1px 0 1px rgba(255,255,255,0.08);
 }
 
+/* Hide bronze trim on mobile */
+@media (max-width: 1023px) {
+  .drawer-shell::before {
+    display: none;
+  }
+}
+
 .drawer-rivet {
   position: absolute;
   width: 6px;
@@ -327,7 +489,15 @@
 .drawer-rivet.top { top: 24px; }
 .drawer-rivet.bottom { bottom: 24px; }
 
-/* Oxidized pull handle */
+/* Hide rivets on mobile */
+@media (max-width: 1023px) {
+  .drawer-rivet,
+  .drawer-handle {
+    display: none !important;
+  }
+}
+
+/* Oxidized pull handle — desktop only */
 .drawer-handle {
   position: absolute;
   left: -12px;
@@ -483,6 +653,14 @@
     0 0 12px rgba(122, 107, 82, 0.1);
 }
 
+/* Mobile: larger close button */
+@media (max-width: 1023px) {
+  .drawer-close {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 .drawer-scroll::-webkit-scrollbar {
   width: 4px;
 }
@@ -528,12 +706,15 @@
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.archive-card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    inset 0 0 30px rgba(60, 50, 40, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.4);
-  border-color: rgba(122, 107, 82, 0.35);
+/* Disable hover lift on touch — prevents sticky hover state */
+@media (hover: hover) {
+  .archive-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      inset 0 0 30px rgba(60, 50, 40, 0.06),
+      0 8px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(122, 107, 82, 0.35);
+  }
 }
 
 .archive-card::before {
@@ -672,14 +853,23 @@
     inset 0 1px 1px rgba(255,255,255,0.08),
     0 2px 8px rgba(0,0,0,0.3);
   transition: all 0.3s ease;
+  /* Minimum touch target */
+  min-height: 44px;
 }
 
-.submit-btn:hover {
-  background: linear-gradient(135deg, #5a4a32, #6b5a42);
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,0.12),
-    0 4px 12px rgba(0,0,0,0.4),
-    0 0 16px rgba(122, 107, 82, 0.08);
+@media (hover: hover) {
+  .submit-btn:hover {
+    background: linear-gradient(135deg, #5a4a32, #6b5a42);
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,0.12),
+      0 4px 12px rgba(0,0,0,0.4),
+      0 0 16px rgba(122, 107, 82, 0.08);
+  }
+}
+
+/* Active state for touch */
+.submit-btn:active {
+  transform: scale(0.98);
 }
 
 .submit-dropzone {
@@ -731,8 +921,8 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #7a3a2a;
   border: 2px solid #ddd0bc;
@@ -751,6 +941,26 @@ input[type="range"]::-webkit-slider-thumb {
 .badge-overlay {
   position: relative;
   z-index: 5;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fog-layer {
+    animation: none !important;
+  }
+  .skeleton-shimmer {
+    animation: none !important;
+  }
 }
 
 /* ============================================================
@@ -836,3 +1046,4 @@ input[type="range"]::-webkit-slider-thumb {
     page-break-inside: avoid;
   }
 }
+

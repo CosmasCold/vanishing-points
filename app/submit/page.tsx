@@ -43,64 +43,68 @@ function NormalForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
       <div>
-        <label className="submit-label block mb-1.5">Place Name</label>
+        <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Place Name</label>
         <input
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="submit-input w-full py-2.5 px-3 text-sm"
+          className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           required
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      
+      {/* Mobile: stack vertically. Desktop: side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <div>
-          <label className="submit-label block mb-1.5">City</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">City</label>
           <input
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
             required
           />
         </div>
         <div>
-          <label className="submit-label block mb-1.5">Country</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Country</label>
           <input
             value={form.country}
             onChange={(e) => setForm({ ...form, country: e.target.value })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
             required
           />
         </div>
       </div>
+      
       <div>
-        <label className="submit-label block mb-1.5">Historical Record</label>
+        <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Historical Record</label>
         <textarea
-          rows={5}
+          rows={4}
           value={form.history}
           onChange={(e) => setForm({ ...form, history: e.target.value })}
-          className="submit-input submit-textarea w-full py-2.5 px-3 text-sm"
+          className="submit-input submit-textarea w-full py-2 md:py-2.5 px-3 text-sm"
           required
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <div>
-          <label className="submit-label block mb-1.5">Danger Level</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Danger Level</label>
           <input
             type="number"
             min={1}
             max={5}
             value={form.dangerLevel}
             onChange={(e) => setForm({ ...form, dangerLevel: parseInt(e.target.value) })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           />
         </div>
         <div>
-          <label className="submit-label block mb-1.5">Category</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Category</label>
           <select
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           >
             <option value="abandoned">Abandoned</option>
             <option value="haunted">Haunted</option>
@@ -108,29 +112,31 @@ function NormalForm() {
           </select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <div>
-          <label className="submit-label block mb-1.5">Your Name</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Your Name</label>
           <input
             value={form.contributorName}
             onChange={(e) => setForm({ ...form, contributorName: e.target.value })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           />
         </div>
         <div>
-          <label className="submit-label block mb-1.5">Email</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Email</label>
           <input
             type="email"
             value={form.contributorEmail}
             onChange={(e) => setForm({ ...form, contributorEmail: e.target.value })}
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           />
         </div>
       </div>
+      
       <button
         type="submit"
         disabled={submitting}
-        className="submit-btn w-full py-3 rounded-lg text-[11px] flex items-center justify-center gap-2 disabled:opacity-50"
+        className="submit-btn w-full py-3 md:py-3.5 rounded-lg text-[11px] md:text-xs flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] min-h-[48px]"
       >
         <Send size={14} />
         {submitting ? "Transmitting..." : "Log Discovery"}
@@ -196,8 +202,8 @@ function HijackedForm() {
 
   if (submitted) {
     return (
-      <div className="text-center py-12 space-y-4">
-        <AlertTriangle size={24} className="mx-auto text-[#33ff00]" />
+      <div className="text-center py-8 md:py-12 space-y-3 md:space-y-4">
+        <AlertTriangle size={24} className="mx-auto text-[#33ff00] md:w-7 md:h-7" />
         <p className="font-mono text-sm text-[#33ff00]">TRANSMISSION RECEIVED</p>
         <p className="text-[10px] font-mono text-[#33ff00]/60 uppercase tracking-widest">
           BUNKER_7 // ARCHIVIST NOTIFIED
@@ -207,40 +213,40 @@ function HijackedForm() {
   }
 
   return (
-    <div className="space-y-5 relative">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="space-y-4 md:space-y-5 relative">
+      <div className="flex items-center gap-2 mb-3 md:mb-4">
         <div className="w-2 h-2 rounded-full bg-[#33ff00] animate-pulse" />
-        <span className="text-[10px] font-mono uppercase tracking-widest text-[#33ff00]/70">
+        <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-[#33ff00]/70">
           Incoming Transmission
         </span>
       </div>
 
       <div>
-        <label className="submit-label block mb-1.5 text-[#33ff00]/70">Message</label>
+        <label className="submit-label block mb-1 md:mb-1.5 text-[#33ff00]/70 text-[11px] md:text-[13px]">Message</label>
         <textarea
           ref={inputRef}
-          rows={4}
+          rows={3}
           value={display}
           readOnly
-          className="w-full bg-[#050a05] border border-[#33ff00]/30 rounded-lg py-2.5 px-3 text-sm text-[#33ff00] font-mono focus:outline-none"
+          className="w-full bg-[#050a05] border border-[#33ff00]/30 rounded-lg py-2 md:py-2.5 px-3 text-sm text-[#33ff00] font-mono focus:outline-none"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 opacity-50">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 opacity-50">
         <div>
-          <label className="submit-label block mb-1.5">Coordinates</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Coordinates</label>
           <input
             value={`${(Math.random() * 180 - 90).toFixed(4)}, ${(Math.random() * 360 - 180).toFixed(4)}`}
             readOnly
-            className="submit-input w-full py-2.5 px-3 text-sm"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm"
           />
         </div>
         <div>
-          <label className="submit-label block mb-1.5">Contributor</label>
+          <label className="submit-label block mb-1 md:mb-1.5 text-[11px] md:text-[13px]">Contributor</label>
           <input
             value="BUNKER_7"
             readOnly
-            className="submit-input w-full py-2.5 px-3 text-sm text-[#33ff00]"
+            className="submit-input w-full py-2 md:py-2.5 px-3 text-sm text-[#33ff00]"
           />
         </div>
       </div>
@@ -248,7 +254,7 @@ function HijackedForm() {
       <button
         onClick={handleSubmit}
         disabled={phase !== "empty"}
-        className="w-full py-3 bg-[#33ff00]/10 border border-[#33ff00]/30 rounded-lg text-[11px] font-mono uppercase tracking-wider text-[#33ff00] hover:bg-[#33ff00]/20 transition-colors disabled:opacity-30"
+        className="w-full py-3 md:py-3.5 bg-[#33ff00]/10 border border-[#33ff00]/30 rounded-lg text-[11px] md:text-xs font-mono uppercase tracking-wider text-[#33ff00] hover:bg-[#33ff00]/20 transition-colors disabled:opacity-30 active:scale-[0.98] min-h-[48px]"
       >
         Submit Intercepted Transmission
       </button>
@@ -257,28 +263,28 @@ function HijackedForm() {
 }
 
 export default function SubmitPage() {
-  const [hijacked] = useState(() => Math.random() < 0.067); // 1 in 15
+  const [hijacked] = useState(() => Math.random() < 0.067);
 
   return (
-    <main className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
+    <main className="min-h-[100dvh] bg-[#1a1612] flex items-start md:items-center justify-center p-4 md:p-6 pt-6 md:pt-0">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="submit-card rounded-xl p-8 w-full max-w-lg relative overflow-hidden"
+        className="submit-card rounded-xl p-5 md:p-8 w-full max-w-lg relative overflow-hidden"
       >
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-0 mb-4 md:mb-6">
             <div>
-              <h1 className="font-cinzel text-xl text-[#3d3228]">
+              <h1 className="font-cinzel text-lg md:text-xl text-[#3d3228]">
                 {hijacked ? "Intercepted Signal" : "Log Discovery"}
               </h1>
-              <p className="text-[11px] font-mono text-[#7a6e5e] mt-1 uppercase tracking-wider">
+              <p className="text-[10px] md:text-[11px] font-mono text-[#7a6e5e] mt-0.5 md:mt-1 uppercase tracking-wider">
                 {hijacked ? "Transmission source unknown" : "Add to the atlas"}
               </p>
             </div>
             <Link
               href="/"
-              className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] hover:text-[#5a4e42]"
+              className="self-start sm:self-auto text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] hover:text-[#5a4e42] active:scale-95"
             >
               [ Close ]
             </Link>

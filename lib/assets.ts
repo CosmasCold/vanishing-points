@@ -1,3 +1,9 @@
+export interface AssetCondition {
+  type: "none" | "encounters" | "time" | "dust" | "breach" | "corruption" | "subplace";
+  value?: string | number;
+  message: string;
+}
+
 export interface StoryAsset {
   id: string;
   title: string;
@@ -7,6 +13,7 @@ export interface StoryAsset {
   category: "photograph" | "document" | "transmission" | "artifact";
   rarity: "common" | "uncommon" | "rare" | "legendary";
   lore?: string;
+  condition?: AssetCondition;
 }
 
 export interface RedeemableCode {
@@ -22,16 +29,16 @@ export const STORY_ASSETS: StoryAsset[] = [
   { id: "ast_003", title: "Containment Blueprint", description: "The atlas was never a map. It was a lock.", filename: "blueprint.jpg", unlockCode: "ASSEMBLY-314", category: "document", rarity: "legendary", lore: "Every pin is a nail in something's coffin." },
   { id: "ast_004", title: "Reflection Anomaly", description: "The mirror showed someone else. Briefly.", filename: "reflection.jpg", unlockCode: "MIRROR", category: "photograph", rarity: "rare" },
   { id: "ast_005", title: "Bunker Corridor", description: "The lights flicker in morse. I stopped decoding.", filename: "corridor.jpg", unlockCode: "742", category: "photograph", rarity: "common" },
-  { id: "ast_006", title: "Static Portrait", description: "A face in the noise. It knows my name.", filename: "static_face.jpg", unlockCode: "REACTOR", category: "transmission", rarity: "rare" },
-  { id: "ast_007", title: "The Archivist's Hand", description: "Cold. Dry. Still writing.", filename: "hand.jpg", unlockCode: "DAYZERO", category: "photograph", rarity: "common" },
-  { id: "ast_008", title: "Coordinate Burn", description: "51.3890, 30.0984 — shifted 3 degrees east.", filename: "coordinates.jpg", unlockCode: "COUNT", category: "document", rarity: "uncommon" },
-  { id: "ast_009", title: "Sealed File 00", description: "I can see when you will return. I hope I'm wrong.", filename: "file00.jpg", unlockCode: "CACHE-00", category: "document", rarity: "legendary" },
-  { id: "ast_010", title: "The Green Light", description: "It is not a light. It is an eye.", filename: "green_light.jpg", unlockCode: "DOOR", category: "photograph", rarity: "rare" },
+  { id: "ast_006", title: "Static Portrait", description: "A face in the noise. It knows my name.", filename: "static_face.jpg", unlockCode: "REACTOR", category: "transmission", rarity: "rare", condition: { type: "encounters", value: 3, message: "The Other has not spoken enough. 3 encounters required." } },
+  { id: "ast_007", title: "The Archivist's Hand", description: "Cold. Dry. Still writing.", filename: "hand.jpg", unlockCode: "DAYZERO", category: "photograph", rarity: "common", condition: { type: "time", message: "The archivist's hand is only visible at 03:14." } },
+  { id: "ast_008", title: "Coordinate Burn", description: "51.3890, 30.0984 — shifted 3 degrees east.", filename: "coordinates.jpg", unlockCode: "COUNT", category: "document", rarity: "uncommon", condition: { type: "dust", value: 40, message: "Dust accumulation insufficient. 40% required to stabilize image." } },
+  { id: "ast_009", title: "Sealed File 00", description: "I can see when you will return. I hope I'm wrong.", filename: "file00.jpg", unlockCode: "CACHE-00", category: "document", rarity: "legendary", condition: { type: "breach", message: "Breach witness or CACHE-KEY required for declassification." } },
+  { id: "ast_010", title: "The Green Light", description: "It is not a light. It is an eye.", filename: "green_light.jpg", unlockCode: "DOOR", category: "photograph", rarity: "rare", condition: { type: "corruption", value: 2, message: "Corruption stage insufficient. The image degrades at lower exposure." } },
   { id: "ast_011", title: "BUNKER_3 Transmission", description: "Signal received. No response to hails.", filename: "bunker3.jpg", unlockCode: "TRIANGULATE", category: "transmission", rarity: "legendary" },
-  { id: "ast_012", title: "The Wandering Marker", description: "It appeared on the atlas. I didn't place it.", filename: "wanderer.jpg", unlockCode: "ANOMALY", category: "artifact", rarity: "uncommon" },
-  { id: "ast_013", title: "Dust Sample 7", description: "Contains skin cells. DNA matches mine. From 40 years ago.", filename: "sample7.jpg", unlockCode: "DUST-7", category: "document", rarity: "rare" },
-  { id: "ast_014", title: "The Last Window", description: "I don't remember where this was taken. I don't remember sky.", filename: "window.jpg", unlockCode: "SKY", category: "photograph", rarity: "common" },
-  { id: "ast_015", title: "03:14 Feed", description: "The cameras show this every night. The room is empty.", filename: "0314_feed.jpg", unlockCode: "FEED", category: "transmission", rarity: "uncommon" },
+  { id: "ast_012", title: "The Wandering Marker", description: "It appeared on the atlas. I didn't place it.", filename: "wanderer.jpg", unlockCode: "ANOMALY", category: "artifact", rarity: "uncommon", condition: { type: "subplace", value: "hashima-shaft-3", message: "Shaft 3 exploration required. The marker originates from below the waterline." } },
+  { id: "ast_013", title: "Dust Sample 7", description: "Contains skin cells. DNA matches mine. From 40 years ago.", filename: "sample7.jpg", unlockCode: "DUST-7", category: "document", rarity: "rare", condition: { type: "dust", value: 60, message: "Deep exposure required. 60% dust threshold for sample analysis." } },
+  { id: "ast_014", title: "The Last Window", description: "I don't remember where this was taken. I don't remember sky.", filename: "window.jpg", unlockCode: "SKY", category: "photograph", rarity: "common", condition: { type: "encounters", value: 5, message: "The Other must speak 5 times before the sky becomes visible." } },
+  { id: "ast_015", title: "03:14 Feed", description: "The cameras show this every night. The room is empty.", filename: "0314_feed.jpg", unlockCode: "FEED", category: "transmission", rarity: "uncommon", condition: { type: "time", message: "03:14 clearance required. The feed is time-locked." } },
 ];
 
 export const REDEEMABLE_CODES: RedeemableCode[] = [
@@ -103,6 +110,49 @@ export const DUST_THRESHOLD = 50;
 
 export const TRIGGER_PHRASE = "i am still here";
 
+// --- CONDITION CHECKER ---
+
+export function checkAssetCondition(condition: AssetCondition | undefined): { blocked: boolean; message?: string } {
+  if (!condition || condition.type === "none") return { blocked: false };
+  if (typeof window === "undefined") return { blocked: true, message: "TERMINAL OFFLINE" };
+
+  switch (condition.type) {
+    case "encounters": {
+      const count = parseInt(localStorage.getItem("bunker-other-count") || "0", 10);
+      if (count < (condition.value as number)) return { blocked: true, message: condition.message };
+      break;
+    }
+    case "time": {
+      const now = new Date();
+      if (!(now.getHours() === 3 && now.getMinutes() === 14)) return { blocked: true, message: condition.message };
+      break;
+    }
+    case "dust": {
+      const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+      if (dust < (condition.value as number)) return { blocked: true, message: condition.message };
+      break;
+    }
+    case "breach": {
+      const breachTime = localStorage.getItem("bunker-breach-time");
+      const breachActive = breachTime ? parseInt(breachTime, 10) <= Date.now() : false;
+      const hasKey = localStorage.getItem("bunker-cache-key") === "true";
+      if (!breachActive && !hasKey) return { blocked: true, message: condition.message };
+      break;
+    }
+    case "corruption": {
+      const corr = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
+      if (corr < (condition.value as number)) return { blocked: true, message: condition.message };
+      break;
+    }
+    case "subplace": {
+      const entered = JSON.parse(localStorage.getItem("vp-subplaces-entered") || "[]");
+      if (!entered.includes(condition.value as string)) return { blocked: true, message: condition.message };
+      break;
+    }
+  }
+  return { blocked: false };
+}
+
 // --- STORAGE HELPERS ---
 
 export function getAssetByCode(code: string): StoryAsset | undefined {
@@ -118,12 +168,22 @@ export function getUnlockedAssets(): string[] {
   return JSON.parse(localStorage.getItem("bunker-assets") || "[]");
 }
 
+export function getAssetRecoveryDates(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  return JSON.parse(localStorage.getItem("bunker-assets-dates") || "{}");
+}
+
 export function unlockAsset(assetId: string): boolean {
   if (typeof window === "undefined") return false;
   const current = getUnlockedAssets();
   if (current.includes(assetId)) return false;
   current.push(assetId);
   localStorage.setItem("bunker-assets", JSON.stringify(current));
+
+  const dates = getAssetRecoveryDates();
+  dates[assetId] = new Date().toISOString();
+  localStorage.setItem("bunker-assets-dates", JSON.stringify(dates));
+
   return true;
 }
 
@@ -139,4 +199,27 @@ export function redeemCode(code: string): boolean {
   current.push(code.toUpperCase());
   localStorage.setItem("bunker-codes", JSON.stringify(current));
   return true;
+}
+
+export function tryUnlockPendingAssets(): string[] {
+  if (typeof window === "undefined") return [];
+  const redeemed = getRedeemedCodes();
+  const unlocked = getUnlockedAssets();
+  const newlyUnlocked: string[] = [];
+
+  redeemed.forEach((code) => {
+    const entry = getCodeEntry(code);
+    if (entry?.type === "asset" && !unlocked.includes(entry.rewardId)) {
+      const asset = STORY_ASSETS.find((a) => a.id === entry.rewardId);
+      if (asset) {
+        const check = checkAssetCondition(asset.condition);
+        if (!check.blocked) {
+          unlockAsset(entry.rewardId);
+          newlyUnlocked.push(asset.title);
+        }
+      }
+    }
+  });
+
+  return newlyUnlocked;
 }

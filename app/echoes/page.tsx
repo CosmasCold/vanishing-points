@@ -50,6 +50,7 @@ import {
   STORY_ASSETS,
   REDEEMABLE_CODES,
   unlockAsset,
+  checkAssetCondition,
 } from "@/lib/assets";
 import {
   getMemory,
@@ -785,44 +786,82 @@ export default function EchoesPage() {
         break;
       }
 
-      case "redeem": {
+            case "redeem": {
         const code = args.slice(1).join(" ").toUpperCase();
         if (!code) {
           pushTerminal(["Usage: redeem [CODE]"]);
-        } else {
-          const entry = getCodeEntry(code);
-          if (!entry) {
-            pushTerminal(["INVALID CODE."]);
-          } else if (!redeemCode(code)) {
-            pushTerminal(["ALREADY REDEEMED.", entry.description]);
+          break;
+        }
+        const entry = getCodeEntry(code);
+        if (!entry) {
+          pushTerminal(["INVALID CODE."]);
+          break;
+        }
+
+        const alreadyRedeemed = getRedeemedCodes().includes(code);
+        const asset = entry.type === "asset" ? STORY_ASSETS.find((a) => a.id === entry.rewardId) : null;
+        const conditionCheck = asset ? checkAssetCondition(asset.condition) : { blocked: false };
+
+                if (entry.type === "asset" && alreadyRedeemed) {
+          if (conditionCheck.blocked) {
+            pushTerminal([
+              "CODE ALREADY REDEEMED.",
+              `ASSET: ${asset?.title || "UNKNOWN"}`,
+              "STATUS: CONDITIONAL HOLD ACTIVE",
+              conditionCheck.message || "",
+            ]);
           } else {
-            if (entry.type === "asset") {
-              unlockAsset(entry.rewardId);
-              const asset = STORY_ASSETS.find(
-                (a) => a.id === entry.rewardId
-              );
+            const newlyUnlocked = unlockAsset(entry.rewardId);
+            if (newlyUnlocked) {
               pushTerminal([
-                "CODE ACCEPTED.",
-                `Recovered: ${asset?.title || entry.rewardId}`,
-                `Rarity: ${asset?.rarity.toUpperCase() || "UNKNOWN"}`,
+                "CONDITIONS MET.",
+                `ASSET UNLOCKED: ${asset?.title || "UNKNOWN"}`,
+                `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`,
+                "The archive grows.",
               ]);
-              setActiveTab("assets");
-              checkLeadProgress();
-            } else if (entry.type === "theme") {
-              if (THEMES[entry.rewardId as ThemeKey]) {
-                setTheme(entry.rewardId as ThemeKey);
-                localStorage.setItem("bunker-theme", entry.rewardId);
-              }
-              pushTerminal([`Theme: ${entry.rewardId.toUpperCase()}`]);
-            } else if (entry.type === "cache_key") {
-              localStorage.setItem("bunker-cache-key", "true");
-              pushTerminal(["CACHE-KEY acquired."]);
-            } else if (entry.type === "lore") {
-              pushTerminal(["Lore fragment added.", entry.description]);
-            } else if (entry.type === "command") {
-              pushTerminal([`Command: ${entry.rewardId}`, "Unlocked."]);
+              setAssets(getUnlockedAssets());
+            } else {
+              pushTerminal(["ALREADY RECOVERED.", asset?.description || ""]);
             }
           }
+          break;
+        }
+
+        // First-time redeem
+        redeemCode(code);
+
+                if (entry.type === "asset") {
+          if (conditionCheck.blocked) {
+            pushTerminal([
+              "CODE ACCEPTED.",
+              `ASSET: ${asset?.title || "UNKNOWN"}`,
+              "STATUS: CONDITIONAL HOLD",
+              conditionCheck.message || "",
+              "Return when requirements are cleared.",
+            ]);
+          } else {
+            unlockAsset(entry.rewardId);
+            pushTerminal([
+              "CODE ACCEPTED.",
+              `Recovered: ${asset?.title || entry.rewardId}`,
+              `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`,
+            ]);
+            setActiveTab("assets");
+            checkLeadProgress();
+          }
+        } else if (entry.type === "theme") {
+          if (THEMES[entry.rewardId as ThemeKey]) {
+            setTheme(entry.rewardId as ThemeKey);
+            localStorage.setItem("bunker-theme", entry.rewardId);
+          }
+          pushTerminal([`Theme: ${entry.rewardId.toUpperCase()}`]);
+        } else if (entry.type === "cache_key") {
+          localStorage.setItem("bunker-cache-key", "true");
+          pushTerminal(["CACHE-KEY acquired."]);
+        } else if (entry.type === "lore") {
+          pushTerminal(["Lore fragment added.", entry.description]);
+        } else if (entry.type === "command") {
+          pushTerminal([`Command: ${entry.rewardId}`, "Unlocked."]);
         }
         break;
       }

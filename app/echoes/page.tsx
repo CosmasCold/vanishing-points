@@ -63,6 +63,10 @@ import {
   getBunkerLie,
   getGlobalLanternCount,
 } from "@/lib/bunkerBrain";
+import { logPlayerCommand, getProceduralGhostLines, getMemoryBasedOtherResponse } from "@/lib/otherMemory";
+import { useKeystrokeAudio } from "@/hooks/useKeystrokeAudio";
+import { addDiscovery, getDiscoveries } from "@/lib/discoveries";
+import SubPlaceChoicePanel from "@/components/SubPlaceChoicePanel";
 import {
   findItem,
   getInventory,
@@ -265,6 +269,7 @@ export default function EchoesPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } =
     useBreachProtocol();
+      const { onType } = useKeystrokeAudio();
 
   const memory = getMemory();
   const otherCount = getOtherEncounters();
@@ -320,7 +325,7 @@ export default function EchoesPage() {
     if (chatMode || hijacked) return;
     const interval = setInterval(() => {
       if (shouldTriggerOther("ghost") && Math.random() < 0.15) {
-        const lines = getGhostLines();
+                const lines = getProceduralGhostLines();
         const line = lines[Math.floor(Math.random() * lines.length)];
         pushTerminal([line, ""]);
       }
@@ -402,9 +407,10 @@ export default function EchoesPage() {
       return;
     }
 
-    setInput("");
+        setInput("");
     const args = clean.split(" ");
     const base = args[0];
+    logPlayerCommand(base);
 
     // The Other lies (encounters 3-5)
     const lie = getBunkerLie(base);
@@ -414,10 +420,10 @@ export default function EchoesPage() {
     }
 
     // Hijack mode — The Other controls responses
-    if (hijacked && base !== "exorcise") {
-      pushTerminal([...getOtherResponse(base), ""]);
-      return;
-    }
+          if (hijacked && base !== "exorcise") {
+        pushTerminal([...getMemoryBasedOtherResponse(base), ""]);
+        return;
+      }
 
     switch (base) {
       case "help":
@@ -460,6 +466,7 @@ export default function EchoesPage() {
           "│  enter       Explore sub-places        │",
           "│  grid        View the constellation    │",
           "│  spectrogram Frequency visualizer      │",
+          "│  discover    Log a real place          │",
           "│  exorcise    Restore BUNKER_7 control  │",
           "│  daily       Acquire daily frequency   │",
           "│  email       Register for transmission │",
@@ -1370,7 +1377,46 @@ export default function EchoesPage() {
         setTerminal([]);
         break;
 
-      case "purge": {
+              case "discover": {
+        const name = args.slice(1).join(" ");
+        if (!name) {
+          const discoveries = getDiscoveries();
+          if (discoveries.length === 0) {
+            pushTerminal([
+              "Usage: discover [place name]",
+              "Log a real abandoned place you have found.",
+              "The atlas grows when witnesses contribute.",
+            ]);
+          } else {
+            pushTerminal([
+              "YOUR DISCOVERIES:",
+              ...discoveries.map((d) => `  ${d.name} — ${d.location} (+${d.dustReward} dust)`),
+              "",
+              `Total: ${discoveries.length} places documented.`,
+            ]);
+          }
+          break;
+        }
+        const discovery = addDiscovery({
+          name,
+          location: "Unknown coordinates",
+          description: "Logged by witness.",
+        });
+        pushTerminal([
+          "╔══════════════════════════════════════╗",
+          "║  DISCOVERY LOGGED                    ║",
+          `║  ${name.toUpperCase().slice(0, 34).padEnd(34)}║`,
+          "╠══════════════════════════════════════╣",
+          `║  Dust reward: ${String(discovery.dustReward).padEnd(20)}║`,
+          "╚══════════════════════════════════════╝",
+          "",
+          "The atlas remembers what you have seen.",
+        ]);
+        setDust((prev) => prev + discovery.dustReward);
+        break;
+      }
+
+            case "purge": {
         const inv = getInventory();
         if (inv.length === 0) {
           pushTerminal([
@@ -1385,6 +1431,25 @@ export default function EchoesPage() {
         const newInv = inv.filter((id) => id !== sacrificed);
         localStorage.setItem("bunker-inventory", JSON.stringify(newInv));
         purgeDust();
+
+        const consequences: string[] = [];
+        const deleteLogRoll = Math.random();
+        const deleteAssetRoll = Math.random();
+
+        if (deleteLogRoll < 0.2 && unlocked > 3) {
+          const nextUnlocked = Math.max(3, unlocked - 1);
+          setUnlocked(nextUnlocked);
+          localStorage.setItem("bunker-unlocked", nextUnlocked.toString());
+          consequences.push("A log entry has been erased. You will not read it again.");
+        }
+        if (deleteAssetRoll < 0.15 && assets.length > 0) {
+          const lostAsset = assets[Math.floor(Math.random() * assets.length)];
+          const nextAssets = assets.filter((a) => a !== lostAsset);
+          localStorage.setItem("bunker-assets", JSON.stringify(nextAssets));
+          setAssets(nextAssets);
+          consequences.push(`An asset has been corrupted: ${lostAsset}. It is gone.`);
+        }
+
         pushTerminal([
           "╔══════════════════════════════════════╗",
           "║  PURGE COMPLETE                      ║",
@@ -1392,6 +1457,8 @@ export default function EchoesPage() {
           `║  Sacrificed: ${(item?.name || sacrificed).padEnd(24)}║`,
           "║  Dust:        0%                     ║",
           "║  Corruption:  0                        ║",
+          ...(consequences.length > 0 ? ["╠══════════════════════════════════════╣"] : []),
+          ...consequences.map((c) => `║  ${c.slice(0, 34).padEnd(34)}║`),
           "╠══════════════════════════════════════╣",
           "║  You feel lighter.                     ║",
           "║  The places remember anyway.         ║",
@@ -1602,10 +1669,13 @@ export default function EchoesPage() {
                 <span className="text-sm md:text-lg opacity-50 font-bold">
                   {chatMode ? "~" : ">"}
                 </span>
-                <input
+                                <input
                   ref={inputRef}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    onType();
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && runCommand(input)}
                   className="flex-1 bg-transparent text-[12px] md:text-[15px] font-mono outline-none placeholder:opacity-30 min-w-0"
                   style={{ color: t.primary }}
@@ -2094,7 +2164,7 @@ export default function EchoesPage() {
             <p className="text-[11px] opacity-80 leading-relaxed">
               {currentSubPlace.description}
             </p>
-            <div className="space-y-1">
+                        <div className="space-y-1">
               {currentSubPlace.lore.map((l, i) => (
                 <p
                   key={i}
@@ -2105,6 +2175,13 @@ export default function EchoesPage() {
                 </p>
               ))}
             </div>
+            {currentSubPlace.choices && (
+              <SubPlaceChoicePanel
+                subPlace={currentSubPlace}
+                theme={t}
+                onConsequence={(lines) => pushTerminal([...lines, ""])}
+              />
+            )}
             <div
               className="text-[9px] opacity-40 pt-2 border-t"
               style={{ borderColor: `${t.primary}10` }}

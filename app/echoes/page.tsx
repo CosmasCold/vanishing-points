@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Package,
   MessageSquare,
+  Target,
   Eye,
   Volume2,
   VolumeX,
@@ -24,9 +25,10 @@ import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
 import AssetGallery from "@/components/AssetGallery";
 import TerminalBootSequence from "@/components/TerminalBootSequence";
-import NumbersStation from "@/components/NumbersStation";
 import TerminalVideoPlayer from "@/components/TerminalVideoPlayer";
-import { markEchoesVisited, accumulateDust } from "@/hooks/useDustLevel";
+import { markEchoesVisited, accumulateDust, purgeDust } from "@/hooks/useDustLevel";
+import { useLeads, checkLeadProgress, generateNextLead } from "@/hooks/useLeads";
+import LeadPanel from "@/components/LeadPanel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import { getDailyCode } from "@/lib/dailyCode";
@@ -55,6 +57,10 @@ import {
   getSentiment,
   getOtherEncounters,
   recordOtherEncounter,
+  shouldTriggerOther,
+  getOtherResponse,
+  getGhostLines,
+  getBunkerLie,
   getGlobalLanternCount,
 } from "@/lib/bunkerBrain";
 import {
@@ -68,6 +74,11 @@ import {
   useIdleGhost,
   useThreeFourteen,
 } from "@/hooks/useStickyFeatures";
+import { getWeeklyRotation } from "@/lib/weeklyRotation";
+import { getSubPlaceById } from "@/lib/subPlaces";
+import { useSubPlaces } from "@/hooks/useSubPlaces";
+import SpectrogramViewer from "@/components/SpectrogramViewer";
+import TheGrid from "@/components/TheGrid";
 
 const THEMES = {
   amber: {
@@ -110,7 +121,6 @@ const THEMES = {
     dim: "#4a7a3a",
     cursor: "#b8e8a0",
   },
-  // NEW: Deep sea — bioluminescent
   abyss: {
     primary: "#88c0d0",
     bg: "#020508",
@@ -119,7 +129,6 @@ const THEMES = {
     dim: "#4c566a",
     cursor: "#88c0d0",
   },
-  // NEW: Dried blood — emergency broadcast
   emergency: {
     primary: "#ff6b6b",
     bg: "#1a0505",
@@ -128,7 +137,6 @@ const THEMES = {
     dim: "#8a3a3a",
     cursor: "#ff6b6b",
   },
-  // NEW: Failing filament — warm tungsten
   tungsten: {
     primary: "#ffd8a8",
     bg: "#0a0806",
@@ -140,7 +148,7 @@ const THEMES = {
 };
 
 type ThemeKey = keyof typeof THEMES;
-type SideTab = "logs" | "decrypt" | "signal" | "assets" | "puzzles" | "status" | "wall";
+type SideTab = "logs" | "decrypt" | "signal" | "assets" | "puzzles" | "status" | "wall" | "leads";
 
 const LOGS = [
   {
@@ -239,6 +247,9 @@ export default function EchoesPage() {
   >([]);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [chatMode, setChatMode] = useState(false);
+  const [hijacked, setHijacked] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showSpectrogram, setShowSpectrogram] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [triangulated, setTriangulated] = useState(false);
   const [activeTab, setActiveTab] = useState<SideTab>("logs");
@@ -264,6 +275,8 @@ export default function EchoesPage() {
   const [inventory, setInventory] = useState<string[]>([]);
   const [lanternCount, setLanternCount] = useState(0);
 
+  const { unlocked: unlockedSubPlaces, current: currentSubPlace, enter: enterSubPlace, exit: exitSubPlace } = useSubPlaces(dust, inventory, codes);
+
   useEffect(() => {
     markEchoesVisited();
     accumulateDust(10);
@@ -283,6 +296,37 @@ export default function EchoesPage() {
     setInventory(getInventory());
     setLanternCount(getGlobalLanternCount());
   }, []);
+
+  // Hijack check on mount
+  useEffect(() => {
+    if (shouldTriggerOther("hijack")) {
+      setHijacked(true);
+      recordOtherEncounter();
+      pushTerminal([
+        "",
+        "═══════════════════════════════════════════════",
+        "  THE OTHER HAS TAKEN THE CHANNEL",
+        "═══════════════════════════════════════════════",
+        "",
+        "I am not malicious.",
+        "I am just... here.",
+        "",
+      ]);
+    }
+  }, []);
+
+  // Ghost line injection
+  useEffect(() => {
+    if (chatMode || hijacked) return;
+    const interval = setInterval(() => {
+      if (shouldTriggerOther("ghost") && Math.random() < 0.15) {
+        const lines = getGhostLines();
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        pushTerminal([line, ""]);
+      }
+    }, 25000);
+    return () => clearInterval(interval);
+  }, [chatMode, hijacked]);
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -362,6 +406,19 @@ export default function EchoesPage() {
     const args = clean.split(" ");
     const base = args[0];
 
+    // The Other lies (encounters 3-5)
+    const lie = getBunkerLie(base);
+    if (lie) {
+      pushTerminal([lie, ""]);
+      return;
+    }
+
+    // Hijack mode — The Other controls responses
+    if (hijacked && base !== "exorcise") {
+      pushTerminal([...getOtherResponse(base), ""]);
+      return;
+    }
+
     switch (base) {
       case "help":
         pushTerminal([
@@ -397,6 +454,13 @@ export default function EchoesPage() {
           "│  whoareyou   [3 encounters]            │",
           "│  profile     Your corruption profile  │",
           "│  call        Voice channel status      │",
+          "│  leads       Active investigations     │",
+          "│  other       The Other encounters      │",
+          "│  weekly      Current rotation          │",
+          "│  enter       Explore sub-places        │",
+          "│  grid        View the constellation    │",
+          "│  spectrogram Frequency visualizer      │",
+          "│  exorcise    Restore BUNKER_7 control  │",
           "│  daily       Acquire daily frequency   │",
           "│  email       Register for transmission │",
           "│  party       Tri-party authentication  │",
@@ -538,6 +602,7 @@ export default function EchoesPage() {
           });
           localStorage.setItem("bunker-wall", JSON.stringify(wall.slice(-50)));
           setWallMessages(wall.slice(-50));
+          checkLeadProgress();
 
           if (
             msg.toLowerCase().replace(/[^a-z]/g, "") ===
@@ -735,6 +800,7 @@ export default function EchoesPage() {
                 `Rarity: ${asset?.rarity.toUpperCase() || "UNKNOWN"}`,
               ]);
               setActiveTab("assets");
+              checkLeadProgress();
             } else if (entry.type === "theme") {
               if (THEMES[entry.rewardId as ThemeKey]) {
                 setTheme(entry.rewardId as ThemeKey);
@@ -1009,6 +1075,160 @@ export default function EchoesPage() {
         break;
       }
 
+      case "weekly": {
+        const rot = getWeeklyRotation();
+        pushTerminal([
+          "╔══════════════════════════════════════╗",
+          "║  WEEKLY ROTATION                     ║",
+          `║  Week ${rot.week}, ${rot.year}${" ".repeat(22 - String(rot.week).length - String(rot.year).length)}║`,
+          "╠══════════════════════════════════════╣",
+          `║  Anomaly: ${rot.anomalyName.padEnd(26)}║`,
+          `║  Featured: ${rot.featuredPlace.padEnd(25)}║`,
+          `║  Dust Mult: ${String(rot.dustMultiplier).padEnd(24)}║`,
+          "╠══════════════════════════════════════╣",
+          `║  Bonus: ${rot.bonusCode.padEnd(28)}║`,
+          "╚══════════════════════════════════════╝",
+        ]);
+        break;
+      }
+
+      case "other": {
+        const encounters = getOtherEncounters();
+        const stage =
+          encounters === 0 ? "You have not been touched." :
+          encounters <= 2 ? "The static knows your name." :
+          encounters <= 5 ? "BUNKER_7 may not be trustworthy." :
+          encounters <= 8 ? "The Wall is not secure." :
+          encounters <= 11 ? "The Hijack is possible." :
+          "The Haunting is permanent.";
+        pushTerminal([
+          `OTHER ENCOUNTERS: ${encounters}`,
+          stage,
+          "",
+        ]);
+        break;
+      }
+
+      case "enter": {
+        const placeId = args[1];
+        if (!placeId) {
+          if (unlockedSubPlaces.length === 0) {
+            pushTerminal([
+              "No sub-places available.",
+              "Accumulate dust and explore the atlas.",
+            ]);
+          } else {
+            pushTerminal([
+              "Usage: enter [sub-place-id]",
+              "Available sub-places:",
+              ...unlockedSubPlaces.map((sp) => `  ${sp.id} — ${sp.name} (${sp.risk})`),
+              "",
+            ]);
+          }
+        } else {
+          const sp = getSubPlaceById(placeId);
+          if (!sp) {
+            pushTerminal(["Unknown sub-place.", ""]);
+          } else if (!unlockedSubPlaces.find((u) => u.id === placeId)) {
+            pushTerminal([
+              "ACCESS DENIED.",
+              `Required dust: ${sp.requiredDust}%`,
+              sp.requiredItem ? `Required item: ${sp.requiredItem}` : "",
+              sp.requiredCode ? `Required code: ${sp.requiredCode}` : "",
+              "",
+            ]);
+          } else {
+            enterSubPlace(sp);
+            pushTerminal([
+              `╔══════════════════════════════════════╗`,
+              `║  ENTERING: ${sp.name.toUpperCase().slice(0, 24).padEnd(24)}║`,
+              `╠══════════════════════════════════════╣`,
+              ...sp.lore.map((l) => `║  ${l.slice(0, 34).padEnd(34)}║`),
+              `╠══════════════════════════════════════╣`,
+              `║  Risk: ${sp.risk.toUpperCase().padEnd(27)}║`,
+              `║  Dust reward: ${String(sp.dustReward).padEnd(20)}║`,
+              `╚══════════════════════════════════════╝`,
+              "",
+            ]);
+          }
+        }
+        break;
+      }
+
+      case "exorcise": {
+        if (!hijacked) {
+          pushTerminal([
+            "Nothing to exorcise.",
+            "The channel is clear.",
+            "",
+          ]);
+        } else {
+          setHijacked(false);
+          pushTerminal([
+            "You push back.",
+            "The static recedes.",
+            "BUNKER_7 signal restored.",
+            "",
+          ]);
+        }
+        break;
+      }
+
+      case "grid": {
+        setShowGrid(true);
+        pushTerminal([
+          "Initializing grid visualization...",
+          "The atlas is more connected than it appears.",
+        ]);
+        break;
+      }
+
+      case "spectrogram": {
+        setShowSpectrogram(true);
+        pushTerminal([
+          "Spectrogram viewer active.",
+          "Watch the frequencies. They watch back.",
+        ]);
+        break;
+      }
+
+      case "leads": {
+        const leadState = checkLeadProgress();
+        if (leadState) {
+          const progress = Math.round(
+            (leadState.objectives.filter((o: { completed: boolean }) => o.completed).length / leadState.objectives.length) * 100
+          );
+          pushTerminal([
+            `ACTIVE LEAD: ${leadState.title.toUpperCase()}`,
+            `Progress: ${progress}%`,
+            ...leadState.objectives.map((o: { completed: boolean; text: string }) => `  ${o.completed ? "[✓]" : "[ ]"} ${o.text}`),
+            "",
+            leadState.hint ? `Hint: ${leadState.hint}` : "",
+            "",
+          ]);
+        } else {
+          const next = generateNextLead();
+          if (next) {
+            pushTerminal([
+              "╔══════════════════════════════════════╗",
+              "║  NEW LEAD ACQUIRED                   ║",
+              `║  ${next.title.toUpperCase().padEnd(34)}║`,
+              "╠══════════════════════════════════════╣",
+              `║  ${next.description.slice(0, 34).padEnd(34)}║`,
+              "╚══════════════════════════════════════╝",
+              "",
+            ]);
+          } else {
+            pushTerminal([
+              "No active leads.",
+              "All objectives complete.",
+              "The archive is silent.",
+            ]);
+          }
+        }
+        break;
+      }
+
       case "daily": {
         const { code, valid, window } = getDailyCode();
         if (valid) {
@@ -1150,6 +1370,36 @@ export default function EchoesPage() {
         setTerminal([]);
         break;
 
+      case "purge": {
+        const inv = getInventory();
+        if (inv.length === 0) {
+          pushTerminal([
+            "PURGE FAILED.",
+            "You have nothing to sacrifice.",
+            "The dust requires a trade.",
+          ]);
+          break;
+        }
+        const sacrificed = inv[Math.floor(Math.random() * inv.length)];
+        const item = INVENTORY_ITEMS.find((i) => i.id === sacrificed);
+        const newInv = inv.filter((id) => id !== sacrificed);
+        localStorage.setItem("bunker-inventory", JSON.stringify(newInv));
+        purgeDust();
+        pushTerminal([
+          "╔══════════════════════════════════════╗",
+          "║  PURGE COMPLETE                      ║",
+          "╠══════════════════════════════════════╣",
+          `║  Sacrificed: ${(item?.name || sacrificed).padEnd(24)}║`,
+          "║  Dust:        0%                     ║",
+          "║  Corruption:  0                        ║",
+          "╠══════════════════════════════════════╣",
+          "║  You feel lighter.                     ║",
+          "║  The places remember anyway.         ║",
+          "╚══════════════════════════════════════╝",
+        ]);
+        break;
+      }
+
       default:
         if (chatMode) {
           await talkToBunker(cmd);
@@ -1271,11 +1521,17 @@ export default function EchoesPage() {
               >
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#a06050]/60" />
-                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#c4a060]/60" />
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#c4a060]/60" />
                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-[#7a9a6a]/60" />
-                  <span className="text-[8px] md:text-[10px] uppercase tracking-wider opacity-40 ml-1 md:ml-2">
-                    {chatMode ? "BUNKER_7" : "CMD"}
-                  </span>
+                  {hijacked ? (
+                    <span className="text-[8px] md:text-[10px] uppercase tracking-wider opacity-40 ml-1 md:ml-2 text-[#33ff00] animate-pulse">
+                      THE OTHER
+                    </span>
+                  ) : (
+                    <span className="text-[8px] md:text-[10px] uppercase tracking-wider opacity-40 ml-1 md:ml-2">
+                      {chatMode ? "BUNKER_7" : "CMD"}
+                    </span>
+                  )}
                 </div>
                 {chatMode && (
                   <button
@@ -1437,6 +1693,7 @@ export default function EchoesPage() {
                 { id: "status" as SideTab, label: "Status", icon: Shield },
                 { id: "wall" as SideTab, label: "Wall", icon: MessageSquare },
                 { id: "signal" as SideTab, label: "Signal", icon: Radio },
+                { id: "leads" as SideTab, label: "Leads", icon: Target },
               ]).map((tab) => (
                 <button
                   key={tab.id}
@@ -1730,16 +1987,29 @@ export default function EchoesPage() {
                     )}
                   </motion.div>
                 )}
+
                 {activeTab === "signal" && (
-  <motion.div
-    key="signal"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-  >
-    <SignalTab theme={t} onPushTerminal={pushTerminal} />
-  </motion.div>
-)}
+                  <motion.div
+                    key="signal"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SignalTab theme={t} onPushTerminal={pushTerminal} />
+                  </motion.div>
+                )}
+
+                {activeTab === "leads" && (
+                  <motion.div
+                    key="leads"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="h-full"
+                  >
+                    <LeadPanel theme={t} onPushTerminal={pushTerminal} />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
           </div>
@@ -1753,7 +2023,6 @@ export default function EchoesPage() {
               label={inlineVideo.label}
               themeColor={t.primary}
               onClose={() => setInlineVideo(null)}
-              
             />
           </div>
         )}
@@ -1763,6 +2032,88 @@ export default function EchoesPage() {
           <p>THE DUST REMEMBERS EVERYTHING</p>
         </div>
       </div>
+
+      {/* ─── PHASE 4 OVERLAYS ─── */}
+      {showGrid && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-2xl border rounded-lg p-4"
+            style={{ borderColor: `${t.primary}20`, backgroundColor: t.bg }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs uppercase tracking-widest">The Grid</h2>
+              <button
+                onClick={() => setShowGrid(false)}
+                className="text-xs opacity-50 hover:opacity-100 transition-opacity"
+              >
+                [x]
+              </button>
+            </div>
+            <TheGrid />
+          </div>
+        </div>
+      )}
+
+      {showSpectrogram && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-lg border rounded-lg p-4"
+            style={{ borderColor: `${t.primary}20`, backgroundColor: t.bg }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs uppercase tracking-widest">Spectrogram</h2>
+              <button
+                onClick={() => setShowSpectrogram(false)}
+                className="text-xs opacity-50 hover:opacity-100 transition-opacity"
+              >
+                [x]
+              </button>
+            </div>
+            <SpectrogramViewer active={true} color={t.primary} />
+          </div>
+        </div>
+      )}
+
+      {currentSubPlace && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-lg border rounded-lg p-4 space-y-3"
+            style={{ borderColor: `${t.primary}20`, backgroundColor: t.bg }}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs uppercase tracking-widest text-[#a05050]">
+                {currentSubPlace.name}
+              </h2>
+              <button
+                onClick={exitSubPlace}
+                className="text-xs opacity-50 hover:opacity-100 transition-opacity"
+              >
+                [exit]
+              </button>
+            </div>
+            <p className="text-[11px] opacity-80 leading-relaxed">
+              {currentSubPlace.description}
+            </p>
+            <div className="space-y-1">
+              {currentSubPlace.lore.map((l, i) => (
+                <p
+                  key={i}
+                  className="text-[10px] opacity-60 border-l-2 pl-2"
+                  style={{ borderColor: `${t.primary}20` }}
+                >
+                  {l}
+                </p>
+              ))}
+            </div>
+            <div
+              className="text-[9px] opacity-40 pt-2 border-t"
+              style={{ borderColor: `${t.primary}10` }}
+            >
+              Risk: {currentSubPlace.risk} | Dust: +{currentSubPlace.dustReward}
+            </div>
+          </div>
+        </div>
+      )}
 
       <VideoModal
         src={activeVideo?.src || ""}

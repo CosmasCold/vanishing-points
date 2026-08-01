@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, Activity, Zap, Volume2, VolumeX, Lock, Unlock, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { markTransmission } from "@/hooks/useDustLevel";
 
 interface ThemeColors {
   primary: string;
@@ -44,7 +45,7 @@ const FREQUENCIES: Frequency[] = [
     placeSlug: "duga-radar-array",
     color: "#88c0d0",
     dimColor: "#4c566a",
-    lore: "The Russian Woodpecker. A sharp tapping that interfered with shortwave radios worldwide from 1976 to 1989. It was not a radar. It was a countdown.",
+    lore: "The Russian Woodpecker. A sharp tapping that interfered with shortwave radios worldwide from 1976 to 1989. Officially an over-the-horizon radar. BUNKER_7 believes otherwise.",
     transmissions: [
       { type: "code", text: "AGENT. REDEEM: WOODPECKER-314", encoded: "NTRAG. ERQRZR: JBBQCRPXRE-314", cipher: "caesar", key: 13, payload: "WOODPECKER-314" },
       { type: "mission", text: "The Woodpecker has shifted frequency. Check Duga Radar Array at 03:14. Bring a radiation badge.", encoded: "GUR JBBQCRPXRE UNF FUVSGRQ SERDHrapl...", cipher: "caesar", key: 13 },
@@ -54,7 +55,7 @@ const FREQUENCIES: Frequency[] = [
   {
     id: "hashima",
     mhz: "9.18",
-    name: "TOWER SEVEN",
+    name: "THE COUNTING HOUSE",
     place: "Hashima Island",
     placeSlug: "hashima-island",
     color: "#e8a8a0",
@@ -147,6 +148,13 @@ function getFrequencyData(text: string): number[] {
 }
 
 export default function SignalTab({ theme, onPushTerminal }: Props) {
+  const [breachActive, setBreachActive] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setBreachActive(true);
+    window.addEventListener("breach-triggered", handler);
+    return () => window.removeEventListener("breach-triggered", handler);
+  }, []);
   const [freqIndex, setFreqIndex] = useState(0);
   const [needle, setNeedle] = useState(50);
   const [sweetSpot, setSweetSpot] = useState(() => 20 + Math.random() * 60);
@@ -182,7 +190,9 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     if (locked) return;
     const drift = setInterval(() => {
       setSweetSpot((prev) => {
-        const jitter = (Math.random() - 0.5) * 12;
+        const jitter = breachActive
+  ? (Math.random() - 0.5) * 24
+  : (Math.random() - 0.5) * 12;
         return Math.max(5, Math.min(95, prev + jitter));
       });
     }, 900);
@@ -464,6 +474,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
       playTone(1200, 0.15, "sine");
       setTimeout(() => playTone(1600, 0.3, "sine"), 150);
       setDecodeResult(guess);
+      localStorage.setItem(`vp-signal-${freq.placeSlug}`, "true");
+markTransmission();
       setLog((prev) => [...prev, `DECODE SUCCESSFUL.`, `CLEAR TEXT ACQUIRED.`, ""]);
     } else {
       playTone(150, 0.4, "sawtooth");

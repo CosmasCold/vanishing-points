@@ -1,10 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Route, X, Plus, Trash2, AlertTriangle, MapPin, Download, Clock, Globe, Shield } from "lucide-react";
+import {
+  Route,
+  X,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  MapPin,
+  Download,
+  Globe,
+  Shield,
+  Lock,
+  Unlock,
+  Radio,
+  Skull,
+  Eye,
+  Wind,
+} from "lucide-react";
 import { Place } from "@/types";
 import { showToast } from "@/lib/toast";
+import { spendDust } from "@/hooks/useDustLevel";
 
 interface Props {
   places: Place[];
@@ -51,14 +68,99 @@ function packingList(levels: number[]): string[] {
   return base;
 }
 
+/* ─── localStorage helpers ─── */
+function getPlaceTier(placeId: string): string {
+  if (typeof window === "undefined") return "surface";
+  return localStorage.getItem(`vp-tier-${placeId}`) || "surface";
+}
+
+function isExpeditionComplete(placeId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(`vp-expedition-${placeId}`) === "true";
+}
+
+function isSealed(placeId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(`vp-sealed-${placeId}`) === "true";
+}
+
+function getSignalUnlock(placeSlug: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(`vp-signal-${placeSlug}`) === "true";
+}
+
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+/* ─── Tier icon component ─── */
+function TierBadge({ placeId }: { placeId: string }) {
+  const tier = getPlaceTier(placeId);
+  const sealed = isSealed(placeId);
+  const complete = isExpeditionComplete(placeId);
+
+  if (sealed) {
+    return (
+      <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-600/80">
+        <Shield size={10} /> SEALED
+      </span>
+    );
+  }
+  if (tier === "documented" || complete) {
+    return (
+      <span className="flex items-center gap-1 text-[9px] font-mono text-[#9a8a72]/80">
+        <Eye size={10} /> DOCUMENTED
+      </span>
+    );
+  }
+  if (tier === "surveyed") {
+    return (
+      <span className="flex items-center gap-1 text-[9px] font-mono text-[#9a8a72]/60">
+        <Wind size={10} /> SURVEYED
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-[9px] font-mono text-white/20">
+      <MapPin size={10} /> SURFACE
+    </span>
+  );
+}
+
+/* ─── Danger gate check ─── */
+function canAccess(place: Place, dust: number): { ok: boolean; reason?: string; forceable?: boolean } {
+  if (place.dangerLevel <= 3) return { ok: true };
+  if (getSignalUnlock(place.slug)) return { ok: true };
+  if (dust >= 30) return { ok: true };
+  return {
+    ok: false,
+    reason: `Danger ${place.dangerLevel}/5 locked. Need signal decode or dust ≥30% (you have ${dust}%).`,
+    forceable: true,
+  };
+}
+
 export default function ExpeditionPlanner({ places, onClose, onFlyTo }: Props) {
   const [selected, setSelected] = useState<Place[]>([]);
+  const [dust, setDust] = useState(0);
+
+  useEffect(() => {
+    setDust(getDust());
+  }, []);
 
   const toggle = (place: Place) => {
     setSelected((prev) => {
       const exists = prev.find((p) => p._id === place._id);
       if (exists) return prev.filter((p) => p._id !== place._id);
-      if (prev.length >= 8) return prev;
+      if (prev.length >= 8) {
+        showToast("Maximum 8 sites per expedition", "warning");
+        return prev;
+      }
+      const gate = canAccess(place, dust);
+      if (!gate.ok) {
+        showToast(gate.reason || "Access denied", "warning");
+        return prev;
+      }
       return [...prev, place];
     });
   };
@@ -103,6 +205,7 @@ Reference:     ${refNum}
 Date Issued:   ${dateStr}
 Classification: FIELD USE — ARCHIVAL COPY
 Expedition Lead: _________________________
+Archivist Dust:  ${dust}%  (Experience Profile)
 `.trim();
 
     const summary = `
@@ -131,6 +234,9 @@ ${highDangerCount > 0 ? "   Insurance waiver required for sites marked ★★★
         const legDist = prev ? haversine(prev.coordinates, place.coordinates) : 0;
         const lat = formatCoord(place.coordinates[1], true);
         const lon = formatCoord(place.coordinates[0], false);
+        const tier = getPlaceTier(place._id);
+        const sealed = isSealed(place._id);
+        const signalOk = getSignalUnlock(place.slug);
 
         return `
 ──────────────────────────────────────────────────────────────────────────────
@@ -144,6 +250,8 @@ ${prev ? `Leg Distance:    ${Math.round(legDist)} km from ${prev.name}` : "Entry
 Classification:  ${place.category === "haunted" ? "SPECTRAL" : place.category === "abandoned" ? "FORSAKEN" : "DUAL NATURE"}
 Status:          ${place.yearAbandoned ? `Abandoned ${place.yearAbandoned}` : "Date unknown"}
 Danger Level:    ${"★".repeat(place.dangerLevel)}${"☆".repeat(5 - place.dangerLevel)}  (${place.dangerLevel}/5)
+Atlas Tier:      ${tier.toUpperCase()}${sealed ? " [SEALED]" : ""}
+Signal Status:   ${signalOk ? "DECODED — BUNKER_7 CLEARANCE GRANTED" : "NO SIGNAL — PROCEED WITH CAUTION"}
 Visual Records:  ${place.photos?.length || 0} photographs on file
 
 FIELD ADVISORY
@@ -173,6 +281,7 @@ ADDITIONAL NOTES
 □ Emergency contacts notified
 □ Satellite communicator charged
 □ Contingency route planned
+□ BUNKER_7 signal clearance confirmed for high-risk sites
 `.trim();
 
     const footer = `
@@ -222,6 +331,29 @@ ADDITIONAL NOTES
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Dust meter */}
+          <div className="mb-4 p-3 bg-[rgba(90,78,66,0.06)] rounded-lg border border-[rgba(122,107,82,0.12)]">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] mb-1.5">
+              <span className="flex items-center gap-1.5">
+                <Skull size={10} />
+                Archivist Dust Level
+              </span>
+              <span>{dust}%</span>
+            </div>
+            <div className="h-2 bg-[rgba(122,107,82,0.15)] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${dust}%`,
+                  backgroundColor: dust > 75 ? "#7a3a2a" : dust > 40 ? "#9a8a5a" : "#7a9a6a",
+                }}
+              />
+            </div>
+            <p className="text-[9px] text-[#9a8a72] mt-1.5 leading-relaxed">
+              Danger 4–5 sites require signal decode or dust ≥30%. You have {dust}%.
+            </p>
+          </div>
+
           {selected.length > 0 && (
             <div className="mb-6 space-y-4">
               {/* Stats bar */}
@@ -270,6 +402,9 @@ ADDITIONAL NOTES
                         {place.address.country} · Danger {place.dangerLevel}/5
                         {i > 0 && ` · ${Math.round(haversine(selected[i - 1].coordinates, place.coordinates))} km`}
                       </p>
+                      <div className="mt-1">
+                        <TierBadge placeId={place._id} />
+                      </div>
                     </div>
                     <button
                       onClick={() => onFlyTo(place.coordinates)}
@@ -302,23 +437,50 @@ ADDITIONAL NOTES
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {places.map((place) => {
               const isSelected = selected.find((p) => p._id === place._id);
+              const gate = canAccess(place, dust);
+              const signalOk = getSignalUnlock(place.slug);
+
               return (
                 <button
                   key={place._id}
                   onClick={() => toggle(place)}
-                  className={`text-left p-3 rounded-lg border transition-all text-sm ${
+                  disabled={!gate.ok && !isSelected}
+                  className={`text-left p-3 rounded-lg border transition-all text-sm relative ${
                     isSelected
                       ? "bg-[rgba(90,78,66,0.08)] border-[#9a8a72] text-[#3d3228]"
+                      : !gate.ok
+                      ? "bg-transparent border-[rgba(122,107,82,0.08)] text-[#9a8a72]/30 cursor-not-allowed"
                       : "bg-transparent border-[rgba(122,107,82,0.15)] text-[#5a4e42] hover:border-[rgba(122,107,82,0.3)]"
                   }`}
                 >
+                  {/* Signal indicator */}
+                  {signalOk && (
+                    <span className="absolute top-1.5 right-1.5 text-amber-600/60" title="Signal decoded">
+                      <Radio size={10} />
+                    </span>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <span className="font-cinzel text-xs truncate pr-2">{place.name}</span>
-                    {isSelected ? <Trash2 size={12} /> : <Plus size={12} />}
+                    {isSelected ? (
+                      <Trash2 size={12} />
+                    ) : !gate.ok ? (
+                      <Lock size={12} />
+                    ) : (
+                      <Plus size={12} />
+                    )}
                   </div>
-                  <span className="text-[10px] font-mono text-[#9a8a72]">
+                  <span className="text-[10px] font-mono text-[#9a8a72] block">
                     {place.address.country} · Danger {place.dangerLevel}
                   </span>
+                  <div className="mt-1">
+                    <TierBadge placeId={place._id} />
+                  </div>
+                  {!gate.ok && !isSelected && (
+                    <p className="text-[9px] text-[#7a3a2a]/70 mt-1 font-mono leading-tight">
+                      {gate.reason}
+                    </p>
+                  )}
                 </button>
               );
             })}

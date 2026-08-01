@@ -127,6 +127,9 @@ export default function Home() {
   const openPlace = useCallback((place: Place) => {
     accumulateDust(3);
     setSelectedPlace(place);
+    window.dispatchEvent(new CustomEvent("placeaudiochange", {
+    detail: { category: place.category, dangerLevel: place.dangerLevel }
+  }));
   }, []);
 
   const handleGhostCapture = useCallback((ghost: { name: string; slug: string; coords: string }) => {

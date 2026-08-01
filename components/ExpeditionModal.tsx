@@ -75,7 +75,7 @@ export default function ExpeditionModal({
         ...prev,
         `> ${choice.label}`,
         "",
-        ...choice.description.split(". ").map((s) => s.trim() + "."),
+        ...choice.description.split(/\. (?=[A-Z])/).map((s) => s.trim() + "."),
         "",
         `Dust accumulated: +${choice.dust}%`,
         corrupted ? "[!] CORRUPTION DETECTED" : "",

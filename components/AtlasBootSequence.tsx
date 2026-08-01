@@ -30,7 +30,7 @@ export default function AtlasBootSequence({ onComplete }: { onComplete: () => vo
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
     BOOT_SEQUENCE.forEach((line, idx) => {
       const timer = setTimeout(() => {

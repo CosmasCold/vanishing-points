@@ -6,28 +6,43 @@ export default function AtlasInversion() {
   const [inverted, setInverted] = useState(false);
 
   useEffect(() => {
+    // Corruption auto-trigger
+    const corruption = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
+    if (corruption >= 3) {
+      setInverted(true);
+      document.body.classList.add("atlas-inverted");
+    }
+
+    // Breach auto-trigger
+    const handleBreach = () => {
+      setInverted(true);
+      document.body.classList.add("atlas-inverted");
+    };
+    window.addEventListener("atlas-invert", handleBreach);
+
+    // Manual toggle
     const handleKey = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key.toLowerCase() === "i") {
         e.preventDefault();
         setInverted((v) => {
           const next = !v;
-          if (next) {
-            document.body.classList.add("atlas-inverted");
-          } else {
-            document.body.classList.remove("atlas-inverted");
-          }
+          document.body.classList.toggle("atlas-inverted", next);
           return next;
         });
       }
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+
+    return () => {
+      window.removeEventListener("atlas-invert", handleBreach);
+      window.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   if (!inverted) return null;
 
   return (
-    <style jsx global>{`
+    <style>{`
       .atlas-inverted .mapboxgl-canvas {
         filter: sepia(0.3) contrast(1.2) brightness(0.7) saturate(0.6) hue-rotate(90deg) !important;
       }

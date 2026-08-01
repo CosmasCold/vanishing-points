@@ -2,10 +2,26 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Lock, Unlock, Flame, Skull, Wind, MapPin, ChevronRight, Radio } from "lucide-react";
+import {
+  X,
+  Lock,
+  Unlock,
+  Flame,
+  Skull,
+  Wind,
+  MapPin,
+  ChevronRight,
+  Radio,
+  Shield,
+  AlertTriangle,
+  FileText,
+  Eye,
+} from "lucide-react";
 import { Place } from "@/types";
 import { getExpedition } from "@/lib/expeditions";
 import ExpeditionModal from "./ExpeditionModal";
+import { bumpCorruption, spendDust } from "@/hooks/useDustLevel";
+import { showToast } from "@/lib/toast";
 
 type Tier = "surface" | "surveyed" | "documented" | "sealed";
 
@@ -13,6 +29,12 @@ function redact(text: string): string {
   return text.replace(/[a-zA-Z0-9]/g, "█");
 }
 
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+/* ─── localStorage helpers ─── */
 function getPlaceTier(placeId: string): Tier {
   if (typeof window === "undefined") return "surface";
   const s = localStorage.getItem(`vp-tier-${placeId}`);
@@ -44,6 +66,41 @@ function isSealed(placeId: string): boolean {
   return localStorage.getItem(`vp-sealed-${placeId}`) === "true";
 }
 
+function getSignalUnlock(placeSlug: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(`vp-signal-${placeSlug}`) === "true";
+}
+
+function isDossierUnlocked(placeSlug: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(`vp-dossier-${placeSlug}`) === "true";
+}
+
+function unlockDossier(placeSlug: string) {
+  localStorage.setItem(`vp-dossier-${placeSlug}`, "true");
+}
+
+/* ─── BUNKER_7 intercepted dossiers ─── */
+const SIGNAL_DOSSIERS: Record<string, { title: string; text: string }> = {
+  "duga-radar-array": {
+    title: "Intercepted: THE HUM",
+    text: `BUNKER_7 ANALYSIS — The Woodpecker pulse does not match Soviet OTHR signatures. Frequency drift suggests an internal clock rather than an external detection sweep. The "countdown" theory is unconfirmed, but the arithmetic is disturbing. The array stopped in 1989. The count, if it existed, was interrupted, not concluded.`,
+  },
+  "hashima-island": {
+    title: "Intercepted: THE COUNTING HOUSE",
+    text: `BUNKER_7 ANALYSIS — The numbers station broadcasting from Hashima coordinates uses a voice model not developed until 2011. The count is backward. The numbers have not been invented yet because they are counting down to a date, not up from zero. Current estimate: 5,000 days remain.`,
+  },
+  "aokigahara-forest": {
+    title: "Intercepted: LOST EXPEDITION",
+    text: `BUNKER_7 ANALYSIS — Expedition Team 4's black box contains 7 hours of audio after the last confirmed human voice. The seventh voice speaks Japanese with a dialect last used in the Edo period. It is giving directions deeper into the forest.`,
+  },
+  "poveglia-island": {
+    title: "Intercepted: STATIC VEIL",
+    text: `BUNKER_7 ANALYSIS — The static between stations is not empty. Spectral analysis reveals ordered data in the 19 Hz range — the frequency of human eyeball resonance. The static is not noise. It is trying to be seen.`,
+  },
+};
+
+/* ─── Component ─── */
 interface Props {
   place: Place;
   onClose: () => void;
@@ -52,16 +109,17 @@ interface Props {
 export default function PlacePanel({ place, onClose }: Props) {
   const [tier, setTier] = useState<Tier>("surface");
   const [expeditionOpen, setExpeditionOpen] = useState(false);
-  const [showAddendum, setShowAddendum] = useState(false);
-  const expedition = useMemo(() => getExpedition(place.slug), [place.slug]);
+  const expedition = useMemo(() => getExpedition(place), [place]);
 
+  /* Initialise tier from localStorage */
   useEffect(() => {
     setTier(getPlaceTier(place._id));
   }, [place._id]);
 
-  // Auto-promote if conditions met
+  /* Auto-promote when conditions are met */
   useEffect(() => {
     let current = getPlaceTier(place._id);
+
     if (current === "surface" && hasLantern(place._id)) {
       current = "surveyed";
       setPlaceTier(place._id, current);
@@ -83,19 +141,25 @@ export default function PlacePanel({ place, onClose }: Props) {
     reportsUnlocked: number[];
     corruptionTriggered: boolean;
   }) => {
-    // Save expedition completion
     localStorage.setItem(`vp-expedition-${place._id}`, "true");
 
-    // Save reports
+    if (result.corruptionTriggered) {
+      bumpCorruption(1);
+    }
+
     const existing = getUnlockedReports(place._id);
     const merged = Array.from(new Set([...existing, ...result.reportsUnlocked]));
     localStorage.setItem(`vp-reports-${place._id}`, JSON.stringify(merged));
 
-    // Accumulate dust
-    const currentDust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
-    localStorage.setItem("vp-dust-accumulation", String(Math.min(100, currentDust + result.dust)));
+    const currentDust = parseInt(
+      localStorage.getItem("vp-dust-accumulation") || "0",
+      10
+    );
+    localStorage.setItem(
+      "vp-dust-accumulation",
+      String(Math.min(100, currentDust + result.dust))
+    );
 
-    // Save items
     const invKey = "vp-inventory";
     const inv = JSON.parse(localStorage.getItem(invKey) || "[]");
     result.items.forEach((item) => {
@@ -103,7 +167,6 @@ export default function PlacePanel({ place, onClose }: Props) {
     });
     localStorage.setItem(invKey, JSON.stringify(inv));
 
-    // Bump tier
     setPlaceTier(place._id, "documented");
     setTier("documented");
   };
@@ -112,293 +175,349 @@ export default function PlacePanel({ place, onClose }: Props) {
     localStorage.setItem(`vp-sealed-${place._id}`, "true");
     setPlaceTier(place._id, "sealed");
     setTier("sealed");
+
+    /* Sealing cleanses dust slightly */
+    const currentDust = parseInt(
+      localStorage.getItem("vp-dust-accumulation") || "0",
+      10
+    );
+    localStorage.setItem(
+      "vp-dust-accumulation",
+      String(Math.max(0, currentDust - 5))
+    );
   };
 
   const summary =
     place.history.split(". ").slice(0, 2).join(". ") + ".";
 
   const unlockedReports = getUnlockedReports(place._id);
+  const signalDossier = SIGNAL_DOSSIERS[place.slug];
+  const hasSignalDossier = signalDossier && getSignalUnlock(place.slug);
 
+  /* ─── Render ─── */
   return (
     <>
-      <div className="drawer-shell open">
-        {/* Drag handle for mobile */}
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 280 }}
+        className="fixed inset-y-0 right-0 z-50 w-full md:w-[28rem] bg-[#0c0a08] border-l border-[#9a8a72]/20 shadow-2xl flex flex-col"
+      >
+        {/* Mobile drag handle */}
         <div className="md:hidden w-full flex justify-center pt-2 pb-1">
           <div className="w-8 h-1 rounded-full bg-white/20" />
         </div>
 
-        <div className="h-full flex flex-col">
-          {/* Header Image */}
-          <div className="relative h-40 md:h-48 flex-shrink-0">
-            <img
-              src={place.photos[0]}
-              alt={place.name}
-              className="w-full h-full object-cover opacity-80"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a08] via-[#0c0a08]/40 to-transparent" />
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95"
-            >
-              <X size={14} />
-            </button>
-            <div className="absolute bottom-3 left-4 right-4">
-              <h2 className="font-cinzel text-lg md:text-xl text-[#ddd0bc] leading-tight">
-                {place.name}
-              </h2>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] mt-1">
-                {place.address.city}, {place.address.country}
-              </p>
-            </div>
-          </div>
-
-          {/* Tier Bar */}
-          <div className="px-4 py-2 border-b border-[#9a8a72]/10 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {(["surface", "surveyed", "documented", "sealed"] as Tier[]).map(
-              (t, i) => {
-                const active = tier === t;
-                const unlocked =
-                  t === "surface" ||
-                  (t === "surveyed" && tier !== "surface") ||
-                  (t === "documented" &&
-                    (tier === "documented" || tier === "sealed")) ||
-                  (t === "sealed" && tier === "sealed");
-                return (
-                  <div
-                    key={t}
-                    className={`flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider whitespace-nowrap px-2 py-1 rounded border ${
-                      active
-                        ? "border-[#9a8a72]/40 text-[#c9b18a] bg-[#1a1612]"
-                        : unlocked
-                        ? "border-[#9a8a72]/15 text-[#5a4e42]"
-                        : "border-[#333] text-[#333]"
-                    }`}
-                  >
-                    {unlocked ? <Unlock size={10} /> : <Lock size={10} />}
-                    {t}
-                  </div>
-                );
-              }
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-5">
-            {/* Surface Tier */}
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5a4e42] mb-2">
-                Surface Data
-              </p>
-              <div className="flex items-center gap-3 text-[11px] font-mono text-[#9a8a72] mb-3">
-                <span className="flex items-center gap-1">
-                  <MapPin size={10} />
-                  {place.coordinates[1].toFixed(4)}, {place.coordinates[0].toFixed(4)}
-                </span>
-                <span className="w-px h-3 bg-[#9a8a72]/20" />
-                <span className="uppercase">{place.category}</span>
-                {place.yearAbandoned && (
-                  <>
-                    <span className="w-px h-3 bg-[#9a8a72]/20" />
-                    <span>Abandoned {place.yearAbandoned}</span>
-                  </>
-                )}
-              </div>
-              <p className="text-xs md:text-sm text-[#b8a898] leading-relaxed">
-                {tier === "surface" ? summary : place.history}
-              </p>
-            </div>
-
-            {/* Surveyed Tier */}
-            <div className="border-t border-[#9a8a72]/10 pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5a4e42]">
-                  Survey Data
-                </p>
-                {tier === "surface" && (
-                  <span className="text-[9px] font-mono text-[#5a4e42]">
-                    <Lock size={9} className="inline mr-1" />
-                    Place lantern to unlock
-                  </span>
-                )}
-              </div>
-
-              {tier !== "surface" ? (
-                <>
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="flex-1">
-                      <p className="text-[9px] font-mono uppercase text-[#5a4e42] mb-1">
-                        Danger Level
-                      </p>
-                      <div className="h-1.5 bg-[#1a1612] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-[#9a8a72]"
-                          style={{ width: `${(place.dangerLevel / 5) * 100}%` }}
-                        />
-                      </div>
-                      <p className="text-[9px] font-mono text-[#7a6e5e] mt-1">
-                        {place.dangerLevel}/5 —{" "}
-                        {place.dangerLevel >= 4
-                          ? "Extreme"
-                          : place.dangerLevel >= 3
-                          ? "Elevated"
-                          : "Moderate"}
-                      </p>
-                    </div>
-                  </div>
-                  {place.photos[1] && (
-                    <img
-                      src={place.photos[1]}
-                      alt="Survey photo"
-                      className="w-full h-32 object-cover rounded border border-[#9a8a72]/10 opacity-80"
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="p-3 bg-[#0c0a08] rounded border border-[#9a8a72]/10">
-                  <p className="text-xs font-mono text-[#5a4e42] leading-relaxed">
-                    {redact(
-                      "The full survey requires ground truth. Place a lantern at these coordinates to establish a permanent observation point."
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Documented Tier */}
-            <div className="border-t border-[#9a8a72]/10 pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5a4e42]">
-                  Field Notes
-                </p>
-                {tier === "surveyed" && (
-                  <span className="text-[9px] font-mono text-[#5a4e42]">
-                    <Lock size={9} className="inline mr-1" />
-                    Complete expedition
-                  </span>
-                )}
-              </div>
-
-              {tier === "documented" || tier === "sealed" ? (
-                <div className="space-y-3">
-                  {place.hauntingReports && place.hauntingReports.length > 0 ? (
-                    place.hauntingReports.map((report, i) => {
-                      const unlocked = unlockedReports.includes(i);
-                      return (
-                        <div
-                          key={i}
-                          className="border-l-2 border-[#9a8a72]/20 pl-3 py-1"
-                        >
-                          <p className="text-[9px] font-mono uppercase text-[#5a4e42] mb-1">
-                            Report {String(i + 1).padStart(2, "0")}
-                            {!unlocked && " — [UNCONFIRMED]"}
-                          </p>
-                          <p className="text-xs text-[#b8a898] leading-relaxed">
-                            {unlocked ? report : redact(report)}
-                          </p>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-xs text-[#5a4e42] italic">
-                      No spectral phenomena documented. Environmental hazards only.
-                    </p>
-                  )}
-
-                  {expedition && (
-                    <div className="pt-2">
-                      <button
-                        onClick={() => setExpeditionOpen(true)}
-                        className="w-full flex items-center justify-between p-3 bg-[#1a1612] border border-[#9a8a72]/20 rounded-lg text-left hover:border-[#9a8a72]/40 transition-all active:scale-[0.99]"
-                      >
-                        <div>
-                          <p className="text-xs font-mono text-[#c9b18a]">
-                            Begin Expedition
-                          </p>
-                          <p className="text-[9px] text-[#5a4e42] mt-0.5">
-                            {expedition.phases.length} phases // Danger {place.dangerLevel}
-                          </p>
-                        </div>
-                        <ChevronRight size={14} className="text-[#5a4e42]" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-3 bg-[#0c0a08] rounded border border-[#9a8a72]/10">
-                  <p className="text-xs font-mono text-[#5a4e42] leading-relaxed">
-                    {redact(
-                      "Field expeditions are required to confirm anomalous reports. Equipment check: radiation badge, audio recorder, secondary light source."
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Sealed Tier */}
-            <div className="border-t border-[#9a8a72]/10 pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5a4e42]">
-                  Archivist's Addendum
-                </p>
-                {tier === "documented" && (
-                  <span className="text-[9px] font-mono text-[#5a4e42]">
-                    <Lock size={9} className="inline mr-1" />
-                    Solve to seal
-                  </span>
-                )}
-              </div>
-
-              {tier === "sealed" ? (
-                <div className="p-3 bg-[#0c0a08] rounded border border-[#9a8a72]/20">
-                  <p className="text-xs text-[#c9b18a] leading-relaxed italic">
-                    "I have been inside {place.name}. I have seen what the dust
-                    remembers. The place is not abandoned — it is waiting for a
-                    specific frequency, a specific soul, a specific silence. I
-                    have left my lantern. I will not return. The door opens
-                    inward."
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="px-2 py-1 bg-[#1a1612] border border-[#9a8a72]/20 rounded text-[9px] font-mono uppercase text-[#5a4e42]">
-                      Sealed by you
-                    </span>
-                    <span className="px-2 py-1 bg-[#1a1612] border border-[#9a8a72]/20 rounded text-[9px] font-mono uppercase text-[#5a4e42]">
-                      Badge earned
-                    </span>
-                  </div>
-                </div>
-              ) : tier === "documented" ? (
-                <button
-                  onClick={handleSeal}
-                  className="w-full p-3 bg-[#1a1612] border border-[#9a8a72]/20 rounded-lg text-left hover:border-[#9a8a72]/40 transition-all active:scale-[0.99]"
-                >
-                  <p className="text-xs font-mono text-[#c9b18a]">
-                    Seal this place
-                  </p>
-                  <p className="text-[9px] text-[#5a4e42] mt-0.5">
-                    No further expeditions. Permanent archive entry.
-                  </p>
-                </button>
-              ) : (
-                <div className="p-3 bg-[#0c0a08] rounded border border-[#9a8a72]/10">
-                  <p className="text-xs font-mono text-[#5a4e42] leading-relaxed">
-                    {redact(
-                      "The final truth is reserved for those who document the anomaly and choose to close the file. Not all archivists have the resolve."
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
+        {/* Header Image */}
+        <div className="relative h-40 md:h-48 flex-shrink-0">
+          <img
+            src={place.photos[0]}
+            alt={place.name}
+            className="w-full h-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a08] via-[#0c0a08]/40 to-transparent" />
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-colors"
+          >
+            <X size={14} />
+          </button>
+          <div className="absolute bottom-3 left-4 right-4">
+            <h2 className="font-cinzel text-lg md:text-xl text-[#ddd0bc] leading-tight">
+              {place.name}
+            </h2>
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] mt-1">
+              {place.address.city}, {place.address.country}
+            </p>
           </div>
         </div>
-      </div>
+
+        {/* Tier Bar */}
+        <div className="px-4 py-2 border-b border-[#9a8a72]/10 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {(["surface", "surveyed", "documented", "sealed"] as Tier[]).map(
+            (t, i) => {
+              const active = tier === t;
+              const unlocked =
+                t === "surface" ||
+                (t === "surveyed" && tier !== "surface") ||
+                (t === "documented" &&
+                  (tier === "documented" || tier === "sealed")) ||
+                (t === "sealed" && tier === "sealed");
+
+              return (
+                <div key={t} className="flex items-center gap-2 shrink-0">
+                  {i > 0 && (
+                    <ChevronRight
+                      size={10}
+                      className="text-[#9a8a72]/30 shrink-0"
+                    />
+                  )}
+                  <div
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border transition-colors ${
+                      active
+                        ? "bg-[#9a8a72]/15 border-[#9a8a72]/40 text-[#ddd0bc]"
+                        : unlocked
+                        ? "border-[#9a8a72]/20 text-[#9a8a72]/60"
+                        : "border-white/5 text-white/20"
+                    }`}
+                  >
+                    {unlocked ? (
+                      active ? (
+                        <Eye size={10} />
+                      ) : (
+                        <Unlock size={10} />
+                      )
+                    ) : (
+                      <Lock size={10} />
+                    )}
+                    {t}
+                  </div>
+                </div>
+              );
+            }
+          )}
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+          {/* ── Surface tier ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin size={12} className="text-[#9a8a72]" />
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                Surface Scan
+              </span>
+            </div>
+            <p className="text-sm text-[#b8a99a] leading-relaxed font-light">
+              {summary}
+            </p>
+
+            {/* Meta badges */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-[#9a8a72]/20 text-[#9a8a72]/70">
+                {place.category}
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-red-900/30 text-red-400/70 flex items-center gap-1">
+                <AlertTriangle size={9} />
+                Danger {place.dangerLevel}/5
+              </span>
+              {place.coordinates && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-white/5 text-white/30">
+                  {place.coordinates[0].toFixed(4)},{" "}
+                  {place.coordinates[1].toFixed(4)}
+                </span>
+              )}
+            </div>
+          </section>
+
+          {/* ── Surveyed tier ── */}
+          <AnimatePresence>
+            {(tier === "surveyed" ||
+              tier === "documented" ||
+              tier === "sealed") && (
+              <motion.section
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Wind size={12} className="text-[#9a8a72]" />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                    Surveyed Depth
+                  </span>
+                </div>
+                <p className="text-sm text-[#b8a99a]/80 leading-relaxed font-light">
+                  {place.history}
+                </p>
+
+                {/* Haunting reports preview (locked) */}
+                {place.hauntingReports && place.hauntingReports.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skull size={12} className="text-red-400/60" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-red-400/60">
+                        Haunting Reports ({place.hauntingReports.length})
+                      </span>
+                    </div>
+                    {place.hauntingReports.map((report, idx) => {
+                      const isUnlocked = unlockedReports.includes(idx);
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded border text-xs leading-relaxed ${
+                            isUnlocked
+                              ? "border-[#9a8a72]/20 bg-[#9a8a72]/5 text-[#b8a99a]"
+                              : "border-white/5 bg-white/[0.02] text-white/20"
+                          }`}
+                        >
+                          {isUnlocked ? (
+                            <>
+                              <span className="text-[9px] font-mono text-[#9a8a72]/50 block mb-1">
+                                REPORT #{String(idx + 1).padStart(2, "0")}
+                              </span>
+                              {report}
+                            </>
+                          ) : (
+                            <span className="font-mono">
+                              {redact(report)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 🔧 FIX: Expedition button moved to SURVEYED tier */}
+                {expedition && tier !== "documented" && tier !== "sealed" && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      if (!spendDust(10)) {
+                        showToast(`Insufficient dust. Need 10% (you have ${getDust()}%). Visit more places.`, "warning");
+                        return;
+                      }
+                      setExpeditionOpen(true);
+                    }}
+                    className="w-full mt-4 py-3 px-4 rounded border border-[#9a8a72]/30 bg-[#9a8a72]/10 text-[#ddd0bc] text-xs font-mono uppercase tracking-wider hover:bg-[#9a8a72]/20 hover:border-[#9a8a72]/50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Flame size={14} />
+                    Begin Expedition (-10 dust)
+                  </motion.button>
+                )}
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          {/* ── Documented tier ── */}
+          <AnimatePresence>
+            {(tier === "documented" || tier === "sealed") && (
+              <motion.section
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText size={12} className="text-[#9a8a72]" />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                    Documented Evidence
+                  </span>
+                </div>
+
+                {/* Signal dossier (unlocked via SignalTab decode) */}
+                {hasSignalDossier && signalDossier && isDossierUnlocked(place.slug) && (
+                  <div className="p-3 rounded border border-amber-900/30 bg-amber-950/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Radio size={12} className="text-amber-500/70" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500/70">
+                        {signalDossier.title}
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-200/60 leading-relaxed font-mono">
+                      {signalDossier.text}
+                    </p>
+                  </div>
+                )}
+
+                {/* Signal decoded but dossier not yet purchased */}
+                {hasSignalDossier && signalDossier && !isDossierUnlocked(place.slug) && (
+                  <div className="p-3 rounded border border-amber-900/20 bg-amber-950/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock size={12} className="text-amber-500/40" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500/40">
+                        {signalDossier.title}
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-200/30 leading-relaxed font-mono mb-3">
+                      {redact(signalDossier.text.slice(0, 60))}...
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (spendDust(20)) {
+                          unlockDossier(place.slug);
+                          // Force re-render
+                          setTier(getPlaceTier(place._id));
+                        } else {
+                          showToast(`Insufficient dust. Need 20% (you have ${getDust()}%).`, "warning");
+                        }
+                      }}
+                      className="w-full py-2 rounded border border-amber-700/30 bg-amber-900/10 text-[10px] font-mono uppercase tracking-wider text-amber-400/70 hover:bg-amber-900/20 hover:border-amber-600/40 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Unlock size={12} />
+                      Decrypt Dossier (-20 dust)
+                    </button>
+                  </div>
+                )}
+
+                {/* If signal dossier exists but signal not yet decoded */}
+                {signalDossier && !hasSignalDossier && (
+                  <div className="p-3 rounded border border-white/5 bg-white/[0.02]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Lock size={12} className="text-white/20" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/20">
+                        Encrypted Dossier
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/10 font-mono">
+                      {redact(
+                        "Awaiting signal authentication. Tune to the frequency associated with this location."
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Seal button */}
+                {tier !== "sealed" && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSeal}
+                    className="w-full py-3 px-4 rounded border border-emerald-900/30 bg-emerald-950/10 text-emerald-200/70 text-xs font-mono uppercase tracking-wider hover:bg-emerald-950/20 hover:border-emerald-800/40 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Shield size={14} />
+                    Seal Record (-5 Dust)
+                  </motion.button>
+                )}
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          {/* ── Sealed tier ── */}
+          <AnimatePresence>
+            {tier === "sealed" && (
+              <motion.section
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="p-4 rounded border border-emerald-900/20 bg-emerald-950/5"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={14} className="text-emerald-500/60" />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-500/60">
+                    Record Sealed
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-200/40 leading-relaxed">
+                  This location has been sealed by BUNKER_7 protocol. All anomalous
+                  activity has been contained and the file is closed. Dust levels
+                  recalibrated.
+                </p>
+              </motion.section>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
 
       {/* Expedition Modal */}
       {expedition && (
         <ExpeditionModal
-          place={place}
-          expedition={expedition}
           isOpen={expeditionOpen}
           onClose={() => setExpeditionOpen(false)}
+          place={place}
+          expedition={expedition}
           onComplete={handleExpeditionComplete}
         />
       )}

@@ -1,3 +1,5 @@
+import { Place } from "@/types";
+
 export interface ExpeditionChoice {
   id: string;
   label: string;
@@ -22,7 +24,13 @@ export interface ExpeditionDef {
   phases: ExpeditionPhase[];
 }
 
-export const EXPEDITIONS: ExpeditionDef[] = [
+/* ═══════════════════════════════════════════
+   CUSTOM / LEGENDARY EXPEDITIONS
+   Hand-written for key places. These override
+   procedural generation.
+   ═══════════════════════════════════════════ */
+
+const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
   {
     placeSlug: "pripyat-amusement-park",
     placeName: "Pripyat Amusement Park",
@@ -316,6 +324,263 @@ export const EXPEDITIONS: ExpeditionDef[] = [
   },
 ];
 
-export function getExpedition(slug: string): ExpeditionDef | undefined {
-  return EXPEDITIONS.find((e) => e.placeSlug === slug);
+/* ═══════════════════════════════════════════
+   PROCEDURAL GENERATOR
+   Builds unique 3-phase expeditions from
+   place metadata. No two places feel the same.
+   ═══════════════════════════════════════════ */
+
+const ADJECTIVES = [
+  "crumbling", "silent", "vast", "narrow", "twisted", "sunken",
+  "overgrown", "frozen", "scorched", "drowned", "forgotten", "hollow",
+];
+
+const ATMOSPHERES = [
+  "The air tastes of rust and old stone.",
+  "A wind you cannot feel moves through the structure.",
+  "The silence has weight, like water pressure.",
+  "Something in the architecture rejects human scale.",
+  "The dust here is not ordinary. It carries memory.",
+  "Every surface holds the temperature of the last hand that touched it.",
+];
+
+const SOUNDS = [
+  "distant machinery",
+  "running water where no water should be",
+  "footsteps on a floor above you",
+  "breathing that is not yours",
+  "static on a dead frequency",
+  "the structural groan of settling concrete",
+];
+
+const DISCOVERIES = [
+  "a door that opens inward",
+  "a photograph with no negative",
+  "a name carved in a language that predates the structure",
+  "a room warmer than the rest",
+  "footprints that enter but do not leave",
+  "a child's toy, impossibly preserved",
+];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function seedRandom(seed: string): () => number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h << 5) - h + seed.charCodeAt(i);
+    h |= 0;
+  }
+  return () => {
+    h = (h * 16807 + 0) % 2147483647;
+    return (h - 1) / 2147483646;
+  };
+}
+
+function generatePhase1(place: Place, rng: () => number): ExpeditionPhase {
+  const adj = ADJECTIVES[Math.floor(rng() * ADJECTIVES.length)];
+  const atm = ATMOSPHERES[Math.floor(rng() * ATMOSPHERES.length)];
+  const sound = SOUNDS[Math.floor(rng() * SOUNDS.length)];
+  const year = place.yearAbandoned ? `since ${place.yearAbandoned}` : "for longer than records show";
+
+  const isHaunted = place.category === "haunted" || place.category === "both";
+  const isAbandoned = place.category === "abandoned" || place.category === "both";
+
+  let narrative = `You approach ${place.name}. The structure has stood ${year}, ${adj} and patient. ${atm} `;
+
+  if (isHaunted) {
+    narrative += `You hear ${sound}. It does not stop when you stop moving. `;
+  } else {
+    narrative += `You hear ${sound}. The building itself is the only thing still awake here. `;
+  }
+
+  narrative += `The ${place.address.city} sky is the color of old television static. You must choose your entry point.`;
+
+  const dustBase = place.dangerLevel * 3;
+  const corruptionBase = place.dangerLevel * 0.04;
+
+  const choices: ExpeditionChoice[] = [
+    {
+      id: "bold",
+      label: "Enter through the main structure",
+      description: isHaunted
+        ? "The front door is open. It has always been open."
+        : "Direct. Exposed. The fastest way in.",
+      dust: dustBase + 5,
+      corruptionRisk: corruptionBase + 0.1,
+      next: 1,
+    },
+    {
+      id: "cautious",
+      label: "Circle to a secondary entrance",
+      description: "Slower. Safer. The dust is thinner on the periphery.",
+      dust: dustBase,
+      corruptionRisk: corruptionBase,
+      next: 1,
+    },
+    {
+      id: "perimeter",
+      label: "Document from the perimeter",
+      description: "No entry. Only observation. The structure watches back.",
+      dust: Math.max(1, dustBase - 3),
+      corruptionRisk: 0,
+      next: 1,
+    },
+  ];
+
+  // 30% chance to add an item drop on the bold choice
+  const categoryItems: Record<string, string[]> = {
+    abandoned: ["rusty-key", "polaroid", "breathing-mask"],
+    haunted: ["exposed-film", "corrupted-drive", "sealed-letter", "breathing-mask"],
+    both: ["rusty-key", "exposed-film", "polaroid", "corrupted-drive", "breathing-mask"],
+  };
+  const pool = categoryItems[place.category] || categoryItems.abandoned;
+  if (rng() > 0.7) {
+    choices[0].itemId = pool[Math.floor(rng() * pool.length)];
+  }
+
+  return { title: "PHASE 1 — Approach", narrative, choices };
+}
+
+function generatePhase2(place: Place, rng: () => number): ExpeditionPhase {
+  const discovery = DISCOVERIES[Math.floor(rng() * DISCOVERIES.length)];
+  const isHaunted = place.category === "haunted" || place.category === "both";
+  const dustBase = place.dangerLevel * 3;
+  const corruptionBase = place.dangerLevel * 0.04;
+  const categoryItems: Record<string, string[]> = {
+    abandoned: ["rusty-key", "polaroid", "breathing-mask"],
+    haunted: ["exposed-film", "corrupted-drive", "sealed-letter", "breathing-mask"],
+    both: ["rusty-key", "exposed-film", "polaroid", "corrupted-drive", "breathing-mask"],
+  };
+  const pool = categoryItems[place.category] || categoryItems.abandoned;
+
+  let narrative = `Inside ${place.name}, the architecture betrays its purpose. `;
+
+  if (place.history) {
+    const sentence = place.history.split(". ")[0];
+    narrative += `${sentence}. `;
+  }
+
+  narrative += `You find ${discovery}. `;
+
+  if (isHaunted && place.hauntingReports && place.hauntingReports.length > 0) {
+    const report = place.hauntingReports[Math.floor(rng() * place.hauntingReports.length)];
+    narrative += `A local account describes: "${report.slice(0, 120)}${report.length > 120 ? "..." : ""}" `;
+  }
+
+  narrative += `The ${place.address.country} air has gone still. You must decide what to do with what you have found.`;
+
+  const choices: ExpeditionChoice[] = [
+    {
+      id: "document",
+      label: "Document and record",
+      description: "Evidence without contamination. The archivist's way.",
+      dust: dustBase + 2,
+      corruptionRisk: corruptionBase,
+      next: 2,
+    },
+    {
+      id: "collect",
+      label: "Collect a sample",
+      description: "Take something with you. The dust will remember.",
+      dust: dustBase + 8,
+      corruptionRisk: corruptionBase + 0.15,
+      itemId: pool[Math.floor(rng() * pool.length)],
+      next: 2,
+    },
+  ];
+
+  // Unlock a report if haunted and has reports
+  if (isHaunted && place.hauntingReports && place.hauntingReports.length > 0) {
+    choices[0].unlocksReportIndex = Math.floor(rng() * place.hauntingReports.length);
+  }
+
+  // Danger 4-5 places get a third "push deeper" option
+  if (place.dangerLevel >= 4) {
+    choices.push({
+      id: "push",
+      label: "Push deeper into the structure",
+      description: "The building has not shown you everything yet.",
+      dust: dustBase + 15,
+      corruptionRisk: corruptionBase + 0.25,
+      next: 2,
+    });
+  }
+
+  return { title: "PHASE 2 — Encounter", narrative, choices };
+}
+
+function generatePhase3(place: Place, rng: () => number): ExpeditionPhase {
+  const isHaunted = place.category === "haunted" || place.category === "both";
+  const dustBase = place.dangerLevel * 3;
+  const corruptionBase = place.dangerLevel * 0.04;
+
+  let narrative = `The expedition at ${place.name} reaches its threshold. `;
+
+  if (isHaunted) {
+    narrative += `The boundary between your presence and the structure's memory has thinned. You are no longer certain which of you is the intruder. `;
+  } else {
+    narrative += `The structural integrity is failing around you. Dust falls in patterns that suggest recent disturbance. You are not the first to document this place, but you may be the last to leave. `;
+  }
+
+  narrative += `The ${place.address.city} horizon waits. You must choose whether to stay or go.`;
+
+  const choices: ExpeditionChoice[] = [
+    {
+      id: "extract",
+      label: "Extract now",
+      description: "Live to archive another day.",
+      dust: dustBase,
+      corruptionRisk: 0,
+      next: "extract",
+    },
+    {
+      id: "stay",
+      label: "Remain for final documentation",
+      description: "Ten more minutes. The dust settles slowly here.",
+      dust: dustBase + 10,
+      corruptionRisk: corruptionBase + 0.2,
+      next: "extract",
+    },
+  ];
+
+  // High danger haunted places get a "confront" option
+  if (isHaunted && place.dangerLevel >= 4) {
+    choices.push({
+      id: "confront",
+      label: "Address whatever is here",
+      description: "'Hello?' The oldest mistake.",
+      dust: dustBase + 20,
+      corruptionRisk: corruptionBase + 0.4,
+      itemId: "sealed-letter",
+      next: "extract",
+    });
+  }
+
+  return { title: "PHASE 3 — Extraction", narrative, choices };
+}
+
+function generateExpedition(place: Place): ExpeditionDef {
+  const rng = seedRandom(place.slug + place._id);
+  return {
+    placeSlug: place.slug,
+    placeName: place.name,
+    type: place.category,
+    phases: [
+      generatePhase1(place, rng),
+      generatePhase2(place, rng),
+      generatePhase3(place, rng),
+    ],
+  };
+}
+
+/* ═══════════════════════════════════════════
+   PUBLIC API
+   ═══════════════════════════════════════════ */
+
+export function getExpedition(place: Place): ExpeditionDef {
+  const custom = CUSTOM_EXPEDITIONS.find((e) => e.placeSlug === place.slug);
+  if (custom) return custom;
+  return generateExpedition(place);
 }

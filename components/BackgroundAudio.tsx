@@ -112,6 +112,7 @@ export default function BackgroundAudio() {
       </div>
 
       <button
+      aria-label={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
         onClick={toggleMute}
         className="fixed bottom-16 right-6 z-[9999] flex items-center gap-2 px-3 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.2)] rounded-lg text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] hover:text-[#c4b8a4] hover:border-[rgba(122,107,82,0.4)] transition-all shadow-lg"
         title={enabled ? "Mute atmosphere" : "Unmute atmosphere"}

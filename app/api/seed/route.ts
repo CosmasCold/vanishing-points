@@ -118,7 +118,7 @@ const SEED_DATA = [
       formatted: "Chernobyl-2, Kyiv Oblast, Ukraine",
     },
     yearAbandoned: 1989,
-    history: `NATO called it the Russian Woodpecker — a sharp, repetitive tapping that interfered with shortwave radios worldwide throughout the 1970s and 80s. The source was a massive over-the-horizon radar built to detect American missile launches, concealed in a classified settlement near Chernobyl. Two arrays, each 150 meters tall and 500 meters long, constructed of rusting steel lattice and cantilevered against the sky. The settlement that housed its 1,000 operators and families was erased from maps. After the 1986 disaster, the radar operated for three more years before abandonment. The steel groans in wind. The control rooms hold logbooks open to dates in 1986. The tapping has stopped, but the structure remains, a cathedral of paranoia.`,
+    history: `NATO called it the Russian Woodpecker — a sharp, repetitive tapping that interfered with shortwave radios worldwide throughout the 1970s and 80s. The source was a massive over-the-horizon radar built to detect American missile launches, concealed in a classified settlement near Chernobyl. Two arrays, each 150 meters tall and 500 meters long, constructed of rusting steel lattice and cantilevered against the sky. The settlement that housed its 1,000 operators and families was erased from maps. After the 1986 disaster, the radar operated for three more years before abandonment. The steel groans in wind. The control rooms hold logbooks open to dates in 1986. The tapping has stopped. BUNKER_7 analysts believe the "radar" narrative was cover. The array's pulse pattern matches no known Soviet telemetry. Some frequencies were counting down to something. The count was interrupted in 1989, not concluded.`,
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
@@ -218,7 +218,7 @@ const SEED_DATA = [
       formatted: "Hashima Island, Nagasaki Prefecture, Japan",
     },
     yearAbandoned: 1974,
-    history: `They called it Gunkanjima — Battleship Island — for its silhouette against the East China Sea. From 1887 to 1974, Mitsubishi operated a coal mine here, cramming 5,259 residents onto 16 acres until it was the highest population density on Earth. Concrete apartment blocks rose ten stories without elevators. There was a school, a hospital, a cinema, a pachinko parlor, all built on a reef with no soil, no agriculture, no escape. When oil replaced coal in 1974, the mine closed overnight. The ferries stopped. The island emptied in weeks. The seawalls now crumble into typhoon surf. Windows stand open to salt air. A single persimmon tree, planted by a miner in 1920, still fruits every autumn for no one.`,
+    history: `They called it Gunkanjima — Battleship Island — for its silhouette against the East China Sea. From 1887 to 1974, Mitsubishi operated a coal mine here, cramming 5,259 residents onto 16 acres until it was the highest population density on Earth. Concrete apartment blocks rose ten stories without elevators. There was a school, a hospital, a cinema, a pachinko parlor, all built on a reef with no soil, no agriculture, no escape. When oil replaced coal in 1974, the mine closed overnight. The ferries stopped. The island emptied in weeks. The seawalls now crumble into typhoon surf. Windows stand open to salt air. A single persimmon tree, planted by a miner in 1920, still fruits every autumn for no one. Since 1987, shortwave listeners have reported a numbers station broadcasting from the island's coordinates — a voice counting backward in a language that has not been identified.`,
     hauntingReports: [],
     dangerLevel: 4,
     photos: [
@@ -301,6 +301,7 @@ const SEED_DATA = [
       "The bell tower, stripped of its bell in 1950, produces a low tolling during autumn fog.",
       "Figures in 18th-century plague doctor masks have been photographed on the shore at twilight.",
       "Visitors who have landed illegally describe a persistent sensation of being herded toward the island's center, where the ash pits are deepest.",
+      "Paranormal investigators report full-spectrum radio static emanating from the bell tower on frequencies between 4.50 and 21.00 MHz. The static forms rhythmic patterns resembling Morse code. No transmitter has been found.",
     ],
     dangerLevel: 4,
     photos: [

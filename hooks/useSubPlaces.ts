@@ -8,6 +8,7 @@ export function useSubPlaces(dust: number, inventory: string[], redeemedCodes: s
   const [current, setCurrent] = useState<SubPlace | null>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const saved = JSON.parse(localStorage.getItem("vp-subplaces-entered") || "[]");
     setEntered(saved);
   }, []);
@@ -17,6 +18,7 @@ export function useSubPlaces(dust: number, inventory: string[], redeemedCodes: s
   const enter = useCallback(
     (subPlace: SubPlace) => {
       setCurrent(subPlace);
+      if (typeof window === "undefined") return;
       if (!entered.includes(subPlace.id)) {
         const next = [...entered, subPlace.id];
         setEntered(next);

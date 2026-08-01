@@ -6,6 +6,7 @@ export function useKeystrokeAudio() {
   const ctxRef = useRef<AudioContext | null>(null);
 
   const getCtx = () => {
+    if (typeof window === "undefined") return null;
     if (!ctxRef.current) {
       ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
@@ -13,8 +14,9 @@ export function useKeystrokeAudio() {
   };
 
   const playClick = useCallback(() => {
+    const ctx = getCtx();
+    if (!ctx) return;
     try {
-      const ctx = getCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "square";
@@ -29,9 +31,9 @@ export function useKeystrokeAudio() {
   }, []);
 
   const playWrong = useCallback(() => {
+    const ctx = getCtx();
+    if (!ctx) return;
     try {
-      const ctx = getCtx();
-      // White noise burst
       const bufferSize = ctx.sampleRate * 0.15;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -44,7 +46,6 @@ export function useKeystrokeAudio() {
       gain.gain.setValueAtTime(0.04, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
 
-      // Low drone underneath
       const osc = ctx.createOscillator();
       osc.type = "sine";
       osc.frequency.setValueAtTime(50 + Math.random() * 30, ctx.currentTime);

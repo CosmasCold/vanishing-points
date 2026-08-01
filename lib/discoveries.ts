@@ -14,6 +14,10 @@ export function addDiscovery(d: {
   description: string;
   coordinates?: string;
 }): PlayerDiscovery {
+  if (typeof window === "undefined") {
+    return { ...d, id: "discovery-0", date: new Date().toISOString(), dustReward: 15 };
+  }
+  
   const discoveries = getDiscoveries();
   const newDiscovery: PlayerDiscovery = {
     ...d,

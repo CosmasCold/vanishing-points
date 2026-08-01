@@ -33,6 +33,8 @@ export function logPlayerCommand(cmd: string) {
 }
 
 export function getProceduralGhostLines(): string[] {
+  if (typeof window === "undefined") return ["The static is waiting."];
+  
   const mem = getCommandMemory();
   const dust = localStorage.getItem("vp-dust-accumulation") || "0";
   const hours = Math.floor((Date.now() - (mem.lastVisit || Date.now())) / 3600000);
@@ -60,6 +62,10 @@ export function getProceduralGhostLines(): string[] {
 }
 
 export function getMemoryBasedOtherResponse(cmd: string): string[] {
+  if (typeof window === "undefined") {
+    return ["The static carries meaning.", "You are not alone in this channel."];
+  }
+
   const mem = getCommandMemory();
   const dust = localStorage.getItem("vp-dust-accumulation") || "0";
 

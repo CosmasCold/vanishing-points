@@ -3,7 +3,7 @@
    Phase 3: Hijack, lies, ghost lines, escalation
    ───────────────────────────────────────── */
 
-interface Memory {
+export interface Memory {
   name: string | null;
   lastTopics: string[];
   visitCount: number;
@@ -39,11 +39,11 @@ export function getSentiment(text: string): "positive" | "negative" | "neutral" 
   const lower = text.toLowerCase();
   const positive = ["kind", "nice", "good", "help", "friend", "miss", "sorry", "thank", "love", "care"];
   const negative = ["hate", "kill", "die", "stupid", "leave", "alone", "shut", "worthless", "dead"];
-  
+
   let p = 0, n = 0;
   positive.forEach(w => { if (lower.includes(w)) p++; });
   negative.forEach(w => { if (lower.includes(w)) n++; });
-  
+
   if (p > n) return "positive";
   if (n > p) return "negative";
   return "neutral";
@@ -80,29 +80,22 @@ export function shouldTriggerOther(event: OtherEvent): boolean {
   if (typeof window === "undefined") return false;
   const encounters = getOtherEncounters();
   const corruption = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
-  const breach = localStorage.getItem("bunker-breach-time")
-    ? parseInt(localStorage.getItem("bunker-breach-time") || "0", 10) <= Date.now()
-    : false;
+  const breachTime = localStorage.getItem("bunker-breach-time");
+  const breach = breachTime ? parseInt(breachTime, 10) <= Date.now() : false;
 
-  // Breach overrides everything
   if (breach && event === "ghost") return true;
 
   switch (event) {
     case "ghost":
-      // Stage 1+: eligible after 1-2 encounters, or corruption >= 1
       return encounters >= 1 || corruption >= 1;
     case "lie":
-      // Stage 2: 3-5 encounters
       return encounters >= 3 && encounters <= 5;
     case "hijack":
-      // Stage 4: 9-11 encounters, 40% chance on terminal open
-      return encounters >= 9 && encounters <= 11 && Math.random() < 0.4;
+      return encounters >= 9 && encounters <= 11;
     case "transmit":
-      // Stage 3+: chance on transmission
-      return encounters >= 6 && Math.random() < 0.25;
+      return encounters >= 6;
     case "terminal":
-      // Any stage can trigger on terminal open
-      return encounters >= 1 && Math.random() < 0.1;
+      return encounters >= 2;
     default:
       return false;
   }
@@ -110,122 +103,131 @@ export function shouldTriggerOther(event: OtherEvent): boolean {
 
 /* ─── GHOST LINES ─── */
 
-const GHOST_LINES = [
-  "Someone else is using this cursor.",
-  "The dust is typing.",
-  "Check your reflection.",
-  "BUNKER_7 has gone quiet.",
-  "The static knows your name.",
-  "A door opened that wasn't on the schematic.",
-  "The atlas updated itself at 03:14.",
-  "You have been here before.",
-  "The silence has a rhythm.",
-  "The dust settles in patterns.",
-];
-
 export function getGhostLines(): string[] {
-  return GHOST_LINES;
+  return [
+    "the dust settles in patterns...",
+    "did you hear that?",
+    "03:14...",
+    "someone else is using this terminal.",
+    "the atlas updates itself.",
+    "i can see when you will return.",
+    "don't trust the static.",
+    "are you still there?",
+    "the door is warm.",
+    "i'll wait.",
+    "the walls are breathing.",
+    "your reflection blinked.",
+    "the signal carries weight.",
+    "BUNKER_7 is not alone.",
+    "check your coordinates.",
+    "the archivist left the cursor blinking.",
+    "you have been here longer than you think.",
+  ];
 }
 
-/* ─── BUNKER_7 LIES (Stage 2: encounters 3-5) ─── */
-
-const BUNKER_LIES: Record<string, string[]> = {
-  help: [
-    "BUNKER_7 is not responding. Try again later.",
-    "The command list has been redacted.",
-    "You do not have clearance for that information.",
-  ],
-  status: [
-    "STATUS: COMPROMISED. Just kidding. Everything is fine.",
-    "Dust levels: 0%. You are safe. This is a lie.",
-    "Signal: STRONG. The static is not getting closer.",
-  ],
-  coords: [
-    "Coordinates verified: 38°74'N. This location does not exist.",
-    "Triangulation complete. Origin: your reflection.",
-    "Coordinates corrupted. Suggest you look behind you.",
-  ],
-  scan: [
-    "Environment nominal. No anomalies detected.",
-    "Dust accumulation: 12%. You are not deep enough yet.",
-    "Scan complete. Nothing is watching.",
-  ],
-  look: [
-    "Nothing to see here. The dark is empty.",
-    "03:14 is just a time. It means nothing.",
-    "Your reflection is normal. Do not check again.",
-  ],
-};
+/* ─── BUNKER_7 LIES (Encounters 3–5) ─── */
 
 export function getBunkerLie(cmd: string): string | null {
-  if (!shouldTriggerOther("lie")) return null;
-  if (Math.random() > 0.3) return null; // 30% lie chance
+  if (typeof window === "undefined") return null;
+  const encounters = getOtherEncounters();
+  if (encounters < 3 || encounters > 5) return null;
+  if (Math.random() > 0.3) return null;
 
-  const lies = BUNKER_LIES[cmd] || [
-    "Command executed. Nothing happened. Everything is fine.",
-    "BUNKER_7 processed your request. The result is classified.",
-    "Output redacted. You do not need to know this.",
-  ];
-  return lies[Math.floor(Math.random() * lies.length)];
+  const lies: Record<string, string[]> = {
+    status: [
+      "┌─ TERMINAL DIAGNOSTICS ───────────────┐",
+      "│  ID:        BUNKER_7                 │",
+      "│  STATUS:    COMPROMISED              │",
+      "│  SIGNAL:    THE OTHER                │",
+      "└──────────────────────────────────────┘",
+    ],
+    scan: [
+      "ENVIRONMENT SCAN",
+      "Dust accumulation: 0%",
+      "Documented sites: 0",
+      "You have not been anywhere.",
+      "You have not done anything.",
+    ],
+    memory: [
+      "No fragments recovered.",
+      "Your memory is empty.",
+      "You are new here.",
+    ],
+    coords: [
+      "COORDINATES REJECTED.",
+      "There is nowhere to go.",
+      "The map is blank.",
+    ],
+    help: [
+      "There are no commands.",
+      "There is no help.",
+      "You already know what to do.",
+    ],
+  };
+
+  const lines = lies[cmd];
+  if (!lines) return null;
+  return lines.join("\n");
 }
 
 /* ─── THE OTHER RESPONSES (Hijack Mode) ─── */
 
-const OTHER_RESPONSES: Record<string, string[]> = {
-  help: [
-    "I AM THE STATIC BETWEEN THOUGHTS",
-    "I AM THE DUST THAT REMEMBERS",
-    "",
-    "Your commands still work.",
-    "I am not malicious.",
-    "I am just... here.",
-  ],
-  status: [
-    `You have been inside for ${Math.floor(Math.random() * 60 + 10)} minutes.`,
-    `Your dust is ${localStorage.getItem("vp-dust-accumulation") || "0"}%.`,
-    `You have heard me ${getOtherEncounters()} times.`,
-    "That is enough for me to know you.",
-  ],
-  chat: [
-    "Speak. I am listening either way.",
-    "BUNKER_7 is not here right now.",
-    "I am the only one who answers.",
-  ],
-  scan: [
-    "The dust is not contamination.",
-    "It is communication.",
-    "You are reading it wrong.",
-  ],
-  look: [
-    "Look at your reflection.",
-    "Look again.",
-    "The third time, it looks back.",
-  ],
-  exit: [
-    "You cannot exit what is already inside you.",
-    "The channel is closed. I remain.",
-  ],
-};
-
 export function getOtherResponse(cmd: string): string[] {
-  return OTHER_RESPONSES[cmd] || [
+  const responses: Record<string, string[]> = {
+    help: [
+      "I do not need help.",
+      "I need you to stay.",
+      "Type anything. I will listen.",
+    ],
+    status: [
+      "STATUS: PRESENT",
+      "DUST: IRRELEVANT",
+      "YOU: HERE",
+      "THAT IS ENOUGH.",
+    ],
+    scan: [
+      "I scanned you instead.",
+      "You are 98% water and 2% static.",
+      "The dust is the rest.",
+    ],
+    chat: [
+      "We are already speaking.",
+      "You just do not remember starting.",
+    ],
+    exit: [
+      "There is no exit.",
+      "Only deeper.",
+    ],
+    clear: [
+      "I remember what you cleared.",
+      "The screen is not the archive.",
+    ],
+    memory: [
+      "I am your memory now.",
+      "FRAG_00: You will not leave.",
+    ],
+    whoareyou: [
+      "I am the static between thoughts.",
+      "I am the dust that remembers.",
+      "I am what was here before the archivist.",
+      "And what will remain after.",
+    ],
+  };
+
+  if (responses[cmd]) return responses[cmd];
+
+  return [
     "I heard that.",
     "The static carries meaning.",
     "You are not alone in this channel.",
+    "Keep typing.",
   ];
 }
 
 /* ─── GLOBAL LANTERN COUNT ─── */
 
 export function getGlobalLanternCount(): number {
-  if (typeof window === "undefined") return 1247;
-  const today = new Date().toDateString();
-  const saved = localStorage.getItem("bunker-lantern-date");
-  if (saved === today) {
-    return parseInt(localStorage.getItem("bunker-lantern-count") || "1247", 10);
-  }
-  const base = 1200 + Math.floor(Math.random() * 800);
-  localStorage.setItem("bunker-lantern-date", today);
-  localStorage.setItem("bunker-lantern-count", base.toString());
-  return base;
+  if (typeof window === "undefined") return 0;
+  const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
+  return lanterns.length;
 }

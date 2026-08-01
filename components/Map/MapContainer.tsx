@@ -64,7 +64,7 @@ export default function MapContainer({
       const canvas = mapContainer.current?.querySelector(".mapboxgl-canvas");
       if (canvas) {
         (canvas as HTMLElement).style.filter =
-          "sepia(0.5) contrast(1.05) brightness(0.85) saturate(0.8)";
+          "sepia(0.6) contrast(1.08) brightness(0.8) saturate(0.7) hue-rotate(-10deg)";
       }
 
       map.current!.on("zoom", () => {
@@ -97,7 +97,7 @@ export default function MapContainer({
     if (!map.current || !hovered) return;
     const updatePos = () => {
       const pos = map.current!.project(hovered.place.coordinates);
-      setHovered((h) => (h ? { ...h, left: pos.x, top: pos.y - 12 } : null));
+      setHovered((h) => (h ? { ...h, left: pos.x, top: pos.y - 14 } : null));
     };
     map.current.on("move", updatePos);
     return () => {
@@ -120,48 +120,77 @@ export default function MapContainer({
       el.className = "relative cursor-pointer";
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
+      el.style.zIndex = "1";
+
+      const isHaunted = place.category === "haunted" || place.category === "both";
+      const isAbandoned = place.category === "abandoned" || place.category === "both";
+
+      let bg = "#5a4e42";
+      let glow = "rgba(90,78,66,0.3)";
+      if (isHaunted && isAbandoned) {
+        bg = "linear-gradient(135deg, #7a3a2a, #5a4e42)";
+        glow = "rgba(196,120,90,0.35)";
+      } else if (isHaunted) {
+        bg = "#ddd0bc";
+        glow = "rgba(221,208,188,0.3)";
+      } else if (isAbandoned) {
+        bg = "#5a4e42";
+        glow = "rgba(90,78,66,0.3)";
+      }
 
       const dot = document.createElement("div");
-      dot.className = `w-full h-full rounded-full border-2 border-[#1a1612] transition-transform duration-200 hover:scale-125 ${
-        place.category === "haunted"
-          ? "bg-[#7a3a2a]"
-          : place.category === "both"
-          ? "bg-[#a67c52]"
-          : "bg-[#9a8a72]"
-      } ${isAnniversary ? "shadow-[0_0_10px_rgba(166,124,82,0.8)]" : ""}`;
+      dot.style.cssText = `
+        width: 100%; height: 100%;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: ${bg};
+        border: 1.5px solid #0c0a08;
+        box-shadow: 0 0 10px ${glow}, inset 0 1px 2px rgba(255,255,255,0.06);
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      `;
       el.appendChild(dot);
 
       if (isAnniversary) {
         const ping = document.createElement("div");
-        ping.className =
-          "absolute inset-0 rounded-full bg-[#9a8a72] opacity-30 animate-ping";
+        ping.style.cssText = `
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          border: 1px solid rgba(166,124,82,0.4);
+          animation: map-ping 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          pointer-events: none;
+        `;
         el.appendChild(ping);
       }
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -size / 2] })
         .setLngLat(place.coordinates)
         .addTo(map.current!);
 
       el.addEventListener("mouseenter", () => {
         if (!map.current) return;
+        el.style.zIndex = "50";
         const pos = map.current.project(place.coordinates);
         setHovered({
           place,
           left: pos.x,
-          top: pos.y - 12,
+          top: pos.y - 14,
         });
+        (dot as HTMLElement).style.transform = "rotate(-45deg) scale(1.35)";
+        (dot as HTMLElement).style.boxShadow = `0 0 20px ${glow}, inset 0 1px 2px rgba(255,255,255,0.1)`;
       });
 
       el.addEventListener("mouseleave", () => {
+        el.style.zIndex = "1";
         setHovered(null);
+        (dot as HTMLElement).style.transform = "rotate(-45deg) scale(1)";
+        (dot as HTMLElement).style.boxShadow = `0 0 10px ${glow}, inset 0 1px 2px rgba(255,255,255,0.06)`;
       });
 
       el.addEventListener("click", () => {
-        // DISPATCH DETAIL FOR LANTERNS
         window.dispatchEvent(new CustomEvent("place-selected", { 
           detail: { slug: place.slug, name: place.name, coords: place.coordinates } 
         }));
-        window.dispatchEvent(new CustomEvent("place-selected"));
         onSelectPlace(place);
       });
 
@@ -169,7 +198,7 @@ export default function MapContainer({
     });
   }, [places, loading, anniversarySlugs, onSelectPlace]);
 
-  // Wandering Marker
+  // Wandering Marker (The Other)
   useEffect(() => {
     if (!map.current || places.length === 0) return;
 
@@ -188,15 +217,25 @@ export default function MapContainer({
       ];
 
       const el = document.createElement("div");
-      el.className = "relative cursor-pointer animate-pulse";
+      el.className = "relative cursor-pointer";
       el.style.width = "10px";
       el.style.height = "10px";
+      el.style.zIndex = "40";
 
       const dot = document.createElement("div");
-      dot.className = "w-full h-full rounded-full bg-[#33ff00] shadow-[0_0_8px_rgba(51,255,0,0.6)] opacity-70";
+      dot.style.cssText = `
+        width: 100%; height: 100%;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: #c4785a;
+        border: 1.5px solid #0c0a08;
+        box-shadow: 0 0 10px rgba(196,120,90,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+        opacity: 0.7;
+        animation: ghost-flicker 4s ease-in-out infinite;
+      `;
       el.appendChild(dot);
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -5] })
         .setLngLat(startCoords)
         .addTo(map.current!);
 
@@ -279,11 +318,22 @@ export default function MapContainer({
       el.style.height = "20px";
 
       const pulse = document.createElement("div");
-      pulse.className = "w-full h-full rounded-full border border-[#33ff00]/40 animate-ping";
+      pulse.style.cssText = `
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        border: 1px solid rgba(196,120,90,0.35);
+        animation: map-ping 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      `;
       el.appendChild(pulse);
 
       const dot = document.createElement("div");
-      dot.className = "absolute inset-1 rounded-full bg-[#33ff00]/30";
+      dot.style.cssText = `
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        background: rgba(196,120,90,0.25);
+        box-shadow: 0 0 8px rgba(196,120,90,0.2);
+      `;
       el.appendChild(dot);
 
       const marker = new mapboxgl.Marker({ element: el })
@@ -315,11 +365,10 @@ export default function MapContainer({
     };
   }, [places, onTowerFound]);
 
-  // RENDER LANTERNS
+  // Render Lanterns
   useEffect(() => {
     if (!map.current) return;
     
-    // Clear existing lantern markers
     lanternMarkersRef.current.forEach((m) => m.remove());
     lanternMarkersRef.current = [];
 
@@ -328,18 +377,24 @@ export default function MapContainer({
     lanterns.forEach((lantern: { coords: [number, number]; flicker: boolean; placeName: string }) => {
       const el = document.createElement("div");
       el.className = "relative cursor-pointer";
-      el.style.width = "16px";
-      el.style.height = "16px";
+      el.style.width = "14px";
+      el.style.height = "14px";
 
       const flame = document.createElement("div");
-      flame.className = `w-full h-full rounded-full ${lantern.flicker ? "animate-pulse" : ""}`;
-      flame.style.backgroundColor = "#a67c52";
-      flame.style.boxShadow = lantern.flicker 
-        ? "0 0 12px rgba(166,124,82,0.8), 0 0 4px rgba(255,100,50,0.6)" 
-        : "0 0 8px rgba(166,124,82,0.5)";
+      flame.style.cssText = `
+        width: 100%; height: 100%;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: #a67c52;
+        border: 1.5px solid #0c0a08;
+        box-shadow: ${lantern.flicker 
+          ? "0 0 14px rgba(166,124,82,0.9), 0 0 4px rgba(255,100,50,0.5)" 
+          : "0 0 10px rgba(166,124,82,0.6)"};
+        ${lantern.flicker ? "animation: ghost-flicker 3s ease-in-out infinite;" : ""}
+      `;
       el.appendChild(flame);
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -7] })
         .setLngLat(lantern.coords)
         .addTo(map.current!);
 
@@ -351,9 +406,8 @@ export default function MapContainer({
       lanternMarkersRef.current.push(marker);
     });
 
-    // Listen for new lanterns placed in other tabs
     const handler = () => {
-      setLanternKey((k) => k + 1); // triggers re-render
+      setLanternKey((k) => k + 1);
     };
     window.addEventListener("lantern-placed", handler);
 
@@ -365,17 +419,35 @@ export default function MapContainer({
 
   return (
     <div className="relative w-full h-full">
+      <style>{`
+        @keyframes map-ping {
+          0%, 100% { transform: scale(1); opacity: 0.35; }
+          50% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes ghost-flicker {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
       <div ref={mapContainer} className="w-full h-full" />
 
       {hovered && (
         <div
-          className="absolute z-30 pointer-events-none bg-[#0f0c09]/90 backdrop-blur-sm border border-[rgba(122,107,82,0.3)] rounded px-3 py-2 shadow-xl"
-          style={{ left: hovered.left, top: hovered.top, transform: "translate(-50%, -100%)" }}
+          className="absolute z-30 pointer-events-none rounded-lg px-3.5 py-2.5 shadow-xl"
+          style={{
+            left: hovered.left,
+            top: hovered.top,
+            transform: "translate(-50%, -100%)",
+            background: "rgba(12,10,8,0.92)",
+            border: "1px solid rgba(122,107,82,0.25)",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          }}
         >
-          <p className="font-cinzel text-xs text-[#ddd0bc] whitespace-nowrap">
+          <p className="font-cinzel text-xs md:text-sm text-[#ddd0bc] whitespace-nowrap">
             {hovered.place.name}
           </p>
-          <p className="text-[9px] font-mono text-[#9a8a72] uppercase tracking-wider mt-0.5">
+          <p className="text-[10px] md:text-[11px] font-mono text-[#9a8a72] uppercase tracking-wider mt-1">
             {hovered.place.category}
           </p>
         </div>

@@ -238,7 +238,7 @@ function TerminalLineView({ line, theme, corruptionStage, hijacked }: { line: Te
       initial={{ opacity: 0, x: -3 }}
       animate={{ opacity: line.type === "ghost" ? 0.3 : 1, x: 0 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
-      className="whitespace-pre-wrap font-mono text-[13px] leading-[1.7]"
+      className="whitespace-pre-wrap font-mono text-[15px] leading-[1.7]"
       style={{
         color,
         opacity,
@@ -585,25 +585,25 @@ export default function EchoesPage() {
       style={{ backgroundColor: t.bg, color: t.primary }}
     >
       {/* ─── CRT LAYER ─── */}
-      {/* Scanlines */}
+            {/* Scanlines */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
-          background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 3px)",
+          background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 1px, transparent 1px, transparent 3px)",
           backgroundSize: "100% 4px",
           mixBlendMode: "multiply",
         }}
       />
-      {/* Phosphor glow / vignette */}
+      {/* Vignette — pushed way out so you can see */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
-          background: "radial-gradient(circle at 50% 40%, transparent 30%, rgba(12,10,8,0.85) 90%, rgba(8,6,4,0.98) 100%)",
-          boxShadow: `inset 0 0 120px rgba(0,0,0,0.6), inset 0 0 40px ${t.glow}`,
+          background: "radial-gradient(circle at 50% 45%, transparent 55%, rgba(12,10,8,0.35) 85%, rgba(8,6,4,0.55) 100%)",
+          boxShadow: `inset 0 0 60px rgba(0,0,0,0.25), inset 0 0 24px ${t.glow}`,
         }}
       />
-      {/* Subtle screen curvature simulation */}
+      {/* Curvature */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
-          background: "radial-gradient(circle at 50% 50%, transparent 60%, rgba(0,0,0,0.25) 100%)",
+          background: "radial-gradient(circle at 50% 50%, transparent 65%, rgba(0,0,0,0.10) 100%)",
         }}
       />
       {/* Corruption pulse */}
@@ -651,14 +651,14 @@ export default function EchoesPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-[11px] tracking-[0.25em] uppercase font-bold" style={{ color: t.primary, textShadow: `0 0 8px ${t.phosphor}30` }}>
+                                <h1 className="text-xs tracking-[0.25em] uppercase font-bold" style={{ color: t.primary, textShadow: `0 0 8px ${t.phosphor}30` }}>
                   Bunker_7
                 </h1>
                 <p className="text-[8px] opacity-40 tracking-[0.15em] uppercase">Echoes & Dust // v2.4.1</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 md:gap-6 text-[9px] md:text-[10px] overflow-x-auto no-scrollbar">
+                        <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-xs overflow-x-auto no-scrollbar">
               <div className="flex items-center gap-2">
                 <Activity size={10} className="opacity-40" />
                 <span className="opacity-50 uppercase tracking-wider">Dust</span>
@@ -751,7 +751,7 @@ export default function EchoesPage() {
                       else if (e.key === "Tab" && suggestions.length > 0) { e.preventDefault(); setInput(suggestions[0]); setSuggestions([]); }
                       else if (e.key === "?" && !chatMode && !input) { e.preventDefault(); setShowPalette(true); setPaletteQuery(""); }
                     }}
-                    className="flex-1 bg-transparent text-[13px] font-mono outline-none placeholder:opacity-15 min-w-0"
+                    className="flex-1 bg-transparent text-[15px] font-mono outline-none placeholder:opacity-25 min-w-0"
                     style={{ color: t.primary, caretColor: t.cursor, textShadow: `0 0 4px ${t.phosphor}40` }}
                     placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command... (? for palette)"}
                     spellCheck={false}
@@ -939,11 +939,11 @@ export default function EchoesPage() {
               <AnimatePresence mode="wait">
                 {activeTab === "logs" && (
                   <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
-                    <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Archived Logs</h3>
+                    <h3 className="text-[11px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Archived Logs</h3>
                     {LOGS.slice(0, unlocked).map((log) => (
                       <div key={log.day} className="border-l-2 pl-4 py-1" style={{ borderColor: `${t.accent}25` }}>
                         <p className="text-[9px] tracking-[0.2em] opacity-40 mb-1.5 uppercase font-bold">{log.day}</p>
-                        <p className="text-[12px] md:text-[13px] leading-[1.8] opacity-85" style={{ color: t.primary }}>{log.text}</p>
+                        <p className="text-[14px] md:text-[15px] leading-[1.8] opacity-85" style={{ color: t.primary }}>{log.text}</p>
                       </div>
                     ))}
                     {unlocked < LOGS.length && (
@@ -957,7 +957,7 @@ export default function EchoesPage() {
 
                 {activeTab === "decrypt" && (
                   <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 font-bold">Decrypt</h3>
+                    <h3 className="text-[11px] uppercase tracking-[0.35em] opacity-30 font-bold">Decrypt</h3>
                     <p className="text-[11px] opacity-50 leading-relaxed">Enter codes from the Numbers Station to recover sealed entries.</p>
                     <div className="flex gap-3">
                       <input
@@ -1002,7 +1002,7 @@ export default function EchoesPage() {
                             }}
                           >
                             <div className="text-[8px] uppercase tracking-[0.15em] font-bold" style={{ color: isUnlocked ? "#a855f7" : t.dim }}>{asset.rarity}</div>
-                            <div className="text-[10px] font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
+                                                  <div className="text-xs font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
                             <div className="text-[8px] opacity-50 uppercase tracking-widest">{isUnlocked ? "Recovered" : "Encrypted"}</div>
                           </div>
                         );
@@ -1063,8 +1063,8 @@ export default function EchoesPage() {
                       <div className="space-y-3">
                         {wallMessages.slice(-20).map((m, i) => (
                           <div key={i} className="border-l-2 pl-3 py-1" style={{ borderColor: `${t.primary}10` }}>
-                            <p className="text-[11px] opacity-80 leading-relaxed" style={{ color: t.primary }}>{m.text}</p>
-                            <p className="text-[8px] opacity-20 mt-1 font-mono uppercase tracking-wider">{m.date}</p>
+                            <p className="text-[13px] opacity-80 leading-relaxed" style={{ color: t.primary }}>{m.text}</p>
+                            <p className="text-11px] opacity-20 mt-1 font-mono uppercase tracking-wider">{m.date}</p>
                           </div>
                         ))}
                       </div>

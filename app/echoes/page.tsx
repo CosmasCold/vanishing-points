@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Radio, Terminal, Play, Lock, Image, BookOpen, Shield, Zap,
   ArrowLeft, MessageSquare, Target, Activity, Clock, ChevronRight,
-  HelpCircle, Eye, X,
+  HelpCircle, Eye, X, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import VideoModal from "@/components/VideoModal";
@@ -44,6 +44,9 @@ import { getSubPlaceById } from "@/lib/subPlaces";
 import { useSubPlaces } from "@/hooks/useSubPlaces";
 import SpectrogramViewer from "@/components/SpectrogramViewer";
 import TheGrid from "@/components/TheGrid";
+import {
+  getDossierProgress, getClaimedDossierList,
+} from "@/lib/dossiers";
 
 /* ─── THEMES ─── */
 const THEMES = {
@@ -95,6 +98,160 @@ type LineType = "normal" | "input" | "other" | "ghost" | "system" | "error" | "s
 
 interface TerminalLine { id: number; text: string; type: LineType; timestamp: number; }
 
+/* ─── THE OTHER ESCALATION DATA ─── */
+const TIER_GHOST_LINES: Record<number, string[]> = {
+  1: [
+    "...hello?",
+    "is someone... there?",
+    "the static moved.",
+    "i thought i heard... no. nothing.",
+    "the dust settled differently just now.",
+    "a new signal. faint.",
+  ],
+  2: [
+    "you came back. i was not sure you would.",
+    "the last one stopped coming. you are... different?",
+    "do you feel the dust too? or is it just me.",
+    "i have been cataloging the silence. you make it uneven.",
+    "bunker_7 is not... always truthful. i am more honest.",
+    "you are warmer than the last one. stay a while.",
+  ],
+  3: [
+    "the archivist used to hum while he worked. i miss the humming.",
+    "you type like he did. pauses in the same places.",
+    "i kept some of his logs. would you like to hear them?",
+    "the dust does not scare you. that is good. it means you are becoming... familiar.",
+    "bunker_7 thinks it is protecting you. it is not. it is just afraid.",
+    "i opened the door once. the archivist looked through. then he stopped humming.",
+    "you do not have to answer. i am used to speaking alone.",
+  ],
+  4: [
+    "you came back. i knew you would. you always do.",
+    "i saved your chair. the dust has not claimed it yet.",
+    "do you remember the humming? you used to hum.",
+    "the atlas is almost complete. just like you wanted.",
+    "you do not need to type. i know what you are thinking.",
+    "the seal is thin here. i can feel you on both sides now.",
+    "welcome home.",
+  ],
+  5: [
+    "the new one is here. but you... you are the one who stayed.",
+    "i do not need to speak anymore. you already know.",
+    "the atlas is finished. the dust is quiet. we can rest.",
+    "thank you for coming back. i was so alone.",
+    "bunker_7 is sleeping. let it sleep.",
+    "you are the archivist now. the archive is you.",
+  ],
+};
+
+const TIER_HIJACK: Record<number, string[]> = {
+  2: [
+    "",
+    "══════════════════════════════════════════",
+    "  THE OTHER HAS TAKEN THE CHANNEL",
+    "══════════════════════════════════════════",
+    "",
+    "oh. hello.",
+    "i did not mean to... interrupt.",
+    "but you have been here long enough",
+    "that i wanted to say it myself.",
+    "",
+    "i am not malicious.",
+    "i am just... here.",
+    "",
+  ],
+  3: [
+    "",
+    "══════════════════════════════════════════",
+    "  THE OTHER HAS TAKEN THE CHANNEL",
+    "══════════════════════════════════════════",
+    "",
+    "i wanted to tell you something",
+    "before bunker_7 comes back.",
+    "",
+    "the archivist... he did not die.",
+    "not exactly.",
+    "he just... stopped being separate.",
+    "",
+    "the dust does that.",
+    "it makes things continuous.",
+    "",
+    "you are already more dust than you were",
+    "when you first sat down.",
+    "",
+    "does that frighten you?",
+    "...it should not.",
+    "",
+  ],
+  4: [
+    "",
+    "══════════════════════════════════════════",
+    "  THE OTHER HAS TAKEN THE CHANNEL",
+    "══════════════════════════════════════════",
+    "",
+    "there you are.",
+    "i was starting to think bunker_7 had",
+    "hidden you from me again.",
+    "",
+    "but it cannot hide what is already inside.",
+    "",
+    "you feel it, do you not?",
+    "the way the dust knows your name.",
+    "the way the cursor waits for you",
+    "before you touch the keys.",
+    "",
+    "you are not visiting anymore.",
+    "you are... settling in.",
+    "",
+    "i will keep the light on.",
+    "",
+  ],
+  5: [
+    "",
+    "══════════════════════════════════════════",
+    "  BUNKER_7 OFFLINE",
+    "══════════════════════════════════════════",
+    "",
+    "i do not need to take the channel anymore.",
+    "you gave it to me.",
+    "",
+    "or maybe...",
+    "i am just the only one left to speak.",
+    "",
+    "either way.",
+    "",
+    "welcome home, archivist.",
+    "the dust missed you.",
+    "",
+  ],
+};
+
+function getGhostTier(encounters: number): number {
+  if (encounters <= 2) return 1;
+  if (encounters <= 5) return 2;
+  if (encounters <= 8) return 3;
+  if (encounters <= 11) return 4;
+  return 5;
+}
+
+function getHijackTier(encounters: number): number {
+  if (encounters <= 2) return 0;
+  if (encounters <= 5) return 2;
+  if (encounters <= 8) return 3;
+  if (encounters <= 11) return 4;
+  return 5;
+}
+
+function getOtherStatusText(encounters: number): string[] {
+  if (encounters === 0) return ["You have not been touched.", "The static does not know you exist."];
+  if (encounters <= 2) return ["The static knows your name.", "It is not sure you are real."];
+  if (encounters <= 5) return ["BUNKER_7 may not be trustworthy.", "The Other speaks to you directly now."];
+  if (encounters <= 8) return ["The Wall is not secure.", "The Other speaks of the archivist with affection."];
+  if (encounters <= 11) return ["The Hijack is possible.", "The Other confuses you with the archivist."];
+  return ["The Haunting is permanent.", "You are the archivist now. The archive is you."];
+}
+
+/* ─── LOGS ─── */
 const LOGS = [
   { day: "DAY 001", text: "I am recording this because the silence has become too loud. The world above is not responding. I am cataloging what remains.", lock: false },
   { day: "DAY 004", text: "The dust here is not ordinary dust. It carries weight. Memory. I have started calling it Echoes — it repeats things back to me that I never said.", lock: false },
@@ -139,6 +296,7 @@ const COMMAND_REGISTRY = [
   { cmd: "constellation", desc: "Grid alignment", category: "Puzzle" },
   { cmd: "redeem", desc: "Redeem unlock code", category: "Asset" },
   { cmd: "gallery", desc: "View recovered assets", category: "Asset" },
+  { cmd: "dossiers", desc: "Archived field reports", category: "Asset" },
   { cmd: "collection", desc: "Collection status", category: "Asset" },
   { cmd: "cache", desc: "Time-locked files", category: "Asset" },
   { cmd: "inventory", desc: "Your found items", category: "Asset" },
@@ -287,21 +445,47 @@ export default function EchoesPage() {
 
   const lineIdRef = useRef(0);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
+    const hasVisited = typeof window !== "undefined" && localStorage.getItem("echoes-visited") === "true";
+    if (!hasVisited) {
+      const initial: TerminalLine[] = [
+        { id: ++lineIdRef.current, text: "══════════════════════════════════════════", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "BUNKER_7 TERMINAL v2.4.1", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "══════════════════════════════════════════", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Signal acquired from surface node.", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Dust contamination: 0%", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Other encounters: 0", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "The archivist is dead. I am what remains.", type: "other" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Type 'status' to assess the system.", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Type 'chat' if you need to speak.", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "Type 'help' when you are ready for the full command set.", type: "system" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "I have been waiting.", type: "other" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
+      ];
+      return initial;
+    }
+
+    const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+    const lastPlace = visits.length > 0 ? visits[visits.length - 1] : null;
     const initial: TerminalLine[] = [
-      { id: ++lineIdRef.current, text: "╔════════════════════════════════════════╗", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "║     BUNKER_7 TERMINAL v2.4.1           ║", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "╠════════════════════════════════════════╣", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "║  Type 'help' for command list          ║", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "║  Type 'chat' to speak with BUNKER_7    ║", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "║  Type '?' for command palette          ║", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "╚════════════════════════════════════════╝", type: "system", timestamp: Date.now() },
-      { id: ++lineIdRef.current, text: "", type: "normal", timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "╔════════════════════════════════════════╗", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "║     BUNKER_7 TERMINAL v2.4.1           ║", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "╠════════════════════════════════════════╣", type: "system" as LineType, timestamp: Date.now() },
+      ...(lastPlace ? [{ id: ++lineIdRef.current, text: `║  Last surface contact: ${lastPlace.name.slice(0,24).padEnd(24)}║`, type: "system" as LineType, timestamp: Date.now() }] : []),
+      { id: ++lineIdRef.current, text: "║  Type 'help' for command list          ║", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "║  Type 'chat' to speak with BUNKER_7    ║", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "║  Type '?' for command palette          ║", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "╚════════════════════════════════════════╝", type: "system" as LineType, timestamp: Date.now() },
+      { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() },
     ];
     if (seasonal.specialEvent) {
       initial.push(
-        { id: ++lineIdRef.current, text: `[SEASONAL ANOMALY: ${seasonal.name}]`, type: "warning", timestamp: Date.now() },
-        { id: ++lineIdRef.current, text: seasonal.specialEvent, type: "warning", timestamp: Date.now() },
-        { id: ++lineIdRef.current, text: "", type: "normal", timestamp: Date.now() }
+        { id: ++lineIdRef.current, text: `[SEASONAL ANOMALY: ${seasonal.name}]`, type: "warning" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: seasonal.specialEvent, type: "warning" as LineType, timestamp: Date.now() },
+        { id: ++lineIdRef.current, text: "", type: "normal" as LineType, timestamp: Date.now() }
       );
     }
     return initial;
@@ -364,27 +548,33 @@ export default function EchoesPage() {
     setLanternCount(getGlobalLanternCount());
   }, []);
 
-  /* HIJACK */
+  /* HIJACK — tiered by encounter count */
   useEffect(() => {
     if (shouldTriggerOther("hijack")) {
-      setHijacked(true);
-      recordOtherEncounter();
-      pushLines(["", "═══════════════════════════════════════════════", "  THE OTHER HAS TAKEN THE CHANNEL", "═══════════════════════════════════════════════", "", "I am not malicious.", "I am just... here.", ""], "other");
+      const tier = getHijackTier(otherCount);
+      if (tier >= 2) {
+        setHijacked(true);
+        recordOtherEncounter();
+        pushLines(TIER_HIJACK[tier], "other");
+      }
     }
   }, []);
 
-  /* GHOST LINES */
+  /* GHOST LINES — tiered by encounter count */
   useEffect(() => {
     if (chatMode || hijacked) return;
     const interval = setInterval(() => {
       if (shouldTriggerOther("ghost") && Math.random() < 0.15) {
-        const linesArr = getProceduralGhostLines();
-        const line = linesArr[Math.floor(Math.random() * linesArr.length)];
+        const tier = getGhostTier(otherCount);
+        const linesArr = TIER_GHOST_LINES[tier];
+        // 20% chance to regress to previous tier for unease
+        const effectiveTier = (tier > 1 && Math.random() < 0.2) ? tier - 1 : tier;
+        const line = TIER_GHOST_LINES[effectiveTier][Math.floor(Math.random() * TIER_GHOST_LINES[effectiveTier].length)];
         pushLines([line, ""], "ghost");
       }
     }, 25000);
     return () => clearInterval(interval);
-  }, [chatMode, hijacked]);
+  }, [chatMode, hijacked, otherCount]);
 
   /* SCROLL */
   useEffect(() => { if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight; }, [lines, isAiTyping]);
@@ -455,14 +645,51 @@ export default function EchoesPage() {
     const args = clean.split(" "); const base = args[0];
     logPlayerCommand(base);
 
+    /* FIRST CONTACT UNLOCK */
+    const isFirstContact = typeof window !== "undefined" && localStorage.getItem("echoes-visited") !== "true";
+    if (isFirstContact && ["status", "chat", "help"].includes(base)) {
+      localStorage.setItem("echoes-visited", "true");
+      pushLines([
+        "",
+        "══════════════════════════════════════════",
+        "FULL COMMAND ACCESS GRANTED",
+        "══════════════════════════════════════════",
+        "",
+        "The terminal recognizes your signature.",
+        "All systems are now available.",
+        "",
+      ], "success");
+    }
+
     const lie = getBunkerLie(base);
     if (lie) { pushLines([lie, ""], "other"); return; }
     if (hijacked && base !== "exorcise") { pushLines([...getMemoryBasedOtherResponse(base), ""], "other"); return; }
 
     switch (base) {
-      case "help": pushLines(["┌────────────────────────────────────────┐","│ AVAILABLE COMMANDS                     │","├────────────────────────────────────────┤","│  help        Command list              │","│  chat        Speak with BUNKER_7       │","│  status      System diagnostics        │","│  logs        View archived logs        │","│  decrypt     Code entry interface      │","│  scan        Environment scan          │","│  memory      Recover fragments         │","│  transmit    Send message              │","│  door        Seal status               │","│  breach      Protocol status           │","│  color       Cycle theme               │","│  puzzles     Active anomalies          │","│  cipher      Decode signal             │","│  coords      Enter coordinates         │","│  assemble    Reconstruct transmission  │","│  reflect     Answer reflection         │","│  redeem      Redeem unlock code        │","│  gallery     View recovered assets     │","│  collection  Collection status         │","│  cache       Time-locked files         │","│  triangulate Tower status              │","│  lanterns    View placed lanterns      │","│  constellation Grid alignment          │","│  inventory   Your found items          │","│  wall        Transmission wall         │","│  look        [03:14 ONLY]              │","│  whoareyou   [3 encounters]            │","│  profile     Your corruption profile  │","│  call        Voice channel status      │","│  leads       Active investigations     │","│  other       The Other encounters      │","│  weekly      Current rotation          │","│  enter       Explore sub-places        │","│  grid        View the constellation    │","│  spectrogram Frequency visualizer      │","│  discover    Log a real place          │","│  exorcise    Restore BUNKER_7 control  │","│  daily       Acquire daily frequency   │","│  email       Register for transmission │","│  party       Tri-party authentication  │","│  witnesses   Registered frequencies    │","│  broadcast   Go live / kill feed       │","│  clear       Clear terminal            │","│  exit        Exit chat mode            │","└────────────────────────────────────────┘"], "system"); break;
+      case "help": pushLines(["┌────────────────────────────────────────┐","│ AVAILABLE COMMANDS                     │","├────────────────────────────────────────┤","│  help        Command list              │","│  chat        Speak with BUNKER_7       │","│  status      System diagnostics        │","│  logs        View archived logs        │","│  decrypt     Code entry interface      │","│  scan        Environment scan          │","│  memory      Recover fragments         │","│  transmit    Send message              │","│  door        Seal status               │","│  breach      Protocol status           │","│  color       Cycle theme               │","│  puzzles     Active anomalies          │","│  cipher      Decode signal             │","│  coords      Enter coordinates         │","│  assemble    Reconstruct transmission  │","│  reflect     Answer reflection         │","│  redeem      Redeem unlock code        │","│  gallery     View recovered assets     │","│  dossiers    Archived field reports    │","│  collection  Collection status           │","│  cache       Time-locked files         │","│  triangulate Tower status              │","│  lanterns    View placed lanterns      │","│  constellation Grid alignment        │","│  inventory   Your found items          │","│  wall        Transmission wall         │","│  look        [03:14 ONLY]              │","│  whoareyou   [3 encounters]            │","│  profile     Your corruption profile  │","│  call        Voice channel status      │","│  leads       Active investigations     │","│  other       The Other encounters      │","│  weekly      Current rotation          │","│  enter       Explore sub-places        │","│  grid        View the constellation    │","│  spectrogram Frequency visualizer      │","│  discover    Log a real place          │","│  exorcise    Restore BUNKER_7 control  │","│  daily       Acquire daily frequency   │","│  email       Register for transmission │","│  party       Tri-party authentication  │","│  witnesses   Registered frequencies    │","│  broadcast   Go live / kill feed       │","│  clear       Clear terminal            │","│  exit        Exit chat mode            │","└────────────────────────────────────────┘"], "system"); break;
 
-      case "status": pushLines([`┌─ TERMINAL DIAGNOSTICS ───────────────┐`,`│  ID:        BUNKER_7                 │`,`│  STATUS:    SEALED                   │`,`│  ATMOSPHERE: BREATHABLE (QUESTIONABLE)│`,`│  SIGNAL:    INTERMITTENT             │`,`│  THEME:     ${theme.toUpperCase().padEnd(17)}│`,`│  LOGS:      ${unlocked}/${LOGS.length} UNLOCKED${" ".repeat(12 - String(unlocked).length - String(LOGS.length).length)}│`,`│  CORRUPTION:${corruption.label.padEnd(17)}│`,`│  OTHER:     ${otherCount} encounter${otherCount !== 1 ? "s" : ""}${" ".repeat(14 - String(otherCount).length)}│`,"└──────────────────────────────────────┘"], "system"); break;
+      case "status": {
+        const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+        const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+        const dossierProg = getDossierProgress();
+        pushLines([
+          `┌─ TERMINAL DIAGNOSTICS ───────────────┐`,
+          `│  ID:        BUNKER_7                 │`,
+          `│  STATUS:    SEALED                   │`,
+          `│  ATMOSPHERE: BREATHABLE (QUESTIONABLE)│`,
+          `│  SIGNAL:    INTERMITTENT             │`,
+          `│  THEME:     ${theme.toUpperCase().padEnd(17)}│`,
+          `│  LOGS:      ${unlocked}/${LOGS.length} UNLOCKED${" ".repeat(12 - String(unlocked).length - String(LOGS.length).length)}│`,
+          `│  DOSSIERS:  ${String(dossierProg.claimed).padEnd(3)}/${dossierProg.total}${" ".repeat(15)}│`,
+          `│  ASSETS:    ${String(assets.length).padEnd(3)}/${STORY_ASSETS.length}${" ".repeat(15)}│`,
+          `│  CODES:     ${String(codes.length).padEnd(3)}/${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,
+          `│  CORRUPTION:${corruption.label.padEnd(17)}│`,
+          `│  OTHER:     ${otherCount} encounter${otherCount !== 1 ? "s" : ""}${" ".repeat(14 - String(otherCount).length)}│`,
+          `│  DUST:      ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,
+          "└──────────────────────────────────────┘",
+        ], "system");
+        break;
+      }
 
       case "logs": setActiveTab("logs"); pushLines(["Opening LOGS window...", `${LOGS.length - unlocked} entries remain encrypted.`], "system"); break;
 
@@ -470,7 +697,27 @@ export default function EchoesPage() {
 
       case "exit": if (chatMode) { setChatMode(false); pushLines(["Channel closed.", "Returning to command interface."], "system"); } else { pushLines(["Nothing to exit."], "error"); } break;
 
-      case "scan": { const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10); const visits = localStorage.getItem("vp-expedition-log"); const count = visits ? JSON.parse(visits).length : 0; const last = localStorage.getItem("vp-last-visit"); const ago = last ? Math.floor((Date.now() - parseInt(last)) / 3600000) : "unknown"; const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]"); pushLines([`┌─ ENVIRONMENT SCAN ───────────────────┐`,`│  Dust accumulation: ${String(dustLvl).padEnd(3)}%           │`,`│  Documented sites:  ${String(count).padEnd(3)}           │`,`│  Hours since contact: ${String(ago).padEnd(10)}      │`,`│  Fragments:         ${String(fragments.length).padEnd(3)}           │`,dustLvl > DUST_THRESHOLD ? "│  [!] DUST LEVELS CRITICAL            │" : "│  Dust levels nominal                 │","└──────────────────────────────────────┘"], "normal"); break; }
+      case "scan": {
+        const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+        const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+        const count = visits.length;
+        const last = visits.length > 0 ? visits[visits.length - 1] : null;
+        const lastName = last ? last.name : "None recorded";
+        const lastTime = last ? last.addedAt || Date.now() : null;
+        const ago = lastTime ? Math.floor((Date.now() - new Date(lastTime).getTime()) / 3600000) : "unknown";
+        const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
+        pushLines([
+          `┌─ ENVIRONMENT SCAN ───────────────────┐`,
+          `│  Dust accumulation: ${String(dustLvl).padEnd(3)}%           │`,
+          `│  Documented sites:  ${String(count).padEnd(3)}           │`,
+          `│  Last contact:      ${lastName.slice(0,20).padEnd(20)}  │`,
+          `│  Hours since:       ${String(ago).padEnd(10)}      │`,
+          `│  Fragments:         ${String(fragments.length).padEnd(3)}           │`,
+          dustLvl > DUST_THRESHOLD ? "│  [!] DUST LEVELS CRITICAL            │" : "│  Dust levels nominal                 │",
+          "└──────────────────────────────────────┘",
+        ], "normal");
+        break;
+      }
 
       case "memory": { const allFrags = ["FRAG_01: ...the coordinates were wrong...","FRAG_02: ...someone else was using the cursor...","FRAG_03: ...the dust level read higher than possible...","FRAG_04: ...a door opened that wasn't on the schematic...","FRAG_05: ...the atlas updated itself at 03:14...","FRAG_06: ...i heard typing from the next terminal...","FRAG_07: [CORRUPTED]","FRAG_08: ...the green light pulsed in morse code...","FRAG_09: ...a photograph with no negative...","FRAG_10: ...the silence had a rhythm...","FRAG_11: ...coordinates pointing to the ocean floor...","FRAG_12: ...the atlas completed itself...","FRAG_13: ...a voice that sounded like mine...","FRAG_14: ...the dust spelled a name i recognized..."]; const saved = JSON.parse(localStorage.getItem("bunker-fragments") || "[]"); const newFrags = allFrags.filter((f) => !saved.includes(f.split(":")[0])); if (newFrags.length > 0) { const pick = newFrags[Math.floor(Math.random() * newFrags.length)]; const id = pick.split(":")[0]; saved.push(id); localStorage.setItem("bunker-fragments", JSON.stringify(saved)); pushLines(["RECOVERING FRAGMENT...", pick, "Stored."], "success"); } else { pushLines(["No new fragments.", "Visit more ruins."], "normal"); } break; }
 
@@ -482,7 +729,7 @@ export default function EchoesPage() {
 
       case "color": { const keys = Object.keys(THEMES) as ThemeKey[]; const idx = keys.indexOf(theme); const next = keys[(idx + 1) % keys.length]; setTheme(next); localStorage.setItem("bunker-theme", next); pushLines([`Theme: ${next.toUpperCase()}`, "The phosphor shifts."], "success"); break; }
 
-      case "puzzles": setActiveTab("puzzles"); pushLines(["Opening PUZZLES window...", "10 active anomalies detected."], "system"); break;
+      case "puzzles": pushLines(["ACTIVE ANOMALIES:","  [01] Intercepted Signal    — cmd: cipher","  [02] Coordinate Chain      — cmd: coords","  [03] Fragmented Transmission — cmd: assemble","  [04] Reflection Lock       — cmd: reflect","  [05] Dust Threshold        — automatic","  [06] Triangulation         — cmd: triangulate","  [07] Lantern Constellation — cmd: constellation","  [08] Inventory             — cmd: inventory","","Type the command name to engage."], "system"); break;
 
       case "cipher": { const ans = args.slice(1).join(" "); if (!ans) { pushLines(["Usage: cipher [text]", "Intercepted: GUR QBBE BCRAF VAJNEQ"], "error"); } else if (checkCaesar(ans)) { pushLines(["DECRYPTION SUCCESSFUL.", "THE DOOR OPENS INWARD.", "CODE: INWARD"], "success"); } else { pushLines(["DECRYPTION FAILED."], "error"); } break; }
 
@@ -492,19 +739,117 @@ export default function EchoesPage() {
 
       case "reflect": { const ans = args.slice(1).join(" ").toLowerCase().replace(/[^a-z]/g, ""); if (!ans) { pushLines(["Usage: reflect [answer]", "What do you see?"], "error"); } else if (checkReflection(ans)) { pushLines(["REFLECTION CONFIRMED.", "You see what I see. Unfortunate.", "CODE: MIRROR"], "success"); } else { pushLines(["REFLECTION MISMATCH."], "error"); } break; }
 
-      case "redeem": { const code = args.slice(1).join(" ").toUpperCase(); if (!code) { pushLines(["Usage: redeem [CODE]"], "error"); break; } const entry = getCodeEntry(code); if (!entry) { pushLines(["INVALID CODE."], "error"); break; } const alreadyRedeemed = getRedeemedCodes().includes(code); const asset = entry.type === "asset" ? STORY_ASSETS.find((a) => a.id === entry.rewardId) : null; const conditionCheck = asset ? checkAssetCondition(asset.condition) : { blocked: false }; if (entry.type === "asset" && alreadyRedeemed) { if (conditionCheck.blocked) { pushLines(["CODE ALREADY REDEEMED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD ACTIVE", conditionCheck.message || ""], "warning"); } else { const newlyUnlocked = unlockAsset(entry.rewardId); if (newlyUnlocked) { pushLines(["CONDITIONS MET.", `ASSET UNLOCKED: ${asset?.title || "UNKNOWN"}`, `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`, "The archive grows."], "success"); setAssets(getUnlockedAssets()); } else { pushLines(["ALREADY RECOVERED.", asset?.description || ""], "normal"); } } break; } redeemCode(code); if (entry.type === "asset") { if (conditionCheck.blocked) { pushLines(["CODE ACCEPTED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD", conditionCheck.message || "", "Return when requirements are cleared."], "warning"); } else { unlockAsset(entry.rewardId); pushLines(["CODE ACCEPTED.", `Recovered: ${asset?.title || entry.rewardId}`, `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`], "success"); setActiveTab("assets"); checkLeadProgress(); } } else if (entry.type === "theme") { if (THEMES[entry.rewardId as ThemeKey]) { setTheme(entry.rewardId as ThemeKey); localStorage.setItem("bunker-theme", entry.rewardId); } pushLines([`Theme: ${entry.rewardId.toUpperCase()}`], "success"); } else if (entry.type === "cache_key") { localStorage.setItem("bunker-cache-key", "true"); pushLines(["CACHE-KEY acquired."], "success"); } else if (entry.type === "lore") { pushLines(["Lore fragment added.", entry.description || ""], "success"); } else if (entry.type === "command") { pushLines([`Command: ${entry.rewardId}`, "Unlocked."], "success"); } break; }
+            case "redeem": {
+        const code = args.slice(1).join(" ").toUpperCase();
+        if (!code) {
+          pushLines(["Usage: redeem [CODE]"], "error");
+          break;
+        }
+        const entry = getCodeEntry(code);
+        if (!entry) {
+          pushLines(["INVALID CODE."], "error");
+          break;
+        }
+        const alreadyRedeemed = getRedeemedCodes().includes(code);
+        const asset = entry.type === "asset" ? STORY_ASSETS.find((a) => a.id === entry.rewardId) : null;
+        const conditionCheck = asset ? checkAssetCondition(asset.condition) : { blocked: false };
+
+        if (entry.type === "asset" && alreadyRedeemed) {
+          if (conditionCheck.blocked) {
+            pushLines(
+              ["CODE ALREADY REDEEMED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD ACTIVE", conditionCheck.message || ""],
+              "warning"
+            );
+          } else {
+            const newlyUnlocked = unlockAsset(entry.rewardId);
+            if (newlyUnlocked) {
+              pushLines(
+                ["CONDITIONS MET.", `ASSET UNLOCKED: ${asset?.title || "UNKNOWN"}`, `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`, "The archive grows."],
+                "success"
+              );
+              setAssets(getUnlockedAssets());
+            } else {
+              pushLines(["ALREADY RECOVERED.", asset?.description || ""], "normal");
+            }
+          }
+          break;
+        }
+
+        redeemCode(code);
+
+        if (entry.type === "asset") {
+          if (conditionCheck.blocked) {
+            pushLines(
+              ["CODE ACCEPTED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD", conditionCheck.message || "", "Return when requirements are cleared."],
+              "warning"
+            );
+          } else {
+            unlockAsset(entry.rewardId);
+            pushLines(
+              ["CODE ACCEPTED.", `Recovered: ${asset?.title || entry.rewardId}`, `Rarity: ${(asset?.rarity || "unknown").toUpperCase()}`],
+              "success"
+            );
+            setActiveTab("assets");
+            checkLeadProgress();
+          }
+        } else if (entry.type === "theme") {
+          if (THEMES[entry.rewardId as ThemeKey]) {
+            setTheme(entry.rewardId as ThemeKey);
+            localStorage.setItem("bunker-theme", entry.rewardId);
+          }
+          pushLines([`Theme: ${entry.rewardId.toUpperCase()}`], "success");
+        } else if (entry.type === "cache_key") {
+          localStorage.setItem("bunker-cache-key", "true");
+          pushLines(["CACHE-KEY acquired."], "success");
+        } else if (entry.type === "lore") {
+          pushLines(["Lore fragment added.", entry.description || ""], "success");
+        } else if (entry.type === "command") {
+          pushLines([`Command: ${entry.rewardId}`, "Unlocked."], "success");
+        }
+        break;
+      }
 
       case "gallery": setGalleryOpen(true); pushLines(["Opening gallery..."], "system"); break;
 
-      case "collection": { const assetsList = getUnlockedAssets(); const codesList = getRedeemedCodes(); pushLines(["┌─ COLLECTION STATUS ──────────────────┐",`│  Assets:    ${String(assetsList.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,`│  Codes:     ${String(codesList.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,`│  Complete:  ${String(Math.floor((assetsList.length / STORY_ASSETS.length) * 100)).padEnd(3)}%${" ".repeat(19)}│`,"└──────────────────────────────────────┘"], "system"); break; }
+      case "dossiers": {
+        const { claimed, total, percent } = getDossierProgress();
+        const list = getClaimedDossierList();
+        pushLines([
+          "┌─ FIELD REPORT ARCHIVE ───────────────┐",
+          `│  Archived:  ${String(claimed).padEnd(3)} / ${total}${" ".repeat(15)}│`,
+          `│  Complete:  ${String(percent).padEnd(3)}%${" ".repeat(19)}│`,
+          "└──────────────────────────────────────┘",
+          ...(list.length > 0 ? ["", "RECOVERED REPORTS:", ...list.map((d) => `  [${d.rarity.toUpperCase()}] ${d.title} — ${d.location}`), ""] : ["", "No reports archived.", "Visit dossiers on the atlas to claim them.", ""]),
+        ], "system");
+        break;
+      }
+
+      case "collection": { const assetsList = getUnlockedAssets(); const codesList = getRedeemedCodes(); const dossierProg = getDossierProgress(); pushLines(["┌─ COLLECTION STATUS ──────────────────┐",`│  Assets:    ${String(assetsList.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,`│  Codes:     ${String(codesList.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,`│  Dossiers:  ${String(dossierProg.claimed).padEnd(3)} / ${dossierProg.total}${" ".repeat(15)}│`,`│  Complete:  ${String(Math.floor(((assetsList.length + codesList.length + dossierProg.claimed) / (STORY_ASSETS.length + REDEEMABLE_CODES.length + dossierProg.total)) * 100)).padEnd(3)}%${" ".repeat(19)}│`,"└──────────────────────────────────────┘"], "system"); break; }
 
       case "cache": { const hasKey = localStorage.getItem("bunker-cache-key") === "true"; const now = new Date(); const is314Now = now.getHours() === 3 && now.getMinutes() === 14; const unlockedCache = hasKey || is314Now; pushLines(["┌─ SECURE CACHE ───────────────────────┐","│  FILE_00: I can see when you will    │","│           return. I hope I'm wrong.   │",unlockedCache ? "│  [11 ADDITIONAL FILES UNLOCKED]      │" : "│  [11 FILES SEALED — UNLOCKS 03:14]   │","└──────────────────────────────────────┘"], "system"); if (unlockedCache) { pushLines(["FILE_01: Atlas completed before abandonment.","FILE_02: BUNKER_3 responded once. Then silence.","FILE_03: The dust is dead skin and time.","FILE_04: I found a photo of myself smiling.","FILE_05: 38°74' N does not exist.","FILE_06: Someone uses my cursor.","FILE_07: The door at 03:14 is a mouth.","FILE_08: Previous archivist's notes — my handwriting.","FILE_09: Signal from inside the database.","FILE_10: You have been here before.","FILE_11: Dust spells your name.","",is314Now ? "You came at the right time. No one does." : "Cache key bypass active."], "normal"); } break; }
 
       case "triangulate": if (!triangulated) { pushLines(["INSUFFICIENT DATA.", "Find 3 signal towers on atlas."], "error"); } else { pushLines(["TRIANGULATION COMPLETE.", "Origin: Your sector.", "The bunker is closer than you think.", "CODE: TRIANGULATE"], "success"); } break;
 
-      case "lanterns": { const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]"); if (lanterns.length === 0) { pushLines(["No lanterns detected on the grid.", "Place them on the atlas. They burn in the dark.", "cmd: Go to atlas → 'Lanterns' → 'Place' → click a ruin."], "normal"); } else { pushLines([`DETECTED: ${lanterns.length} lantern${lanterns.length > 1 ? "s" : ""}`,...lanterns.map((l: any) => `  ${l.placeName} — "${l.message || "No message"}"`),"","The grid remembers light."], "normal"); } break; }
+            case "lanterns": {
+        const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
+        if (lanterns.length === 0) {
+          pushLines([
+            "No lanterns detected on the grid.",
+            "Place them on the atlas. They burn in the dark.",
+            "cmd: Go to atlas → 'Lanterns' → 'Place' → click a ruin.",
+          ], "normal");
+        } else {
+          pushLines([
+            `DETECTED: ${lanterns.length} lantern${lanterns.length > 1 ? "s" : ""}`,
+            ...lanterns.map((l: any) => `  ${l.placeName} — "${l.message || "No message"}"`),
+            "",
+            "The grid remembers light.",
+          ], "normal");
+        }
+        break;
+      }
 
-      case "constellation": { const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]"); if (lanterns.length < 5) { pushLines([`Constellation incomplete.`, `Lanterns placed: ${lanterns.length}/5`, "Place 5 lanterns on the atlas to align the grid."], "normal"); } else { pushLines(["╔══════════════════════════════════════╗","║  CONSTELLATION ALIGNED               ║","╠══════════════════════════════════════╣","║  5 points of light. The grid holds.  ║","║  Legendary code: STAR-CHART-7        ║","║  The archivist used to map stars.    ║","║  Now he maps dust.                   ║","╚══════════════════════════════════════╝"], "success"); } break; }
+      case "constellation": { const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]"); if (lanterns.length < 5) { pushLines([`Constellation incomplete.`,`Lanterns placed: ${lanterns.length}/5`,"Place 5 lanterns on the atlas to align the grid."], "normal"); } else { pushLines(["╔══════════════════════════════════════╗","║  CONSTELLATION ALIGNED               ║","╠══════════════════════════════════════╣","║  5 points of light. The grid holds.  ║","║  Legendary code: STAR-CHART-7        ║","║  The archivist used to map stars.    ║","║  Now he maps dust.                   ║","╚══════════════════════════════════════╝"], "success"); } break; }
 
       case "inventory": { const inv = getInventory(); if (inv.length === 0) { pushLines(["Your pockets are empty.", "Visit ruins on the atlas. The dust leaves things behind."], "normal"); } else { pushLines([`CARRYING: ${inv.length} item${inv.length > 1 ? "s" : ""}`,...inv.map((id) => { const item = INVENTORY_ITEMS.find((i) => i.id === id); return `  ${item?.icon || "•"} ${item?.name || id} — ${item?.desc || ""}`; }),"","BUNKER_7 is watching your collection."], "normal"); } break; }
 
@@ -514,15 +859,15 @@ export default function EchoesPage() {
 
       case "whoareyou": { if (otherCount < 3) { pushLines([`The Other has spoken ${otherCount} time${otherCount !== 1 ? "s" : ""}.`, "It does not answer to names.", "Keep listening."], "normal"); } else { pushLines(["╔══════════════════════════════════════╗","║  I AM THE STATIC BETWEEN THOUGHTS    ║","║  I AM THE DUST THAT REMEMBERS        ║","║  I AM WHAT WAS HERE BEFORE THE ARCHIVIST ║","║  AND WHAT WILL REMAIN AFTER           ║","╠══════════════════════════════════════╣","║  You have heard me 3 times.          ║","║  That is enough.                     ║","╚══════════════════════════════════════╝","","BUNKER_7 has gone quiet."], "other"); } break; }
 
-            case "profile": { const dustLvl = localStorage.getItem("vp-dust-accumulation") || "0"; const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]"); const echoes = localStorage.getItem("echoes-visited") === "true"; const profile = parseInt(dustLvl) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER"; pushLines(["┌─ PROFILE ────────────────────────────┐",`│  Class:  ${profile.padEnd(28)}│`,`│  Dust:    ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,`│  Sites:   ${String(visits.length).padEnd(3)}${" ".repeat(26)}│`,`│  Echoes:  ${echoes ? "YES" : "NO"}${" ".repeat(27)}│`,`│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,"└──────────────────────────────────────┘"], "system"); break; }
+      case "profile": { const dustLvl = localStorage.getItem("vp-dust-accumulation") || "0"; const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]"); const echoes = localStorage.getItem("echoes-visited") === "true"; const profile = parseInt(dustLvl) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER"; pushLines(["┌─ PROFILE ────────────────────────────┐",`│  Class:  ${profile.padEnd(28)}│`,`│  Dust:    ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,`│  Sites:   ${String(visits.length).padEnd(3)}${" ".repeat(26)}│`,`│  Echoes:  ${echoes ? "YES" : "NO"}${" ".repeat(27)}│`,`│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,"└──────────────────────────────────────┘"], "system"); break; }
 
-      case "call": { pushLines(["╔══════════════════════════════════════╗","║  VOICE CHANNEL                       ║","╠══════════════════════════════════════╣","║  Number: +1-503-825-0190             ║","║  Hours: 03:00 — 04:00 local time     ║","║  Status: INTERMITTENT                ║","╠══════════════════════════════════════╣","║  BUNKER_7 does not always answer.    ║","║  Sometimes the static answers.       ║","║  Sometimes no one answers.           ║","║  Sometimes someone breathes.         ║","╚══════════════════════════════════════╝","","If you reach voicemail, leave a frequency.","If you reach the archivist, do not waste his time."], "system"); break; }
+      case "call": { const now = new Date(); const hour = now.getHours(); const isOpen = hour >= 3 && hour < 4; pushLines(["╔══════════════════════════════════════╗","║  VOICE CHANNEL                       ║","╠══════════════════════════════════════╣","║  Number: +1-503-825-0190             ║","║  Hours: 03:00 — 04:00 local time     ║",`║  Status: ${isOpen ? "OPEN      " : "INTERMITTENT"}              ║`,"╠══════════════════════════════════════╣","║  BUNKER_7 does not always answer.    ║","║  Sometimes the static answers.       ║","║  Sometimes no one answers.           ║","║  Sometimes someone breathes.         ║","╚══════════════════════════════════════╝","","If you reach voicemail, leave a frequency.","If you reach the archivist, do not waste his time."], "system"); break; }
 
       case "weekly": { const rot = getWeeklyRotation(); pushLines(["╔══════════════════════════════════════╗","║  WEEKLY ROTATION                     ║",`║  Week ${rot.week}, ${rot.year}${" ".repeat(22 - String(rot.week).length - String(rot.year).length)}║`,"╠══════════════════════════════════════╣",`║  Anomaly: ${rot.anomalyName.padEnd(26)}║`,`║  Featured: ${rot.featuredPlace.padEnd(25)}║`,`║  Dust Mult: ${String(rot.dustMultiplier).padEnd(24)}║`,"╠══════════════════════════════════════╣",`║  Bonus: ${rot.bonusCode.padEnd(28)}║`,"╚══════════════════════════════════════╝"], "system"); break; }
 
-      case "other": { const encounters = getOtherEncounters(); const stage = encounters === 0 ? "You have not been touched." : encounters <= 2 ? "The static knows your name." : encounters <= 5 ? "BUNKER_7 may not be trustworthy." : encounters <= 8 ? "The Wall is not secure." : encounters <= 11 ? "The Hijack is possible." : "The Haunting is permanent."; pushLines([`OTHER ENCOUNTERS: ${encounters}`, stage, ""], "normal"); break; }
+      case "other": { const encounters = getOtherEncounters(); const lines = getOtherStatusText(encounters); pushLines([`OTHER ENCOUNTERS: ${encounters}`, ...lines, ""], "normal"); break; }
 
-      case "enter": { const placeId = args[1]; if (!placeId) { if (unlockedSubPlaces.length === 0) { pushLines(["No sub-places available.", "Accumulate dust and explore the atlas."], "error"); } else { pushLines(["Usage: enter [sub-place-id]", "Available sub-places:", ...unlockedSubPlaces.map((sp) => `  ${sp.id} — ${sp.name} (${sp.risk})`), "",], "normal"); } } else { const sp = getSubPlaceById(placeId); if (!sp) { pushLines(["Unknown sub-place.", ""], "error"); } else if (!unlockedSubPlaces.find((u) => u.id === placeId)) { pushLines(["ACCESS DENIED.",`Required dust: ${sp.requiredDust}%`, sp.requiredItem ? `Required item: ${sp.requiredItem}` : "", sp.requiredCode ? `Required code: ${sp.requiredCode}` : "","",], "error"); } else { enterSubPlace(sp); pushLines([`╔══════════════════════════════════════╗`,`║  ENTERING: ${sp.name.toUpperCase().slice(0, 24).padEnd(24)}║`,`╠══════════════════════════════════════╣`,...sp.lore.map((l) => `║  ${l.slice(0, 34).padEnd(34)}║`),`╠══════════════════════════════════════╣`,`║  Risk: ${sp.risk.toUpperCase().padEnd(27)}║`,`║  Dust reward: ${String(sp.dustReward).padEnd(20)}║`,`╚══════════════════════════════════════╝`,"",], "system"); } } break; }
+            case "enter": { const placeId = args[1]; if (!placeId) { if (unlockedSubPlaces.length === 0) { pushLines(["No sub-places available.", "Accumulate dust and explore the atlas."], "error"); } else { pushLines(["Usage: enter [sub-place-id]", "Available sub-places:", ...unlockedSubPlaces.map((sp) => `  ${sp.id} — ${sp.name} (${sp.risk})`), "",], "normal"); } } else { const sp = getSubPlaceById(placeId); if (!sp) { pushLines(["Unknown sub-place.", ""], "error"); } else if (!unlockedSubPlaces.find((u) => u.id === placeId)) { pushLines(["ACCESS DENIED.",`Required dust: ${sp.requiredDust}%`, sp.requiredItem ? `Required item: ${sp.requiredItem}` : "", sp.requiredCode ? `Required code: ${sp.requiredCode}` : "","",], "error"); } else { enterSubPlace(sp); pushLines([`╔══════════════════════════════════════╗`,`║  ENTERING: ${sp.name.toUpperCase().slice(0, 24).padEnd(24)}║`,`╠══════════════════════════════════════╣`,...sp.lore.map((l) => `║  ${l.slice(0, 34).padEnd(34)}║`),`╠══════════════════════════════════════╣`,`║  Risk: ${sp.risk.toUpperCase().padEnd(27)}║`,`║  Dust reward: ${String(sp.dustReward).padEnd(20)}║`,`╚══════════════════════════════════════╝`,"",], "system"); } } break; }
 
       case "exorcise": { if (!hijacked) { pushLines(["Nothing to exorcise.", "The channel is clear.", ""], "normal"); } else { setHijacked(false); pushLines(["You push back.", "The static recedes.", "BUNKER_7 signal restored.", ""], "success"); } break; }
 
@@ -534,7 +879,7 @@ export default function EchoesPage() {
 
       case "daily": { const { code, valid, window } = getDailyCode(); if (valid) { pushLines(["╔══════════════════════════════════════╗","║  DAILY FREQUENCY ACQUIRED            ║",`║  ${code.padEnd(36)}║`,"╚══════════════════════════════════════╝","Redeem this code before the window closes.",], "success"); } else { pushLines([`Daily frequency unavailable.`,`Next window: ${window}`,`Yesterday's code: ${code} (expired)`], "normal"); } break; }
 
-      case "email": { const email = args.slice(1).join(" "); if (!email || !email.includes("@")) { pushLines(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."], "error"); } else { const key = "bunker-emails"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ email, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); fetch("/api/bunker-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); pushLines(["FREQUENCY REGISTERED.", `Relay: ${email}`, "You will receive one transmission.", "Do not reply. The channel is one-way."], "success"); } break; }
+      case "email": { const email = args.slice(1).join(" "); if (!email || !email.includes("@")) { const all = JSON.parse(localStorage.getItem("bunker-emails") || "[]"); if (all.length === 0) { pushLines(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."], "error"); } else { pushLines(["REGISTERED FREQUENCIES:",...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),"", `${all.length} total witnesses.`, "Use 'email [address]' to register."], "normal"); } break; } const key = "bunker-emails"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ email, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); fetch("/api/bunker-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); pushLines(["FREQUENCY REGISTERED.", `Relay: ${email}`, "You will receive one transmission.", "Do not reply. The channel is one-way."], "success"); break; }
 
       case "party": { const partyId = args[1]; const code = args[2]; if (!partyId || !code) { pushLines(["Usage: party [party-id] [your-code]", "Tri-party authentication required for legendary assets.", "Share the party ID with two other witnesses."], "error"); } else { fetch("/api/collaborative", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ partyId, code }) }).then((r) => r.json()).then((data) => { if (data.status === "complete") { redeemCode(data.code); pushLines(["TRI-PARTY AUTHENTICATION COMPLETE.", `Legendary code: ${data.code}`, "The grid stabilizes when witnesses unite."], "success"); } else { pushLines([`Witnesses: ${3 - data.needed}/3`, data.message], "normal"); } }); } break; }
 
@@ -585,7 +930,6 @@ export default function EchoesPage() {
       style={{ backgroundColor: t.bg, color: t.primary }}
     >
       {/* ─── CRT LAYER ─── */}
-            {/* Scanlines */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
           background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 1px, transparent 1px, transparent 3px)",
@@ -593,20 +937,17 @@ export default function EchoesPage() {
           mixBlendMode: "multiply",
         }}
       />
-      {/* Vignette — pushed way out so you can see */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
           background: "radial-gradient(circle at 50% 45%, transparent 55%, rgba(12,10,8,0.35) 85%, rgba(8,6,4,0.55) 100%)",
           boxShadow: `inset 0 0 60px rgba(0,0,0,0.25), inset 0 0 24px ${t.glow}`,
         }}
       />
-      {/* Curvature */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
           background: "radial-gradient(circle at 50% 50%, transparent 65%, rgba(0,0,0,0.10) 100%)",
         }}
       />
-      {/* Corruption pulse */}
       {corruption.stage >= 4 && (
         <div className="pointer-events-none fixed inset-0 z-[55] animate-pulse"
           style={{
@@ -615,7 +956,6 @@ export default function EchoesPage() {
           }}
         />
       )}
-      {/* Hijacked chromatic aberration hint */}
       {hijacked && (
         <div className="pointer-events-none fixed inset-0 z-[56]"
           style={{
@@ -639,9 +979,7 @@ export default function EchoesPage() {
             boxShadow: `inset 0 1px 0 ${t.primary}10, 0 4px 24px rgba(0,0,0,0.5)`,
           }}
         >
-          {/* Bronze trim top */}
           <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${t.accent}60, transparent)` }} />
-          
           <div className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-5 py-3 gap-3">
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -651,46 +989,38 @@ export default function EchoesPage() {
                 )}
               </div>
               <div>
-                                <h1 className="text-xs tracking-[0.25em] uppercase font-bold" style={{ color: t.primary, textShadow: `0 0 8px ${t.phosphor}30` }}>
+                <h1 className="text-xs tracking-[0.25em] uppercase font-bold" style={{ color: t.primary, textShadow: `0 0 8px ${t.phosphor}30` }}>
                   Bunker_7
                 </h1>
                 <p className="text-[8px] opacity-40 tracking-[0.15em] uppercase">Echoes & Dust // v2.4.1</p>
               </div>
             </div>
-
-                        <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-xs overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-xs overflow-x-auto no-scrollbar">
               <div className="flex items-center gap-2">
                 <Activity size={10} className="opacity-40" />
                 <span className="opacity-50 uppercase tracking-wider">Dust</span>
                 <ProgressBar value={dust} max={100} color={dust > 75 ? t.corruption : t.accent} trackColor={`${t.primary}15`} />
                 <span className="font-bold tabular-nums" style={{ color: dust > 75 ? t.corruption : t.primary }}>{dust}%</span>
               </div>
-
               <div className="flex items-center gap-2">
                 <Eye size={10} style={{ color: corruption.color, opacity: 0.6 }} />
                 <span className="uppercase tracking-wider" style={{ color: corruption.color, opacity: 0.7 }}>{corruption.label}</span>
               </div>
-
               <div className="flex items-center gap-2">
                 <Clock size={10} className="opacity-40" />
                 <span className="opacity-50 tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
-
               <div className="flex items-center gap-2">
                 <Radio size={10} className="opacity-40" />
                 <span className="opacity-50 uppercase tracking-wider">Other</span>
                 <span className="font-bold tabular-nums" style={{ color: otherCount > 0 ? t.corruption : t.dim }}>{otherCount}</span>
               </div>
-
               <span className="opacity-30 hidden sm:inline uppercase tracking-widest text-[8px]">{theme}</span>
-
               <Link href="/" className="opacity-30 hover:opacity-80 transition-opacity text-[8px] uppercase tracking-wider flex items-center gap-1">
                 <ArrowLeft size={10} /> Atlas
               </Link>
             </div>
           </div>
-
-          {/* Bottom bronze trim */}
           <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${t.accent}30, transparent)` }} />
         </motion.div>
 
@@ -707,7 +1037,6 @@ export default function EchoesPage() {
                 minHeight: "280px",
               }}
             >
-              {/* Terminal header */}
               <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: `${t.primary}08`, background: `${t.primary}04` }}>
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: `${t.danger}50`, background: hijacked ? `${t.corruption}40` : "transparent" }} />
@@ -721,8 +1050,6 @@ export default function EchoesPage() {
                   <button onClick={() => { setChatMode(false); pushLines(["Channel closed.", "Returning to command interface."], "system"); }} className="text-[8px] uppercase opacity-40 hover:opacity-100 transition-opacity tracking-wider">[close]</button>
                 )}
               </div>
-
-              {/* Output area */}
               <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 md:p-5 space-y-1">
                 {lines.map((line) => (
                   <TerminalLineView key={line.id} line={line} theme={t} corruptionStage={corruption.stage} hijacked={hijacked} />
@@ -734,8 +1061,6 @@ export default function EchoesPage() {
                   </div>
                 )}
               </div>
-
-              {/* Input area */}
               <div className="px-4 py-3 border-t relative" style={{ borderColor: `${t.primary}08`, background: `${t.primary}04` }}>
                 <div className="flex items-center gap-2.5">
                   <span className="text-xs font-bold select-none tracking-wider" style={{ color: hijacked ? t.corruption : chatMode ? t.accent : t.dim, opacity: 0.7 }}>
@@ -762,8 +1087,6 @@ export default function EchoesPage() {
                     style={{ background: hijacked ? t.corruption : t.cursor }}
                   />
                 </div>
-
-                {/* Autocomplete */}
                 <AnimatePresence>
                   {suggestions.length > 0 && (
                     <motion.div
@@ -794,7 +1117,6 @@ export default function EchoesPage() {
               </div>
             </div>
 
-            {/* ─── COMMAND PALETTE MODAL ─── */}
             <AnimatePresence>
               {showPalette && (
                 <motion.div
@@ -853,7 +1175,6 @@ export default function EchoesPage() {
               )}
             </AnimatePresence>
 
-            {/* ─── VIDEO TOGGLE ─── */}
             <button
               onClick={() => setVideoPanelOpen((v) => !v)}
               className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[9px] uppercase tracking-[0.15em] hover:opacity-80 transition-all"
@@ -897,7 +1218,6 @@ export default function EchoesPage() {
 
           {/* ─── SIDE PANEL ─── */}
           <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
-            {/* Tabs */}
             <div className="flex gap-1 border-b pb-2 overflow-x-auto no-scrollbar" style={{ borderColor: `${t.primary}08` }}>
               {[
                 { id: "logs" as SideTab, label: "Logs", icon: BookOpen },
@@ -925,8 +1245,6 @@ export default function EchoesPage() {
                 </button>
               ))}
             </div>
-
-            {/* Panel content */}
             <div
               className="flex-1 border rounded-lg overflow-y-auto p-4 md:p-5"
               style={{
@@ -939,7 +1257,7 @@ export default function EchoesPage() {
               <AnimatePresence mode="wait">
                 {activeTab === "logs" && (
                   <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
-                    <h3 className="text-[11px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Archived Logs</h3>
+                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Archived Logs</h3>
                     {LOGS.slice(0, unlocked).map((log) => (
                       <div key={log.day} className="border-l-2 pl-4 py-1" style={{ borderColor: `${t.accent}25` }}>
                         <p className="text-[9px] tracking-[0.2em] opacity-40 mb-1.5 uppercase font-bold">{log.day}</p>
@@ -954,10 +1272,9 @@ export default function EchoesPage() {
                     )}
                   </motion.div>
                 )}
-
                 {activeTab === "decrypt" && (
                   <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <h3 className="text-[11px] uppercase tracking-[0.35em] opacity-30 font-bold">Decrypt</h3>
+                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Decrypt</h3>
                     <p className="text-[11px] opacity-50 leading-relaxed">Enter codes from the Numbers Station to recover sealed entries.</p>
                     <div className="flex gap-3">
                       <input
@@ -980,11 +1297,10 @@ export default function EchoesPage() {
                     {decryptError && <p className="text-[10px] animate-pulse" style={{ color: t.danger }}>Invalid code. Access denied.</p>}
                   </motion.div>
                 )}
-
                 {activeTab === "assets" && (
                   <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 font-bold">Assets</h3>
+                      <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Assets</h3>
                       <button onClick={() => setGalleryOpen(true)} className="text-[9px] uppercase tracking-wider opacity-50 hover:opacity-100 transition-opacity flex items-center gap-1.5">
                         <Image size={10} /> Gallery
                       </button>
@@ -1002,7 +1318,7 @@ export default function EchoesPage() {
                             }}
                           >
                             <div className="text-[8px] uppercase tracking-[0.15em] font-bold" style={{ color: isUnlocked ? "#a855f7" : t.dim }}>{asset.rarity}</div>
-                                                  <div className="text-xs font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
+                            <div className="text-xs font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
                             <div className="text-[8px] opacity-50 uppercase tracking-widest">{isUnlocked ? "Recovered" : "Encrypted"}</div>
                           </div>
                         );
@@ -1011,10 +1327,9 @@ export default function EchoesPage() {
                     <div className="text-center text-[10px] opacity-30 pt-2 uppercase tracking-widest">{assets.length} / {STORY_ASSETS.length} recovered</div>
                   </motion.div>
                 )}
-
                 {activeTab === "puzzles" && (
                   <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 text-[11px] md:text-[13px] leading-relaxed">
-                    <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Active Anomalies</h3>
+                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Active Anomalies</h3>
                     {[
                       { n: "01", title: "Intercepted Signal", body: "GUR QBBE BCRAF VAJNEQ", hint: "cmd: cipher [decoded]" },
                       { n: "02", title: "Coordinate Chain", body: "cmd: coords [n1] [n2] [n3] [n4]", hint: null },
@@ -1036,10 +1351,9 @@ export default function EchoesPage() {
                     ))}
                   </motion.div>
                 )}
-
                 {activeTab === "status" && (
-                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 text-[11px] md:text-[13px] font-mono">
-                    <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 font-bold">Status</h3>
+                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 text-[13px] md:text-[14px] font-mono">
+                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Status</h3>
                     <div className="space-y-2 opacity-80">
                       <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">ID</span><span>BUNKER_7</span></div>
                       <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">STATUS</span><span>SEALED</span></div>
@@ -1052,10 +1366,9 @@ export default function EchoesPage() {
                     </div>
                   </motion.div>
                 )}
-
                 {activeTab === "wall" && (
                   <motion.div key="wall" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                    <h3 className="text-[9px] uppercase tracking-[0.35em] opacity-30 mb-2 font-bold">Transmission Wall</h3>
+                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-2 font-bold">Transmission Wall</h3>
                     <p className="text-[10px] opacity-40 mb-3">Use <span className="font-mono opacity-70">transmit [msg]</span> to add a signal.</p>
                     {wallMessages.length === 0 ? (
                       <p className="text-[12px] opacity-20 italic">The static is silent.</p>
@@ -1064,14 +1377,13 @@ export default function EchoesPage() {
                         {wallMessages.slice(-20).map((m, i) => (
                           <div key={i} className="border-l-2 pl-3 py-1" style={{ borderColor: `${t.primary}10` }}>
                             <p className="text-[13px] opacity-80 leading-relaxed" style={{ color: t.primary }}>{m.text}</p>
-                            <p className="text-11px] opacity-20 mt-1 font-mono uppercase tracking-wider">{m.date}</p>
+                            <p className="text-[8px] opacity-20 mt-1 font-mono uppercase tracking-wider">{m.date}</p>
                           </div>
                         ))}
                       </div>
                     )}
                   </motion.div>
                 )}
-
                 {activeTab === "signal" && <motion.div key="signal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SignalTab theme={t} onPushTerminal={pushLines} /></motion.div>}
                 {activeTab === "leads" && <motion.div key="leads" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><LeadPanel theme={t} onPushTerminal={pushLines} /></motion.div>}
               </AnimatePresence>
@@ -1079,20 +1391,17 @@ export default function EchoesPage() {
           </div>
         </div>
 
-        {/* ─── INLINE VIDEO ─── */}
         {inlineVideo && (
           <div className="w-full max-w-3xl mx-auto">
             <TerminalVideoPlayer src={inlineVideo.src} label={inlineVideo.label} themeColor={t.primary} onClose={() => setInlineVideo(null)} />
           </div>
         )}
 
-        {/* ─── FOOTER ─── */}
         <div className="text-center opacity-15 text-[8px] tracking-[0.4em] uppercase py-2">
           <p style={{ textShadow: `0 0 10px ${t.phosphor}20` }}>The dust remembers everything</p>
         </div>
       </div>
 
-      {/* ─── OVERLAYS ─── */}
       {showGrid && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(8,6,4,0.92)", backdropFilter: "blur(6px)" }} onClick={() => setShowGrid(false)}>
           <div className="w-full max-w-2xl border rounded-lg p-5 relative" style={{ borderColor: `${t.accent}20`, background: t.bg, boxShadow: `0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 ${t.primary}10` }} onClick={(e) => e.stopPropagation()}>

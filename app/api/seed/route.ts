@@ -1600,7 +1600,8 @@ const SEED_DATA: SeedPlace[] = [
   },
 ];
 
-const SEED_DATA_80 = [
+const SEED_DATA_80: SeedPlace[] = [
+
   // ═══════════════════════════════════════════════════════════════
   // EUROPE — DEEP CUTS
   // ═══════════════════════════════════════════════════════════════
@@ -3287,7 +3288,9 @@ export async function GET(request: NextRequest) {
       (await PlaceModel.find({}, "slug")).map((p) => p.slug)
     );
 
-    const docs = SEED_DATA
+        const allData = [...SEED_DATA, ...SEED_DATA_80];
+
+    const docs = allData
       .filter((data) => !existingSlugs.has(slugify(data.name)))
       .map((data) => ({
         ...data,

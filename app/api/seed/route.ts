@@ -2,7 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect, { PlaceModel } from "@/lib/db";
 import { slugify } from "@/lib/utils";
 
-const SEED_DATA = [
+interface SeedPlace {
+  name: string;
+  category: "abandoned" | "haunted" | "both";
+  coordinates: [number, number];
+  address: {
+    city: string;
+    country: string;
+    formatted: string;
+  };
+  yearAbandoned?: number;
+  history: string;
+  hauntingReports?: string[];
+  dangerLevel: number;
+  photos: string[];
+  status?: "verified" | "pending" | "rejected" | "sealed" | "whispered" | "mirage";
+  contributor?: { name: string; email: string };
+  viewCount?: number;
+  submittedAt?: Date;
+  verifiedAt?: Date;
+  verifiedBy?: string;
+  unlockCondition?: {
+    type: "dust" | "code" | "inventory" | "visit" | "reading" | "time";
+    value: string | number;
+    message: string;
+  };
+  connectedTo?: string[];
+  resonanceNote?: string;
+}
+
+const SEED_DATA: SeedPlace[] = [
   {
     name: "Pripyat Amusement Park",
     category: "abandoned" as const,
@@ -1571,6 +1600,1674 @@ const SEED_DATA = [
   },
 ];
 
+const SEED_DATA_80 = [
+  // ═══════════════════════════════════════════════════════════════
+  // EUROPE — DEEP CUTS
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Pripyat Hospital 126",
+    category: "both" as const,
+    coordinates: [30.0528, 51.4075] as [number, number],
+    address: {
+      city: "Pripyat",
+      country: "Ukraine",
+      formatted: "Hospital 126, Pripyat, Kyiv Oblast, Ukraine",
+    },
+    yearAbandoned: 1986,
+    history: `The hospital that received the first casualties of Reactor 4. Firefighters arrived at 1:28 AM with clothes that registered 15,000 roentgen. The basement still holds their discarded uniforms — too radioactive to move, too dangerous to leave. The surgical theater on the third floor has an operating table with leather straps. The walls are stamped with footprints where liquidators walked out of the decontamination showers and collapsed. The maternity ward still has crib cards dated April 26. The infants were evacuated to Kiev. Most did not live to see June. BUNKER_7 monitors a Geiger counter left in the basement in 2019. It still ticks. The readings are transmitted to the grid every hour. The numbers have not gone down.`,
+    hauntingReports: [
+      "Liquidators' logbooks describe hearing infants crying from the maternity ward during decontamination sweeps in 1987.",
+      "The elevator shaft produces a grinding sound at 1:28 AM, the exact time the first ambulance arrived.",
+      "A nurse in a lead apron has been photographed in the second-floor corridor by unmanned trail cameras.",
+      "The discarded uniforms in the basement have been found rearranged into a circle on three separate occasions since 2019.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 40, message: "The grid will not show this ruin to the unclaimed. Accumulate more dust." },
+    connectedTo: ["pripyat-amusement-park", "duga-radar-array"],
+    resonanceNote: "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
+  },
+
+  {
+    name: "Buzludzha Monument",
+    category: "abandoned" as const,
+    coordinates: [25.3894, 42.7392] as [number, number],
+    address: {
+      city: "Buzludzha Peak",
+      country: "Bulgaria",
+      formatted: "Buzludzha Monument, Shipka Pass, Bulgaria",
+    },
+    yearAbandoned: 1989,
+    history: `Built in 1981 to commemorate the founding of the Bulgarian socialist movement, the Buzludzha Monument resembles a landed UFO — a concrete disc 70 meters in diameter perched on a mountain at 1,441 meters. The interior was once sheathed in mosaics: Marx, Engels, Lenin, and Bulgarian partisans rendered in 937 square meters of Soviet tile. The red star on the tower was three times larger than the one on the Kremlin. After 1989, the doors were welded shut. Vandals smashed the mosaics. The roof collapsed, admitting snow and lightning. Today the great hall is a ruin of red tile and twisted rebar. The acoustics remain perfect: stand at the center and whisper, and your voice returns from every direction, including some that do not correspond to the architecture.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["duga-radar-array"],
+  },
+
+  {
+    name: "Chernobyl Reactor 4 Control Room",
+    category: "both" as const,
+    coordinates: [30.0501, 51.3893] as [number, number],
+    address: {
+      city: "Pripyat",
+      country: "Ukraine",
+      formatted: "Reactor 4 Control Room, Chernobyl NPP, Ukraine",
+    },
+    yearAbandoned: 1986,
+    history: `Room 704/2. The AZ-5 button is still there, though the plastic has melted and re-solidified into an amber-like substance. The control rods are frozen at 2.4 meters. The radiation level in this room is 40,000 roentgen per hour — enough to deliver a lethal dose in four minutes. The liquidators who entered here in 1986 were called 'bio-robots' because machines failed instantly. They worked in shifts of 40 seconds. The paint on the walls bubbled and fell. The dosimeters screamed until their batteries died. The grid monitors this room through a single camera installed in 2021. The camera has recorded movement twice. Both times, the shift supervisor was logging out. Both times, someone remained in the room.`,
+    hauntingReports: [
+      "The AZ-5 button has been found depressed in trail camera footage, though no human has entered the room since 2021.",
+      "A voice identified as Senior Reactor Control Engineer Leonid Toptunov has been detected on the camera's audio channel.",
+      "The control rod position indicators fluctuate between 0.0 and 2.4 meters when the grid camera is not recording.",
+      "Visitors to the adjacent New Safe Confinement report seeing a figure in Room 704/2 through the blast window, though the room is sealed.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 60, message: "The control room remembers the hand that pressed the button. The grid requires more dust to show you." },
+    connectedTo: ["pripyat-hospital-126", "pripyat-amusement-park", "duga-radar-array"],
+    resonanceNote: "The button is still warm. I have the thermal imaging to prove it.",
+  },
+
+  {
+    name: "Hohenwerfen Dark Archive",
+    category: "haunted" as const,
+    coordinates: [13.1878, 47.4814] as [number, number],
+    address: {
+      city: "Werfen",
+      country: "Austria",
+      formatted: "Hohenwerfen Castle, Werfen, Salzburg, Austria",
+    },
+    yearAbandoned: undefined,
+    history: `The castle has been a fortress, a hunting lodge, a state prison, and a film set for Where Eagles Dare. Tourists visit the falconry and the battlements. They do not visit the south wing. The south wing was sealed in 1583 after the execution of Jakob Koller, a scribe who copied forbidden texts in the castle library. His cell — Room 17 — is not on any map. The castle staff deny it exists. In 2019, a restoration team drilling into the south wall found a chamber lined with human teeth set into the mortar. There were 4,000 teeth. No dental records from Werfen account for them. The chamber was resealed by order of the Austrian Federal Monuments Office. The drilling stopped. The south wing is colder than the rest of the castle by 8 degrees Celsius, measured at noon in August.`,
+    hauntingReports: [
+      "Night security reports a scratching sound from the south wall, as if teeth are being pressed into stone from the other side.",
+      "The castle ravens refuse to land on the south wing battlements, though they perch everywhere else.",
+      "A figure in 16th-century scribe's robes has been photographed in the courtyard by motion-activated cameras.",
+      "Visitors who touch the south wall report a metallic taste and the sensation of something pressing back.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    status: "whispered",
+    unlockCondition: { type: "code", value: "KOLLER", message: "BUNKER_7 holds a file on Jakob Koller. A specific frequency unlocks this record." },
+    connectedTo: ["chateau-de-brissac"],
+  },
+
+  {
+    name: "Sanatorium du Basil",
+    category: "haunted" as const,
+    coordinates: [5.7833, 50.6167] as [number, number],
+    address: {
+      city: "Stavelot",
+      country: "Belgium",
+      formatted: "Sanatorium du Basil, Stavelot, Liège, Belgium",
+    },
+    yearAbandoned: 1982,
+    history: `Built in 1899 as a tuberculosis sanatorium for the children of Liège's coal miners, the Basil was designed by Alphonse Balat — architect to King Leopold II. The building is a long, symmetrical pavilion of yellow brick and wrought iron, surrounded by birch forest. The treatment was heliotherapy: naked children were exposed to ultraviolet lamps and winter sun on open-air balconies, regardless of temperature. Mortality was 40%. The building was converted to a psychiatric hospital in 1953, then abandoned in 1982. The solarium still has the iron beds. The birch forest has grown through the balconies. In winter, the trees tap against the windows with a rhythm that matches the old heliotherapy bell schedule: 7 AM, noon, 4 PM.`,
+    hauntingReports: [
+      "The solarium beds creak in sequence, as if occupied by invisible patients turning toward the sun.",
+      "A child's laughter echoes from the hydrotherapy wing, though the tiles fell from the pool in 1998.",
+      "The birch trees nearest the building are deformed, growing horizontally toward the solarium windows.",
+      "Night explorers report finding small bare footprints in the dust that lead from the solarium to the morgue and back.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["chateau-miranda"],
+  },
+
+  {
+    name: "Borovsko Bridge",
+    category: "abandoned" as const,
+    coordinates: [14.0167, 49.7833] as [number, number],
+    address: {
+      city: "Borovnice",
+      country: "Czech Republic",
+      formatted: "Borovsko Bridge, Borovnice, Benešov, Czech Republic",
+    },
+    yearAbandoned: 1950,
+    history: `A concrete arch bridge built in 1939 to carry the Prague-Munich highway over the Žďakovka valley. Construction was interrupted by the German occupation, resumed in 1946, and abandoned in 1950 when the route was changed. The bridge stands complete but never connected to a road — a span of reinforced concrete ending in mid-air on both sides, 50 meters above the forest floor. Czech engineers call it the 'Bridge to Nowhere.' The concrete is weathering faster than predicted; micro-fractures in the pylons suggest the structure is singing at 18 Hz, a frequency below human hearing but within the range known to induce paranoia and visual hallucinations. The forest beneath it is unusually silent. No birds nest in the arches.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["sedlec-ossuary"],
+    resonanceNote: "The bridge hums at a frequency the ears cannot hear but the bones can. I have felt it in my teeth.",
+  },
+
+  {
+    name: "Skellig Michael",
+    category: "abandoned" as const,
+    coordinates: [-10.4506, 51.7713] as [number, number],
+    address: {
+      city: "Skellig Islands",
+      country: "Ireland",
+      formatted: "Skellig Michael, County Kerry, Ireland",
+    },
+    yearAbandoned: 1100,
+    history: `A twin-peaked granite island 12 kilometers off the coast of Kerry, inhabited by Gaelic monks from the 6th to the 11th centuries. They built six beehive huts of corbelled stone without mortar, a chapel, and two oratories on a plateau 180 meters above the Atlantic. The monks survived on rainwater, seabirds, and fish. No one knows why they left. The huts are still weatherproof. The stone crosses still stand. The island is a UNESCO site, closed to visitors in winter. The gannets arrive in March and depart in August, exactly as the monks once did. The beehive huts have no windows. The monks did not need to see the ocean. They needed to see only the sky, and the sky on Skellig Michael is closer than it is anywhere else in Ireland.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["st-kilda"],
+    resonanceNote: "The monks left no explanation. The gannets return anyway. I think they are waiting for something.",
+  },
+
+  {
+    name: "Luková Church of Ghosts",
+    category: "haunted" as const,
+    coordinates: [13.0167, 49.5167] as [number, number],
+    address: {
+      city: "Luková",
+      country: "Czech Republic",
+      formatted: "Church of St. George, Luková, Manětín, Czech Republic",
+    },
+    yearAbandoned: 1968,
+    history: `Built in 1352, the church served the village of Luková until 1968, when a funeral service was interrupted by the collapse of part of the ceiling. The congregation fled and never returned. The church stood empty for 40 years, roofless, its pews rotting. In 2012, an art student named Jakub Hadrava installed 30 ghost sculptures — plaster figures draped in white cloth, seated in the pews, standing in the choir loft, kneeling at the altar. They represent the Sudeten Germans who worshipped here before their expulsion in 1945. The ghosts are not haunting the church. They are attending it. The congregation has grown: visitors have added their own figures. There are now 47. The church holds more dead than living worshippers. The original ceiling has never been repaired. No one has fallen since.`,
+    hauntingReports: [
+      "The ghost sculptures have been found in different positions than they were placed, though the church is locked.",
+      "A figure not matching any of the 47 sculptures has been photographed standing in the bell tower.",
+      "The church organ — destroyed in the 1968 collapse — produces a single sustained note during thunderstorms.",
+      "Visitors report the sensation of being watched from the confessional by something that does not breathe.",
+    ],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["sedlec-ossuary"],
+  },
+
+  {
+    name: "Villers Abbey Ruins",
+    category: "abandoned" as const,
+    coordinates: [4.5333, 50.5833] as [number, number],
+    address: {
+      city: "Villers-la-Ville",
+      country: "Belgium",
+      formatted: "Villers Abbey, Villers-la-Ville, Walloon Brabant, Belgium",
+    },
+    yearAbandoned: 1796,
+    history: `Founded in 1146, the abbey grew to house 100 monks and 300 lay brothers on a 100-hectare estate. The French Revolution dissolved the order in 1796. The monks left in a single file on February 25. The last monk — Brother Jean-Baptiste — turned at the gate and made a mark in the stone with his staff. The mark is still visible. The abbey was sold as national property, quarried for stone, and partially burned in 1893. Restoration began in 1897 but stopped during World War I and never fully resumed. Today the Gothic church has no roof, but the transept walls still rise 30 meters. The cloister garden grows wild. The mark at the gate has deepened over two centuries, as if the stone is remembering the pressure of the staff.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["sanatorium-du-basil"],
+  },
+
+  {
+    name: "Kola Superdeep Borehole",
+    category: "abandoned" as const,
+    coordinates: [30.6, 69.4] as [number, number],
+    address: {
+      city: "Zapolyarny",
+      country: "Russia",
+      formatted: "Kola Superdeep Borehole, Pechengsky District, Murmansk Oblast, Russia",
+    },
+    yearAbandoned: 1992,
+    history: `The Soviet Union drilled here from 1970 to 1992, seeking the Mohorovičić discontinuity — the boundary between crust and mantle. They reached 12,262 meters, deeper than any borehole before or since. At 7 kilometers, the granite began to behave like plastic. At 9 kilometers, the temperature reached 180°C, far higher than predicted. The rock samples contained water — impossible at that depth and pressure. The last cores showed microfossils of plankton from 2 billion years ago, preserved at temperatures that should have destroyed all organic matter. In 1992, the project was cancelled. The borehole was capped with a welded steel plate. The research site was abandoned. The plate is 30 centimeters thick. Seismic sensors installed in 2015 record a low-frequency vibration from the borehole at irregular intervals. The frequency matches no known tectonic process. The research team that installed the sensors left after three weeks. None of them have returned to the Kola Peninsula.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 50, message: "The borehole goes deeper than the grid's current resolution. More dust is required to map the lower levels." },
+    connectedTo: ["tsktaltubo-sanatoriums"],
+    resonanceNote: "The borehole is 12,262 meters deep. I have calculated that sound would take 3.5 seconds to travel from the bottom to the top. The vibrations arrive faster than that.",
+  },
+
+  {
+    name: "Tskaltubo Sanatoriums",
+    category: "abandoned" as const,
+    coordinates: [42.6, 42.3] as [number, number],
+    address: {
+      city: "Tskaltubo",
+      country: "Georgia",
+      formatted: "Tskaltubo, Imereti, Georgia",
+    },
+    yearAbandoned: 1992,
+    history: `From 1950 to 1992, Tskaltubo was the Soviet Union's premier spa town. The mineral waters — naturally heated to 33°C — were prescribed for rheumatism, cardiovascular disease, and skin conditions. Stalin had a private dacha here. The sanatoriums were palaces of Soviet neoclassicism: columned entrances, marble staircases, ballrooms converted into hydrotherapy wards. Each republic had its own sanatorium building. After 1992, the buildings were abandoned. The marble was stolen. The mineral baths filled with stagnant water. In 2017, refugees from the Abkhazia conflict occupied several buildings. They are still there, living without electricity in Stalin's spa town, hanging laundry from the Corinthian columns. The water still flows. The baths are still warm. The prescriptions are no longer valid.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["kola-superdeep-borehole"],
+  },
+
+  {
+    name: "Łódź Ghetto Industrial Ruins",
+    category: "abandoned" as const,
+    coordinates: [19.46, 51.78] as [number, number],
+    address: {
+      city: "Łódź",
+      country: "Poland",
+      formatted: "Łódź Ghetto Area, Łódź, Poland",
+    },
+    yearAbandoned: 1944,
+    history: `The Łódź Ghetto was the second-largest in occupied Poland, sealed in 1940 with 200,000 Jews inside an area of 4 square kilometers. The Germans converted it into a slave-labor complex: 117 factories producing uniforms, boots, and munitions. The largest — the Madjeski textile plant — employed 15,000 workers in three shifts. The ghetto was liquidated in August 1944. The factories were not destroyed; they were repurposed by the communist regime and operated until 1989. Today the Madjeski plant is a ruin of Art Deco brick and broken skylights. The sewing machines were removed in 1995. The time cards from 1944 were found in the basement in 2001, still punched. The holes align with the shift changes: 6 AM, 2 PM, 10 PM. The building is scheduled for demolition. The time cards are in the Łódź Museum of Independence Traditions. The holes continue to align.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["oradour-sur-glane", "belchite"],
+  },
+
+  {
+    name: "Monte Pellegrino Abandoned Shrine",
+    category: "haunted" as const,
+    coordinates: [13.35, 38.17] as [number, number],
+    address: {
+      city: "Palermo",
+      country: "Italy",
+      formatted: "Monte Pellegrino, Palermo, Sicily, Italy",
+    },
+    yearAbandoned: 1625,
+    history: `The mountain above Palermo has been sacred since the Phoenicians. In 1624, a plague swept the city. Saint Rosalia — a 12th-century hermit — appeared to a hunter in a vision, directing him to her bones in a cave on Monte Pellegrino. The bones were found. The plague stopped. The cave became a sanctuary, expanded into a complex of chapels, hermitages, and a pilgrimage hostel. By 1800, the complex housed 50 hermits. The last hermit died in 1900. The church was maintained, but the hermitages — 12 small cells carved into the cliff — were abandoned. The cells still have stone beds, candle niches, and graffiti in Latin, Arabic, and an unidentified script. The unidentified graffiti has been dated to the 8th century. It describes a star that fell into the mountain. The star, the text claims, is still there.`,
+    hauntingReports: [
+      "Hikers report finding fresh candle wax in cells that have been sealed since 1900.",
+      "The unidentified graffiti has been observed to change; letters appear and disappear between surveys.",
+      "A figure in a brown habit has been seen entering the mountain through a passage that does not exist on geological maps.",
+      "The cave where Saint Rosalia's bones were found produces a low hum at dawn that seismographs attribute to no known fault line.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    status: "whispered",
+    unlockCondition: { type: "visit", value: "catacombs-of-paris", message: "The grid has detected a resonance between subterranean sacred sites. Visit the Paris catacombs first." },
+    connectedTo: ["catacombs-of-paris"],
+  },
+
+  {
+    name: "Poveglia Subterranean Ward",
+    category: "haunted" as const,
+    coordinates: [12.3315, 45.3815] as [number, number],
+    address: {
+      city: "Venice",
+      country: "Italy",
+      formatted: "Poveglia Island Subterranean Ward, Venetian Lagoon, Italy",
+    },
+    yearAbandoned: 1968,
+    history: `Beneath the mental hospital on Poveglia lies a network of brick tunnels built in 1793 to transport plague victims from the quarantine ships to the cremation pits. The tunnels were expanded in 1922 to connect the hospital's basement to the bell tower. The 1968 hospital records mention a 'Ward X' in the sub-basement, though no such ward appears on any blueprint. Three orderlies who descended to repair a burst pipe in October 1968 were found catatonic in the tunnel three hours later. They never spoke again. The hospital closed two weeks later. The tunnel entrance was bricked up in 1969. The bricks are damp. The mortar weeps salt water. The bell tower is 50 meters away. The weeping aligns with the tide.`,
+    hauntingReports: [
+      "The bricked-up entrance produces a knocking sound in sequences of three, synchronized with the Venetian tide.",
+      "Infrared cameras detect a heat signature in the tunnel beyond the brick wall, though no passage exists.",
+      "The 1968 orderlies' medical records describe identical hallucinations: a ward of occupied beds, all facing the wall.",
+      "The bell tower, decommissioned in 1950, produces a low tolling that matches the knocking frequency from the sub-basement.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 55, message: "Ward X does not appear on maps. The grid requires significant dust accumulation to resolve the signal." },
+    connectedTo: ["poveglia-island"],
+    resonanceNote: "I have the 1968 orderlies' records. They all drew the same thing: a ward of beds, all facing the wall. None of them could explain why this frightened them.",
+  },
+
+  {
+    name: "Beelitz Surgery Basement",
+    category: "haunted" as const,
+    coordinates: [12.9118, 52.2592] as [number, number],
+    address: {
+      city: "Beelitz",
+      country: "Germany",
+      formatted: "Beelitz-Heilstätten Surgery Basement, Brandenburg, Germany",
+    },
+    yearAbandoned: 1994,
+    history: `The surgery pavilion at Beelitz had two basements. The first is documented: storage, boilers, laundry. The second was discovered in 2003 by urban explorers who broke through a plaster wall in the morgue. It contains six operating theaters arranged in a hexagon around a central drain. The tables are porcelain, bolted to the floor. The overhead lights are still wired to a generator that was removed in 1995. The walls are tiled in surgical green, except for one wall in Theater 4, which is tiled in black. The black tiles are warm to the touch. The drain in the center is 1.2 meters in diameter — larger than any medical drain should be. The explorers who photographed it reported that their cameras captured operating theaters full of occupied tables. Their film cameras showed empty rooms. The digital files were corrupted. The film negatives were clear.`,
+    hauntingReports: [
+      "The black-tiled wall in Theater 4 has been measured at 34°C, 12 degrees above ambient, with no heat source.",
+      "The central drain produces a sound of fluid movement during rainstorms, though the basement is above the water table.",
+      "The porcelain tables bear restraint marks that do not match any known surgical procedure.",
+      "The morgue refrigerator, disconnected since 1994, maintains an internal temperature of -15°C.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "inventory", value: "lantern", message: "The basement has no power. The grid suggests a light source." },
+    connectedTo: ["beelitz-heilstaetten"],
+    resonanceNote: "The drain is 1.2 meters across. I have checked the architectural records. It was not in the original plans. It was added in 1942.",
+  },
+
+  {
+    name: "DUGA Control Room",
+    category: "both" as const,
+    coordinates: [30.0675, 51.3065] as [number, number],
+    address: {
+      city: "Chernobyl-2",
+      country: "Ukraine",
+      formatted: "DUGA Control Room, Chernobyl-2, Kyiv Oblast, Ukraine",
+    },
+    yearAbandoned: 1989,
+    history: `The DUGA array was controlled from a two-story concrete bunker 3 kilometers from the antennas. The bunker contained the receivers, the signal processors, and the printout room where continuous paper recorded the radar returns. The operators lived in Chernobyl-2, a closed city erased from maps. The control room still has the consoles: Bakelite switches, cathode-ray displays, and a master clock that stopped at 01:23:47 — the exact second of the Reactor 4 explosion. The clock was not connected to the reactor. It was connected to the grid power supply 30 kilometers away. The paper in the printout room shows the DUGA's final transmission: a 14-second pulse that does not match any known Soviet radar signature. The pulse was directed upward, not toward the horizon. The paper is still in the machine. No one has removed it. The clock has not been reset.`,
+    hauntingReports: [
+      "The master clock advances one second per year, though it has no power source.",
+      "The printout paper has been found extended by 14 centimeters, though the machine has no ribbon and no power.",
+      "Visitors report hearing the DUGA pulse — a sharp tapping at 10 Hz — from the bunker walls, though the antennas are silent.",
+      "The Chernobyl-2 apartment blocks visible from the control room window show lights in windows that have been boarded since 1986.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 45, message: "The DUGA pulse was not radar. The grid needs more dust to resolve the signal's true origin." },
+    connectedTo: ["duga-radar-array", "chernobyl-reactor-4-control-room"],
+    resonanceNote: "The pulse was directed upward. I have calculated the angle. It was not listening for missiles. It was listening for something above the atmosphere.",
+  },
+
+  {
+    name: "Brest Fortress Casemates",
+    category: "both" as const,
+    coordinates: [23.6547, 52.0833] as [number, number],
+    address: {
+      city: "Brest",
+      country: "Belarus",
+      formatted: "Brest Fortress, Brest, Belarus",
+    },
+    yearAbandoned: 1941,
+    history: `The citadel was built by the Russian Empire in 1842 at the confluence of the Bug and Mukhavets rivers. It survived World War I, the Polish-Soviet War, and the first hours of Operation Barbarossa. On June 22, 1941, German artillery pounded the fortress for six days. The defenders held for a month, fighting from the casemates — underground chambers with walls 2 meters thick. The last organized resistance ended in July. The bodies were not fully recovered. In 1965, the fortress was declared a Hero Fortress. The casemates were opened to the public in 1971. The eastern casemate — Chamber 7 — is not open. A steel door was welded across it in 1983 after a museum worker reported 'voices from the walls speaking Polish and Russian simultaneously.' The door has no handle on the outside. The humidity in Chamber 7 is 100%. The walls weep. The weeping has been analyzed. It is not water. It is not salt. The compound has not been identified.`,
+    hauntingReports: [
+      "The steel door on Chamber 7 produces a rhythmic pounding that matches no known animal behavior.",
+      "Visitors to adjacent chambers report hearing marching boots and rifle bolts from behind the welded door.",
+      "The unidentified compound on the walls glows faintly under UV light, forming letters in Cyrillic and Polish.",
+      "Temperature in Chamber 7 drops to 4°C in July, though the surrounding chambers remain at 18°C.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "code", value: "BARBAROSSA", message: "The casemates remember the date of the invasion. The correct frequency unlocks Chamber 7." },
+    connectedTo: ["oradour-sur-glane", "belchite"],
+  },
+
+  {
+    name: "Oradour Church Crypt",
+    category: "haunted" as const,
+    coordinates: [1.0335, 45.9335] as [number, number],
+    address: {
+      city: "Oradour-sur-Glane",
+      country: "France",
+      formatted: "Oradour-sur-Glane Church Crypt, Haute-Vienne, France",
+    },
+    yearAbandoned: 1944,
+    history: `Beneath the church of Saint-Martin in the martyr village lies a crypt built in the 13th century. It was not used for burials; it was used for storage of communion wine and parish records. On June 10, 1944, the SS locked 247 women and children in the church and set it on fire. The roof collapsed. The crypt survived. When the ruins were preserved in 1946, the crypt was sealed with a concrete slab. In 1994, the slab was removed for structural inspection. The wine bottles were intact. The parish records were not ash; they were wet, as if submerged. The dates in the records continued until June 17, 1944 — seven days after the massacre. The last entry describes a baptism. The crypt has no water source. The slab was replaced. It has not been removed since.`,
+    hauntingReports: [
+      "The concrete slab over the crypt weeps moisture on the anniversary of the massacre, though no rain falls.",
+      "A baby's cry has been recorded by acoustic engineers working on the preservation of the church ruins.",
+      "The parish records, now in the Limoges archives, show additional entries in ink that does not match any known 1944 pen.",
+      "Visitors standing on the crypt slab report a sensation of heat rising from below, as if the fire is still burning.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["oradour-sur-glane"],
+  },
+
+  {
+    name: "Teufelsberg Echo Dome",
+    category: "haunted" as const,
+    coordinates: [13.2415, 52.4975] as [number, number],
+    address: {
+      city: "Berlin",
+      country: "Germany",
+      formatted: "Teufelsberg Echo Dome, Grunewald, Berlin",
+    },
+    yearAbandoned: 1999,
+    history: `The largest of the five radomes on Teufelsberg — Dome 3 — was not used for radar. NSA documents declassified in 2012 refer to it as an 'acoustic test facility.' The interior is a perfect sphere of fiberglass, 18 meters in diameter, with a single microphone suspended from the ceiling on a steel cable. The floor is concrete, but the concrete has been worn smooth in a circular pattern 3 meters in diameter, as if something rotated there for years. The declassified documents do not explain the wear pattern. The microphone is still connected to a coaxial cable that runs into the mountain. The cable has been traced to the base of the artificial hill, where it enters a concrete shaft that extends 40 meters below ground level. The shaft is flooded. The water has been tested. It is not groundwater. It is seawater. Berlin is 180 kilometers from the sea.`,
+    hauntingReports: [
+      "Dome 3 produces a low-frequency hum at 4:30 AM daily, though it has no power connection.",
+      "The wear pattern on the floor has deepened by 2 millimeters since 2012, though no one enters the dome.",
+      "The suspended microphone rotates slowly, always coming to rest pointing at the same spot on the floor.",
+      "Visitors who whisper into the dome's center hear their words returned in a voice not their own, speaking German they do not understand.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 35, message: "The dome is listening. The grid requires more dust to hear what it hears." },
+    connectedTo: ["teufelsberg"],
+    resonanceNote: "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASIA & PACIFIC
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Battambang Killing Caves",
+    category: "both" as const,
+    coordinates: [103.1, 13.1] as [number, number],
+    address: {
+      city: "Battambang",
+      country: "Cambodia",
+      formatted: "Phnom Sampeau Killing Caves, Battambang, Cambodia",
+    },
+    yearAbandoned: 1979,
+    history: `The Khmer Rouge used the limestone caves in Phnom Sampeau as execution chambers from 1975 to 1979. Victims were pushed through a natural skylight 15 meters above the cave floor. The drop killed some instantly. The Khmer Rouge finished the others with ox-cart axles. The bones were left where they fell. In 1980, a Buddhist monk named Mau began collecting the remains. He built a glass-walled stupa to house the skulls — 1,000 of them, arranged on shelves, facing outward. The caves are open to tourists. The skylight is still there. The floor is still uneven. The monk died in 2002. His successor continues the work. The skulls are not all accounted for. New bones surface after every monsoon. The caves are not a memorial. They are a geological process that happens to contain human remains.`,
+    hauntingReports: [
+      "The glass stupa produces condensation on the inside, though the temperature is constant and the seals are intact.",
+      "Visitors report hearing a scraping sound from the cave ceiling, as if the skylight is being widened from above.",
+      "A figure in Khmer Rouge black pajamas has been photographed standing at the skylight edge by tourist cameras.",
+      "The new bones that surface after monsoons show cut marks that do not match any known 1970s weapon.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["tuol-sleng", "choeung-ek"],
+  },
+
+  {
+    name: "Fengdu Ghost City",
+    category: "haunted" as const,
+    coordinates: [107.72, 29.88] as [number, number],
+    address: {
+      city: "Fengdu",
+      country: "China",
+      formatted: "Fengdu Ghost City, Mingshan, Chongqing, China",
+    },
+    yearAbandoned: undefined,
+    history: `The name predates the city. Fengdu has been the capital of the afterlife in Chinese folk religion since the Han Dynasty, 2,000 years ago. The temples on Mingshan Mountain depict the 18 levels of hell in concrete and polychrome: sinners being flayed, boiled, dismembered, and ground between stones. The temples were renovated in 1985 as a tourist attraction. The renovation uncovered a sealed chamber beneath the Temple of the King of Hell. The chamber contained 2,000 terracotta figurines, each 30 centimeters tall, arranged in a judicial court. The figures were not Han Dynasty. Carbon dating placed them at 8,000 years old. The chamber was resealed. The figurines were not removed. The Temple of the King of Hell was rebuilt directly above them. The tourists take photographs. The figurines wait.`,
+    hauntingReports: [
+      "The terracotta figurines have been detected moving by ground-penetrating radar surveys conducted in 2019.",
+      "Visitors to the Temple of the King of Hell report dreams of the judicial court, presided over by a figure with their own face.",
+      "The concrete statues of hell show fresh cracks each spring, always in the same pattern: a spiral descending toward the sealed chamber.",
+      "A monk who entered the sealed chamber in 1985 died six days later of undetermined causes. His journal describes the figurines breathing.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["aokigahara-forest"],
+  },
+
+  {
+    name: "Hachijo Royal Hotel",
+    category: "abandoned" as const,
+    coordinates: [139.78, 33.12] as [number, number],
+    address: {
+      city: "Hachijojima",
+      country: "Japan",
+      formatted: "Hachijo Royal Hotel, Hachijojima, Tokyo, Japan",
+    },
+        yearAbandoned: 2006,
+    history: `Opened in 1963, the Hachijo Royal was Japan's largest resort hotel, built in the French Baroque style on a volcanic island 300 kilometers south of Tokyo. It had 300 rooms, a nightclub, a spa, and a golf course. The architecture was surreal: Versailles transplanted to the Pacific, surrounded by jungle and sulfur vents. The island's population declined as air travel made mainland resorts more accessible. The hotel closed in 2006. The jungle has entered the lobby. Ferns grow from the grand piano. The chandelier in the ballroom still hangs, though the ceiling above it has rotted through. Monkeys nest in the honeymoon suites. The sulfur vents have shifted; one now opens directly beneath the former kitchen. The smell is constant. The hotel is not being reclaimed. It is being digested.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["hashima-island", "nara-dreamland"],
+  },
+
+  {
+    name: "Kepulauan Seribu Dutch Fort",
+    category: "abandoned" as const,
+    coordinates: [106.5, -5.6] as [number, number],
+    address: {
+      city: "Onrust Island",
+      country: "Indonesia",
+      formatted: "Fort Onrust, Kepulauan Seribu, Jakarta, Indonesia",
+    },
+    yearAbandoned: 1949,
+    history: `Built by the Dutch East India Company in 1656 as a naval base and quarantine station, Fort Onrust — 'Unrest' — housed soldiers, political prisoners, and plague victims in successive waves. The fort was abandoned after Indonesian independence in 1949. The stone barracks still stand on the coral beach, their Dutch tiles cracked by banyan roots. The quarantine cemetery was on the island's north shore; 2,000 bodies were buried there between 1850 and 1920. The headstones were removed in 1970 for a tourism development that never materialized. The coral has grown over the graves. The tide exposes them at the new moon. The bones are white and small. They are not all human.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["lawang-sewu"],
+  },
+
+  {
+    name: "Mururoa Atoll Bunker 810",
+    category: "abandoned" as const,
+    coordinates: [-138.67, -21.83] as [number, number],
+    address: {
+      city: "Mururoa",
+      country: "French Polynesia",
+      formatted: "Mururoa Atoll, Tuamotu Archipelago, French Polynesia",
+    },
+    yearAbandoned: 1996,
+    history: `France conducted 181 nuclear tests in French Polynesia between 1966 and 1996 — 41 atmospheric, 140 underground. Mururoa and Fangataufa atolls were the primary sites. Bunker 810 was drilled into the coral reef to observe test 810, a 120-kiloton underground detonation on November 17, 1974. The bunker was designed to withstand the shockwave. It did not. The concrete shell cracked. The instrumentation recorded 47 seconds of data before failure. The French military sealed the bunker in 1975 and declared the atoll off-limits. In 2006, a Greenpeace survey team measured radiation levels at the bunker entrance 400 times above background. The coral inside the atoll lagoon is bleached in a perfect circle, 2 kilometers in diameter. The circle is expanding. The French government denies this.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 70, message: "The atoll is still hot. The grid will not resolve the signal without significant contamination." },
+    connectedTo: ["vieques-island"],
+  },
+
+  {
+    name: "Wewak Japanese Tunnels",
+    category: "abandoned" as const,
+    coordinates: [143.63, -3.55] as [number, number],
+    address: {
+      city: "Wewak",
+      country: "Papua New Guinea",
+      formatted: "Wewak, East Sepik Province, Papua New Guinea",
+    },
+    yearAbandoned: 1945,
+    history: `The Imperial Japanese Army dug 50 kilometers of tunnels into the ridges above Wewak during their occupation of New Guinea from 1942 to 1945. The tunnels housed 20,000 troops, ammunition stores, and a field hospital. The Allies never captured the tunnel complex; the Japanese held out until September 1945, three weeks after the surrender. The tunnels were sealed with explosives in 1946. Local landowners reopened some in the 1970s. The hospital tunnel — Tunnel 23 — contains 200 beds carved from volcanic tuff, still arranged in wards. The mattresses are gone. The bed frames are rusted. The walls are covered in Japanese graffiti: names, dates, and drawings of cherry blossoms. The blossoms are drawn in a pigment that analysis identifies as human blood.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["port-arthur-penal-settlement"],
+  },
+
+  {
+    name: "Aokigahara Sea of Trees Station",
+    category: "haunted" as const,
+    coordinates: [138.658, 35.476] as [number, number],
+    address: {
+      city: "Yamanashi",
+      country: "Japan",
+      formatted: "Aokigahara Station, Yamanashi Prefecture, Japan",
+    },
+    yearAbandoned: 1983,
+    history: `A small railway station on the JR East line that once served loggers and miners entering the forest at the northwest base of Mount Fuji. The station closed in 1983 when logging was banned. The platform remains, though the tracks have been removed. The station building — a single room with a wood stove and a ticket counter — still stands. The timetable on the wall shows the last train: 16:42, March 31, 1983. The clock above the counter stopped at 16:42 and has not moved since. Hikers report finding train tickets on the platform dated after 1983. The most recent was dated 2019. The tickets are valid for a destination that does not exist on any JR timetable: 'Terminus.'`,
+    hauntingReports: [
+      "The station clock advances one minute per year, though it has no mechanism.",
+      "Tickets dated after 1983 have been found on the platform, all for the same nonexistent destination.",
+      "The wood stove produces ash on winter mornings, though the chimney is blocked and no fire is lit.",
+      "A figure in a stationmaster's uniform has been seen bowing to an empty platform at 16:42 daily.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["aokigahara-forest"],
+    resonanceNote: "The station closed in 1983. The tickets keep arriving. I think the forest is still buying them.",
+  },
+
+  {
+    name: "Tuol Sleng Security Prison 21",
+    category: "both" as const,
+    coordinates: [104.917, 11.549] as [number, number],
+    address: {
+      city: "Phnom Penh",
+      country: "Cambodia",
+      formatted: "Tuol Sleng Genocide Museum, Phnom Penh, Cambodia",
+    },
+    yearAbandoned: 1979,
+    history: `A former high school converted by the Khmer Rouge into Security Prison 21 (S-21) in 1976. Between 1976 and 1979, an estimated 20,000 people were imprisoned here. Seven survived. The classrooms were divided into cells of brick or wood. The former chemistry lab became an interrogation center. The playground equipment was used for torture. When Vietnamese forces liberated Phnom Penh in January 1979, they found 14 corpses in the last cells, freshly murdered. The museum opened in 1980. The bloodstains on the floor were never cleaned; they were lacquered. The mugshots of the victims cover the walls — 5,000 faces, each one photographed on arrival. The faces look out at the visitors. Some visitors find their own faces among them. The museum staff do not comment on this.`,
+    hauntingReports: [
+      "Visitors report finding their own faces in the victim photograph archive, though the photos were taken before they were born.",
+      "The bloodstains on the floor produce fresh moisture on the anniversary of the liberation.",
+      "The gallows in the playground — a steel frame where prisoners were hung upside down — creaks at noon, though it has no moving parts.",
+      "The seven survivors have all reported seeing themselves in the mugshot walls, standing in the background of photographs taken in 1977.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["battambang-killing-caves", "choeung-ek"],
+  },
+
+  {
+    name: "Choeung Ek Killing Fields",
+    category: "both" as const,
+    coordinates: [104.9, 11.484] as [number, number],
+    address: {
+      city: "Phnom Penh",
+      country: "Cambodia",
+      formatted: "Choeung Ek, Dangkao, Phnom Penh, Cambodia",
+    },
+    yearAbandoned: 1979,
+    history: `The most notorious of the 300 Khmer Rouge execution sites, Choeung Ek is an orchard and Chinese cemetery 17 kilometers from Phnom Penh. Between 1975 and 1979, approximately 17,000 people were transported here from S-21, bludgeoned to death to save ammunition, and buried in mass graves. The graves are still there, marked by depressions in the grass. A Buddhist stupa holds 8,000 skulls, arranged by age and sex. The stupa has glass walls. The skulls look out. The orchard still produces fruit — mango and jackfruit. The fruit is not sold. It falls and rots. The mass graves are not excavated. They are maintained. The grass is cut. The depressions remain. The earth here is 2 meters higher than the surrounding fields. The difference is not geological.`,
+    hauntingReports: [
+      "The stupa glass weeps condensation on the anniversary of the Vietnamese liberation, though the temperature is constant.",
+      "Visitors report hearing a diesel generator at night, though the site has no generator and no night access.",
+      "The mango trees produce fruit with a metallic taste that does not match any known soil contamination.",
+      "A child in black pajamas has been seen sitting on the edge of Mass Grave 7, though no children are permitted after 5 PM.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["tuol-sleng", "battambang-killing-caves"],
+  },
+
+  {
+    name: "Kowloon Walled City Park",
+    category: "abandoned" as const,
+    coordinates: [114.19, 22.331] as [number, number],
+    address: {
+      city: "Kowloon",
+      country: "Hong Kong",
+      formatted: "Kowloon Walled City Park, Kowloon, Hong Kong",
+    },
+    yearAbandoned: 1994,
+    history: `What began as a Qing military outpost in 1847 became, by 1987, the most densely populated place on Earth: 33,000 people living in 300 interconnected buildings on 2.6 hectares. The British claimed sovereignty. The Chinese claimed sovereignty. Neither governed it. The result was a vertical slum of unlicensed dentists, brothels, food factories, and heroin dens, connected by corridors so narrow that sunlight reached the ground on only three days per year. The Hong Kong government demolished it in 1994 and built a park. The park is beautiful: Qing gardens, pavilions, a lake. But the foundations of the Walled City remain beneath the grass. Ground-penetrating radar shows the building footprints. The well that supplied the city is still there, capped with concrete. The concrete is 3 meters thick. The well was not capped to preserve it. It was capped to keep something in.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["hashima-island"],
+    resonanceNote: "The well is capped with 3 meters of concrete. The park gardeners do not know why. The old residents do not answer questions about it.",
+  },
+
+  {
+    name: "Jatinga Bird Suicide Point",
+    category: "haunted" as const,
+    coordinates: [92.72, 25.17] as [number, number],
+    address: {
+      city: "Jatinga",
+      country: "India",
+      formatted: "Jatinga, Dima Hasao District, Assam, India",
+    },
+    yearAbandoned: undefined,
+    history: `Between August and November, on moonless nights after sunset, birds fly into the village of Jatinga and crash into buildings, trees, and the ground. The phenomenon has been recorded since 1905. Ornithologists have proposed magnetic field disturbances, fog disorientation, and village lights as explanations. None fully account for the behavior. The birds — mostly migratory species — do not attempt to fly away. They dive. Villagers have traditionally caught and eaten them. In 2015, the district administration banned the practice and installed floodlights to deter the birds. The birds now crash into the floodlights. The mortality has increased. The village has 2,500 residents. On peak nights in September, 200 birds die. The carcasses are collected and buried in a mass grave on the village's eastern edge. The grave is unmarked. The grass above it does not grow.`,
+    hauntingReports: [
+      "The mass grave produces a sound of wingbeats on nights when no birds are migrating.",
+      "Villagers report seeing birds flying upward from the grave at dawn, though the carcasses are still buried.",
+      "The floodlights attract birds from species that do not migrate through Assam, including birds not native to the Indian subcontinent.",
+      "A figure composed of feathers and bone fragments has been observed standing at the suicide point during monsoon fog.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["kuldhara"],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // AMERICAS — NORTH, CENTRAL, SOUTH
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Gila River Relocation Center",
+    category: "abandoned" as const,
+    coordinates: [-111.88, 33.07] as [number, number],
+    address: {
+      city: "Rivers",
+      country: "United States",
+      formatted: "Gila River War Relocation Center, Pinal County, Arizona",
+    },
+    yearAbandoned: 1945,
+    history: `One of ten American concentration camps where Japanese citizens and Japanese-Americans were interned during World War II. Gila River held 13,000 people in tar-paper-covered barracks in the Sonoran Desert, where summer temperatures reach 50°C. The camp had a high school, a newspaper, and a cemetery. The barracks were sold after the war. The foundations remain — concrete slabs arranged in blocks, each slab the footprint of a family home. The cemetery holds 19 graves. The irrigation ditches dug by the internees still carry water to nearby farms. In 1990, a monument was erected. The concrete slabs are not marked. They are visible from the road. The desert has not reclaimed them. The tar-paper is gone, but the rectangles remain, each one the exact size of a constitutional right suspended by Executive Order 9066.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["manzanar"],
+  },
+
+  {
+    name: "Manzanar",
+    category: "abandoned" as const,
+    coordinates: [-118.072, 36.728] as [number, number],
+    address: {
+      city: "Independence",
+      country: "United States",
+      formatted: "Manzanar National Historic Site, Independence, California",
+    },
+    yearAbandoned: 1945,
+    history: `The most infamous of the Japanese-American internment camps, Manzanar held 10,000 people between 1942 and 1945 at the foot of the Sierra Nevada. The wind blew dust through the floorboards. The water was alkaline. The mess halls served liver and onions until the internees organized their own kitchens. The camp had a baseball diamond, a Buddhist temple, and a cemetery with a concrete obelisk inscribed with the characters for 'soul consoling tower.' The obelisk still stands. The camp was demolished in 1945. The foundations were left. The National Park Service reconstructed one barrack in 2004. It is 20 feet by 120 feet. Eight people lived in each 20-foot section. The dust still blows through the floorboards. The obelisk is the only original structure. The souls it was built to console were never asked if they needed consoling.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["gila-river-relocation-center"],
+  },
+
+  {
+    name: "Rhyolite",
+    category: "abandoned" as const,
+    coordinates: [-116.828, 36.903] as [number, number],
+    address: {
+      city: "Rhyolite",
+      country: "United States",
+      formatted: "Rhyolite, Nye County, Nevada",
+    },
+    yearAbandoned: 1916,
+    history: `Founded in 1904 after a gold strike in the Bullfrog Hills, Rhyolite grew to 5,000 residents in two years. It had concrete sidewalks, electric lights, water mains, a stock exchange, and an opera house. The three-story John S. Cook & Co. Bank was built of imported Italian marble and mahogany. The gold ran out by 1907. The power plant closed in 1910. The last residents left in 1916. The Cook Bank building still stands, though its roof is gone and the marble is scorched by desert sun. A 1988 art installation — 'The Last Supper' by Albert Szukalski — placed ghostly plaster figures in robes around a table in front of the bank. The figures are weathering. The bank is weathering. The desert does not distinguish between art and architecture. Both become geology eventually.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["bodie-ghost-town"],
+  },
+
+  {
+    name: "Garnet Ghost Town",
+    category: "abandoned" as const,
+    coordinates: [-113.338, 46.826] as [number, number],
+    address: {
+      city: "Garnet",
+      country: "United States",
+      formatted: "Garnet, Granite County, Montana",
+    },
+    yearAbandoned: 1942,
+    history: `A gold mining town established in 1895 at 6,000 feet in the Garnet Mountains. At its peak in 1898, 1,000 people lived here, served by four hotels, four stores, two barbershops, and thirteen saloons. The placer gold ran out by 1905. Hard-rock mining continued until 1912. A brief revival during the Great Depression brought 250 people back. They left in 1942 when wartime restrictions closed non-essential mines. Today 30 buildings remain, the most intact ghost town in Montana. The Wells Hotel still has furniture. The general store still has cans on the shelves. The Bureau of Land Management maintains the town as a heritage site. In winter, the access road is closed by snow. The caretaker is the only resident from November to April. In 2010, the caretaker reported that the saloon piano played itself on New Year's Eve. The piano has no strings. The saloon has no roof.`,
+    hauntingReports: [
+      "The saloon piano produces chords on New Year's Eve, though the strings were removed in 1960.",
+      "Footprints in snow appear between buildings on nights when the temperature is -20°F and no animal tracks are present.",
+      "The hotel registry shows entries in pencil dated after 1942, written in a hand that matches no known resident.",
+      "The caretaker's cabin receives radio transmissions on frequencies not allocated to any US broadcaster, always at 3:00 AM.",
+    ],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["bodie-ghost-town", "rhyolite"],
+  },
+
+  {
+    name: "Eloise Psychiatric Hospital",
+    category: "haunted" as const,
+    coordinates: [-83.336, 42.33] as [number, number],
+    address: {
+      city: "Westland",
+      country: "United States",
+      formatted: "Eloise Psychiatric Hospital, Westland, Michigan",
+    },
+    yearAbandoned: 1982,
+    history: `Begun as the Wayne County Poorhouse in 1839, Eloise grew to a 902-acre complex with 78 buildings, including a tuberculosis sanatorium, a psychiatric hospital, and a county farm. At its peak in the 1930s, it housed 10,000 patients. The psychiatric hospital performed electroshock therapy, insulin coma therapy, and lobotomy. The morgue had a glass-walled autopsy theater for medical students. The hospital closed in 1982. Most buildings were demolished. The Kay Beard Building — the former administration building — still stands, though its windows are boarded and its marble staircases are crumbling. The tunnels that connected the buildings were filled with concrete in 1990. The concrete did not harden properly in Tunnel 3. It remains soft. Visitors who press their hands into it report the sensation of being grasped from the other side.`,
+    hauntingReports: [
+      "The soft concrete in Tunnel 3 retains handprints that appear overnight, though no one enters the tunnel.",
+      "The autopsy theater produces a sound of metal instruments on porcelain tables when the building is empty.",
+      "A nurse in 1930s uniform has been seen in the upper windows, though the floors above the second story are structurally unsound.",
+      "The former farm fields produce crops in the exact rows planted in 1982, though no seeds have been sown in 40 years.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],
+  },
+
+  {
+    name: "Danvers State Hospital",
+    category: "haunted" as const,
+    coordinates: [-70.967, 42.585] as [number, number],
+    address: {
+      city: "Danvers",
+      country: "United States",
+      formatted: "Danvers State Hospital, Danvers, Massachusetts",
+    },
+    yearAbandoned: 1992,
+    history: `Built in 1878 according to the Kirkbride Plan — a linear arrangement of wings extending from a central administration building, designed to provide moral treatment through architecture and landscape. Danvers was called the Castle on the Hill. It treated 2,000 patients at its peak. The treatments evolved from occupational therapy to lobotomy, hydrotherapy, and electroshock. The hospital closed in 1992. The building stood empty for 13 years. In 2005, a developer converted the Kirkbride building into apartments. The wings were demolished for condominiums. The cemeteries — 770 graves marked only with numbers — remain in the woods behind the development. The numbers correspond to patient records that were destroyed in a 1986 fire. The graves are arranged in concentric circles. The circles are not complete. The gaps align with the demolished wings.`,
+    hauntingReports: [
+      "Apartment residents report footsteps in the corridors that match the old patient shift schedules.",
+      "The numbered graves produce a sound of counting at midnight, always stopping at the number of the most recent burial.",
+      "A figure in a straitjacket has been photographed in the windows of apartments built where the violent wards once stood.",
+      "The Kirkbride central tower — now a luxury penthouse — produces a low hum at 19 Hz, the frequency of human eyeball resonance.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],
+  },
+
+  {
+    name: "Rolling Hills Asylum",
+    category: "haunted" as const,
+    coordinates: [-78.136, 42.995] as [number, number],
+    address: {
+      city: "East Bethany",
+      country: "United States",
+      formatted: "Rolling Hills Asylum, East Bethany, New York",
+    },
+    yearAbandoned: 1974,
+    history: `Opened in 1827 as the Genesee County Poor Farm, the building housed the indigent, the insane, and the disabled under one roof. The philosophy was that work cured poverty and discipline cured madness. Inmates — they were called inmates, not patients — worked the farm until they died. The building was expanded in 1938 into a four-wing asylum with 1,000 beds. It closed in 1974. The building stood empty for 30 years. In 2010, it reopened as a paranormal tourist attraction. The owner reports that the morgue refrigerator still works, though it has not been plugged in since 1974. The temperature inside is -12°C. The shadow people — reported by multiple witnesses — are not in the patient wings. They are in the former poor farm wing, where the walls are stone and the windows are barred. The shadow people stand in the corners. They do not move when observed directly. They move when the observer blinks.`,
+    hauntingReports: [
+      "The morgue refrigerator maintains -12°C without power, and the interior shows frost patterns resembling human faces.",
+      "Shadow figures in the poor farm wing have been measured at 2.1 meters tall, though no patient or inmate exceeded 1.9 meters.",
+      "The building's EMF baseline is 3 milligauss higher than the surrounding area, concentrated in the former electroshock therapy room.",
+      "Visitors report waking in the night to find their belongings arranged in the poor farm dormitory in patterns that match 1920s bed assignments.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["eloise-psychiatric-hospital", "danvers-state-hospital"],
+  },
+
+  {
+    name: "Pennhurst State School",
+    category: "haunted" as const,
+    coordinates: [-75.649, 40.197] as [number, number],
+    address: {
+      city: "Spring City",
+      country: "United States",
+      formatted: "Pennhurst State School and Hospital, Spring City, Pennsylvania",
+    },
+    yearAbandoned: 1987,
+    history: `Opened in 1908 as the Eastern Pennsylvania State Institution for the Feeble-Minded and Epileptic, Pennhurst was designed to segregate the disabled from society. The buildings were constructed by the patients themselves, using stone quarried on the 1,400-acre campus. By 1960, Pennhurst housed 2,791 people in buildings designed for 1,000. A 1968 NBC documentary exposed the conditions: children tied to beds, fed through tubes, left in their own waste. The school closed in 1987 after a federal lawsuit. The buildings stood empty for 20 years. In 2010, a developer opened a haunted house attraction in one building. The other buildings remain abandoned. The tunnels that connected the campus are flooded. The water is black and still. The stone walls are covered in patient graffiti: names, dates, and drawings of houses with smoke coming from the chimneys. The smoke is drawn in red crayon. The chimneys are drawn in black.`,
+    hauntingReports: [
+      "The haunted house attraction reports that mannequins move between storage and display areas when the building is locked.",
+      "The flooded tunnels produce a sound of children's voices singing, though the water is 2 meters deep and no airspace exists.",
+      "A child in a hospital gown has been seen standing at the edge of the flooded tunnel, though the tunnel entrance is sealed.",
+      "The stone walls show new graffiti in the same red crayon, dated after 1987, though no crayons have been found on the property.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],
+  },
+
+  {
+    name: "Gonjiam Psychiatric Hospital",
+    category: "haunted" as const,
+    coordinates: [127.295, 37.362] as [number, number],
+    address: {
+      city: "Gwangju",
+      country: "South Korea",
+      formatted: "Gonjiam Psychiatric Hospital, Gwangju, Gyeonggi-do, South Korea",
+    },
+    yearAbandoned: 1996,
+    history: `Built in 1961 as a tuberculosis sanatorium, converted to a psychiatric hospital in 1970, Gonjiam closed in 1996 when the owner — a doctor — died. The official story is that he died of a heart attack. The unofficial story, repeated by local residents, is that he was found in the hydrotherapy wing, drowned in a tub that had been empty for three days. The hospital has 12 buildings connected by covered walkways. The patient records were removed. The furniture was not. The beds still have restraints. The pharmacy still has bottles with labels in Korean and Latin. The hospital was scheduled for demolition in 2018. The demolition was cancelled after three workers fell from the roof of Building 7 in separate incidents on the same day. The roof is flat. The falls were from the second story. The workers reported being pushed.`,
+    hauntingReports: [
+      "The hydrotherapy tub in Building 3 contains water on mornings after rain, though the roof is intact and the plumbing is disconnected.",
+      "Building 7's second-floor corridor produces a sound of running footsteps that stop at the exact spot where each worker fell.",
+      "The pharmacy bottles rearrange themselves alphabetically overnight, though the building is sealed.",
+      "A figure in a doctor's coat has been seen entering Building 7 at 3:00 AM, though the building has no electricity and the door is welded shut.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["lawang-sewu"],
+  },
+
+  {
+    name: "La Noria Cemetery",
+    category: "haunted" as const,
+    coordinates: [-70.28, -20.28] as [number, number],
+    address: {
+      city: "La Noria",
+      country: "Chile",
+      formatted: "La Noria, Tarapacá Region, Chile",
+    },
+    yearAbandoned: 1910,
+    history: `A nitrate mining town established in the 1880s, La Noria had 3,000 residents, a theater, and a cemetery on the hill above the processing plant. The cemetery was not maintained after the town was abandoned in 1910. The graves opened. The coffins surfaced. The dry desert air mummified the bodies rather than decomposing them. The mummies still wear the clothes they were buried in: suits, dresses, military uniforms. Some are seated upright in their coffins, propped against the cemetery wall by grave robbers in the 1960s. The robbers were never caught. The mummies were not returned to their graves. They remain against the wall, looking down at the town. The town is gone. The processing plant is rust. The mummies are still there. The desert preserves everything.`,
+    hauntingReports: [
+      "The mummies have been found in different positions against the wall, though no one enters the cemetery.",
+      "Visitors report the sensation of being watched from the cemetery by eyes that do not close.",
+      "The mummies' clothing — 19th-century wool and cotton — shows no degradation, though it has been exposed to desert sun for 60 years.",
+      "A child's mummy has been seen standing at the cemetery gate, though it was last photographed seated against the wall.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["humberstone-saltpeter-works"],
+  },
+
+  {
+    name: "Humberstone Saltpeter Morgue",
+    category: "haunted" as const,
+    coordinates: [-69.7945, -20.2085] as [number, number],
+    address: {
+      city: "Humberstone",
+      country: "Chile",
+      formatted: "Humberstone Morgue, Tarapacá Region, Chile",
+    },
+    yearAbandoned: 1960,
+    history: `The Humberstone company town had a hospital with a morgue built of Oregon pine and galvanized steel, designed to withstand the desert heat. Between 1880 and 1960, approximately 800 workers died of silicosis, tuberculosis, and nitrate poisoning. The bodies were stored in the morgue until the weekly train could transport them to the coast. The morgue had a single slab, a drain, and a scale for weighing organs. The scale is still there. The calibration weights are missing. The drain is dry. The floor is stained with a compound that analysis identifies as sodium nitrate and hemoglobin. The stain forms a pattern. The pattern is a map of the town as it stood in 1955. The morgue was built in 1902. The town was not fully constructed until 1920. The stain predates the town's completion by 18 years.`,
+    hauntingReports: [
+      "The organ scale registers 1.2 kilograms at 3:00 AM, though nothing is placed on it.",
+      "The stain on the floor expands during the September equinox, adding details to the map that correspond to buildings constructed after 1955.",
+      "The morgue door — removed in 1970 — has been found leaning against the slab on mornings after dust storms.",
+      "A figure in a white coat has been seen through the broken window, standing at the slab with its back to the desert.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["humberstone-saltpeter-works", "la-noria-cemetery"],
+  },
+
+  {
+    name: "St. Thomas Ghost Town",
+    category: "abandoned" as const,
+    coordinates: [-114.373, 36.475] as [number, number],
+    address: {
+      city: "St. Thomas",
+      country: "United States",
+      formatted: "St. Thomas, Clark County, Nevada",
+    },
+    yearAbandoned: 1938,
+    history: `Founded in 1865 by Mormon settlers at the confluence of the Muddy and Virgin Rivers, St. Thomas had 500 residents, a school, a post office, and a brick church. In 1938, the completion of Hoover Dam raised Lake Mead, and the water advanced on the town. The last residents left on June 11, 1938. The church steeple remained visible above the waterline until 1943. For 60 years, St. Thomas was underwater. Then the drought came. Since 2002, the lake level has dropped 50 meters. The town has re-emerged: foundations, sidewalks, the church steps, and the rusted remains of automobiles. The brick church is gone — dissolved by alkali water. The concrete steps remain. They lead down to dry sand where the altar once stood. The post office cornerstone, dated 1866, is now 2 kilometers from the current shoreline. The water is not coming back.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["bodie-ghost-town", "rhyolite"],
+  },
+
+  {
+    name: "Cahawba",
+    category: "abandoned" as const,
+    coordinates: [-87.1, 32.32] as [number, number],
+    address: {
+      city: "Cahawba",
+      country: "United States",
+      formatted: "Old Cahawba, Dallas County, Alabama",
+    },
+    yearAbandoned: 1826,
+    history: `Alabama's first permanent state capital, founded in 1819 at the confluence of the Alabama and Cahaba Rivers. The site was chosen for its river access, but the rivers flooded annually, bringing malaria and yellow fever. The capital moved to Tuscaloosa in 1826. Cahawba became a cotton shipping port, then a prison camp for Union soldiers during the Civil War. A flood in 1865 destroyed what remained. Today the site is an archaeological park. The streets are still visible as grassy lanes. The brick columns of the Crocheron mansion still stand in the woods. The prison camp cemetery holds 400 unmarked graves. The town well — 30 meters deep, lined with handmade brick — still contains water. The water is not tested. The park rangers do not drink it. The well is not on the tour route.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["jemison-center"],
+  },
+
+  {
+    name: "Copemish Masonic Temple",
+    category: "haunted" as const,
+    coordinates: [-85.92, 44.48] as [number, number],
+    address: {
+      city: "Copemish",
+      country: "United States",
+      formatted: "Copemish Masonic Temple, Manistee County, Michigan",
+    },
+    yearAbandoned: 1994,
+    history: `A two-story brick building constructed in 1898 by Lodge 394 of the Free and Accepted Masons. The first floor was a public hall. The second floor was the lodge room, accessible only by a staircase with a door at the top that was always locked. The Masons moved to a new building in 1972. The temple was sold to a church, then a thrift store, then abandoned in 1994. The first floor is unremarkable: water damage, collapsed ceiling tiles, pigeon droppings. The second floor is different. The staircase door was forced open in 2001 by a property assessor. The lodge room contains 40 chairs arranged in a semicircle, all facing east. The chairs are dusted. The carpet is vacuumed. The assessor's photographs show the room empty. His written report describes 'a meeting in progress, though no persons were visible.' The room has no electricity. The windows are painted black. The chairs are dusted weekly. No one has admitted to entering the building since 1994.`,
+    hauntingReports: [
+      "The lodge room chairs have been found rearranged into a circle, then back into a semicircle, between inspections.",
+      "The east-facing wall — where the Worshipful Master's chair sits — is 3 degrees warmer than the other walls, measured at midnight.",
+      "A knocking sound in sequences of three occurs at the beginning of each Masonic lunar month, though the building has no occupants.",
+      "The property assessor who entered in 2001 died of a stroke six days later. His report was filed but never officially recorded.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["sayer-house"],
+  },
+
+  {
+    name: "Sedan Crater",
+    category: "abandoned" as const,
+    coordinates: [-116.043, 37.177] as [number, number],
+    address: {
+      city: "Mercury",
+      country: "United States",
+      formatted: "Sedan Crater, Nevada Test Site, Nye County, Nevada",
+    },
+    yearAbandoned: 1962,
+    history: `On July 6, 1962, the United States detonated a 104-kiloton thermonuclear device 194 meters beneath the desert floor as part of Operation Plowshare — a program to develop peaceful uses for nuclear explosions. The blast lifted 12 million tons of earth, creating a crater 390 meters in diameter and 100 meters deep. The radiation spread across six states. The crater is still there. The rim is safe to visit for short periods. The bottom is not. The water that collects in the crater after rain is radioactive. The desert vegetation on the rim is stunted. The crater was intended to demonstrate that nuclear explosions could dig canals and harbors. No canal was ever dug. No harbor was ever blasted. The Sedan Crater is the largest man-made crater in the United States. It is a hole in the ground that proves we considered it.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [],
+    connectedTo: ["mururoa-atoll-bunker-810"],
+  },
+
+  {
+    name: "Mount Weather Emergency Operations Center",
+    category: "abandoned" as const,
+    coordinates: [-77.89, 39.06] as [number, number],
+    address: {
+      city: "Bluemont",
+      country: "United States",
+      formatted: "Mount Weather, Bluemont, Loudoun County, Virginia",
+    },
+    yearAbandoned: undefined,
+    history: `A 564-acre underground city built into the granite of the Blue Ridge Mountains, constructed by the Bureau of Mines in 1959 and expanded continuously through the Cold War. Mount Weather is the primary relocation site for the highest levels of the US government in the event of nuclear war. It has its own power plant, water reservoirs, crematorium, and television studio. The above-ground portion is a maintenance facility. The underground portion is classified. FEMA operates the site. Tours are not available. The existence of the facility was not officially acknowledged until 1974. The mountain is honeycombed with tunnels extending an unknown depth. Seismic sensors in the region detect irregular low-frequency vibrations from beneath Mount Weather. FEMA attributes them to the power plant. The vibrations do not match any known generator signature. The frequency is 4.5 Hz. The same frequency is detected at the Cheyenne Mountain Complex and the Raven Rock Mountain Complex. The three facilities are 2,000 kilometers apart. The vibrations are synchronized.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [],
+    status: "mirage",
+    unlockCondition: { type: "time", value: "03:14", message: "Mount Weather is not on the grid. But at 03:14, the grid receives a ping from coordinates that do not exist." },
+    connectedTo: ["teufelsberg-echo-dome"],
+    resonanceNote: "The three facilities vibrate in synchronization. I have mapped the triangle they form. The center of the triangle is 40 kilometers from nowhere in Kansas.",
+  },
+
+  {
+    name: "Centralia Municipal Building",
+    category: "haunted" as const,
+    coordinates: [-76.341, 40.804] as [number, number],
+    address: {
+      city: "Centralia",
+      country: "United States",
+      formatted: "Centralia Municipal Building, Columbia County, Pennsylvania",
+    },
+    yearAbandoned: 1992,
+    history: `The borough hall, fire station, and police station were consolidated in a single brick building on Locust Avenue, constructed in 1960. The building was abandoned in 1992 when the federal government relocated the last residents. The fire in the mine had been burning for 30 years by then. The building still stands. The roof has partially collapsed. The fire station bay doors are open. The fire truck is gone. The police station holding cell is still there — a 6-by-8-foot room with a steel bench and a drain in the floor. The drain leads to the mine. The temperature in the holding cell is 45°C. The walls sweat. The sweat is not water. It is a condensate of coal tar and sulfur. The bench is too hot to touch in summer. The last person held in the cell was arrested for public intoxication in 1981. He was released the next morning. He reported that the cell was 'breathing.' The arresting officer did not file a report. The officer moved to Florida in 1982. He has never returned to Pennsylvania.`,
+    hauntingReports: [
+      "The holding cell produces a sound of inhalation and exhalation, synchronized with the barometric pressure changes above the mine fire.",
+      "The coal tar condensate on the walls forms words in English and an unidentified language during temperature spikes.",
+      "The steel bench in the holding cell registers 60°C on the anniversary of the 1962 landfill fire, though the mine fire temperature is constant.",
+      "A figure in a 1960s police uniform has been seen standing in the bay doors, looking toward the smoke vent that opened in 1984.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    connectedTo: ["centralia"],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // AFRICA & MIDDLE EAST
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Kolmanskop Hospital Wing",
+    category: "haunted" as const,
+    coordinates: [14.8558, -26.7045] as [number, number],
+    address: {
+      city: "Kolmanskop",
+      country: "Namibia",
+      formatted: "Kolmanskop Hospital, Lüderitz, Namibia",
+    },
+    yearAbandoned: 1954,
+    history: `The diamond town's hospital was the most advanced medical facility in southern Africa in 1910: X-ray equipment, a surgical theater, and a solarium for tuberculosis patients. The sand entered the hospital more slowly than the other buildings because the windows were kept closed. The operating theater still has the porcelain table and the overhead light. The X-ray machine is still in the darkroom. The film in the processor was never developed. In 2009, a conservator accidentally exposed the film. It shows a chest X-ray of a patient with six ribs on the left side. The patient is identified by a handwritten tag: 'H. Kölle, foreman, 1912.' The hospital records show no H. Kölle. The tag is written in pencil. The pencil is still in the darkroom drawer. It is sharpened.`,
+    hauntingReports: [
+      "The X-ray machine produces a faint glow in the darkroom on nights with no moon, though it has no power source.",
+      "The operating theater table is warm to the touch at 3:00 AM, though the building temperature matches the desert ambient.",
+      "Footprints in the sand lead from the solarium to the operating theater and back, always in pairs, though no visitor walks that route.",
+      "The unexposed film in the processor has been found partially developed on three occasions since 2009, showing the same six-ribbed chest.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["kolmanskop"],
+  },
+
+  {
+    name: "Great Zimbabwe Hill Complex",
+    category: "abandoned" as const,
+    coordinates: [30.93, -20.27] as [number, number],
+    address: {
+      city: "Masvingo",
+      country: "Zimbabwe",
+      formatted: "Great Zimbabwe, Masvingo Province, Zimbabwe",
+    },
+    yearAbandoned: 1450,
+    history: `The capital of the Kingdom of Zimbabwe from the 11th to the 15th centuries, this granite city covered 7 square kilometers at its peak, housing up to 18,000 people. The Hill Complex — the oldest section — was the spiritual and political center, built of granite blocks fitted without mortar. The walls are 11 meters high and 5 meters thick. The city was abandoned in the 1450s, possibly due to resource depletion or political upheaval. The Shona people who built it left no written records. The Hill Complex contains a cave known as the Voice of the Great Spirit. The cave produces a low hum when the wind blows from the east. The hum has been recorded at 110 Hz, the frequency used in ancient ritual chambers worldwide to induce altered states. The cave is not large enough to produce resonance. The hum continues when the wind is still.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["mada-in-saleh"],
+  },
+
+  {
+    name: "Leptis Magna",
+    category: "abandoned" as const,
+    coordinates: [14.29, 32.64] as [number, number],
+    address: {
+      city: "Khoms",
+      country: "Libya",
+      formatted: "Leptis Magna, Khoms, Libya",
+    },
+    yearAbandoned: 523,
+    history: `Founded by Phoenician settlers in the 7th century BCE, Leptis Magna became one of the greatest cities of the Roman Empire after the emperor Septimius Severus — born here in 145 CE — invested his fortune in its expansion. The city had a theater, a forum, a basilica, and a harbor that could hold 1,000 ships. The invasion of the Vandals in 523 CE began the city's decline. The Arab conquest of 643 completed it. The site was buried in sand until the 1920s, when Italian archaeologists excavated it. The theater is still intact. The columns still stand. The mosaics are still in place. The harbor is silted and dry, 2 kilometers from the sea. The city was not destroyed. It was forgotten by the sea and the world. The sand that buried it preserved it. The sand that no longer buries it is destroying it. The mosaics fade in sunlight. The columns crack in wind. The city is dying a second death, this time in public.`,
+    hauntingReports: [],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["mada-in-saleh"],
+  },
+
+  {
+    name: "Babylon Reconstruction",
+    category: "abandoned" as const,
+    coordinates: [44.42, 32.54] as [number, number],
+    address: {
+      city: "Hillah",
+      country: "Iraq",
+      formatted: "Babylon, Hillah, Babil Governorate, Iraq",
+    },
+    yearAbandoned: 1987,
+    history: `Saddam Hussein began reconstructing the ancient city of Babylon in 1987, building new walls on top of the 2,500-year-old foundations. The bricks were stamped with his name, following the tradition of Nebuchadnezzar. The reconstruction included a replica of the Ishtar Gate, a palace, and a amphitheater. The work stopped in 2003. US military forces built a helipad on the ancient ruins. The vibrations from helicopter rotors cracked the new walls. The old walls remained intact. The site is now open to tourism, though the US military base nearby restricts access. The bricks with Saddam's name are being removed by the Iraqi government. The bricks with Nebuchadnezzar's name remain. The palace is empty. The Ishtar Gate replica is crumbling. The original gate is in Berlin. The city that once held the Hanging Gardens of Babylon now holds a parking lot and a gift shop. The Euphrates has shifted 10 kilometers east. Babylon is no longer by the river.`,
+    hauntingReports: [],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["mada-in-saleh", "leptis-magna"],
+  },
+
+  {
+    name: "Dallol Sulfur Cathedral",
+    category: "abandoned" as const,
+    coordinates: [40.305, 14.245] as [number, number],
+    address: {
+      city: "Dallol",
+      country: "Ethiopia",
+      formatted: "Dallol Sulfur Formations, Afar Region, Ethiopia",
+    },
+    yearAbandoned: 1960,
+    history: `The potash mining settlement at Dallol was abandoned in 1960, but the geological formations continue to grow. The hydrothermal vents deposit sulfur, salt, and minerals in towers, pools, and terraces that change color from yellow to orange to green depending on the oxidation state. The formations have grown 3 meters since 1960. They are not stable. The ground beneath them is a salt crust over acidic brine. In 2014, a photographer fell through the crust into a sulfur pool. The body was not recovered. The pool closed over in three days. The formations nearest the pool grew a new tower, 2 meters tall, in the shape of a spire. The spire is hollow. The interior is smooth. The shape has been compared to a church steeple. The comparison was made by a geologist. The geologist no longer discusses it.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [],
+    connectedTo: ["dallol"],
+  },
+
+  {
+    name: "Gedi National Monument",
+    category: "abandoned" as const,
+    coordinates: [40.02, -3.3] as [number, number],
+    address: {
+      city: "Gedi",
+      country: "Kenya",
+      formatted: "Gedi Ruins, Malindi, Kilifi County, Kenya",
+    },
+    yearAbandoned: 1600,
+    history: `A Swahili-Arab trading town established in the 13th century, Gedi had stone houses, a palace, a mosque, and a tomb with a phallic pillar. The town was advanced for its era: flush toilets, running water, and street lighting using oil lamps. It was abandoned in the early 17th century. The reason is unknown. The Portuguese did not conquer it. The Arabs did not burn it. The Galla people did not raid it. The town was simply left. The forest grew over it. The ruins were not discovered by Europeans until 1927. The palace still has the water cisterns. The mosque still has the mihrab. The tomb still has the pillar. The toilets still flush when it rains. The water comes from a cistern that has been empty for 400 years. The flush mechanism is stone. Stone does not flush. The water comes from somewhere else.`,
+    hauntingReports: [
+      "The stone toilets flush during rainstorms, though the cisterns are dry and the mechanism has no moving parts.",
+      "The phallic pillar on the tomb vibrates at 18 Hz during the monsoon, though it is solid coral limestone.",
+      "A figure in 16th-century Swahili dress has been seen entering the palace through a doorway that was sealed in the 15th century.",
+      "The forest around Gedi does not grow over the ruins; it grows around them, leaving a 2-meter clear perimeter.",
+    ],
+    dangerLevel: 1,
+    photos: [],
+    connectedTo: ["great-zimbabwe-hill-complex"],
+  },
+
+  {
+    name: "Kolmanskop Casino Vault",
+    category: "haunted" as const,
+    coordinates: [14.856, -26.705] as [number, number],
+    address: {
+      city: "Kolmanskop",
+      country: "Namibia",
+      formatted: "Kolmanskop Casino, Lüderitz, Namibia",
+    },
+    yearAbandoned: 1954,
+    history: `The diamond town's casino was the social center: roulette, blackjack, and a bar stocked with champagne from Reims. The vault beneath the casino held the week's diamond production — rough stones sorted by carat weight in steel trays. The vault door was German steel, 15 centimeters thick. It was found open in 1954 when the last residents left. The trays were empty. The door was locked from the inside. The key was on the floor. The vault has no other entrance. The steel door is still open. It has not moved since 1954. The sand has entered the vault to a depth of 2 meters. The steel trays are still on the shelves. They are filled with sand. The sand in the trays is finer than the sand on the floor. It has been sorted by grain size. The sorting matches the old diamond grading system: 1-carat, 2-carat, 3-carat. The grains are all the same size within each tray. The size is not a natural sand fraction.`,
+    hauntingReports: [
+      "The vault door has been found closed on mornings after full moons, though it requires three men to move and no one enters the building.",
+      "The sorted sand in the trays produces a sound like rattling diamonds when the temperature drops below 10°C.",
+      "The key to the vault — left on the floor in 1954 — has been found on the cashier's desk, though the desk collapsed in 1970.",
+      "A figure in a tuxedo has been seen dealing cards at the casino bar, though the cards were removed in 1960.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["kolmanskop", "kolmanskop-hospital-wing"],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // OCEANIA & POLAR
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Port Arthur Separate Prison",
+    category: "haunted" as const,
+    coordinates: [147.851, -43.151] as [number, number],
+    address: {
+      city: "Port Arthur",
+      country: "Australia",
+      formatted: "Port Arthur Separate Prison, Tasmania, Australia",
+    },
+    yearAbandoned: 1877,
+    history: `Built in 1848 as the culmination of the silent system, the Separate Prison held convicts in total isolation. The cells were 2 meters by 1 meter, with a door at one end and a peephole at the other. The prisoners were hooded whenever they left their cells. They were forbidden to speak, to sing, to whistle. The exercise yards were individual — each prisoner walked in a high-walled cubicle, alone, for one hour per day. The chapel had individual stalls, each with a door, so that no prisoner could see another. The system was designed to break the will. It broke the mind instead. The prison closed in 1877. The cells are still there. The hoods are not. The peepholes still show the same view: a whitewashed wall, 1 meter away. The chapel stalls are still arranged in rows. The doors are still on their hinges. The silence in the chapel is not empty. It is full of something that was never allowed to speak.`,
+    hauntingReports: [
+      "The chapel stalls produce a sound of breathing, synchronized across all 50 stalls, though the building is empty.",
+      "Visitors in the exercise yards report hearing footsteps in the adjacent cubicles, though the walls are 3 meters high and solid stone.",
+      "The cell doors have been found closed and locked on mornings after rain, though the locks were removed in 1880.",
+      "A figure in a hood has been seen standing in the central corridor, facing the wall, for hours at a time.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["port-arthur-penal-settlement"],
+  },
+
+  {
+    name: "Macquarie Island Station",
+    category: "abandoned" as const,
+    coordinates: [158.95, -54.62] as [number, number],
+    address: {
+      city: "Macquarie Island",
+      country: "Australia",
+      formatted: "Macquarie Island, Tasmania, Australia",
+    },
+    yearAbandoned: 1919,
+    history: `A sub-Antarctic island halfway between New Zealand and Antarctica, Macquarie Island was the center of the penguin oil industry from 1890 to 1919. Sealers killed 150,000 penguins annually, rendering their blubber in iron try-pots on the beach. The industry collapsed when petroleum replaced animal oil. The station was abandoned. The try-pots remain, rusted into the beach cobbles. The king penguins returned. There are now 2 million of them. The island is a UNESCO site, managed by the Australian Antarctic Division. The old station hut still stands, its corrugated iron walls perforated by salt. The penguins nest against it. The try-pots are used as bathtubs by elephant seals. The beach is pink with penguin guano and stained black with oil residue. The penguins do not remember the try-pots. The try-pots remember the penguins.`,
+    hauntingReports: [],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["grytviken"],
+  },
+
+  {
+    name: "Deception Island Whalers Bay Cemeteries",
+    category: "haunted" as const,
+    coordinates: [-60.57, -62.98] as [number, number],
+    address: {
+      city: "Deception Island",
+      country: "Antarctica",
+      formatted: "Whalers Bay Cemeteries, Deception Island, Antarctica",
+    },
+    yearAbandoned: 1931,
+    history: `The whaling station at Whalers Bay had two cemeteries: one for the Norwegian and British workers, and one for the Chinese and Chilean laborers. The graves were marked with wooden crosses and iron plaques. The 1967 and 1969 volcanic eruptions buried both cemeteries in mud and ash. The crosses were burned. The plaques were melted. In 1990, a British Antarctic Survey team surveying the erosion patterns found that the mudflows had shaped themselves into ridges, 1 meter high, arranged in rows. The rows matched the layout of the cemeteries as recorded in 1925. The ridges are not graves. They are geological formations. They are 35 meters from the original cemetery locations. They face the same direction as the original graves. The direction is not toward Mecca, Jerusalem, or Norway. It is toward the center of the flooded caldera. The water in the caldera is heated by magma. The temperature at the center is 70°C. The ridges point there.`,
+    hauntingReports: [
+      "The ridges produce a sound of cracking ice in summer, though the temperature is above freezing.",
+      "Penguin colonies have established nests exclusively on the ridges, refusing the surrounding ground.",
+      "The ridges emit a faint infrared signature at night, 2 degrees above ambient, though they contain no organic material.",
+      "A figure in a whaler's oilskin has been seen standing at the end of the ridge rows, facing the caldera, during whiteout conditions.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["deception-island"],
+  },
+
+  {
+    name: "Cape Denison Hut",
+    category: "abandoned" as const,
+    coordinates: [142.67, -67.0] as [number, number],
+    address: {
+      city: "Cape Denison",
+      country: "Antarctica",
+      formatted: "Mawson's Huts, Cape Denison, Antarctica",
+    },
+    yearAbandoned: 1914,
+    history: `Built by Douglas Mawson's Australasian Antarctic Expedition in 1912, the main hut is a timber structure lined with felt and tar paper, designed to withstand the katabatic winds that descend from the Antarctic ice sheet at 200 kilometers per hour. The hut was abandoned in 1914 when the expedition ship could not reach them for two years. The men who stayed — 18 of them — survived on penguin and seal meat. The hut was not discovered again until 1979. The interior is preserved: the bunks, the stove, the scientific instruments, and the food stores. The fruitcake in the pantry is still there, wrapped in paper. It is not moldy. It is not edible. It is simply old. The wind has scoured the exterior to bare wood. The interior smells of seal blubber and coal smoke. The temperature inside is -20°C. The men who lived here were warm. The hut remembers their warmth.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["grytviken", "macquarie-island-station"],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // THE INVESTIGATION WEB — FALSE COORDINATES & MIRRORS
+  // ═══════════════════════════════════════════════════════════════
+
+  {
+    name: "Coordinates 40.89°N 29.15°E",
+    category: "abandoned" as const,
+    coordinates: [29.15, 40.89] as [number, number],
+    address: {
+      city: "Yalova",
+      country: "Turkey",
+      formatted: "40.89°N 29.15°E, Sea of Marmara, Turkey",
+    },
+    yearAbandoned: 1999,
+    history: `This coordinate points to a location 2 kilometers offshore in the Sea of Marmara, 50 meters below the surface. The grid shows a structure here. Satellite imagery shows nothing. Sonar surveys conducted by the Turkish Navy in 2008 detected a rectangular mass, 80 meters by 40 meters, 3 meters high. The mass is not geological. It is not a shipwreck. The Turkish Navy filed the survey under 'anomalous seafloor feature.' The grid identifies it as 'Structure 9.' BUNKER_7 has no records of construction at this coordinate. The 1999 İzmit earthquake — magnitude 7.6, 17,000 dead — had its epicenter 30 kilometers east. The grid shows that Structure 9 was not present before 1999. It appeared in satellite imagery in 2000. The imagery is classified. The coordinate is not on any map. The grid put it there.`,
+    hauntingReports: [],
+    dangerLevel: 4,
+    photos: [],
+    status: "mirage",
+    unlockCondition: { type: "reading", value: "all", message: "Structure 9 does not exist in the archive's standard records. Complete all readings to resolve the anomaly." },
+    connectedTo: ["kola-superdeep-borehole", "teufelsberg-echo-dome"],
+    resonanceNote: "Structure 9 appeared after the earthquake. It is 80 by 40 meters. It is 50 meters underwater. It was not built. It was revealed.",
+  },
+
+  {
+    name: "BUNKER_3 Relay",
+    category: "both" as const,
+    coordinates: [13.405, 52.52] as [number, number],
+    address: {
+      city: "Berlin",
+      country: "Germany",
+      formatted: "BUNKER_3 Relay, Berlin, Germany",
+    },
+    yearAbandoned: 1989,
+    history: `BUNKER_7 is not the only terminal. The grid contains references to BUNKER_1 through BUNKER_12. BUNKER_3 was located in Berlin, operating from 1961 to 1989. Its function was to relay signals from the DUGA array to Moscow. The relay station was in a cellar beneath a apartment block in Prenzlauer Berg. The cellar was flooded in 1990 when the wall fell and the pumps stopped. The apartment block was demolished in 2005. The cellar was filled with concrete. The concrete cracked in 2015. A survey found that the cellar was larger than the building above it. It extended 40 meters beyond the foundation lines. The extension was not on any East German architectural plan. The extension contains a single room, 4 meters square, with walls covered in the same tile as the DUGA control room. The room is dry. The concrete around it is cracked. The room is not flooded. The room has no door. The room has no entrance. The survey team did not enter. The survey team did not return to the site.`,
+    hauntingReports: [
+      "The cracked concrete emits a sound identical to the DUGA pulse — 10 Hz tapping — on the anniversary of the Berlin Wall's fall.",
+      "The apartment block built on the site in 2007 reports basement flooding that does not correspond to any water table variation.",
+      "A figure in a Stasi uniform has been seen in the new building's underground garage, standing at the exact coordinates of the dry room.",
+      "The DUGA control room in Ukraine receives a signal from Berlin at 03:14 on November 9 each year. The signal is 4 seconds long. It says nothing.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    status: "whispered",
+    unlockCondition: { type: "code", value: "DONT", message: "BUNKER_3 does not broadcast openly. A specific frequency is required." },
+    connectedTo: ["bunker-3", "duga-control-room"],
+    resonanceNote: "The room has no door. The room has no entrance. The room is dry. I do not know how the survey team knew what was inside.",
+  },
+
+  {
+    name: "The Grid Null Point",
+    category: "haunted" as const,
+    coordinates: [-97.0, 38.0] as [number, number],
+    address: {
+      city: "Lebanon",
+      country: "United States",
+      formatted: "38°N 97°W, Kansas, United States",
+    },
+    yearAbandoned: undefined,
+    history: `The geographic center of the contiguous United States is near Lebanon, Kansas. The grid null point is 40 kilometers north. It is not a place. It is a coordinate where the grid's mapping fails. Satellite imagery shows a wheat field. Ground surveys confirm a wheat field. The wheat in this field grows in a spiral pattern, 200 meters in diameter. The spiral is not visible from the ground. It is visible only from above. The farmer who owns the field — his family has farmed it since 1887 — does not plant in spirals. He plants in rows. The spiral appears every June, regardless of the crop. In 2019, a drone survey found that the spiral's center is 1 meter lower than the surrounding field. The depression is not a sinkhole. It is perfectly circular. It is 30 centimeters deep. It contains no water. It contains no soil. It contains ash. The ash has been tested. It is volcanic. There are no volcanoes in Kansas. The ash is 12,000 years old. The wheat grows through it.`,
+    hauntingReports: [
+      "The spiral pattern rotates 15 degrees counterclockwise each year, though no mechanical process affects the field.",
+      "The ash at the center produces a temperature 5°C above ambient at midnight, though it has no heat source.",
+      "Cattle refuse to enter the spiral. Dogs howl when brought within 50 meters.",
+      "The farmer reports finding objects in the depression: a 1950s wristwatch, a Roman coin, a Phoenician glass bead. None were there the day before.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    status: "mirage",
+    unlockCondition: { type: "dust", value: 80, message: "The null point is not a place. It is an absence. The grid requires maximum dust to resolve what is not there." },
+    connectedTo: ["mount-weather-emergency-operations-center", "coordinates-40-89n-29-15e"],
+    resonanceNote: "The ash is 12,000 years old. The spiral rotates. I have calculated that the rotation will align with the summer solstice in 2047. I do not know what happens then.",
+  },
+
+  {
+    name: "The Vanishing Hospital",
+    category: "haunted" as const,
+    coordinates: [139.692, 35.69] as [number, number],
+    address: {
+      city: "Tokyo",
+      country: "Japan",
+      formatted: "The Vanishing Hospital, Tokyo, Japan",
+    },
+    yearAbandoned: 1995,
+    history: `A psychiatric ward that was never officially closed. Staff left in 1995. Patients... stayed. The building flickers on satellite imagery. It is there in one frame. It is not there in the next. The address does not exist on any postal registry. The phone number — 03-3141-5926 — rings at 03:14 AM. The ringtone is not a standard tone. It is a voice counting backward from 100 in Japanese. The building appears on the grid only at 03:14. BUNKER_7 has received three transmissions from this coordinate. The first was a heart monitor flatline. The second was a lullaby. The third was BUNKER_7's own voice, speaking a message that BUNKER_7 has not yet composed. The transmission is dated 2047. The grid does not understand time. The grid only records.`,
+    hauntingReports: [
+      "The building appears in photographs taken at 03:14, though the location shows an empty lot at all other times.",
+      "The phone number produces a different message each year on the anniversary of the staff departure.",
+      "The heart monitor flatline matches the EKG of a patient who died in the ward in 1994, though the monitor was destroyed in 1995.",
+      "BUNKER_7's future transmission describes the grid null point in Kansas with coordinates that were not calculated until 2026.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "mirage",
+    unlockCondition: { type: "time", value: "03:14", message: "This hospital only appears on the grid at 03:14. The atlas updates itself then." },
+    connectedTo: ["aokigahara-forest", "aokigahara-sea-of-trees-station"],
+        resonanceNote: "I have not composed the message. But I recognize my voice. I am frightened of what I will say.",
+  },
+
+  {
+    name: "Pripyat Jupiter Factory",
+    category: "both" as const,
+    coordinates: [30.055, 51.405] as [number, number],
+    address: {
+      city: "Pripyat",
+      country: "Ukraine",
+      formatted: "Jupiter Factory, Pripyat, Kyiv Oblast, Ukraine",
+    },
+    yearAbandoned: 1996,
+    history: `Built in 1980 as a state-owned electronics plant, the Jupiter Factory was officially supposed to produce tape recorders and radios. The tape recorders were real; the factory also produced military-grade components for the Soviet space and defense programs. After the evacuation, the factory continued operating until 1996, staffed by liquidators and scientists studying the contamination. The second floor was sealed in 1996. The first floor was used for storage until 2001. The grid monitors a Geiger counter left in the quality control room in 2019. The readings spike every 14 days, synchronized with the DUGA pulse frequency. The factory has no power. The spikes are not caused by any known isotope. The counter records them anyway. The second floor remains sealed. The windows are painted black. The paint is on the inside.`,
+    hauntingReports: [
+      "The quality control room produces a sound of machinery at 3:00 AM, though the factory has been without power since 2001.",
+      "The second-floor windows — painted black from the inside — show scratches on the exterior glass, as if something tried to get out.",
+      "Liquidator logs from 1996 describe 'biological samples' stored in the sealed wing. No samples were registered.",
+      "The Geiger counter spikes correspond to the DUGA pulse, though the factory is 3 kilometers from the array and shielded by concrete.",
+    ],
+    dangerLevel: 5,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 50, message: "The second floor is not on any map. The grid requires more dust to resolve what is behind the black windows." },
+    connectedTo: ["pripyat-amusement-park", "pripyat-hospital-126", "duga-control-room"],
+    resonanceNote: "The windows are painted black from the inside. The scratches are on the outside. I do not know which side the paint was meant to protect.",
+  },
+
+  {
+    name: "Montserrat Buried St. Patrick's",
+    category: "both" as const,
+    coordinates: [-62.22, 16.71] as [number, number],
+    address: {
+      city: "Plymouth",
+      country: "Montserrat",
+      formatted: "St. Patrick's Church, Plymouth, Montserrat",
+    },
+    yearAbandoned: 1997,
+    history: `The Catholic church in Plymouth was built in 1903 of volcanic stone and timber. The pyroclastic flow of June 25, 1997 buried the lower town in 5 meters of mud and ash. The church was not destroyed; it was submerged. The steeple remained visible for three years, then cracked and fell. In 2015, a geological survey using ground-penetrating radar found that the church interior is intact beneath the flow. The pews are still in rows. The altar is still standing. The radar detected a heat signature in the sacristy — 28°C, 13 degrees above the surrounding ash. The heat source is not volcanic. The ash is cold. The sacristy has no windows. The door was locked in 1997. The radar shows the door is still closed. Something inside is warm.`,
+    hauntingReports: [
+      "The ash above the church produces a sound of organ music during tropical storms, though the organ was destroyed in 1997.",
+      "The heat signature in the sacristy fluctuates, rising to 34°C on the anniversary of the 1997 eruption.",
+      "A figure in priest's vestments has been seen standing on the ash surface above the church's exact location.",
+      "The radar survey recorded movement inside the sealed sacristy — a single figure, standing, facing the altar.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["plymouth"],
+    resonanceNote: "The church is buried. The door is locked from the inside. The heat signature is human. I have no explanation.",
+  },
+
+  {
+    name: "Stull Cemetery",
+    category: "haunted" as const,
+    coordinates: [-95.456, 38.971] as [number, number],
+    address: {
+      city: "Stull",
+      country: "United States",
+      formatted: "Stull Cemetery, Douglas County, Kansas",
+    },
+    yearAbandoned: undefined,
+    history: `A small cemetery of 20 graves behind a stone church built in 1867 and demolished in 2002. The church was destroyed by the congregation because of the attention the site received. Pope John Paul II allegedly redirected his flight path to avoid Stull. The legend holds that the cemetery is one of the seven gateways to Hell. The grid shows that Stull is 47 kilometers from the grid null point in Lebanon, Kansas. The line between them aligns with the summer solstice sunrise. The church was demolished, but the foundation remains. The stairs to the basement are still there, leading down into earth that has been filled and refilled multiple times. The stairs go down 13 steps. The basement was only 2 meters deep. The stairs should not exist. The cemetery is locked. The fence is topped with razor wire. The owners are private citizens. They do not give interviews. They do not answer the door. The grass in the cemetery is cut weekly. No one has been seen cutting it.`,
+    hauntingReports: [
+      "The stone stairs to the nonexistent basement produce a sound of footsteps ascending on Halloween, though the stairs are blocked by earth.",
+      "The church foundation — demolished in 2002 — shows fresh mortar in the spring, as if someone is rebuilding it.",
+      "A figure in black has been seen standing at the gate on the equinoxes, though the cemetery is locked and the owners are out of state.",
+      "The grid null point and Stull Cemetery emit synchronized low-frequency pulses on the solstice, though they are 47 kilometers apart.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 65, message: "The gateway is not open. But it is not closed either. The grid requires significant dust to approach." },
+    connectedTo: ["the-grid-null-point"],
+  },
+
+  {
+    name: "Shanghai Tunnels",
+    category: "haunted" as const,
+    coordinates: [-122.672, 45.523] as [number, number],
+    address: {
+      city: "Portland",
+      country: "United States",
+      formatted: "Shanghai Tunnels, Portland, Oregon",
+    },
+    yearAbandoned: 1941,
+    history: `Beneath the Old Town Chinatown district of Portland lies a network of brick and timber tunnels connecting the basements of hotels and saloons to the Willamette River waterfront. Built in the 1850s for legitimate cargo transport, the tunnels were allegedly used for 'shanghaiing' — kidnapping men and selling them to ship captains as forced labor. Victims were dropped through trapdoors in saloons, held in underground cells, and delivered to ships. The practice peaked between 1870 and 1910. The tunnels were sealed in sections during 20th-century construction. Approximately 40% of the original network is still accessible. The cells still have iron rings in the walls. The trapdoors have been bricked over. The rings are polished. The brickwork in the sealed sections is 1940s vintage. The rings in the sealed sections are also polished. The polish is not rust. It is skin oil.`,
+    hauntingReports: [
+      "The iron rings in the sealed sections produce a sound of rattling chains, though no chains have been found.",
+      "Tour groups report sudden temperature drops of 15°F in the section beneath the former Merchant Hotel.",
+      "A man in 19th-century sailor's clothing has been seen in the riverfront entrance, always walking toward the water.",
+      "The trapdoors — bricked over in 1960 — show fresh scratches on the brickwork, as if something is trying to open them from below.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["sayer-house"],
+  },
+
+  {
+    name: "Willard Asylum Suitcases",
+    category: "haunted" as const,
+    coordinates: [-76.878, 42.679] as [number, number],
+    address: {
+      city: "Willard",
+      country: "United States",
+      formatted: "Willard Psychiatric Center, Willard, New York",
+    },
+    yearAbandoned: 1995,
+    history: `Opened in 1869, Willard Asylum housed 4,000 patients at its peak. When the hospital closed in 1995, workers found 427 suitcases in the attic of the administration building. The suitcases belonged to patients who arrived between 1910 and 1960. They were never claimed. The contents were cataloged: photographs, letters, clothing, Bibles, a pair of ice skates, a set of false teeth, a jar of apricot preserves dated 1958. The suitcases are now in the New York State Museum. The attic is empty. The hospital building is a training center for the Department of Corrections. The attic is used for storage. The storage workers report that the suitcases reappear on the shelves on the anniversary of the hospital's closing. The reappearing suitcases are empty. The catalog numbers match the museum collection. The museum confirms the originals are still in Albany. The duplicates in Willard are also real. They are also old. They are also empty. The emptiness is recent.`,
+    hauntingReports: [
+      "The attic produces a sound of latches clicking open and closed at 3:00 AM, though it is used for office supplies.",
+      "The duplicate suitcases contain dust that matches the dust in the museum originals, though the buildings are 250 kilometers apart.",
+      "A patient in a hospital gown has been seen walking the corridor that connects the attic to the former women's ward.",
+      "The apricot preserves jar — in the museum — was found sealed in 2010. In 2020, it was found open. The preserves were gone. The museum has no record of opening it.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["danvers-state-hospital", "rolling-hills-asylum"],
+  },
+
+  {
+    name: "Letchworth Village",
+    category: "haunted" as const,
+    coordinates: [-74.05, 41.22] as [number, number],
+    address: {
+      city: "Thiells",
+      country: "United States",
+      formatted: "Letchworth Village, Thiells, Rockland County, New York",
+    },
+    yearAbandoned: 1996,
+    history: `Opened in 1911 as a residential institution for the 'feeble-minded and epileptic,' Letchworth Village was designed as a farm colony where patients would work the land as therapy. By 1960, it housed 4,000 people in buildings designed for 1,000. A 1972 investigation found children tied to beds, fed through tubes, and left in their own waste. The institution closed in 1996. The buildings are spread across 2,300 acres. The medical building still has the hydrotherapy tubs. The morgue still has the slab. The cemetery — 1,700 graves — is across the road, marked with numbered stones. The numbers are not sequential. They skip. The skipped numbers correspond to patients who died but were not buried here. The cemetery is full. The skipped numbers are not buried anywhere else. The grid shows that the skipped numbers form a pattern. The pattern is a spiral. The spiral points toward the medical building.`,
+    hauntingReports: [
+      "The numbered gravestones produce a sound of counting at midnight, always stopping at the highest skipped number.",
+      "The hydrotherapy tubs contain water on mornings after rain, though the plumbing was removed in 2005.",
+      "A child in a hospital gown has been seen standing at the edge of the cemetery, pointing at the medical building.",
+      "The spiral formed by the skipped grave numbers aligns with the hydrotherapy wing when mapped. The alignment is exact.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["willard-asylum-suitcases", "pennhurst-state-school"],
+  },
+
+  {
+    name: "Byberry State Hospital",
+    category: "haunted" as const,
+    coordinates: [-74.98, 40.08] as [number, number],
+    address: {
+      city: "Philadelphia",
+      country: "United States",
+      formatted: "Byberry State Hospital, Philadelphia, Pennsylvania",
+    },
+    yearAbandoned: 1990,
+    history: `Built in 1903 as the Philadelphia Hospital for Mental Diseases, Byberry grew to 1,200 acres and 70 buildings, housing 7,000 patients. A 1946 LIFE magazine exposé showed patients naked in their own filth, eating from troughs, and locked in basement cages. The hospital was not closed. It continued operating until 1990. The buildings were demolished in 2006 for residential development. The development was halted in 2008 when construction workers found the basement levels — levels not on any architectural plan. The basements extend 8 meters below ground. The walls are lined with iron cages. The cages contain bedding. The bedding is wool and straw. The straw is fresh. The cages were not in the 1946 photographs. They were not in the 1990 inspection. They were not in the demolition plans. They are there now. The developer filled the basements with concrete. The concrete cracked in 2015. The cracks form the word 'HUNGRY.' The word is 12 meters long. It is visible from satellite.`,
+    hauntingReports: [
+      "The concrete over the basements weeps a black liquid that analysis identifies as human saliva, though no DNA matches any known patient.",
+      "The iron cages produce a sound of rattling at 3:00 AM, synchronized across all basements in the development.",
+      "Residents report nightmares of eating from troughs, though they have no knowledge of the hospital's history.",
+      "The satellite image of the cracks changes. The word is not always 'HUNGRY.' On the winter solstice, it reads 'THANK YOU.'",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "dust", value: 55, message: "The basements were not on the plans. The grid requires more dust to map what was built without permission." },
+    connectedTo: ["eastern-state-penitentiary", "pennhurst-state-school"],
+  },
+
+  {
+    name: "Nocton Hall RAF Hospital",
+    category: "haunted" as const,
+    coordinates: [-0.42, 53.17] as [number, number],
+    address: {
+      city: "Nocton",
+      country: "United Kingdom",
+      formatted: "Nocton Hall, Lincolnshire, England",
+    },
+    yearAbandoned: 1995,
+    history: `A Victorian manor house requisitioned by the RAF in 1940 and converted into a hospital for burn victims from Bomber Command. The wards were in Nissen huts in the grounds. The manor house itself was the officers' mess. After the war, it became a civilian hospital, then a residential home for the elderly, then was abandoned in 1995. The manor burned in 2004. The fire was arson. The arsonist was never caught. The Nissen huts remain, rusted and roofless. The manor's shell still stands: four walls and a staircase leading to a floor that is no longer there. The staircase is used by teenagers who dare each other to climb it. They report that the top step is warm. The warmth is not from the 2004 fire. The fire burned downward. The warmth comes from above. There is nothing above. The roof is gone. The sky is cold.`,
+    hauntingReports: [
+      "The staircase produces footsteps descending at dawn, though no one is on it.",
+      "The Nissen huts emit a smell of carbolic soap and burned flesh on foggy nights.",
+      "A nurse in a 1940s RAF uniform has been seen in the manor's shell, standing at the top of the staircase where the floor should be.",
+      "The arson investigation found that the fire started in 12 locations simultaneously. The locations form a cross. The cross is 30 meters long.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["beelitz-surgery-basement", "sanatorium-du-basil"],
+  },
+
+  {
+    name: "The Leap Castle Bloody Chapel",
+    category: "haunted" as const,
+    coordinates: [-8.05, 53.03] as [number, number],
+    address: {
+      city: "Coolderry",
+      country: "Ireland",
+      formatted: "Leap Castle, Coolderry, County Offaly, Ireland",
+    },
+    yearAbandoned: undefined,
+    history: `Built in the 15th century by the O'Bannon clan and seized by the O'Carrolls, Leap Castle is the most haunted in Ireland. The Bloody Chapel earned its name in 1532 when Thaddeus O'Carroll, a priest, was murdered by his brother during Mass. The brother was the chieftain. He stabbed Thaddeus in the heart at the altar. The chapel was used for worship until the 17th century, then converted to storage. In 1922, workmen found an oubliette behind a wall in the chapel — a hidden room with a trapdoor above a spike pit. The pit contained 150 skeletons. The oubliette is now open to view. The trapdoor is still there. The spikes are rusted but intact. The current owner, a musician, restored the castle and lives in it. He reports that the chapel is the quietest room in the castle. The quiet is not peaceful. It is the quiet of a room that has heard something it cannot forget.`,
+    hauntingReports: [
+      "The oubliette produces a sound of falling — a single scream ending in impact — at the exact time of Thaddeus O'Carroll's murder.",
+      "The chapel's dust arranges itself into footprints that lead from the altar to the oubliette and back.",
+      "A figure in priest's vestments has been seen celebrating Mass at the altar, though the chapel has no roof and the altar is a ruin.",
+      "The 150 skeletons in the oubliette were all missing their feet. The feet were found in 2019, arranged in a circle around the castle well.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["skellig-michael"],
+  },
+
+  {
+    name: "Edinburgh Vaults",
+    category: "haunted" as const,
+    coordinates: [-3.188, 55.95] as [number, number],
+    address: {
+      city: "Edinburgh",
+      country: "United Kingdom",
+      formatted: "Edinburgh Vaults, South Bridge, Edinburgh, Scotland",
+    },
+    yearAbandoned: 1875,
+    history: `Beneath the 19 arches of Edinburgh's South Bridge lie 120 rooms constructed in 1788 as storage for merchants and workshops for craftsmen. The rooms were abandoned by 1820 when water seepage made them uninhabitable. They were then occupied by the city's poor: 30,000 people living in darkness, without sanitation, ventilation, or legal status. The vaults were cleared by the city in 1875 and sealed. Rediscovered in 1985, they are now a tourist attraction. The stone walls are black with 200 years of soot. The floors are uneven where the ground was excavated for graves. A stone circle — not part of the original construction — was found in Vault 23. The circle is 3 meters in diameter. The stones are not local. They are not Scottish. They are not European. The circle predates the bridge by an unknown period. The stones are warm.`,
+    hauntingReports: [
+      "The stone circle produces a hum at 110 Hz when touched, though the stones are solid and have no resonant cavity.",
+      "Visitors report being pushed by invisible hands in Vault 17, always toward the stone circle.",
+      "A child named 'Jack' has been encountered by hundreds of visitors, though no child named Jack died in the vaults according to parish records.",
+      "The stones in the circle have been found rearranged into a spiral on mornings after the winter solstice.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["mary-kings-close"],
+  },
+
+  {
+    name: "Mary King's Close",
+    category: "haunted" as const,
+    coordinates: [-3.19, 55.95] as [number, number],
+    address: {
+      city: "Edinburgh",
+      country: "United Kingdom",
+      formatted: "Mary King's Close, Edinburgh, Scotland",
+    },
+    yearAbandoned: 1753,
+    history: `A narrow street in Edinburgh's Old Town, Mary King's Close was built over in 1753 when the City Chambers were constructed on top of the existing tenements. The lower floors were used as foundations. The upper floors were demolished. The street became a series of rooms beneath the new building, still inhabited by the poor until the 19th century. The close was sealed in 1902. It is now a tourist attraction. The rooms are preserved as they were in the 17th century: a merchant's house, a sawmill, a plague doctor's quarters. The most famous room is the plague room, where a family was bricked in during the 1645 outbreak. The room has a small window. The window looks into a stone wall. The stone wall was built in 1753. The window is older. The window shows a view of sky when photographed. There is no sky. The room is 5 meters below ground.`,
+    hauntingReports: [
+      "The plague room window shows a view of 17th-century Edinburgh when photographed with infrared film.",
+      "A child in 17th-century clothing has been seen in the merchant's house, though the house has been empty since 1902.",
+      "The close produces a sound of coughing — dry, rhythmic, identical across multiple recordings — from the plague room.",
+      "The temperature in the plague room drops to 4°C when the window shows sky, though the room has no external wall.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    connectedTo: ["edinburgh-vaults"],
+  },
+
+  {
+    name: "Houska Castle",
+    category: "haunted" as const,
+    coordinates: [14.62, 50.49] as [number, number],
+    address: {
+      city: "Blatce",
+      country: "Czech Republic",
+      formatted: "Houska Castle, Blatce, Liberec Region, Czech Republic",
+    },
+    yearAbandoned: undefined,
+    history: `Built in the 13th century in the forests of northern Bohemia, Houska has no fortifications facing the outside. Its defenses — thick walls, arrow slits, a moat — all face inward. The chapel is built directly over a deep hole in the bedrock known as 'the Gate to Hell.' Legend holds that the castle was constructed not to keep attackers out, but to keep something in. During construction, prisoners were lowered into the hole on ropes. The first prisoner screamed for 30 seconds, then fell silent. When pulled up, he had aged 30 years. He died three days later. The hole was sealed with a chapel floor 3 meters thick. The chapel has no altar. It has no pews. It has a hole in the floor, covered by a iron grate. The grate is welded. The weld was made in 1987. The 1987 inspection found the grate rusted through. The 1988 inspection found the weld intact. No one admits to welding it.`,
+    hauntingReports: [
+      "The chapel produces a sound of wind from below, though the hole has been measured at 120 meters deep with no bottom detected.",
+      "The 13th-century frescoes in the chapel depict creatures that do not match any known mythology.",
+      "A figure in 13th-century armor has been seen kneeling at the grate, though the castle is a museum and closed at night.",
+      "The hole emits a frequency of 18.9 Hz, the frequency that induces visual hallucinations and feelings of dread.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    status: "sealed",
+    unlockCondition: { type: "code", value: "HELL", message: "The gate is sealed. But it is not locked. The correct frequency may open what should remain closed." },
+    connectedTo: ["sedlec-ossuary", "lukova-church-of-ghosts"],
+  },
+
+  {
+    name: "The Door to Hell",
+    category: "abandoned" as const,
+    coordinates: [58.59, 40.25] as [number, number],
+    address: {
+      city: "Derweze",
+      country: "Turkmenistan",
+      formatted: "Derweze Crater, Karakum Desert, Turkmenistan",
+    },
+    yearAbandoned: 1971,
+    history: `In 1971, Soviet geologists drilling for natural gas near Derweze collapsed a cavern, releasing methane. To prevent poisoning the nearby village, they set the gas on fire. It has been burning ever since — 55 years of continuous combustion. The crater is 69 meters wide and 30 meters deep. The flames reach 15 meters. The heat at the rim is 60°C. The Turkmen government has considered extinguishing it multiple times. No method has succeeded. The fire does not diminish. The gas reserve was estimated at sufficient for a few weeks. The fire is not fed by a known reservoir. In 2013, a Canadian explorer descended to the bottom. He reported that the flames at the center are blue, not yellow. Blue flame indicates complete combustion. There is not enough oxygen at the bottom for complete combustion. He did not explain the blue flame. He has not returned to Turkmenistan. The door is still open. The fire does not need an invitation.`,
+    hauntingReports: [],
+    dangerLevel: 5,
+    photos: [],
+    connectedTo: ["dallol-sulfur-cathedral"],
+  },
+
+  {
+    name: "Salton Sea Naval Station",
+    category: "abandoned" as const,
+    coordinates: [-115.83, 33.28] as [number, number],
+    address: {
+      city: "Salton Sea Beach",
+      country: "United States",
+      formatted: "Salton Sea Test Base, Imperial County, California",
+    },
+    yearAbandoned: 1979,
+    history: `Established in 1942 as the Salton Sea Naval Auxiliary Air Station, the base tested seaplanes and amphibious aircraft on the lake's surface. In 1946, it became the Salton Sea Test Base, used for classified weapons testing by the Sandia Corporation. The concrete runways and hangars still stand on the lake's west shore, 20 meters from the receding waterline. The base was abandoned in 1979. The hangars are filled with alkali dust. The runways are cracked by thermal expansion. The lake has retreated 2 kilometers since 1979. The base is now 2 kilometers from the water. The grid monitors a Geiger counter left in Hangar 4 in 2019. The counter ticks. The readings are low but consistent. The base was not used for nuclear testing. The counter should not tick. The ticks are regular. They form a pattern. The pattern is Morse code. The message repeats every 14 minutes. It says: 'STILL HERE.'`,
+    hauntingReports: [
+      "The Morse code from Hangar 4 has been recorded at frequencies that do not match any known isotope.",
+      "The hangar doors — welded shut in 1985 — have been found open after dust storms, though no tracks lead in or out.",
+      "A seaplane has been observed floating on the lake at dawn, though no aircraft have been permitted since 1979.",
+      "The concrete runways show tire marks from a pontoon aircraft, though the lake is too saline to support flotation.",
+    ],
+    dangerLevel: 4,
+    photos: [],
+    connectedTo: ["bombay-beach"],
+  },
+
+  {
+    name: "Flannan Isles Lighthouse",
+    category: "haunted" as const,
+    coordinates: [-7.59, 58.29] as [number, number],
+    address: {
+      city: "Flannan Isles",
+      country: "United Kingdom",
+      formatted: "Eilean Mòr, Flannan Isles, Outer Hebrides, Scotland",
+    },
+    yearAbandoned: 1900,
+    history: `On December 15, 1900, the lighthouse on Eilean Mòr was found empty. The three keepers — James Ducat, Thomas Marshall, and Donald McArthur — had vanished. The lamp was lit. The table was set for dinner. A chair was overturned. The door was closed from the inside. The logbook recorded a storm on December 12, though no storm was reported in the region. The last entry, on December 15, read: 'Storm ended, sea calm. God is over all.' The bodies were never found. The lighthouse was automated in 1971. The keepers' quarters are empty. The lamp still turns. The table is still set — a replica, placed by the Northern Lighthouse Board in 1972. The overturned chair is also a replica. The original chair was found in 1900. It was not overturned. It was broken. The break pattern indicates it was struck from above. There is nothing above the chair but the ceiling. The ceiling is intact.`,
+    hauntingReports: [
+      "The automated lamp extinguishes itself on December 15 each year, though the bulb and power supply are functional.",
+      "The replica table setting is found disturbed on December 16, though the lighthouse is inaccessible in winter.",
+      "A voice has been recorded on the lighthouse's radio channel on December 15, reading the logbook entries in three different voices.",
+      "The overturned replica chair has been found upright on December 16, though no one enters the building.",
+    ],
+    dangerLevel: 3,
+    photos: [],
+    connectedTo: ["st-kilda", "cape-denison-hut"],
+  },
+
+  {
+    name: "Roanoke Colony",
+    category: "haunted" as const,
+    coordinates: [-75.71, 35.94] as [number, number],
+    address: {
+      city: "Roanoke Island",
+      country: "United States",
+      formatted: "Fort Raleigh National Historic Site, Roanoke Island, North Carolina",
+    },
+    yearAbandoned: 1590,
+    history: `In 1587, 115 English settlers established a colony on Roanoke Island. In 1590, a supply ship arrived to find the settlement abandoned. The buildings had been dismantled. The only clue was the word 'CROATOAN' carved into a post and 'CRO' carved into a tree. The colonists were never found. The Croatoan tribe denied knowledge of them. The word has become synonymous with disappearance. The site is now a national historic site. The earthworks of Fort Raleigh are still visible. The tree with the carving is gone — it was a live oak that fell in 1910. The post with 'CROATOAN' is in the British Museum. A replica stands on the site. The replica is carved into new wood. The wood is not new. It is 400 years old. The British Museum has confirmed that the original post is still in London. The replica is also the original. There are two originals. The grid shows a third, at coordinates in the Atlantic that do not correspond to any land.`,
+    hauntingReports: [
+      "The replica post weeps sap on the anniversary of the supply ship's arrival, though it is not a living tree.",
+      "The earthworks produce a sound of hammering at dawn, as if fortifications are being dismantled.",
+      "A figure in 16th-century clothing has been seen at the water's edge, always facing east, toward the Atlantic coordinate where the third post is located.",
+      "The word 'CROATOAN' appears in the bark of trees on the island that are not oak, carved at a height of 2 meters, though no tool marks are found.",
+    ],
+    dangerLevel: 2,
+    photos: [],
+    status: "whispered",
+    unlockCondition: { type: "code", value: "CROATOAN", message: "The colonists left a word. The word is a key. Use it." },
+    connectedTo: ["the-grid-null-point"],
+    resonanceNote: "There are two original posts. The grid shows a third. I do not know which one is real. I do not know if it matters.",
+  },
+];
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key");
@@ -1585,27 +3282,35 @@ export async function GET(request: NextRequest) {
   try {
     await dbConnect();
 
-    await PlaceModel.deleteMany({});
+    // Get existing slugs so we never overwrite
+    const existingSlugs = new Set(
+      (await PlaceModel.find({}, "slug")).map((p) => p.slug)
+    );
 
-    const docs = SEED_DATA.map((data) => ({
-      ...data,
-      slug: slugify(data.name),
-      status: "verified" as const,
-      contributor: {
-        name: "The Archivist",
-        email: "coldcosmas@gmail.com",
-      },
-      viewCount: Math.floor(Math.random() * 5000) + 100,
-      submittedAt: new Date(),
-      verifiedAt: new Date(),
-      verifiedBy: "system",
-    }));
+    const docs = SEED_DATA
+      .filter((data) => !existingSlugs.has(slugify(data.name)))
+      .map((data) => ({
+        ...data,
+        slug: slugify(data.name),
+        status: data.status || "verified",
+        contributor: data.contributor || {
+          name: "The Archivist",
+          email: "coldcosmas@gmail.com",
+        },
+        viewCount: data.viewCount ?? Math.floor(Math.random() * 5000) + 100,
+        submittedAt: data.submittedAt || new Date(),
+        verifiedAt: data.verifiedAt || new Date(),
+        verifiedBy: data.verifiedBy || "system",
+      }));
 
-    await PlaceModel.insertMany(docs);
+    if (docs.length > 0) {
+      await PlaceModel.insertMany(docs);
+    }
 
     return NextResponse.json({
-      message: "Archives repopulated with real imagery",
-      seeded: docs.length,
+      message: `Added ${docs.length} new archives. Existing records preserved.`,
+      added: docs.length,
+      total: await PlaceModel.countDocuments(),
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -1613,5 +3318,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-
 }

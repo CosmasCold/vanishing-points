@@ -1,213 +1,302 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface BootLine {
-  text: string;
-  delay: number;
-  color?: "normal" | "warning" | "success" | "ghost";
+interface Props {
+  onComplete: () => void;
 }
 
-const BOOT_SEQUENCE: BootLine[] = [
-  { text: "INITIALIZING CARTOGRAPHIC LINK...", delay: 0, color: "normal" },
-  { text: "Connecting to BUNKER_7 relay...", delay: 800, color: "normal" },
-  { text: "Signal strength: 14%", delay: 1400, color: "warning" },
-  { text: "Handshake accepted.", delay: 2000, color: "success" },
-  { text: "Loading containment grid...", delay: 2600, color: "normal" },
-  { text: "WARNING: Grid integrity at 67%", delay: 3400, color: "warning" },
-  { text: "Dust accumulation detected in sector 4", delay: 4000, color: "warning" },
-  { text: "Atlas inversion: OFFLINE", delay: 4600, color: "normal" },
-  { text: "Signal triangulation: STANDBY", delay: 5200, color: "normal" },
-  { text: "The dust remembers everything.", delay: 6400, color: "ghost" },
-  { text: "DO NOT TRUST THE STATIC", delay: 7200, color: "ghost" },
-  { text: "Establishing visual feed...", delay: 8400, color: "success" },
-];
+type BootPhase = "static" | "tuning" | "lock" | "clear";
 
-function getLineStyle(color?: string): { color: string; fontStyle?: string } {
-  switch (color) {
-    case "warning":
-      return { color: "#c4785a" };
-    case "success":
-      return { color: "#7a9a6a" };
-    case "ghost":
-      return { color: "rgba(154,138,114,0.6)", fontStyle: "italic" };
-    default:
-      return { color: "#ddd0bc" };
-  }
-}
+export default function AtlasBootSequence({ onComplete }: Props) {
+  const [phase, setPhase] = useState<BootPhase>("static");
+  const [line, setLine] = useState("");
+  const [subLine, setSubLine] = useState("");
+  const [signalStrength, setSignalStrength] = useState(0);
+  const [skipped, setSkipped] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const toneRef = useRef<OscillatorNode | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const startTime = useRef(Date.now());
 
-export default function AtlasBootSequence({ onComplete }: { onComplete: () => void }) {
-  const [visibleLines, setVisibleLines] = useState<number>(0);
-  const [showCursor, setShowCursor] = useState(true);
-  const [finished, setFinished] = useState(false);
+  const getBootLines = useCallback((): { main: string; sub: string; duration: number } => {
+    if (typeof window === "undefined") return { main: "Acquiring signal...", sub: "Stand by.", duration: 3000 };
+
+    const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+    const lastVisit = localStorage.getItem("vp-atlas-last-visit");
+    const hoursAway = lastVisit ? Math.floor((Date.now() - parseInt(lastVisit)) / 3600000) : 0;
+    const corruption = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
+    const newPlaces = localStorage.getItem("vp-new-places-unseen") === "true";
+    const echoesVisited = localStorage.getItem("vp-echoes-visited") === "true";
+
+    // High corruption + absent long
+    if (corruption >= 3 && hoursAway > 12) {
+      return {
+        main: "Signal contaminated. Reacquiring from memory.",
+        sub: `You were gone for ${hoursAway} hours. The dust did not forget.`,
+        duration: 4500,
+      };
+    }
+
+    // High dust, returning to atlas
+    if (dust > 60 && echoesVisited) {
+      return {
+        main: "Grid contact re-established.",
+        sub: newPlaces 
+          ? "The atlas has updated itself. New signals detected." 
+          : "The grid holds. For now.",
+        duration: 3500,
+      };
+    }
+
+    // Long absence
+    if (hoursAway > 24) {
+      return {
+        main: "Signal lost. Scanning previous frequency...",
+        sub: `Last contact: ${hoursAway} hours ago. The static got loud.`,
+        duration: 4000,
+      };
+    }
+
+    // Medium absence
+    if (hoursAway > 4) {
+      return {
+        main: "Re-establishing cartographic link...",
+        sub: "The grid remembers intermittent witnesses.",
+        duration: 3200,
+      };
+    }
+
+    // First visit ever
+    if (!lastVisit && !echoesVisited) {
+      return {
+        main: "Acquiring signal...",
+        sub: "Every place you are about to see was abandoned. Someone documented them. That someone is gone.",
+        duration: 5000,
+      };
+    }
+
+    // Standard return
+    return {
+      main: "Tuning to grid frequency...",
+      sub: echoesVisited 
+        ? "BUNKER_7 terminal detected on auxiliary channel." 
+        : "Anomalous signal detected at coordinates unknown.",
+      duration: 2800,
+    };
+  }, []);
+
+  // Initialize audio on first interaction (browser autoplay policy)
+  const initAudio = useCallback(() => {
+    if (ctxRef.current) return;
+    const ctx = new AudioContext();
+    ctxRef.current = ctx;
+
+    // Static noise (pink noise approximation)
+    const bufferSize = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      data[i] = (lastOut + (0.02 * white)) / 1.02;
+      lastOut = data[i];
+      data[i] *= 3.5;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.08;
+    noise.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+
+    // Signal lock tone (detuned sine)
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = 440;
+    const toneGain = ctx.createGain();
+    toneGain.gain.value = 0;
+    osc.connect(toneGain);
+    toneGain.connect(ctx.destination);
+    osc.start();
+    toneRef.current = osc;
+
+    // Ramp down static, ramp up tone
+    setTimeout(() => {
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+      toneGain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 1);
+      osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 2);
+    }, 800);
+
+    // Stop everything
+    setTimeout(() => {
+      toneGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
+      setTimeout(() => {
+        noise.stop();
+        osc.stop();
+        ctx.close();
+      }, 1200);
+    }, 2500);
+  }, []);
 
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const { main, sub, duration } = getBootLines();
+    setLine(main);
+    setSubLine(sub);
 
-    BOOT_SEQUENCE.forEach((line, idx) => {
-      const timer = setTimeout(() => {
-        setVisibleLines((prev) => prev + 1);
-        if (idx === BOOT_SEQUENCE.length - 1) {
-          setTimeout(() => setFinished(true), 1200);
-          setTimeout(() => onComplete(), 2800);
-        }
-      }, line.delay);
-      timers.push(timer);
-    });
+    // Record visit timestamp for next boot
+    localStorage.setItem("vp-atlas-last-visit", String(Date.now()));
 
-    const cursorInterval = setInterval(() => {
-      setShowCursor((p) => !p);
-    }, 530);
+    // Phase timing
+    const timers: NodeJS.Timeout[] = [];
+    timers.push(setTimeout(() => setPhase("tuning"), 400));
+    timers.push(setTimeout(() => setPhase("lock"), 1200));
+    timers.push(setTimeout(() => setPhase("clear"), duration - 600));
+    timers.push(setTimeout(() => {
+      if (!skipped) onComplete();
+    }, duration));
+
+    // Signal strength animation
+    let frame: number;
+    const animateSignal = () => {
+      setSignalStrength((prev) => {
+        if (prev >= 100) return 100;
+        const jitter = Math.random() * 15 - 7;
+        return Math.min(100, prev + 2 + jitter);
+      });
+      frame = requestAnimationFrame(animateSignal);
+    };
+    frame = requestAnimationFrame(animateSignal);
 
     return () => {
       timers.forEach(clearTimeout);
-      clearInterval(cursorInterval);
+      cancelAnimationFrame(frame);
     };
-  }, [onComplete]);
+  }, [getBootLines, onComplete, skipped]);
+
+  const handleSkip = () => {
+    setSkipped(true);
+    if (ctxRef.current) {
+      ctxRef.current.close();
+    }
+    onComplete();
+  };
 
   return (
-    <AnimatePresence>
-      {!finished && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-[100] flex items-center justify-center font-mono"
-          style={{ backgroundColor: "#0c0a08" }}
-        >
-          {/* CRT overlays */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: "linear-gradient(rgba(122,107,82,0.04) 50%, rgba(12,10,8,0.25) 50%)",
-              backgroundSize: "100% 4px",
-            }}
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: "radial-gradient(circle at center, transparent 50%, rgba(12,10,8,0.95) 100%)",
-            }}
-          />
-          
-          {/* Scanline sweep */}
+    <motion.div
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center cursor-pointer"
+      style={{ background: "#050403" }}
+      onClick={handleSkip}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: phase === "clear" ? 0 : 1 }}
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+    >
+      {/* CRT scanlines */}
+      <div
+        className="pointer-events-none fixed inset-0 z-[201]"
+        style={{
+          background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px)",
+          backgroundSize: "100% 4px",
+        }}
+      />
+
+      {/* Vignette */}
+      <div
+        className="pointer-events-none fixed inset-0 z-[201]"
+        style={{
+          background: "radial-gradient(circle at 50% 50%, transparent 40%, rgba(5,4,3,0.8) 100%)",
+        }}
+      />
+
+      {/* Static flash during phase 1 */}
+      <AnimatePresence>
+        {phase === "static" && (
           <motion.div
-            className="absolute h-32 w-full pointer-events-none"
-            style={{
-              background: "linear-gradient(to bottom, transparent, rgba(154,138,114,0.03), transparent)",
-            }}
-            animate={{ top: ["-10%", "110%"] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.3, 0.1, 0.4, 0] }}
+            transition={{ duration: 0.6 }}
+            className="fixed inset-0 z-[202]"
+            style={{ background: "rgba(200,200,200,0.08)" }}
           />
+        )}
+      </AnimatePresence>
 
-          {/* Content */}
-          <div className="relative w-full max-w-lg px-8 space-y-3">
-            {/* Header */}
-            <div
-              className="border-b pb-3 mb-6"
-              style={{ borderColor: "rgba(122,107,82,0.2)" }}
-            >
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[10px] uppercase tracking-[0.4em]"
-                style={{ color: "rgba(154,138,114,0.4)" }}
-              >
-                Vanishing Points // Atlas v3.1.4
-              </motion.p>
-            </div>
+      {/* Main content */}
+      <div className="relative z-[203] text-center max-w-lg px-6 space-y-6">
+        {/* Signal strength bars */}
+        <div className="flex items-end justify-center gap-1 h-12 mb-4">
+          {[20, 40, 60, 80, 100].map((threshold) => (
+            <motion.div
+              key={threshold}
+              className="w-1.5 rounded-t"
+              style={{
+                background: signalStrength >= threshold ? "#9a8a72" : "rgba(90,78,66,0.2)",
+                height: `${threshold * 0.5}px`,
+              }}
+              animate={{
+                background: signalStrength >= threshold 
+                  ? ["#9a8a72", "#c4785a", "#9a8a72"] 
+                  : "rgba(90,78,66,0.2)",
+              }}
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </div>
 
-            {/* Boot lines */}
-            <div className="space-y-1.5 min-h-[300px]">
-              {BOOT_SEQUENCE.slice(0, visibleLines).map((line, idx) => {
-                const lineStyle = getLineStyle(line.color);
-                return (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-[13px] tracking-wide"
-                    style={{ color: lineStyle.color, fontStyle: lineStyle.fontStyle }}
-                  >
-                    {line.color === "ghost" ? (
-                      <span className="italic">{line.text}</span>
-                    ) : (
-                      <span>
-                        <span className="mr-2" style={{ color: "rgba(154,138,114,0.4)" }}>
-                          {`[${String(idx).padStart(2, "0")}]`}
-                        </span>
-                        {line.text}
-                      </span>
-                    )}
-                  </motion.div>
-                );
-              })}
-              
-              {/* Typing cursor */}
-              {visibleLines < BOOT_SEQUENCE.length && (
-                <div className="text-[13px]" style={{ color: "#ddd0bc" }}>
-                  <span className="mr-2" style={{ color: "rgba(154,138,114,0.4)" }}>
-                    {`[${String(visibleLines).padStart(2, "0")}]`}
-                  </span>
-                  <span
-                    className={`inline-block w-2 h-4 align-middle ${showCursor ? "opacity-100" : "opacity-0"}`}
-                    style={{ backgroundColor: "#9a8a72" }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Progress bar */}
-            <div className="pt-6">
-              <div
-                className="h-px w-full relative overflow-hidden"
-                style={{ backgroundColor: "rgba(122,107,82,0.1)" }}
-              >
-                <motion.div
-                  className="absolute inset-y-0 left-0"
-                  style={{ backgroundColor: "rgba(154,138,114,0.3)" }}
-                  initial={{ width: "0%" }}
-                  animate={{ width: `${(visibleLines / BOOT_SEQUENCE.length) * 100}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-              <p
-                className="text-[10px] mt-2 uppercase tracking-widest"
-                style={{ color: "rgba(154,138,114,0.3)" }}
-              >
-                {Math.floor((visibleLines / BOOT_SEQUENCE.length) * 100)}% synchronized
-              </p>
-            </div>
-
-            {/* Ghost text - subtle background */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.04 }}
-              transition={{ delay: 5, duration: 3 }}
-              className="absolute -bottom-12 left-8 text-[10px] max-w-md leading-relaxed"
-              style={{ color: "#ddd0bc" }}
-            >
-              I can see when you will return. I hope I'm wrong. The atlas was completed before the places were abandoned. BUNKER_3 responded once. Then static. Then silence.
-            </motion.p>
-          </div>
-
-          {/* Corner decorations */}
-          <div
-            className="absolute top-6 left-6 text-[10px] tracking-widest"
-            style={{ color: "rgba(154,138,114,0.2)" }}
+        {/* Main line */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h1
+            className="font-mono text-sm md:text-base tracking-[0.25em] uppercase"
+            style={{ color: "#ddd0bc", textShadow: "0 0 12px rgba(221,208,188,0.15)" }}
           >
-            LAT: 38.74.000<br/>LON: UNKNOWN
-          </div>
-          <div
-            className="absolute bottom-6 right-6 text-[10px] tracking-widest text-right"
-            style={{ color: "rgba(154,138,114,0.2)" }}
-          >
-            SECTOR: 7<br/>STATUS: SEALED
-          </div>
+            {line}
+          </h1>
         </motion.div>
-      )}
-    </AnimatePresence>
+
+        {/* Sub line */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+        >
+          <p
+            className="font-mono text-[11px] md:text-xs tracking-wider uppercase leading-relaxed"
+            style={{ color: "#7a6e5e", textShadow: "0 0 8px rgba(122,107,82,0.1)" }}
+          >
+            {subLine}
+          </p>
+        </motion.div>
+
+        {/* Progress / skip hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.3 }}
+          transition={{ delay: 1.5 }}
+          className="pt-8"
+        >
+          <p className="font-mono text-[9px] tracking-[0.3em] uppercase" style={{ color: "#5a4e42" }}>
+            Click anywhere to skip acquisition
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Bottom status */}
+      <div className="absolute bottom-8 left-0 right-0 z-[203] text-center">
+        <p className="font-mono text-[9px] tracking-[0.4em] uppercase opacity-20" style={{ color: "#9a8a72" }}>
+          {phase === "static" && "STATIC"}
+          {phase === "tuning" && "TUNING"}
+          {phase === "lock" && "SIGNAL LOCKED"}
+          {phase === "clear" && "GRID CONTACT"}
+        </p>
+      </div>
+    </motion.div>
   );
 }

@@ -37,6 +37,8 @@ import AbsenceGreeting from "@/components/AbsenceGreeting";
 import AtlasInversion from "@/components/AtlasInversion";
 import { showToast } from "@/lib/toast";
 import LiveSignalOverlay from "@/components/LiveSignalOverlay";
+import AudioEngine from "@/components/AudioEngine";
+
 
 function MapLoadingFallback() {
   return (
@@ -243,7 +245,9 @@ export default function Home() {
 
   return (
     <>
-      {!booted && <AtlasBootSequence onComplete={() => setBooted(true)} />}
+      <AtlasBootSequence onComplete={() => setBooted(true)} />
+
+      <AudioEngine />
 
       <main
         className={`relative w-full h-[100dvh] overflow-hidden transition-colors duration-[2000ms] select-none ${
@@ -578,7 +582,10 @@ function NavBtn({
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent("vp-ui-click"));
+        onClick();
+      }}
       title={title}
       className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[11px] md:text-xs transition-all duration-300 active:scale-95 flex-shrink-0"
       style={{
@@ -628,7 +635,11 @@ function NavLink({
         backdropFilter: "blur(6px)",
         boxShadow: "inset 0 1px 0 rgba(122,107,82,0.06), 0 2px 8px rgba(0,0,0,0.3)",
       }}
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent("vp-ui-click"));
+      }}
       onMouseEnter={(e) => {
+        window.dispatchEvent(new CustomEvent("vp-ui-hover"));
         e.currentTarget.style.color = "#ddd0bc";
         e.currentTarget.style.borderColor = "rgba(154,138,114,0.4)";
         if (highlight) e.currentTarget.style.background = "rgba(122,107,82,0.2)";

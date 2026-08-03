@@ -18,11 +18,33 @@ export interface PlaceDocument extends Document {
   photos: string[];
   hauntingReports?: string[];
   viewCount: number;
-  status: "pending" | "approved" | "rejected";
-  contributorName?: string;
-  contributorEmail?: string;
+  status: "pending" | "verified" | "rejected" | "sealed" | "whispered" | "mirage";
+  contributor?: {
+    name: string;
+    email: string;
+  };
+  contributorName?: string; // legacy
+  contributorEmail?: string; // legacy
   submittedAt: Date;
+  verifiedAt?: Date;
+  verifiedBy?: string;
+  unlockCondition?: {
+    type: "dust" | "code" | "inventory" | "visit" | "reading" | "time";
+    value: string | number;
+    message: string;
+  };
+  connectedTo?: string[];
+  resonanceNote?: string;
 }
+
+const UnlockConditionSchema = new Schema(
+  {
+    type: { type: String, enum: ["dust", "code", "inventory", "visit", "reading", "time"] },
+    value: Schema.Types.Mixed,
+    message: String,
+  },
+  { _id: false }
+);
 
 const PlaceSchema = new Schema<PlaceDocument>(
   {
@@ -57,12 +79,21 @@ const PlaceSchema = new Schema<PlaceDocument>(
     viewCount: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "approved", // ← SEEDED DATA GOES LIVE IMMEDIATELY
+      enum: ["pending", "verified", "rejected", "sealed", "whispered", "mirage"],
+      default: "verified",
+    },
+    contributor: {
+      name: String,
+      email: String,
     },
     contributorName: { type: String },
     contributorEmail: { type: String },
     submittedAt: { type: Date, default: Date.now },
+    verifiedAt: { type: Date },
+    verifiedBy: { type: String },
+    unlockCondition: { type: UnlockConditionSchema, required: false },
+    connectedTo: { type: [String], default: [] },
+    resonanceNote: { type: String },
   },
   {
     timestamps: true,

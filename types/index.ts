@@ -16,7 +16,7 @@ export interface Place {
   hauntingReports?: string[];
   dangerLevel: 1 | 2 | 3 | 4 | 5;
   photos: string[];
-  status: "verified" | "pending" | "rejected";
+  status: "verified" | "pending" | "rejected" | "sealed" | "whispered" | "mirage";
   contributor: {
     name: string;
     email: string;
@@ -25,6 +25,13 @@ export interface Place {
   verifiedAt?: string;
   verifiedBy?: string;
   viewCount: number;
+  unlockCondition?: {
+    type: "dust" | "code" | "inventory" | "visit" | "reading" | "time";
+    value: string | number;
+    message: string;
+  };
+  connectedTo?: string[];
+  resonanceNote?: string;
 }
 
 export interface PlaceInput {

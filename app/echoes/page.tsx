@@ -556,6 +556,7 @@ export default function EchoesPage() {
       const tier = getHijackTier(otherCount);
       if (tier >= 2) {
         setHijacked(true);
+        window.dispatchEvent(new CustomEvent("vp-other-interference"));
         recordOtherEncounter();
         pushLines(TIER_HIJACK[tier], "other");
       }
@@ -643,6 +644,7 @@ export default function EchoesPage() {
     if (!clean) return;
     if (chatMode && clean !== "exit") { await talkToBunker(cmd); setInput(""); return; }
     setInput(""); setSuggestions([]); setShowPalette(false);
+    window.dispatchEvent(new CustomEvent("vp-static", { detail: { duration: 0.2, intensity: 0.05 } }));
     const args = clean.split(" "); const base = args[0];
     recordCommand(base);
 
@@ -1096,7 +1098,7 @@ export default function EchoesPage() {
                   <input
                     ref={inputRef}
                     value={input}
-                    onChange={(e) => { setInput(e.target.value); onType(); }}
+                    onChange={(e) => { setInput(e.target.value); onType(); window.dispatchEvent(new CustomEvent("vp-keystroke")); }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") { runCommand(input); }
                       else if (e.key === "Tab" && suggestions.length > 0) { e.preventDefault(); setInput(suggestions[0]); setSuggestions([]); }

@@ -4,30 +4,35 @@ export interface Dossier {
   slug: string;
   title: string;
   location: string;
-  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  rarity: "common" | "uncommon" | "rare" | "legendary";
   description?: string;
   image?: string;
 }
 
 export const DOSSIERS: Dossier[] = [
-  { slug: "dossier-01", title: "Site Alpha", location: "Unknown", rarity: "common" },
-  { slug: "dossier-02", title: "Site Beta", location: "Unknown", rarity: "common" },
-  { slug: "dossier-03", title: "Site Gamma", location: "Unknown", rarity: "uncommon" },
-  { slug: "dossier-04", title: "Site Delta", location: "Unknown", rarity: "uncommon" },
-  { slug: "dossier-05", title: "Site Epsilon", location: "Unknown", rarity: "rare" },
-  { slug: "dossier-06", title: "Site Zeta", location: "Unknown", rarity: "rare" },
-  { slug: "dossier-07", title: "Site Eta", location: "Unknown", rarity: "epic" },
-  { slug: "dossier-08", title: "Site Theta", location: "Unknown", rarity: "epic" },
-  { slug: "dossier-09", title: "Site Iota", location: "Unknown", rarity: "legendary" },
-  { slug: "dossier-10", title: "Site Kappa", location: "Unknown", rarity: "common" },
-  { slug: "dossier-11", title: "Site Lambda", location: "Unknown", rarity: "uncommon" },
-  { slug: "dossier-12", title: "Site Mu", location: "Unknown", rarity: "rare" },
-  { slug: "dossier-13", title: "Site Nu", location: "Unknown", rarity: "epic" },
-  { slug: "dossier-14", title: "Site Xi", location: "Unknown", rarity: "legendary" },
-  { slug: "dossier-15", title: "Site Omicron", location: "Unknown", rarity: "legendary" },
+  { slug: "pripyat-amusement-park", title: "Pripyat: Ferris Wheel", location: "Ukraine", rarity: "rare" },
+  { slug: "eastern-state-penitentiary", title: "Eastern State: Cellblock 12", location: "USA", rarity: "legendary" },
+  { slug: "isla-de-las-munecas", title: "Isla de las Muñecas", location: "Mexico", rarity: "legendary" },
+  { slug: "bodie-ghost-town", title: "Bodie: Main Street", location: "USA", rarity: "common" },
+  { slug: "aokigahara-forest", title: "Aokigahara: The Sea of Trees", location: "Japan", rarity: "legendary" },
+  { slug: "duga-radar-array", title: "Duga: The Russian Woodpecker", location: "Ukraine", rarity: "legendary" },
+  { slug: "bhangarh-fort", title: "Bhangarh: The Cursed City", location: "India", rarity: "rare" },
+  { slug: "north-brother-island", title: "North Brother: Quarantine", location: "USA", rarity: "uncommon" },
+  { slug: "hashima-island", title: "Hashima: Battleship Island", location: "Japan", rarity: "legendary" },
+  { slug: "kolmanskop", title: "Kolmanskop: The Sand Fill", location: "Namibia", rarity: "common" },
+  { slug: "waverly-hills-sanatorium", title: "Waverly Hills: The Body Chute", location: "USA", rarity: "uncommon" },
+  { slug: "centralia", title: "Centralia: The Burning Borough", location: "USA", rarity: "rare" },
+  { slug: "winchester-mystery-house", title: "Winchester: Room 13", location: "USA", rarity: "uncommon" },
+  { slug: "sedlec-ossuary", title: "Sedlec: The Bone Church", location: "Czech Republic", rarity: "rare" },
+  { slug: "catacombs-of-paris", title: "Catacombs: Six Million", location: "France", rarity: "legendary" },
 ];
 
 const STORAGE_KEY = "vp-dossiers-claimed";
+
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
 
 export function claimDossier(slug: string): boolean {
   if (typeof window === "undefined") return false;
@@ -35,6 +40,12 @@ export function claimDossier(slug: string): boolean {
   if (claimed.includes(slug)) return false;
   claimed.push(slug);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(claimed));
+
+  const dust = getDust();
+  localStorage.setItem("vp-dust-accumulation", String(Math.min(100, dust + 2)));
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+  window.dispatchEvent(new CustomEvent("vp-dossiers-updated"));
+
   return true;
 }
 

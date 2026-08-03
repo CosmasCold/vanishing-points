@@ -19,8 +19,8 @@ export default function PhotoGallery({ photos }: Props) {
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
         {photos.map((photo, i) => (
           <motion.div
-            key={photo}
-            whileHover={{ scale: 1.03 }}
+            key={`${photo}-${i}`}
+            whileHover={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches ? { scale: 1.03 } : undefined}
             transition={{ duration: 0.3 }}
             className="relative flex-shrink-0 w-48 h-32 rounded-lg overflow-hidden cursor-pointer group"
             onClick={() => setLightbox(i)}
@@ -33,7 +33,12 @@ export default function PhotoGallery({ photos }: Props) {
               sizes="192px"
               loading={i === 0 ? "eager" : "lazy"}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(10,8,6,0.5)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: "linear-gradient(to top, rgba(10,8,6,0.5), transparent, transparent)",
+              }}
+            />
           </motion.div>
         ))}
       </div>
@@ -44,23 +49,28 @@ export default function PhotoGallery({ photos }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] lightbox-backdrop flex items-center justify-center"
+            className="fixed inset-0 z-[70] flex items-center justify-center"
+            style={{ background: "rgba(12,10,8,0.95)", backdropFilter: "blur(4px)" }}
             onClick={() => setLightbox(null)}
           >
             <button
-              className="absolute top-6 right-6 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
+              className="absolute top-6 right-6 transition-colors"
+              style={{ color: "#9a8a72" }}
               onClick={() => setLightbox(null)}
+              aria-label="Close gallery"
             >
               <X size={24} />
             </button>
 
             {lightbox > 0 && (
               <button
-                className="absolute left-6 top-1/2 -translate-y-1/2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
+                className="absolute left-6 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: "#9a8a72" }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox - 1);
                 }}
+                aria-label="Previous photo"
               >
                 <ChevronLeft size={32} />
               </button>
@@ -68,11 +78,13 @@ export default function PhotoGallery({ photos }: Props) {
 
             {lightbox < photos.length - 1 && (
               <button
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-[#9a8a72] hover:text-[#d4c8b4] transition-colors"
+                className="absolute right-6 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: "#9a8a72" }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightbox(lightbox + 1);
                 }}
+                aria-label="Next photo"
               >
                 <ChevronRight size={32} />
               </button>
@@ -96,7 +108,10 @@ export default function PhotoGallery({ photos }: Props) {
               />
             </motion.div>
 
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-xs text-[#9a8a72]">
+            <div
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono"
+              style={{ color: "#9a8a72", fontSize: "11px" }}
+            >
               {lightbox + 1} / {photos.length}
             </div>
           </motion.div>

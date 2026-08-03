@@ -19,7 +19,7 @@ export interface SubPlace {
   lore: string[];
   choices?: SubPlaceChoice[];
   risk: "low" | "medium" | "high" | "extreme";
-  dustReward: number;
+  dustGain: number;
 }
 
 export const SUB_PLACES: SubPlace[] = [
@@ -66,7 +66,7 @@ export const SUB_PLACES: SubPlace[] = [
       },
     ],
     risk: "medium",
-    dustReward: 15,
+    dustGain: 15,
   },
   {
     id: "hashima-shaft-3",
@@ -74,7 +74,6 @@ export const SUB_PLACES: SubPlace[] = [
     name: "Shaft 3",
     description: "The deepest coal shaft. The elevator still works. Do not take it.",
     requiredDust: 40,
-    requiredItem: "rusty-lantern",
     lore: [
       "Water drips upward.",
       "The counting voice is loudest here.",
@@ -97,11 +96,11 @@ export const SUB_PLACES: SubPlace[] = [
           "The rungs are worn smooth by hands smaller than yours.",
           "You find a photograph: the island, full of people, timestamped tomorrow.",
         ],
-        effect: { type: "add_item", value: "hashima-photo" },
+        effect: { type: "add_item", value: "polaroid" },
       },
     ],
     risk: "high",
-    dustReward: 25,
+    dustGain: 25,
   },
   {
     id: "aokigahara-cabin",
@@ -132,11 +131,11 @@ export const SUB_PLACES: SubPlace[] = [
           "The ink runs upward, toward the ceiling.",
           "The cabin is warmer now. You are colder.",
         ],
-        effect: { type: "remove_item", value: "compass" },
+        effect: { type: "add_corruption", value: 1 },
       },
     ],
     risk: "medium",
-    dustReward: 20,
+    dustGain: 20,
   },
   {
     id: "poveglia-bell-tower",
@@ -172,19 +171,19 @@ export const SUB_PLACES: SubPlace[] = [
       },
     ],
     risk: "extreme",
-    dustReward: 35,
+    dustGain: 35,
   },
 ];
 
 export function getUnlockedSubPlaces(
   dust: number,
   inventory: string[],
-  redeemedCodes: string[]
+  foundCodes: string[]
 ): SubPlace[] {
   return SUB_PLACES.filter((sp) => {
     if (dust < sp.requiredDust) return false;
     if (sp.requiredItem && !inventory.includes(sp.requiredItem)) return false;
-    if (sp.requiredCode && !redeemedCodes.includes(sp.requiredCode)) return false;
+    if (sp.requiredCode && !foundCodes.includes(sp.requiredCode)) return false;
     return true;
   });
 }

@@ -6,17 +6,15 @@ import {
   Target,
   CheckCircle2,
   Circle,
-  Lightbulb,
   X,
   Radio,
   Flame,
   Skull,
   Users,
   BookOpen,
-  ChevronRight,
-  Gift,
 } from "lucide-react";
-import { Lead, useLeads, checkLeadProgress, generateNextLead } from "@/hooks/useLeads";
+import { useArchiveReadings, synchronizeReadings, detectNextReading } from "@/hooks/useArchiveReadings";
+import type { ReadingCondition } from "@/hooks/useArchiveReadings";
 import { showToast } from "@/lib/toast";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -30,8 +28,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 const CATEGORY_COLORS: Record<string, string> = {
   signal: "#7a9a6a",
   expedition: "#9a8a5a",
-  corruption: "#9a5a5a",
-  community: "#6a8a9a",
+  corruption: "#c4785a",
+  community: "#8a7a6a",
   lore: "#9a8a72",
 };
 
@@ -45,37 +43,34 @@ interface Props {
 }
 
 export default function LeadPanel({ theme, onPushTerminal }: Props) {
-  const { active, completed, progress, refresh, abandon } = useLeads();
-  const [showHint, setShowHint] = useState(false);
+  const { active, completed, clarity, refresh, abandon } = useArchiveReadings();
   const [justCompleted, setJustCompleted] = useState(false);
 
   const handleCheck = () => {
-    const updated = checkLeadProgress();
+    const updated = synchronizeReadings();
     if (!updated && active) {
-      // Lead completed!
       setJustCompleted(true);
-      showToast(`Lead complete: ${active.title}`, "success");
+      showToast(`Pattern resolved: ${active.title}`, "info");
       onPushTerminal?.([
         `╔══════════════════════════════════════╗`,
-        `║  LEAD COMPLETED                      ║`,
-        `║  ${active.title.padEnd(34)}║`,
+        `║  PATTERN RESOLVED                    ║`,
+        `║  ${active.title.slice(0, 34).padEnd(34)}║`,
         `╠══════════════════════════════════════╣`,
-        `║  Rewards distributed.                ║`,
-        `║  Check your inventory and fragments. ║`,
+        `║  Archive expanded.                   ║`,
+        `║  New signals detected.               ║`,
         `╚══════════════════════════════════════╝`,
         "",
       ]);
       setTimeout(() => {
         setJustCompleted(false);
         refresh();
-        // Auto-generate next lead after a delay
         setTimeout(() => {
-          const next = generateNextLead();
+          const next = detectNextReading();
           if (next) {
-            showToast(`New lead: ${next.title}`, "info");
+            showToast(`New pattern: ${next.title}`, "info");
             onPushTerminal?.([
-              `NEW LEAD ACQUIRED: ${next.title.toUpperCase()}`,
-              next.description.slice(0, 60) + "...",
+              `NEW PATTERN SURFACED: ${next.title.toUpperCase()}`,
+              next.description.slice(0, 60) + (next.description.length > 60 ? "..." : ""),
               "",
             ]);
             refresh();
@@ -90,9 +85,9 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
   const handleAbandon = () => {
     if (!active) return;
     abandon();
-    showToast("Lead abandoned", "warning");
+    showToast("Pattern abandoned", "warning");
     onPushTerminal?.([
-      "LEAD ABANDONED.",
+      "PATTERN ABANDONED.",
       "BUNKER_7 does not judge. The archive continues either way.",
       "",
     ]);
@@ -100,12 +95,12 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
   };
 
   const handleGenerate = () => {
-    const next = generateNextLead();
+    const next = detectNextReading();
     if (next) {
-      showToast(`New lead: ${next.title}`, "info");
+      showToast(`New pattern: ${next.title}`, "info");
       refresh();
     } else {
-      showToast("No leads available. All objectives complete.", "success");
+      showToast("No patterns available. All correlations complete.", "info");
     }
   };
 
@@ -113,15 +108,15 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
     return (
       <div className="space-y-4 text-center py-8">
         <Target size={24} className="mx-auto opacity-30" style={{ color: theme.dim }} />
-        <p className="text-xs opacity-50" style={{ color: theme.dim }}>
-          No active leads.
+        <p className="text-[11px] opacity-50" style={{ color: theme.dim }}>
+          No active patterns.
         </p>
         <button
           onClick={handleGenerate}
-          className="px-3 py-1.5 border rounded text-[10px] font-mono uppercase tracking-wider transition-all hover:opacity-80"
+          className="px-3 py-1.5 border rounded text-[11px] font-mono uppercase tracking-wider transition-all hover:opacity-80"
           style={{ borderColor: `${theme.primary}30`, color: theme.primary }}
         >
-          Acquire Lead
+          Open Channel
         </button>
       </div>
     );
@@ -131,15 +126,15 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
     return (
       <div className="space-y-4 text-center py-8">
         <CheckCircle2 size={24} className="mx-auto opacity-40" style={{ color: "#7a9a6a" }} />
-        <p className="text-xs opacity-50" style={{ color: theme.dim }}>
-          {completed.length} lead{completed.length !== 1 ? "s" : ""} completed.
+        <p className="text-[11px] opacity-50" style={{ color: theme.dim }}>
+          {completed.length} pattern{completed.length !== 1 ? "s" : ""} archived.
         </p>
         <button
           onClick={handleGenerate}
-          className="px-3 py-1.5 border rounded text-[10px] font-mono uppercase tracking-wider transition-all hover:opacity-80"
+          className="px-3 py-1.5 border rounded text-[11px] font-mono uppercase tracking-wider transition-all hover:opacity-80"
           style={{ borderColor: `${theme.primary}30`, color: theme.primary }}
         >
-          Acquire Next Lead
+          Open Channel
         </button>
       </div>
     );
@@ -153,21 +148,21 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border"
             style={{ borderColor: `${catColor}40`, color: catColor }}
           >
             {CATEGORY_ICONS[active.category]}
             {active.category}
           </span>
-          <span className="text-[9px] font-mono opacity-40" style={{ color: theme.dim }}>
-            {progress}%
+          <span className="text-[10px] font-mono opacity-40" style={{ color: theme.dim }}>
+            {clarity}%
           </span>
         </div>
         <button
           onClick={handleAbandon}
-          className="text-[9px] opacity-30 hover:opacity-70 transition-opacity"
+          className="text-[10px] opacity-30 hover:opacity-70 transition-opacity"
           style={{ color: theme.dim }}
-          title="Abandon lead"
+          title="Abandon pattern"
         >
           <X size={12} />
         </button>
@@ -175,7 +170,7 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
 
       {/* Title & Description */}
       <div>
-        <h3 className="text-sm font-bold mb-1" style={{ color: theme.primary }}>
+        <h3 className="text-[13px] font-bold mb-1" style={{ color: theme.primary }}>
           {active.title}
         </h3>
         <p className="text-[11px] leading-relaxed opacity-80" style={{ color: theme.dim }}>
@@ -183,126 +178,65 @@ export default function LeadPanel({ theme, onPushTerminal }: Props) {
         </p>
       </div>
 
-      {/* Progress Bar */}
+      {/* Clarity Bar */}
       <div className="space-y-1">
-        <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+        <div
+          className="h-1.5 rounded-full overflow-hidden"
+          style={{ background: "rgba(12,10,8,0.6)" }}
+        >
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: catColor }}
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
+            animate={{ width: `${clarity}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
       </div>
 
-      {/* Objectives */}
+      {/* Conditions */}
       <div className="space-y-2">
-        <p className="text-[9px] font-mono uppercase tracking-wider opacity-40" style={{ color: theme.dim }}>
-          Objectives
+        <p className="text-[10px] font-mono uppercase tracking-wider opacity-40" style={{ color: theme.dim }}>
+          Conditions
         </p>
-        {active.objectives.map((obj) => (
+        {active.conditions.map((cond: ReadingCondition) => (
           <div
-            key={obj.id}
+            key={cond.id}
             className="flex items-start gap-2 text-[11px] leading-relaxed"
-            style={{ color: obj.completed ? "#7a9a6a" : theme.dim }}
+            style={{ color: cond.observed ? "#7a9a6a" : theme.dim }}
           >
             <span className="mt-0.5 flex-shrink-0">
-              {obj.completed ? (
-                <CheckCircle2 size={12} className="text-[#7a9a6a]" />
+              {cond.observed ? (
+                <CheckCircle2 size={12} style={{ color: "#7a9a6a" }} />
               ) : (
                 <Circle size={12} className="opacity-30" />
               )}
             </span>
-            <span className={obj.completed ? "line-through opacity-50" : ""}>
-              {obj.text}
+            <span className={cond.observed ? "line-through opacity-50" : ""}>
+              {cond.text}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Check Progress Button */}
+      {/* Check Status Button */}
       <button
         onClick={handleCheck}
         disabled={justCompleted}
-        className="w-full py-2 border rounded text-[10px] font-mono uppercase tracking-wider transition-all disabled:opacity-30"
+        className="w-full py-2 border rounded text-[11px] font-mono uppercase tracking-wider transition-all disabled:opacity-30"
         style={{
           borderColor: `${catColor}40`,
           color: catColor,
           backgroundColor: `${catColor}08`,
         }}
       >
-        {justCompleted ? "Processing..." : "Update Progress"}
+        {justCompleted ? "Sealing record..." : "Check Status"}
       </button>
 
-      {/* Hint */}
-      {active.hint && (
-        <div className="space-y-1">
-          <button
-            onClick={() => setShowHint((s) => !s)}
-            className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider opacity-40 hover:opacity-70 transition-opacity"
-            style={{ color: theme.dim }}
-          >
-            <Lightbulb size={10} />
-            {showHint ? "Hide hint" : "Show hint"}
-          </button>
-          <AnimatePresence>
-            {showHint && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="text-[10px] italic pl-3 border-l-2"
-                style={{ borderColor: `${catColor}30`, color: theme.dim }}
-              >
-                {active.hint}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Rewards Preview */}
-      {active.rewards && (
-        <div className="pt-2 border-t" style={{ borderColor: `${theme.primary}08` }}>
-          <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider opacity-30 mb-1.5" style={{ color: theme.dim }}>
-            <Gift size={10} />
-            Rewards
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {active.rewards.dust && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "#9a8a5a30", color: "#9a8a5a" }}>
-                +{active.rewards.dust} dust
-              </span>
-            )}
-            {active.rewards.fragments && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "#7a9a6a30", color: "#7a9a6a" }}>
-                {active.rewards.fragments.length} fragment{active.rewards.fragments.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {active.rewards.items && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "#6a8a9a30", color: "#6a8a9a" }}>
-                {active.rewards.items.length} item{active.rewards.items.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {active.rewards.codes && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "#9a8a7230", color: "#9a8a72" }}>
-                {active.rewards.codes.length} code{active.rewards.codes.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {active.rewards.corruptionDelta && active.rewards.corruptionDelta > 0 && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "#9a5a5a30", color: "#9a5a5a" }}>
-                +{active.rewards.corruptionDelta} corruption
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Completed leads count */}
+      {/* Completed patterns count */}
       {completed.length > 0 && (
-        <p className="text-[9px] opacity-30 text-center pt-2" style={{ color: theme.dim }}>
-          {completed.length} lead{completed.length !== 1 ? "s" : ""} archived
+        <p className="text-[10px] opacity-30 text-center pt-2" style={{ color: theme.dim }}>
+          {completed.length} pattern{completed.length !== 1 ? "s" : ""} archived
         </p>
       )}
     </div>

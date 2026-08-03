@@ -5,25 +5,34 @@ import { useState, useEffect, useRef } from "react";
 export function useCorruptionStage() {
   const [stage, setStage] = useState(0);
 
-  useEffect(() => {
-    const check = () => {
-      const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
-      const echoes = localStorage.getItem("echoes-visited") === "true";
-      const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]").length;
+  const calculate = () => {
+    if (typeof window === "undefined") return;
+    const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+    const echoes = localStorage.getItem("vp-echoes-visited") === "true";
+    const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]").length;
 
-      if (dust > 200 && echoes) setStage(4);
-      else if (dust > 100 && echoes) setStage(3);
-      else if (dust > 50) setStage(2);
-      else if (dust > 20) setStage(1);
-      else setStage(0);
+    // Thresholds scaled to dust maximum of 100
+    if (dust >= 85 && echoes) setStage(4);
+    else if (dust >= 60 && echoes) setStage(3);
+    else if (dust >= 40) setStage(2);
+    else if (dust >= 15) setStage(1);
+    else setStage(0);
+  };
+
+  useEffect(() => {
+    calculate();
+    const handler = () => calculate();
+    window.addEventListener("vp-dust-change", handler);
+    window.addEventListener("vp-corruption-change", handler);
+    return () => {
+      window.removeEventListener("vp-dust-change", handler);
+      window.removeEventListener("vp-corruption-change", handler);
     };
-    check();
-    window.addEventListener("dust-updated", check);
-    return () => window.removeEventListener("dust-updated", check);
   }, []);
 
-  const labels = ["OBSERVER", "SENSITIVE", "ARCHIVIST", "WITNESS", "GHOST"];
-  const colors = ["#8a7a6a", "#9a8a72", "#a67c52", "#c4a882", "#e8d5c0"];
+  // Atmospheric descriptors, not ranks
+  const labels = ["quiet", "stirring", "present", "attentive", "known"];
+  const colors = ["#5a4e42", "#7a6e5e", "#9a8a72", "#a67c52", "#c4785a"];
 
   return {
     stage,
@@ -33,7 +42,7 @@ export function useCorruptionStage() {
 }
 
 export function useIdleGhost(onGhost: (line: string) => void) {
-  const idleRef = useRef<NodeJS.Timeout | null>(null);
+  const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const GHOST_LINES = [
     "the dust settles in patterns...",
@@ -67,6 +76,7 @@ export function useIdleGhost(onGhost: (line: string) => void) {
       window.removeEventListener("keydown", reset);
       window.removeEventListener("mousemove", reset);
       if (idleRef.current) clearTimeout(idleRef.current);
+      if (typeof document !== "undefined") document.title = "BUNKER_7 TERMINAL";
     };
   }, [onGhost]);
 

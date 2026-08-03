@@ -5,10 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Plus, Eye, Route, Navigation, BookOpen } from "lucide-react";
+import {
+  List,
+  Plus,
+  Eye,
+  Route,
+  Navigation,
+  BookOpen,
+  Activity,
+  Flame,
+} from "lucide-react";
 import PlacePanel from "@/components/PlacePanel";
 import ExpeditionPlanner from "@/components/ExpeditionPlanner";
 import ExpeditionLog from "@/components/ExpeditionLog";
+import LanternSystem from "@/components/LanternSystem";
 import RandomDestination from "@/components/RandomDestination";
 import HelpOverlay from "@/components/HelpOverlay";
 import ShortcutHint from "@/components/ShortcutHint";
@@ -25,7 +35,6 @@ import { accumulateDust } from "@/hooks/useDustLevel";
 import LyingCompass from "@/components/LyingCompass";
 import AbsenceGreeting from "@/components/AbsenceGreeting";
 import AtlasInversion from "@/components/AtlasInversion";
-import PlaceWhispers from "@/components/PlaceWhispers";
 import { showToast } from "@/lib/toast";
 import LiveSignalOverlay from "@/components/LiveSignalOverlay";
 
@@ -67,16 +76,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showLanterns, setShowLanterns] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>();
   const [nearest, setNearest] = useState<{
     place: Place;
     distance: number;
   } | null>(null);
+  const [dust, setDust] = useState(0);
   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
   const { count: visitedCount, visitGhost } = useVisitedPlaces();
 
+  // ── Load places ──
   useEffect(() => {
     fetch("/api/places")
       .then((r) => r.json())
@@ -87,9 +99,27 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
+  // ── Read dust on mount ──
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const d = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+    setDust(d);
+  }, []);
+
+  // ── Ghost toast: BUNKER_7 notices you after 3 expeditions ──
+  useEffect(() => {
+    if (!booted || typeof window === "undefined") return;
+    const log = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+    const hasNotified = localStorage.getItem("vp-ghost-toast-3") === "true";
+    if (log.length >= 3 && !hasNotified) {
+      localStorage.setItem("vp-ghost-toast-3", "true");
+      showToast("The terminal at BUNKER_7 has noticed your movement.", "warning");
+    }
+  }, [booted]);
+
   const findNearest = useCallback(() => {
     if (!navigator.geolocation) {
-      alert("Geolocation not supported");
+      showToast("Geolocation unavailable. The atlas cannot locate you.", "warning");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -117,16 +147,20 @@ export default function Home() {
           setMapCenter(result.place.coordinates);
         }
       },
-      () => alert("Location access denied or unavailable"),
+      () => {
+        showToast("Location signal lost. The atlas reads silence.", "warning");
+      },
       { enableHighAccuracy: false, timeout: 10000 }
     );
   }, [places]);
 
   const openPlace = useCallback((place: Place) => {
     accumulateDust(3);
+    const newDust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+    setDust(newDust);
     setSelectedPlace(place);
-    window.dispatchEvent(new CustomEvent("placeaudiochange", {
-      detail: { category: place.category, dangerLevel: place.dangerLevel }
+     window.dispatchEvent(new CustomEvent("placeaudiochange", {
+      detail: { category: place.category, atmosphere: place.dangerLevel }
     }));
   }, []);
 
@@ -134,20 +168,20 @@ export default function Home() {
     visitGhost(ghost);
   }, [visitGhost]);
 
-  const handleTowerFound = useCallback(() => {
-    showToast("Triangulation complete. Check the bunker terminal.", "warning");
+      const handleTowerFound = useCallback((tower: { id: string; name: string; coords: [number, number] }) => {
+    if (typeof window === "undefined") return;
+    showToast("A tower hums on frequencies the atlas does not register. The terminal might hear it.", "warning");
   }, []);
 
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
+        const handleKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (
+      const isTyping =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
-        return;
-      }
+        target.isContentEditable;
+      const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
+      if (isTyping || hasModifier) return;
 
       switch (e.key.toLowerCase()) {
         case "e":
@@ -177,6 +211,10 @@ export default function Home() {
           e.preventDefault();
           setShowLog(true);
           break;
+        case "k":
+          e.preventDefault();
+          setShowLanterns(true);
+          break;
         case "?":
           e.preventDefault();
           setShowHelp((h) => !h);
@@ -190,6 +228,8 @@ export default function Home() {
             setShowPlanner(false);
           } else if (showLog) {
             setShowLog(false);
+          } else if (showLanterns) {
+            setShowLanterns(false);
           } else if (nearest) {
             setNearest(null);
           }
@@ -199,7 +239,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [places, findNearest, router, selectedPlace, showPlanner, showLog, nearest, showHelp]);
+  }, [places, findNearest, router, selectedPlace, showPlanner, showLog, showLanterns, nearest, showHelp]);
 
   return (
     <>
@@ -219,10 +259,9 @@ export default function Home() {
         {/* ─── ATMOSPHERIC LAYER ─── */}
         <DustOverlay />
         <AtlasInversion />
-        <PlaceWhispers />
         <CollaborativeCursors />
 
-        {/* Subtle edge vignette — pointer-events-none so map works */}
+        {/* Subtle edge vignette */}
         <div
           className="pointer-events-none fixed inset-0 z-[30]"
           style={{
@@ -233,7 +272,6 @@ export default function Home() {
 
         {/* ─── HEADER / HUD ─── */}
         <header className="absolute top-0 left-0 right-0 z-40 safe-top pointer-events-none">
-          {/* Bronze trim */}
           <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #9a8a7260, transparent)" }} />
 
           <div className="px-4 md:px-8 py-4 md:py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -274,6 +312,12 @@ export default function Home() {
                 label="Plan"
                 title="Expedition Planner (E)"
               />
+              <NavBtn
+                onClick={() => setShowLanterns(true)}
+                icon={<Flame size={14} />}
+                label="Lanterns"
+                title="Lantern Grid (K)"
+              />
               <NavLink
                 href="/list"
                 icon={<List size={14} />}
@@ -283,24 +327,24 @@ export default function Home() {
               <NavLink
                 href="/submit"
                 icon={<Plus size={14} />}
-                label="Log discovery"
-                title="Submit Discovery (S)"
+                label="Witness a ruin"
+                title="Document a place (S)"
                 highlight
               />
             </motion.nav>
           </div>
 
-          {/* Bottom header trim */}
           <div className="h-px w-full opacity-30" style={{ background: "linear-gradient(90deg, transparent, #9a8a7240, transparent)" }} />
         </header>
 
-        {/* ─── BOTTOM LEFT STATUS ─── */}
+        {/* ─── BOTTOM LEFT STATUS CLUSTER ─── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: booted ? 1 : 0 }}
           transition={{ delay: 1.2, duration: 1 }}
           className="absolute bottom-3 md:bottom-8 left-4 md:left-8 z-40 pointer-events-none safe-bottom space-y-2 md:space-y-3"
         >
+          {/* Archive stats */}
           <div
             className="inline-flex items-center gap-3 md:gap-4 font-mono text-[11px] md:text-xs tracking-wider uppercase px-3 py-2 rounded border"
             style={{
@@ -311,25 +355,64 @@ export default function Home() {
               boxShadow: "inset 0 1px 0 rgba(122,107,82,0.08)",
             }}
           >
-            <StatItem icon={<Eye size={11} />} value={`${places.length} doc`} />
+            <StatItem icon={<Eye size={11} />} value={`${places.length} documented`} />
             <span className="w-px h-3 bg-[#9a8a72]/20" />
             <span className="hidden sm:inline">{places.filter((p) => p.category === "haunted").length} spectral</span>
             <span className="w-px h-3 bg-[#9a8a72]/20 hidden sm:inline" />
             <span className="hidden sm:inline">{places.filter((p) => p.category === "abandoned").length} forsaken</span>
           </div>
 
+          {/* Dust accumulation */}
+          <div
+            className="inline-flex items-center gap-3 font-mono text-[11px] tracking-wider uppercase px-3 py-2 rounded border"
+            style={{
+              color: dust > 75 ? "#c4785a" : "#7a6e5e",
+              borderColor: dust > 75 ? "rgba(196,120,90,0.2)" : "rgba(122,107,82,0.12)",
+              background: "rgba(12,10,8,0.6)",
+              backdropFilter: "blur(6px)",
+              boxShadow: "inset 0 1px 0 rgba(122,107,82,0.08)",
+            }}
+          >
+            <Activity size={11} className="opacity-50" />
+            <span className="opacity-60">Dust</span>
+            <div className="w-14 h-1 rounded-full overflow-hidden" style={{ background: "rgba(90,78,66,0.25)" }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${Math.min(dust, 100)}%`,
+                  background: dust > 75 ? "#c4785a" : "#9a8a72",
+                  boxShadow: dust > 75 ? "0 0 6px rgba(196,120,90,0.4)" : "none",
+                }}
+              />
+            </div>
+            <span className="tabular-nums font-bold">{dust}%</span>
+          </div>
+
+          {/* Anomalous Signal */}
           <div className="pointer-events-auto">
             <Link
               href="/echoes"
-              className="group inline-flex items-center gap-2 font-mono text-[10px] md:text-[11px] tracking-[0.25em] uppercase transition-all duration-500"
+              className="group inline-flex items-center gap-2.5 font-mono text-[10px] md:text-[11px] tracking-[0.2em] uppercase px-3 py-2 rounded border transition-all duration-500"
+              style={{
+                color: "#c4785a",
+                borderColor: "rgba(196,120,90,0.18)",
+                background: "rgba(196,120,90,0.04)",
+              }}
             >
-              <span
-                className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: "#c4785a", boxShadow: "0 0 6px #c4785a80" }}
-              />
-              <span className="text-[#5a4e42] group-hover:text-[#c4785a] transition-colors duration-500">
-                Anomalous Signal
+              <span className="relative flex h-2 w-2">
+                <span
+                  className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40"
+                  style={{ background: "#c4785a" }}
+                />
+                <span
+                  className="relative inline-flex rounded-full h-2 w-2"
+                  style={{ background: "#c4785a" }}
+                />
               </span>
+              <span className="group-hover:opacity-100 transition-opacity">
+                Signal detected — BUNKER_7
+              </span>
+              <span className="opacity-40 group-hover:opacity-80 transition-opacity">↳</span>
             </Link>
           </div>
         </motion.div>
@@ -349,10 +432,10 @@ export default function Home() {
               backdropFilter: "blur(8px)",
               boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(122,107,82,0.1)",
             }}
-            title="Find nearest ruin (N)"
+            title="Locate nearest ruin (N)"
           >
             <Navigation size={13} />
-            <span className="hidden sm:inline font-mono text-[11px] uppercase tracking-wider">Near Me</span>
+            <span className="hidden sm:inline font-mono text-[11px] uppercase tracking-wider">Locate</span>
           </motion.button>
         </div>
 
@@ -421,14 +504,14 @@ export default function Home() {
 
         {/* ─── MAP ─── */}
         <div className="absolute inset-0 z-0">
-          <MapContainer
+                  <MapContainer
             places={places}
             onSelectPlace={openPlace}
             loading={loading}
             center={mapCenter}
-            anniversarySlugs={places
+            anniversarySlugs={isAnniversary ? places
               .filter((p) => isAnniversary(p.slug))
-              .map((p) => p.slug)}
+              .map((p) => p.slug) : []}
             onGhostCapture={handleGhostCapture}
             onTowerFound={handleTowerFound}
           />
@@ -457,6 +540,16 @@ export default function Home() {
 
         <AnimatePresence>
           {showLog && <ExpeditionLog onClose={() => setShowLog(false)} />}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showLanterns && (
+            <LanternSystem
+              onClose={() => setShowLanterns(false)}
+              preselectedPlace={selectedPlace ?? undefined}
+              mapCenter={mapCenter}
+            />
+          )}
         </AnimatePresence>
 
         <TransmissionFeed />

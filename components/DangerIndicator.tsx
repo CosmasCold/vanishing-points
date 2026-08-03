@@ -27,7 +27,9 @@ export default function DangerIndicator({ level, variant = "default" }: Props) {
         <AlertTriangle
           key={i}
           size={10}
-          className={i < level ? "text-ember" : "text-fog"}
+          style={{
+            color: i < level ? "#c4785a" : "rgba(122,107,82,0.2)",
+          }}
           fill={i < level ? "currentColor" : "none"}
         />
       ))}

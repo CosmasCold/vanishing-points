@@ -4,7 +4,7 @@ export interface WeeklyAnomaly {
   featuredPlace: string;
   anomalyName: string;
   anomalyDescription: string;
-  bonusCode: string;
+  weeklyCode: string;
   dustMultiplier: number;
 }
 
@@ -24,15 +24,15 @@ export function getWeeklyRotation(): WeeklyAnomaly {
   const places = ["duga-radar-array", "hashima-island", "aokigahara-forest", "poveglia-island", "chernobyl", "centralia"];
   const anomalies = [
     { name: "The Resonance", desc: "Signals carry double weight. The static is louder.", multiplier: 2 },
-    { name: "The Quiet", desc: "Ghost lines appear every 15s instead of 25s.", multiplier: 1 },
+    { name: "The Quiet", desc: "Ghost lines appear every 15 seconds. The Other wants to talk.", multiplier: 1 },
     { name: "The Bleed", desc: "Corruption spreads faster. Dust accumulates at 1.5x.", multiplier: 1.5 },
-    { name: "The Recall", desc: "Sub-places unlock with 50% less dust required.", multiplier: 1 },
-    { name: "The Lockdown", desc: "BUNKER_7 lies 50% of the time. Trust nothing.", multiplier: 1 },
+    { name: "The Recall", desc: "Sub-places unlock with 50% less dust required. The grid remembers.", multiplier: 1 },
+    { name: "The Lockdown", desc: "The signal is drowning in static. BUNKER_7's responses are incomplete.", multiplier: 1 },
   ];
 
   const placeIndex = seed % places.length;
   const anomalyIndex = (seed * 7) % anomalies.length;
-  const bonusCodes = ["WEEK-314", "ROTATION-91", "ECHO-7", "STATIC-5000", "VOID-12", "GRID-88"];
+  const weeklyCodes = ["WEEK-314", "ROTATION-91", "ECHO-7", "STATIC-5000", "VOID-12", "GRID-88"];
 
   return {
     week,
@@ -40,7 +40,7 @@ export function getWeeklyRotation(): WeeklyAnomaly {
     featuredPlace: places[placeIndex],
     anomalyName: anomalies[anomalyIndex].name,
     anomalyDescription: anomalies[anomalyIndex].desc,
-    bonusCode: bonusCodes[seed % bonusCodes.length],
+    weeklyCode: weeklyCodes[seed % weeklyCodes.length],
     dustMultiplier: anomalies[anomalyIndex].multiplier,
   };
 }

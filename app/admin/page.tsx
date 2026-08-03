@@ -13,30 +13,12 @@ import {
   Eye,
   Edit3,
   Save,
-  Trash2,
   Search,
   FileText,
   Shield,
   Globe,
 } from "lucide-react";
-
-interface Place {
-  _id: string;
-  name: string;
-  slug: string;
-  category: "abandoned" | "haunted" | "both";
-  dangerLevel: number;
-  status: "pending" | "approved" | "rejected";
-  history: string;
-  address: { city: string; country: string };
-  coordinates: [number, number];
-  yearAbandoned?: number;
-  photos: string[];
-  contributorName?: string;
-  contributorEmail?: string;
-  submittedAt: string;
-  viewCount?: number;
-}
+import type { Place } from "@/types";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -48,7 +30,6 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Place | null>(null);
 
-  // Check auth on mount
   useEffect(() => {
     fetch("/api/admin/auth", { credentials: "include" })
       .then((r) => r.ok && setAuthed(true))
@@ -93,7 +74,7 @@ export default function AdminPage() {
     if (authed) loadData();
   }, [authed, tab]);
 
-  const updateStatus = async (id: string, status: "approved" | "rejected") => {
+  const updateStatus = async (id: string, status: "verified" | "rejected") => {
     await fetch("/api/admin/submissions", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -129,8 +110,8 @@ export default function AdminPage() {
 
   const stats = {
     pending: places.filter((p) => p.status === "pending").length,
-    approved: places.filter((p) => p.status === "approved").length,
-    rejected: places.filter((p) => p.status === "rejected").length,
+    verified: places.filter((p) => p.status === "verified").length,
+    sealed: places.filter((p) => p.status === "rejected").length,
     total: places.length,
   };
 
@@ -154,7 +135,7 @@ export default function AdminPage() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[rgba(122,107,82,0.15)] border border-[rgba(122,107,82,0.25)] flex items-center justify-center">
               <Lock size={20} className="text-[#9a8a72]" />
             </div>
-            <h1 className="font-cinzel text-xl text-[#3d3228] mb-1">Archivist's Console</h1>
+            <h1 className="font-cinzel text-xl text-[#3d3228] mb-1">Grid Maintenance</h1>
             <p className="text-[11px] font-mono text-[#7a6e5e] mb-6 uppercase tracking-wider">
               Authorized personnel only
             </p>
@@ -190,7 +171,7 @@ export default function AdminPage() {
       <header className="border-b border-[rgba(122,107,82,0.15)] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Shield size={18} className="text-[#9a8a72]" />
-          <h1 className="font-cinzel text-lg text-[#ddd0bc]">Archivist's Console</h1>
+          <h1 className="font-cinzel text-lg text-[#ddd0bc]">Grid Maintenance</h1>
         </div>
         <button
           onClick={logout}
@@ -205,9 +186,9 @@ export default function AdminPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Pending Review", value: stats.pending, icon: Clock, color: "text-[#a67c52]" },
-            { label: "Approved", value: stats.approved, icon: CheckCircle, color: "text-[#6b7a5a]" },
-            { label: "Rejected", value: stats.rejected, icon: XCircle, color: "text-[#7a3a2a]" },
+            { label: "Awaiting Verification", value: stats.pending, icon: Clock, color: "text-[#a67c52]" },
+            { label: "Documented", value: stats.verified, icon: CheckCircle, color: "text-[#6b7a5a]" },
+            { label: "Withheld", value: stats.sealed, icon: XCircle, color: "text-[#7a3a2a]" },
             { label: "Total Records", value: stats.total, icon: FileText, color: "text-[#9a8a72]" },
           ].map((s) => (
             <div
@@ -228,8 +209,8 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 border-b border-[rgba(122,107,82,0.15)]">
           {[
-            { key: "pending" as const, label: "Pending Review", count: stats.pending },
-            { key: "all" as const, label: "All Sites", count: stats.total },
+            { key: "pending" as const, label: "Awaiting Verification", count: stats.pending },
+            { key: "all" as const, label: "All Records", count: stats.total },
           ].map((t) => (
             <button
               key={t.key}
@@ -271,7 +252,7 @@ export default function AdminPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-[#5a4e42] font-mono text-sm">
-            {tab === "pending" ? "No submissions awaiting review." : "No records found."}
+            {tab === "pending" ? "No new signals." : "The grid is empty."}
           </div>
         ) : (
           <div className="space-y-4">
@@ -288,12 +269,12 @@ export default function AdminPage() {
                           className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider ${
                             place.status === "pending"
                               ? "bg-[rgba(166,124,82,0.15)] text-[#a67c52] border border-[rgba(166,124,82,0.25)]"
-                              : place.status === "approved"
+                              : place.status === "verified"
                               ? "bg-[rgba(107,122,90,0.15)] text-[#6b7a5a] border border-[rgba(107,122,90,0.25)]"
                               : "bg-[rgba(122,58,42,0.15)] text-[#7a3a2a] border border-[rgba(122,58,42,0.25)]"
                           }`}
                         >
-                          {place.status}
+                          {place.status === "pending" ? "awaiting" : place.status === "verified" ? "documented" : "withheld"}
                         </span>
                         <span className="text-[10px] font-mono text-[#9a8a72]">
                           Ref. {place.slug?.toUpperCase()}
@@ -309,7 +290,7 @@ export default function AdminPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <AlertTriangle size={10} />
-                          Danger {place.dangerLevel}/5
+                          Weight {place.dangerLevel}/5
                         </span>
                         <span className="flex items-center gap-1">
                           <Eye size={10} />
@@ -319,9 +300,9 @@ export default function AdminPage() {
                           <span>Abandoned {place.yearAbandoned}</span>
                         )}
                       </div>
-                      {place.contributorName && (
+                      {place.contributor?.name && (
                         <p className="text-[10px] font-mono text-[#9a8a72] mt-1">
-                          Submitted by {place.contributorName} · {new Date(place.submittedAt).toLocaleDateString()}
+                          Witnessed by {place.contributor.name} · {new Date(place.submittedAt).toLocaleDateString()}
                         </p>
                       )}
                       <p className="text-[13px] text-[#4a3e32] mt-3 leading-relaxed line-clamp-3">
@@ -334,18 +315,18 @@ export default function AdminPage() {
                       {place.status === "pending" && (
                         <>
                           <button
-                            onClick={() => updateStatus(place._id, "approved")}
+                            onClick={() => updateStatus(place._id, "verified")}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(107,122,90,0.1)] border border-[rgba(107,122,90,0.25)] rounded text-[10px] font-mono uppercase text-[#5a6b4a] hover:bg-[rgba(107,122,90,0.2)] transition-colors"
                           >
                             <CheckCircle size={12} />
-                            Approve
+                            Verify
                           </button>
                           <button
                             onClick={() => updateStatus(place._id, "rejected")}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(122,58,42,0.1)] border border-[rgba(122,58,42,0.25)] rounded text-[10px] font-mono uppercase text-[#7a3a2a] hover:bg-[rgba(122,58,42,0.2)] transition-colors"
                           >
                             <XCircle size={12} />
-                            Reject
+                            Withhold
                           </button>
                         </>
                       )}
@@ -354,7 +335,7 @@ export default function AdminPage() {
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(122,107,82,0.08)] border border-[rgba(122,107,82,0.2)] rounded text-[10px] font-mono uppercase text-[#5a4e42] hover:bg-[rgba(122,107,82,0.15)] transition-colors"
                       >
                         <Edit3 size={12} />
-                        Edit
+                        Amend
                       </button>
                     </div>
                   </div>
@@ -383,7 +364,7 @@ export default function AdminPage() {
               className="submit-card rounded-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-cinzel text-lg text-[#3d3228]">Edit Record</h2>
+                <h2 className="font-cinzel text-lg text-[#3d3228]">Amend Entry</h2>
                 <button onClick={() => setEditing(null)} className="text-[#9a8a72] hover:text-[#5a4e42]">
                   <XCircle size={18} />
                 </button>
@@ -413,13 +394,13 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="submit-label block mb-1.5">Danger Level</label>
+                    <label className="submit-label block mb-1.5">Atmospheric Weight</label>
                     <input
                       type="number"
                       min={1}
                       max={5}
                       value={editing.dangerLevel}
-                      onChange={(e) => setEditing({ ...editing, dangerLevel: parseInt(e.target.value) })}
+                      onChange={(e) => setEditing({ ...editing, dangerLevel: parseInt(e.target.value) as Place["dangerLevel"] })}
                       className="submit-input w-full py-2 px-3 text-sm"
                     />
                   </div>
@@ -450,7 +431,7 @@ export default function AdminPage() {
                   className="submit-btn w-full py-3 rounded-lg text-[11px] flex items-center justify-center gap-2"
                 >
                   <Save size={14} />
-                  Save Changes
+                  Commit to Archive
                 </button>
               </div>
             </motion.div>

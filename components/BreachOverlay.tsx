@@ -11,7 +11,7 @@ export default function BreachOverlay() {
 
   useEffect(() => {
     const check = () => {
-      const breachTime = localStorage.getItem("bunker-breach-time");
+      const breachTime = localStorage.getItem("vp-breach-time");
       if (breachTime) {
         const diff = parseInt(breachTime, 10) - Date.now();
         if (diff <= 0) {
@@ -35,7 +35,6 @@ export default function BreachOverlay() {
   useEffect(() => {
     if (!active) return;
 
-    // Phase 3: persist breach count + dispatch corruption events
     const count = parseInt(localStorage.getItem("vp-breach-count") || "0", 10);
     localStorage.setItem("vp-breach-count", String(count + 1));
     localStorage.setItem("vp-last-breach", Date.now().toString());
@@ -58,7 +57,7 @@ export default function BreachOverlay() {
           className={`fixed inset-0 z-[9990] pointer-events-none transition-opacity duration-150 ${
             flash ? "opacity-100" : "opacity-0"
           }`}
-          style={{ backgroundColor: "rgba(51, 255, 0, 0.08)" }}
+          style={{ backgroundColor: "rgba(196, 120, 90, 0.1)" }}
         />
       )}
 
@@ -72,10 +71,19 @@ export default function BreachOverlay() {
           >
             <Link
               href="/breach"
-              className="flex items-center gap-2 px-4 py-2 bg-[#050a05] border border-[#33ff00]/60 rounded-lg text-[10px] font-mono uppercase tracking-widest text-[#33ff00] animate-pulse shadow-[0_0_20px_rgba(51,255,0,0.3)]"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest animate-blink border"
+              style={{
+                backgroundColor: "#0c0a08",
+                borderColor: "rgba(196,120,90,0.6)",
+                color: "#c4785a",
+                boxShadow: "0 0 20px rgba(196,120,90,0.15)",
+              }}
             >
-              <span className="w-2 h-2 rounded-full bg-[#33ff00]" />
-              BREACH PROTOCOL ACTIVE
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: "#c4785a" }}
+              />
+              PERIMETER COMPROMISED
             </Link>
           </motion.div>
         )}
@@ -87,12 +95,29 @@ export default function BreachOverlay() {
             exit={{ opacity: 0 }}
             className="fixed top-6 right-6 z-[9995]"
           >
-            <div className="px-3 py-1.5 bg-[#252018]/80 border border-[rgba(122,107,82,0.2)] rounded text-[9px] font-mono uppercase tracking-wider text-[#7a6e5e]">
+            <div
+              className="px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-wider"
+              style={{
+                backgroundColor: "rgba(12,10,8,0.95)",
+                border: "1px solid rgba(122,107,82,0.2)",
+                color: "#7a6e5e",
+              }}
+            >
               Breach in {countdown}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <style jsx>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .animate-blink {
+          animation: blink 1.4s steps(1) infinite;
+        }
+      `}</style>
     </>
   );
 }

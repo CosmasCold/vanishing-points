@@ -4,8 +4,8 @@ export interface ExpeditionChoice {
   id: string;
   label: string;
   description: string;
-  dust: number;
-  corruptionRisk: number;
+  dustGain: number;
+  corruptionGain: number;
   itemId?: string;
   unlocksReportIndex?: number;
   next: number | "extract";
@@ -37,7 +37,7 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
     type: "abandoned",
     phases: [
       {
-        title: "PHASE 1 — Approach",
+        title: "Approach",
         narrative:
           "The Ferris wheel is visible through the pines. Its cabins hang at odd angles, painted in colors that have faded to the same grey as the sky. A Geiger counter ticks somewhere in the distance, steady as a metronome. The school building looms to your left, its windows dark. You can set up base in the courtyard, but the dust here is thick and metallic on your tongue.",
         choices: [
@@ -45,8 +45,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "wheel",
             label: "Climb the Ferris wheel",
             description: "High ground. High radiation.",
-            dust: 15,
-            corruptionRisk: 0.1,
+            dustGain: 15,
+            corruptionGain: 0.1,
             itemId: "photo-the-view",
             next: 1,
           },
@@ -54,8 +54,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "school",
             label: "Enter the school",
             description: "Classrooms hold what children left behind.",
-            dust: 8,
-            corruptionRisk: 0.05,
+            dustGain: 8,
+            corruptionGain: 0.05,
             itemId: "childs-drawing",
             next: 1,
           },
@@ -63,14 +63,14 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "courtyard",
             label: "Set up in the courtyard",
             description: "Safe. Quiet. Too quiet.",
-            dust: 3,
-            corruptionRisk: 0,
+            dustGain: 3,
+            corruptionGain: 0,
             next: 1,
           },
         ],
       },
       {
-        title: "PHASE 2 — Encounter",
+        title: "Encounter",
         narrative:
           "You found what you came for. But the park has shifted. The Geiger counter is ticking faster now, or maybe that's your own pulse. In the cabin above, something warm remains on the seat — a radiation badge, still clicking. It is pointed at you.",
         choices: [
@@ -78,8 +78,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "take",
             label: "Take the badge",
             description: "You will need it elsewhere. But it marks you.",
-            dust: 20,
-            corruptionRisk: 0.2,
+            dustGain: 20,
+            corruptionGain: 0.2,
             itemId: "radiation-badge",
             next: 2,
           },
@@ -87,8 +87,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "photograph",
             label: "Photograph it and leave",
             description: "Evidence without contamination.",
-            dust: 5,
-            corruptionRisk: 0,
+            dustGain: 5,
+            corruptionGain: 0,
             itemId: "evidence-photo",
             next: 2,
           },
@@ -96,14 +96,14 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "smash",
             label: "Smash it",
             description: "The clicking stops. For now.",
-            dust: 0,
-            corruptionRisk: 0.3,
+            dustGain: 0,
+            corruptionGain: 0.3,
             next: 2,
           },
         ],
       },
       {
-        title: "PHASE 3 — Extraction",
+        title: "Threshold",
         narrative:
           "The sun is setting over Pripyat. The dust you have stirred up hangs in the air like gold leaf, and every particle is radioactive. You have what you came for. But the map shows a new pin 200 meters east — a door in the ground that was not on the schematic.",
         choices: [
@@ -111,16 +111,16 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "investigate",
             label: "Investigate the door",
             description: "The park is not finished with you.",
-            dust: 25,
-            corruptionRisk: 0.4,
+            dustGain: 25,
+            corruptionGain: 0.4,
             next: "extract",
           },
           {
             id: "extract",
             label: "Extract now",
             description: "Live to archive another day.",
-            dust: 5,
-            corruptionRisk: 0,
+            dustGain: 5,
+            corruptionGain: 0,
             next: "extract",
           },
         ],
@@ -133,7 +133,7 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
     type: "haunted",
     phases: [
       {
-        title: "PHASE 1 — The Tree Line",
+        title: "The Tree Line",
         narrative:
           "The forest does not welcome you. It permits you. The volcanic soil swallows sound. Your compass spins lazily, drunk on magnetite. You must choose when to enter — the forest remembers time differently than you do.",
         choices: [
@@ -141,16 +141,16 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "dawn",
             label: "Enter at dawn",
             description: "The yūrei sleep. Mostly.",
-            dust: 5,
-            corruptionRisk: 0.1,
+            dustGain: 5,
+            corruptionGain: 0.1,
             next: 1,
           },
           {
             id: "dusk",
             label: "Enter at dusk",
             description: "The boundary between worlds is thin.",
-            dust: 12,
-            corruptionRisk: 0.3,
+            dustGain: 12,
+            corruptionGain: 0.3,
             unlocksReportIndex: 0,
             next: 1,
           },
@@ -158,15 +158,15 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "night",
             label: "Enter at night",
             description: "They are already here.",
-            dust: 20,
-            corruptionRisk: 0.5,
+            dustGain: 20,
+            corruptionGain: 0.5,
             unlocksReportIndex: 1,
             next: 1,
           },
         ],
       },
       {
-        title: "PHASE 2 — The Silence",
+        title: "The Silence",
         narrative:
           "The trees have grown in spirals. Compasses fail. The silence has weight. You hear footsteps circling your position, but the volcanic soil holds no tracks. A tent stands abandoned ahead, a sleeping bag still unrolled, a cup of tea frozen mid-sip.",
         choices: [
@@ -174,8 +174,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "tent",
             label: "Search the tent",
             description: "Someone left in a hurry. Or was taken.",
-            dust: 10,
-            corruptionRisk: 0.2,
+            dustGain: 10,
+            corruptionGain: 0.2,
             itemId: "frozen-journal",
             next: 2,
           },
@@ -183,8 +183,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "roots",
             label: "Examine the root spiral",
             description: "The roots twist like grasping hands. They are warm.",
-            dust: 15,
-            corruptionRisk: 0.4,
+            dustGain: 15,
+            corruptionGain: 0.4,
             unlocksReportIndex: 2,
             next: 2,
           },
@@ -192,14 +192,14 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "push",
             label: "Push deeper",
             description: "The forest wants you to see something.",
-            dust: 18,
-            corruptionRisk: 0.5,
+            dustGain: 18,
+            corruptionGain: 0.5,
             next: 2,
           },
         ],
       },
       {
-        title: "PHASE 3 — The Weight",
+        title: "The Weight",
         narrative:
           "Electronic devices drain. You hear your own voice through static on a dead radio. The figures in white stand between the trees, always facing away, always 50 meters ahead. You can run. You can stay. You can become part of the silence.",
         choices: [
@@ -207,16 +207,16 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "run",
             label: "Run",
             description: "The forest lets you go. This time.",
-            dust: 5,
-            corruptionRisk: 0.2,
+            dustGain: 5,
+            corruptionGain: 0.2,
             next: "extract",
           },
           {
             id: "stay",
             label: "Stay until dawn",
             description: "You will learn what the silence wants.",
-            dust: 30,
-            corruptionRisk: 0.6,
+            dustGain: 30,
+            corruptionGain: 0.6,
             unlocksReportIndex: 3,
             itemId: "white-robe-fragment",
             next: "extract",
@@ -231,7 +231,7 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
     type: "haunted",
     phases: [
       {
-        title: "PHASE 1 — Choose a Wing",
+        title: "Choose a Wing",
         narrative:
           "The radial floor plan extends seven spokes from the central hub. The stone corridors amplify footsteps that do not belong to you. Three cellblocks produce the most concentrated phenomena. The choice of wing determines what finds you.",
         choices: [
@@ -239,8 +239,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "twelve",
             label: "Cellblock 12",
             description: "Disembodied laughter. The corridor's exact midpoint.",
-            dust: 8,
-            corruptionRisk: 0.2,
+            dustGain: 8,
+            corruptionGain: 0.2,
             unlocksReportIndex: 0,
             next: 1,
           },
@@ -248,8 +248,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "six",
             label: "Cellblock 6",
             description: "Whispered conversations in a language of silence.",
-            dust: 8,
-            corruptionRisk: 0.2,
+            dustGain: 8,
+            corruptionGain: 0.2,
             unlocksReportIndex: 1,
             next: 1,
           },
@@ -257,15 +257,15 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "four",
             label: "Cellblock 4",
             description: "Temperature drops of 20°F. Tobacco smoke.",
-            dust: 8,
-            corruptionRisk: 0.2,
+            dustGain: 8,
+            corruptionGain: 0.2,
             unlocksReportIndex: 2,
             next: 1,
           },
         ],
       },
       {
-        title: "PHASE 2 — The Phenomenon",
+        title: "The Phenomenon",
         narrative:
           "You have reached the epicenter. The stone here is colder than the rest. In Cellblock 12, the laughter echoes from everywhere at once. In 6, the whispers form words you almost understand. In 4, your breath clouds and the smell of pipe tobacco is unmistakable — Sweet Virginia, a brand discontinued in 1958.",
         choices: [
@@ -273,8 +273,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "record",
             label: "Record evidence",
             description: "Audio log. Proof. But proof of what?",
-            dust: 10,
-            corruptionRisk: 0.1,
+            dustGain: 10,
+            corruptionGain: 0.1,
             itemId: "audio-log-eastern",
             next: 2,
           },
@@ -282,8 +282,8 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "cell",
             label: "Enter the source cell",
             description: "The door is open. It should not be.",
-            dust: 15,
-            corruptionRisk: 0.35,
+            dustGain: 15,
+            corruptionGain: 0.35,
             unlocksReportIndex: 3,
             next: 2,
           },
@@ -291,14 +291,14 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "retreat",
             label: "Retreat to hub",
             description: "The center is safer. Theoretically.",
-            dust: 3,
-            corruptionRisk: 0,
+            dustGain: 3,
+            corruptionGain: 0,
             next: 2,
           },
         ],
       },
       {
-        title: "PHASE 3 — The Rotunda",
+        title: "The Rotunda",
         narrative:
           "The central hub was designed so a single guard could see down all seven spokes. But the guard is long gone, and something else occupies the vantage point. A figure in guard uniform stands at the rail, looking down. It does not turn around. It knows you are here.",
         choices: [
@@ -306,16 +306,16 @@ const CUSTOM_EXPEDITIONS: ExpeditionDef[] = [
             id: "address",
             label: "Address the figure",
             description: "'Hello?' The oldest mistake.",
-            dust: 20,
-            corruptionRisk: 0.5,
+            dustGain: 20,
+            corruptionGain: 0.5,
             next: "extract",
           },
           {
             id: "flee",
             label: "Leave through the gate",
             description: "The prison releases you. For now.",
-            dust: 5,
-            corruptionRisk: 0,
+            dustGain: 5,
+            corruptionGain: 0,
             next: "extract",
           },
         ],
@@ -407,24 +407,24 @@ function generatePhase1(place: Place, rng: () => number): ExpeditionPhase {
       description: isHaunted
         ? "The front door is open. It has always been open."
         : "Direct. Exposed. The fastest way in.",
-      dust: dustBase + 5,
-      corruptionRisk: corruptionBase + 0.1,
+      dustGain: dustBase + 5,
+      corruptionGain: corruptionBase + 0.1,
       next: 1,
     },
     {
       id: "cautious",
       label: "Circle to a secondary entrance",
       description: "Slower. Safer. The dust is thinner on the periphery.",
-      dust: dustBase,
-      corruptionRisk: corruptionBase,
+      dustGain: dustBase,
+      corruptionGain: corruptionBase,
       next: 1,
     },
     {
       id: "perimeter",
       label: "Document from the perimeter",
       description: "No entry. Only observation. The structure watches back.",
-      dust: Math.max(1, dustBase - 3),
-      corruptionRisk: 0,
+      dustGain: Math.max(1, dustBase - 3),
+      corruptionGain: 0,
       next: 1,
     },
   ];
@@ -440,7 +440,7 @@ function generatePhase1(place: Place, rng: () => number): ExpeditionPhase {
     choices[0].itemId = pool[Math.floor(rng() * pool.length)];
   }
 
-  return { title: "PHASE 1 — Approach", narrative, choices };
+  return { title: "Approach", narrative, choices };
 }
 
 function generatePhase2(place: Place, rng: () => number): ExpeditionPhase {
@@ -476,16 +476,16 @@ function generatePhase2(place: Place, rng: () => number): ExpeditionPhase {
       id: "document",
       label: "Document and record",
       description: "Evidence without contamination. The archivist's way.",
-      dust: dustBase + 2,
-      corruptionRisk: corruptionBase,
+      dustGain: dustBase + 2,
+      corruptionGain: corruptionBase,
       next: 2,
     },
     {
       id: "collect",
       label: "Collect a sample",
       description: "Take something with you. The dust will remember.",
-      dust: dustBase + 8,
-      corruptionRisk: corruptionBase + 0.15,
+      dustGain: dustBase + 8,
+      corruptionGain: corruptionBase + 0.15,
       itemId: pool[Math.floor(rng() * pool.length)],
       next: 2,
     },
@@ -502,13 +502,13 @@ function generatePhase2(place: Place, rng: () => number): ExpeditionPhase {
       id: "push",
       label: "Push deeper into the structure",
       description: "The building has not shown you everything yet.",
-      dust: dustBase + 15,
-      corruptionRisk: corruptionBase + 0.25,
+      dustGain: dustBase + 15,
+      corruptionGain: corruptionBase + 0.25,
       next: 2,
     });
   }
 
-  return { title: "PHASE 2 — Encounter", narrative, choices };
+  return { title: "Encounter", narrative, choices };
 }
 
 function generatePhase3(place: Place, rng: () => number): ExpeditionPhase {
@@ -531,16 +531,16 @@ function generatePhase3(place: Place, rng: () => number): ExpeditionPhase {
       id: "extract",
       label: "Extract now",
       description: "Live to archive another day.",
-      dust: dustBase,
-      corruptionRisk: 0,
+      dustGain: dustBase,
+      corruptionGain: 0,
       next: "extract",
     },
     {
       id: "stay",
       label: "Remain for final documentation",
       description: "Ten more minutes. The dust settles slowly here.",
-      dust: dustBase + 10,
-      corruptionRisk: corruptionBase + 0.2,
+      dustGain: dustBase + 10,
+      corruptionGain: corruptionBase + 0.2,
       next: "extract",
     },
   ];
@@ -551,14 +551,14 @@ function generatePhase3(place: Place, rng: () => number): ExpeditionPhase {
       id: "confront",
       label: "Address whatever is here",
       description: "'Hello?' The oldest mistake.",
-      dust: dustBase + 20,
-      corruptionRisk: corruptionBase + 0.4,
+      dustGain: dustBase + 20,
+      corruptionGain: corruptionBase + 0.4,
       itemId: "sealed-letter",
       next: "extract",
     });
   }
 
-  return { title: "PHASE 3 — Extraction", narrative, choices };
+  return { title: "Threshold", narrative, choices };
 }
 
 function generateExpedition(place: Place): ExpeditionDef {

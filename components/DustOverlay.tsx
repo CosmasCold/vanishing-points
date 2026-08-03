@@ -23,8 +23,9 @@ export default function DustOverlay() {
     resize();
     window.addEventListener("resize", resize);
 
-    // Particle count scales with dust level (0-100)
     const targetCount = Math.floor((level / 100) * 150);
+
+    // Add particles if level increased
     while (particles.current.length < targetCount) {
       particles.current.push({
         x: Math.random() * canvas.width,
@@ -36,22 +37,25 @@ export default function DustOverlay() {
       });
     }
 
+    // Remove particles if level decreased
+    if (particles.current.length > targetCount) {
+      particles.current = particles.current.slice(0, targetCount);
+    }
+
     let anim: number;
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Vignette intensifies with dust
+
       const vignette = ctx.createRadialGradient(
         canvas.width / 2, canvas.height / 2, canvas.height * 0.3,
         canvas.width / 2, canvas.height / 2, canvas.height * 0.8
       );
       const vOpacity = Math.min(0.6, level / 100);
-      vignette.addColorStop(0, `rgba(10,8,5,0)`);
-      vignette.addColorStop(1, `rgba(10,8,5,${vOpacity})`);
+      vignette.addColorStop(0, "rgba(12,10,8,0)");
+      vignette.addColorStop(1, `rgba(12,10,8,${vOpacity})`);
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw particles
       particles.current.forEach((p) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);

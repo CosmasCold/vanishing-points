@@ -13,6 +13,18 @@ export interface VisitRecord {
   coords?: string;
 }
 
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+function addDust(amount: number) {
+  if (typeof window === "undefined") return;
+  const next = Math.min(100, getDust() + amount);
+  localStorage.setItem("vp-dust-accumulation", next.toString());
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+}
+
 export function useVisitedPlaces() {
   const [visited, setVisited] = useState<VisitRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -25,11 +37,6 @@ export function useVisitedPlaces() {
     setLoaded(true);
   }, []);
 
-  const save = useCallback((next: VisitRecord[]) => {
-    setVisited(next);
-    localStorage.setItem(KEY, JSON.stringify(next));
-  }, []);
-
   const visit = useCallback(
     (place: { _id: string; name: string; slug: string }) => {
       setVisited((prev) => {
@@ -39,6 +46,7 @@ export function useVisitedPlaces() {
           { _id: place._id, name: place.name, slug: place.slug, addedAt: new Date().toISOString() },
         ];
         localStorage.setItem(KEY, JSON.stringify(next));
+        addDust(3);
         return next;
       });
     },
@@ -59,6 +67,7 @@ export function useVisitedPlaces() {
         },
       ];
       localStorage.setItem(KEY, JSON.stringify(next));
+      addDust(5);
       return next;
     });
   }, []);

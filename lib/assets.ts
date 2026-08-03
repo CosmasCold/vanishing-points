@@ -16,7 +16,7 @@ export interface StoryAsset {
   condition?: AssetCondition;
 }
 
-export interface RedeemableCode {
+export interface ArchiveCode {
   code: string;
   type: "asset" | "log" | "command" | "lore" | "theme" | "cache_key";
   rewardId: string;
@@ -41,7 +41,7 @@ export const STORY_ASSETS: StoryAsset[] = [
   { id: "ast_015", title: "03:14 Feed", description: "The cameras show this every night. The room is empty.", filename: "0314_feed.jpg", unlockCode: "FEED", category: "transmission", rarity: "uncommon", condition: { type: "time", message: "03:14 clearance required. The feed is time-locked." } },
 ];
 
-export const REDEEMABLE_CODES: RedeemableCode[] = [
+export const ARCHIVE_CODES: ArchiveCode[] = [
   { code: "INWARD", type: "asset", rewardId: "ast_001", description: "The door opens inward" },
   { code: "BREATHE", type: "asset", rewardId: "ast_002", description: "The grid breathes" },
   { code: "ASSEMBLY-314", type: "asset", rewardId: "ast_003", description: "Fragments reassembled" },
@@ -57,13 +57,12 @@ export const REDEEMABLE_CODES: RedeemableCode[] = [
   { code: "DUST-7", type: "asset", rewardId: "ast_013", description: "Sample analyzed" },
   { code: "SKY", type: "asset", rewardId: "ast_014", description: "Memory of outside" },
   { code: "FEED", type: "asset", rewardId: "ast_015", description: "03:14 surveillance" },
-  { code: "PHOSPHOR", type: "theme", rewardId: "phosphor", description: "Green terminal theme" },
-  { code: "AMBER", type: "theme", rewardId: "amber", description: "Amber terminal theme" },
+  { code: "TUNGSTEN", type: "theme", rewardId: "tungsten", description: "Warm terminal tone" },
   { code: "CACHE-KEY", type: "cache_key", rewardId: "cache_unlock", description: "Unlocks time-locked files early" },
   { code: "WITNESS", type: "lore", rewardId: "witness_log", description: "Breach protocol witness" },
-  { code: "SENSITIVE", type: "lore", rewardId: "sensitive_profile", description: "High haunted affinity" },
-  { code: "ARCHIVIST", type: "lore", rewardId: "archivist_profile", description: "High abandoned affinity" },
-  { code: "GHOST", type: "lore", rewardId: "ghost_profile", description: "Dust corruption complete" },
+  { code: "SENSITIVE", type: "lore", rewardId: "sensitive_profile", description: "The static responds to you" },
+  { code: "ARCHIVIST", type: "lore", rewardId: "archivist_profile", description: "The dust recognizes your hand" },
+  { code: "GHOST", type: "lore", rewardId: "ghost_profile", description: "The terminal remembers when you do not" },
   { code: "CONTAINMENT", type: "command", rewardId: "invert", description: "Atlas inversion unlocked" },
   { code: "FREQUENCY-88", type: "asset", rewardId: "ast_005", description: "Numbers Station frequency" },
   { code: "FREQUENCY-99", type: "asset", rewardId: "ast_006", description: "Numbers Station frequency" },
@@ -118,7 +117,7 @@ export function checkAssetCondition(condition: AssetCondition | undefined): { bl
 
   switch (condition.type) {
     case "encounters": {
-      const count = parseInt(localStorage.getItem("bunker-other-count") || "0", 10);
+      const count = parseInt(localStorage.getItem("vp-other-count") || "0", 10);
       if (count < (condition.value as number)) return { blocked: true, message: condition.message };
       break;
     }
@@ -133,9 +132,9 @@ export function checkAssetCondition(condition: AssetCondition | undefined): { bl
       break;
     }
     case "breach": {
-      const breachTime = localStorage.getItem("bunker-breach-time");
+      const breachTime = localStorage.getItem("vp-breach-time");
       const breachActive = breachTime ? parseInt(breachTime, 10) <= Date.now() : false;
-      const hasKey = localStorage.getItem("bunker-cache-key") === "true";
+      const hasKey = localStorage.getItem("vp-cache-key") === "true";
       if (!breachActive && !hasKey) return { blocked: true, message: condition.message };
       break;
     }
@@ -159,18 +158,18 @@ export function getAssetByCode(code: string): StoryAsset | undefined {
   return STORY_ASSETS.find((a) => a.unlockCode === code.toUpperCase());
 }
 
-export function getCodeEntry(code: string): RedeemableCode | undefined {
-  return REDEEMABLE_CODES.find((c) => c.code === code.toUpperCase());
+export function getCodeEntry(code: string): ArchiveCode | undefined {
+  return ARCHIVE_CODES.find((c) => c.code === code.toUpperCase());
 }
 
 export function getUnlockedAssets(): string[] {
   if (typeof window === "undefined") return [];
-  return JSON.parse(localStorage.getItem("bunker-assets") || "[]");
+  return JSON.parse(localStorage.getItem("vp-assets-unlocked") || "[]");
 }
 
 export function getAssetRecoveryDates(): Record<string, string> {
   if (typeof window === "undefined") return {};
-  return JSON.parse(localStorage.getItem("bunker-assets-dates") || "{}");
+  return JSON.parse(localStorage.getItem("vp-assets-dates") || "{}");
 }
 
 export function unlockAsset(assetId: string): boolean {
@@ -178,36 +177,39 @@ export function unlockAsset(assetId: string): boolean {
   const current = getUnlockedAssets();
   if (current.includes(assetId)) return false;
   current.push(assetId);
-  localStorage.setItem("bunker-assets", JSON.stringify(current));
+  localStorage.setItem("vp-assets-unlocked", JSON.stringify(current));
 
   const dates = getAssetRecoveryDates();
   dates[assetId] = new Date().toISOString();
-  localStorage.setItem("bunker-assets-dates", JSON.stringify(dates));
+  localStorage.setItem("vp-assets-dates", JSON.stringify(dates));
 
+  window.dispatchEvent(new CustomEvent("vp-assets-updated"));
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
   return true;
 }
 
-export function getRedeemedCodes(): string[] {
+export function getFoundCodes(): string[] {
   if (typeof window === "undefined") return [];
-  return JSON.parse(localStorage.getItem("bunker-codes") || "[]");
+  return JSON.parse(localStorage.getItem("vp-found-codes") || "[]");
 }
 
-export function redeemCode(code: string): boolean {
+export function recordCode(code: string): boolean {
   if (typeof window === "undefined") return false;
-  const current = getRedeemedCodes();
+  const current = getFoundCodes();
   if (current.includes(code.toUpperCase())) return false;
   current.push(code.toUpperCase());
-  localStorage.setItem("bunker-codes", JSON.stringify(current));
+  localStorage.setItem("vp-found-codes", JSON.stringify(current));
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
   return true;
 }
 
 export function tryUnlockPendingAssets(): string[] {
   if (typeof window === "undefined") return [];
-  const redeemed = getRedeemedCodes();
+  const found = getFoundCodes();
   const unlocked = getUnlockedAssets();
   const newlyUnlocked: string[] = [];
 
-  redeemed.forEach((code) => {
+  found.forEach((code) => {
     const entry = getCodeEntry(code);
     if (entry?.type === "asset" && !unlocked.includes(entry.rewardId)) {
       const asset = STORY_ASSETS.find((a) => a.id === entry.rewardId);

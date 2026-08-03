@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { AlertTriangle, Radio } from "lucide-react";
+import { recordCode } from "@/lib/assets";
 
 export default function BreachPage() {
   const router = useRouter();
@@ -13,13 +14,16 @@ export default function BreachPage() {
   const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
+    const alreadyClaimed = localStorage.getItem("vp-breach-claimed");
+    if (alreadyClaimed) setClaimed(true);
+
     const params = new URLSearchParams(window.location.search);
     const forced = params.get("active") === "1";
     const stored = localStorage.getItem("breach-active");
     const isActive = forced || stored === "true";
 
     if (!isActive) {
-      router.push("/echoes");
+      router.push("/");
       return;
     }
 
@@ -47,13 +51,11 @@ export default function BreachPage() {
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const claimCode = () => {
+  const recordWitnessCode = () => {
     if (claimed) return;
     const code = "BREACH-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const existing = JSON.parse(localStorage.getItem("bunker-codes") || "[]");
-    existing.push(code);
-    localStorage.setItem("bunker-codes", JSON.stringify(existing));
-    localStorage.setItem("breach-claimed", code);
+    recordCode(code);
+    localStorage.setItem("vp-breach-claimed", code);
     setClaimed(true);
   };
 
@@ -163,7 +165,7 @@ export default function BreachPage() {
 
           {!claimed ? (
             <button
-              onClick={claimCode}
+              onClick={recordWitnessCode}
               className="w-full py-3.5 md:py-4 rounded text-xs md:text-sm uppercase tracking-[0.25em] font-bold transition-all duration-300 active:scale-95 relative overflow-hidden"
               style={{
                 color: "#0a0806",
@@ -178,7 +180,7 @@ export default function BreachPage() {
                 e.currentTarget.style.boxShadow = "0 4px 20px rgba(196,120,90,0.2), inset 0 1px 0 rgba(255,255,255,0.1)";
               }}
             >
-              <span className="relative z-10">Claim Witness Code</span>
+              <span className="relative z-10">Record Witness Code</span>
             </button>
           ) : (
             <div className="text-center space-y-3 py-2">
@@ -192,7 +194,7 @@ export default function BreachPage() {
                   textShadow: "0 0 16px rgba(196,120,90,0.3)",
                 }}
               >
-                {localStorage.getItem("breach-claimed")}
+                {localStorage.getItem("vp-breach-claimed")}
               </p>
               <p className="text-[10px] md:text-xs opacity-30 uppercase tracking-wider">
                 This code will never be available again.

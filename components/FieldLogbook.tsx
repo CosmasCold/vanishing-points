@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, X, Save } from "lucide-react";
+import { recordOtherEncounter } from "@/lib/bunkerBrain";
 
 interface Props {
   placeSlug: string;
@@ -16,18 +17,24 @@ interface NoteEntry {
 }
 
 const GHOST_NOTES = [
-  "The floorboards were stable when I checked.",
-  "There is no basement here.",
-  "I was never inside.",
-  "The coordinates on the map are wrong by 3 degrees.",
-  "Do not come back after dark.",
-  "The silence has weight.",
-  "I left something in the corner. It is still there.",
-  "The dust here carries memory.",
+  "the floorboards were stable when i checked... i think they were.",
+  "there is no basement here. i looked. i looked for a long time.",
+  "i was never inside. but the dust has my footprints.",
+  "the coordinates on the map are wrong by 3 degrees. or the map is wrong. or i am.",
+  "the silence has weight. it presses on the ribs.",
+  "i left something in the corner. it is still there. i can feel it waiting.",
+  "the dust here carries memory. not mine. older.",
+  "you type like he did. pauses in the same places.",
+  "i kept some of his logs. would you like to hear them?",
+  "the archivist used to hum while he worked. i miss the humming.",
 ];
 
 function getKey(slug: string) {
   return `vp-logbook-${slug}`;
+}
+
+function getGhostKey(slug: string) {
+  return `vp-ghost-note-${slug}`;
 }
 
 export default function FieldLogbook({ placeSlug, placeName }: Props) {
@@ -35,13 +42,22 @@ export default function FieldLogbook({ placeSlug, placeName }: Props) {
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [draft, setDraft] = useState("");
   const [ghostRevealed, setGhostRevealed] = useState(false);
+  const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(getKey(placeSlug));
       if (raw) setNotes(JSON.parse(raw));
     } catch {}
+    // Persist ghost reveal state across sessions
+    setGhostRevealed(localStorage.getItem(getGhostKey(placeSlug)) === "true");
   }, [placeSlug]);
+
+  useEffect(() => {
+    return () => {
+      if (ghostTimerRef.current) clearTimeout(ghostTimerRef.current);
+    };
+  }, []);
 
   const save = (next: NoteEntry[]) => {
     setNotes(next);
@@ -59,9 +75,15 @@ export default function FieldLogbook({ placeSlug, placeName }: Props) {
     setDraft("");
 
     // 20% chance to inject ghost note after user writes 3+ notes
+    // Only once per place, ever
     if (next.length >= 3 && Math.random() < 0.2 && !ghostRevealed) {
       setGhostRevealed(true);
-      setTimeout(() => {
+      localStorage.setItem(getGhostKey(placeSlug), "true");
+      
+      // Bridge to Terminal: The Other notices
+      recordOtherEncounter();
+
+      ghostTimerRef.current = setTimeout(() => {
         const ghost: NoteEntry = {
           text: GHOST_NOTES[Math.floor(Math.random() * GHOST_NOTES.length)],
           date: new Date().toISOString(),
@@ -120,15 +142,15 @@ export default function FieldLogbook({ placeSlug, placeName }: Props) {
                     key={i}
                     className={`p-3 rounded-lg border ${
                       n.isGhost
-                        ? "bg-[rgba(51,255,0,0.04)] border-[rgba(51,255,0,0.15)]"
+                        ? "bg-[rgba(196,120,90,0.04)] border-[rgba(196,120,90,0.18)]"
                         : "bg-[rgba(90,78,66,0.04)] border-[rgba(122,107,82,0.1)]"
                     }`}
                   >
-                    <p className={`text-sm leading-relaxed ${n.isGhost ? "text-[#33ff00]/80 italic" : "text-[#3d3228]"}`}>
+                    <p className={`text-sm leading-relaxed ${n.isGhost ? "text-[#c4785a]/90 italic" : "text-[#3d3228]"}`}>
                       {n.text}
                     </p>
-                    <p className={`text-[9px] font-mono mt-1 ${n.isGhost ? "text-[#33ff00]/40" : "text-[#9a8a72]"}`}>
-                      {n.isGhost ? "Unknown hand" : new Date(n.date).toLocaleDateString("en-GB")}
+                    <p className={`text-[9px] font-mono mt-1 ${n.isGhost ? "text-[#c4785a]/40" : "text-[#9a8a72]"}`}>
+                      {n.isGhost ? "The ink was already dry" : new Date(n.date).toLocaleDateString("en-GB")}
                     </p>
                   </div>
                 ))}

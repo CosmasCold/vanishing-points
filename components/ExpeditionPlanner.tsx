@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Place } from "@/types";
 import { showToast } from "@/lib/toast";
-import { spendDust } from "@/hooks/useDustLevel";
 
 interface Props {
   places: Place[];
@@ -51,20 +50,20 @@ function formatCoord(n: number, isLat: boolean) {
 }
 
 function dangerAdvice(level: number): string {
-  if (level >= 5) return "EXTREME CAUTION — Structural collapse imminent. Do not enter alone. Notify local authorities of intent.";
-  if (level === 4) return "HIGH RISK — Unstable flooring, asbestos, or active security. Full PPE and respirator recommended.";
-  if (level === 3) return "MODERATE RISK — Weathered structures. Sturdy boots, flashlight, and first aid required.";
-  if (level === 2) return "LOW RISK — Public access possible. Standard outdoor gear sufficient.";
-  return "MINIMAL RISK — Safe for documentation. Respect no-trespass signage.";
+  if (level >= 5) return "The archivist's final note on this site: 'The walls remember. Do not enter alone. The dust will not let you leave the same.'";
+  if (level === 4) return "Previous witness reported the floor breathing. Bring rope. Mark your path. The architecture shifts when unobserved.";
+  if (level === 3) return "Weathered but navigable. The previous surveyor left a salt line at the threshold. Respect it.";
+  if (level === 2) return "Public access possible, though the silence is unusual. Standard field gear sufficient.";
+  return "Minimal structural concern. The archive considers this site stable. Document thoroughly.";
 }
 
 function packingList(levels: number[]): string[] {
   const max = Math.max(...levels, 1);
-  const base = ["Field notebook", "Camera with low-light capability", "Sturdy boots", "First aid kit"];
-  if (max >= 2) base.push("Flashlight + spare batteries", "Dust mask");
-  if (max >= 3) base.push("Hard hat", "Respirator (P100)", "Rope (30m)", "Emergency whistle");
-  if (max >= 4) base.push("Full PPE suit", "Geiger counter (if applicable)", "Satellite communicator", "Bolt cutters");
-  if (max >= 5) base.push("Structural engineer consult", "Local guide / fixer", "Emergency extraction plan");
+  const base = ["Field notebook (waterproofed)", "Camera with low-light lens", "Sturdy boots, broken in", "Amber bottle for samples"];
+  if (max >= 2) base.push("Lantern with spare wick", "Dust mask, cloth-lined");
+  if (max >= 3) base.push("Iron key (universal skeleton)", "Salt line, 30 meters", "Signal mirror", "Emergency whistle, bone");
+  if (max >= 4) base.push("Heavy gloves, leather", "Geiger charm (the archivist's)", "Rope, 50m, hemp", "Chalk for marking thresholds");
+  if (max >= 5) base.push("Local guide's name (ask at the terminal)", "Contingency route, memorized", "Letter to someone who will look for you");
   return base;
 }
 
@@ -102,7 +101,7 @@ function TierBadge({ placeId }: { placeId: string }) {
 
   if (sealed) {
     return (
-      <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-600/80">
+      <span className="flex items-center gap-1 text-[9px] font-mono" style={{ color: "#7a9a6a" }}>
         <Shield size={10} /> SEALED
       </span>
     );
@@ -135,7 +134,7 @@ function canAccess(place: Place, dust: number): { ok: boolean; reason?: string; 
   if (dust >= 30) return { ok: true };
   return {
     ok: false,
-    reason: `Danger ${place.dangerLevel}/5 locked. Need signal decode or dust ≥30% (you have ${dust}%).`,
+    reason: `Danger ${place.dangerLevel}/5. The archive resists this route. Signal decode or dust ≥30% required. You carry ${dust}%.`,
     forceable: true,
   };
 }
@@ -153,12 +152,12 @@ export default function ExpeditionPlanner({ places, onClose, onFlyTo }: Props) {
       const exists = prev.find((p) => p._id === place._id);
       if (exists) return prev.filter((p) => p._id !== place._id);
       if (prev.length >= 8) {
-        showToast("Maximum 8 sites per expedition", "warning");
+        showToast("The archivist never recorded more than 8 waypoints in a single sortie.", "warning");
         return prev;
       }
       const gate = canAccess(place, dust);
       if (!gate.ok) {
-        showToast(gate.reason || "Access denied", "warning");
+        showToast(gate.reason || "The archive resists this route.", "warning");
         return prev;
       }
       return [...prev, place];
@@ -183,7 +182,7 @@ export default function ExpeditionPlanner({ places, onClose, onFlyTo }: Props) {
   const refNum = `VPX-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
   const exportItinerary = () => {
-    showToast("Expedition briefing downloaded", "success");
+    showToast("Expedition briefing compiled. Check your downloads.", "success");
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -205,7 +204,7 @@ Reference:     ${refNum}
 Date Issued:   ${dateStr}
 Classification: FIELD USE — ARCHIVAL COPY
 Expedition Lead: _________________________
-Archivist Dust:  ${dust}%  (Experience Profile)
+Dust Profile:  ${dust}%  (Contamination Accumulation)
 `.trim();
 
     const summary = `
@@ -224,8 +223,8 @@ Average Threat:     ${avgDanger} / 5
 Maximum Threat:     ${maxDanger} / 5
 High-Risk Sites:    ${highDangerCount}
 
-${maxDanger >= 4 ? "⚠  THIS EXPEDITION CROSSES EXTREME-HAZARD ZONES." : ""}
-${highDangerCount > 0 ? "   Insurance waiver required for sites marked ★★★★★." : ""}
+${maxDanger >= 4 ? "⚠  THE ARCHIVIST MARKED THIS ROUTE AS PERILOUS." : ""}
+${highDangerCount > 0 ? "   The dust is thick at these coordinates. Proceed with memory." : ""}
 `.trim();
 
     const siteReports = selected
@@ -250,17 +249,17 @@ ${prev ? `Leg Distance:    ${Math.round(legDist)} km from ${prev.name}` : "Entry
 Classification:  ${place.category === "haunted" ? "SPECTRAL" : place.category === "abandoned" ? "FORSAKEN" : "DUAL NATURE"}
 Status:          ${place.yearAbandoned ? `Abandoned ${place.yearAbandoned}` : "Date unknown"}
 Danger Level:    ${"★".repeat(place.dangerLevel)}${"☆".repeat(5 - place.dangerLevel)}  (${place.dangerLevel}/5)
-Atlas Tier:      ${tier.toUpperCase()}${sealed ? " [SEALED]" : ""}
+Archive Tier:    ${tier.toUpperCase()}${sealed ? " [SEALED]" : ""}
 Signal Status:   ${signalOk ? "DECODED — BUNKER_7 CLEARANCE GRANTED" : "NO SIGNAL — PROCEED WITH CAUTION"}
 Visual Records:  ${place.photos?.length || 0} photographs on file
 
 FIELD ADVISORY
 ${dangerAdvice(place.dangerLevel)}
 
-${place.hauntingReports && place.hauntingReports.length > 0 ? `SPECTRAL ACCOUNTS
+${place.hauntingReports && place.hauntingReports.length > 0 ? `WITNESS ACCOUNTS
 ${place.hauntingReports.map((r) => `  • ${r}`).join("\n")}` : ""}
 
-${place.history ? `HISTORICAL NOTE
+${place.history ? `HISTORICAL FRAGMENT
 ${place.history.slice(0, 280)}${place.history.length > 280 ? "..." : ""}` : ""}
 `;
       })
@@ -275,13 +274,13 @@ ${packingList(selected.map((p) => p.dangerLevel))
   .map((item, i) => `  ${String(i + 1).padStart(2, "0")}.  ${item}`)
   .join("\n")}
 
-ADDITIONAL NOTES
-────────────────
-□ Local permits verified
-□ Emergency contacts notified
-□ Satellite communicator charged
-□ Contingency route planned
-□ BUNKER_7 signal clearance confirmed for high-risk sites
+PRE-DEPARTURE RITUALS
+─────────────────────
+□ Threshold salt line prepared
+□ Emergency contact knows the route
+□ Signal mirror polished
+□ Contingency route memorized
+□ BUNKER_7 frequency confirmed for high-risk coordinates
 `.trim();
 
     const footer = `
@@ -336,7 +335,7 @@ ADDITIONAL NOTES
             <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] mb-1.5">
               <span className="flex items-center gap-1.5">
                 <Skull size={10} />
-                Archivist Dust Level
+                Dust Accumulation
               </span>
               <span>{dust}%</span>
             </div>
@@ -344,13 +343,14 @@ ADDITIONAL NOTES
               <div
                 className="h-full rounded-full transition-all"
                 style={{
-                  width: `${dust}%`,
-                  backgroundColor: dust > 75 ? "#7a3a2a" : dust > 40 ? "#9a8a5a" : "#7a9a6a",
+                  width: `${Math.min(dust, 100)}%`,
+                  backgroundColor: dust > 75 ? "#c4785a" : dust > 40 ? "#9a8a72" : "#7a9a6a",
+                  boxShadow: dust > 75 ? "0 0 6px rgba(196,120,90,0.3)" : "none",
                 }}
               />
             </div>
             <p className="text-[9px] text-[#9a8a72] mt-1.5 leading-relaxed">
-              Danger 4–5 sites require signal decode or dust ≥30%. You have {dust}%.
+              Danger 4–5 sites require signal decode or dust ≥30%. You carry {dust}%.
             </p>
           </div>
 
@@ -381,7 +381,7 @@ ADDITIONAL NOTES
                   <AlertTriangle size={14} className="text-[#7a3a2a] flex-shrink-0" />
                   <p className="text-[11px] text-[#5a3a2a] font-mono">
                     This expedition crosses {highDangerCount} extreme-hazard zone
-                    {highDangerCount > 1 ? "s" : ""}. Insurance waiver required.
+                    {highDangerCount > 1 ? "s" : ""}. The archivist's notes suggest caution.
                   </p>
                 </div>
               )}
@@ -429,7 +429,7 @@ ADDITIONAL NOTES
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#4a3a28] border border-[#3a2e22] rounded-lg text-[11px] font-mono uppercase tracking-wider text-[#ddd0bc] hover:bg-[#5a4a32] transition-colors shadow-md"
               >
                 <Download size={14} />
-                Export Expedition Briefing
+                Compile Expedition Briefing
               </button>
             </div>
           )}

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+const BREACH_TIME_KEY = "vp-breach-time";
+
 export function useBreachProtocol() {
   const [state, setState] = useState<{ active: boolean; countdown: string | null }>({
     active: false,
@@ -10,7 +12,7 @@ export function useBreachProtocol() {
 
   useEffect(() => {
     const check = () => {
-      const breachTime = localStorage.getItem("bunker-breach-time");
+      const breachTime = localStorage.getItem(BREACH_TIME_KEY);
       if (breachTime) {
         const diff = parseInt(breachTime, 10) - Date.now();
         if (diff <= 0) {

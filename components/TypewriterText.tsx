@@ -20,6 +20,7 @@ export default function TypewriterText({
   const [displayed, setDisplayed] = useState("");
   const [skipped, setSkipped] = useState(false);
   const indexRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const key = `vp-typed-${text.slice(0, 40)}`;
 
   useEffect(() => {
@@ -36,36 +37,56 @@ export default function TypewriterText({
     setDisplayed("");
     setSkipped(false);
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       indexRef.current += 1;
       setDisplayed(text.slice(0, indexRef.current));
 
       if (indexRef.current >= text.length) {
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         sessionStorage.setItem(key, "1");
         onComplete?.();
       }
     }, speed);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [text, speed, key, onComplete, skipOnRepeat]);
 
   const handleSkip = () => {
-    if (!skipped) {
-      setSkipped(true);
-      setDisplayed(text);
-      sessionStorage.setItem(key, "1");
-      onComplete?.();
-    }
+    if (skipped || displayed.length >= text.length) return;
+    setSkipped(true);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setDisplayed(text);
+    sessionStorage.setItem(key, "1");
+    onComplete?.();
   };
 
   return (
     <span onClick={handleSkip} className={`cursor-pointer ${className}`}>
       {displayed}
       {displayed.length < text.length && (
-        <span className="inline-block w-[2px] h-[1em] bg-[#9a8a72] ml-[1px] animate-pulse align-middle" />
+        <span
+          className="inline-block align-middle animate-blink"
+          style={{
+            width: 2,
+            height: "1em",
+            marginLeft: 1,
+            backgroundColor: "#9a8a72",
+          }}
+        />
       )}
       <span className="sr-only">{text}</span>
+
+      <style jsx>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .animate-blink {
+          animation: blink 1.1s steps(1) infinite;
+        }
+      `}</style>
     </span>
   );
 }

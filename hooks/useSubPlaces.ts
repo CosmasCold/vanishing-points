@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getUnlockedSubPlaces, SubPlace } from "@/lib/subPlaces";
 
-export function useSubPlaces(dust: number, inventory: string[], redeemedCodes: string[]) {
+export function useSubPlaces(dust: number, inventory: string[], foundCodes: string[]) {
   const [entered, setEntered] = useState<string[]>([]);
   const [current, setCurrent] = useState<SubPlace | null>(null);
 
@@ -13,7 +13,7 @@ export function useSubPlaces(dust: number, inventory: string[], redeemedCodes: s
     setEntered(saved);
   }, []);
 
-  const unlocked = getUnlockedSubPlaces(dust, inventory, redeemedCodes);
+  const unlocked = getUnlockedSubPlaces(dust, inventory, foundCodes);
 
   const enter = useCallback(
     (subPlace: SubPlace) => {
@@ -23,9 +23,14 @@ export function useSubPlaces(dust: number, inventory: string[], redeemedCodes: s
         const next = [...entered, subPlace.id];
         setEntered(next);
         localStorage.setItem("vp-subplaces-entered", JSON.stringify(next));
+
         const dustKey = "vp-dust-accumulation";
         const currentDust = parseInt(localStorage.getItem(dustKey) || "0", 10);
-        localStorage.setItem(dustKey, String(currentDust + subPlace.dustReward));
+        // Note: update subPlaces.ts to rename dustReward → dustGain
+        const gain = (subPlace as any).dustGain ?? (subPlace as any).dustReward ?? 0;
+        const nextDust = Math.min(100, currentDust + gain);
+        localStorage.setItem(dustKey, String(nextDust));
+        window.dispatchEvent(new CustomEvent("vp-dust-change"));
       }
     },
     [entered]

@@ -58,7 +58,7 @@ export default function ExpeditionModal({
   const choose = useCallback(
     (choice: ExpeditionPhase["choices"][0]) => {
       const phase = expedition.phases[phaseIndex];
-      const corrupted = Math.random() < choice.corruptionRisk;
+      const corrupted = Math.random() < choice.corruptionGain;
       if (corrupted) setCorruption(true);
 
       const newItems = choice.itemId ? [...items, choice.itemId] : items;
@@ -69,7 +69,7 @@ export default function ExpeditionModal({
 
       setItems(newItems);
       setReports(newReports);
-      setTotalDust((d) => d + choice.dust);
+      setTotalDust((d) => d + choice.dustGain);
 
       setLog((prev) => [
         ...prev,
@@ -77,7 +77,7 @@ export default function ExpeditionModal({
         "",
         ...choice.description.split(/\. (?=[A-Z])/).map((s) => s.trim() + "."),
         "",
-        `Dust accumulated: +${choice.dust}%`,
+        `Dust accumulated: +${choice.dustGain}%`,
         corrupted ? "[!] CORRUPTION DETECTED — The Other is watching." : "",
         "",
       ]);
@@ -88,7 +88,7 @@ export default function ExpeditionModal({
           ...prev,
           "═══════════════════════════════════════",
           "EXTRACTION COMPLETE",
-          `Total dust: ${totalDust + choice.dust}%`,
+          `Total dust: ${totalDust + choice.dustGain}%`,
           `Items recovered: ${newItems.length}`,
           `Reports documented: ${newReports.length}`,
           corruption || corrupted
@@ -97,7 +97,7 @@ export default function ExpeditionModal({
           "═══════════════════════════════════════",
         ]);
         onComplete({
-          dust: totalDust + choice.dust,
+          dust: totalDust + choice.dustGain,
           items: newItems,
           reportsUnlocked: newReports,
           corruptionTriggered: corruption || corrupted,
@@ -292,12 +292,12 @@ export default function ExpeditionModal({
                 <div className="flex items-center gap-4 mt-2.5 text-[10px] md:text-[11px] font-mono uppercase tracking-[0.1em]">
                   <span className="flex items-center gap-1.5" style={{ color: "#9a8a72" }}>
                     <Wind size={10} />
-                    +{choice.dust}%
+                    +{choice.dustGain}%
                   </span>
-                  {choice.corruptionRisk > 0 && (
+                  {choice.corruptionGain > 0 && (
                     <span className="flex items-center gap-1.5" style={{ color: "#c4785a" }}>
                       <ShieldAlert size={10} />
-                      {Math.round(choice.corruptionRisk * 100)}% risk
+                      {Math.round(choice.corruptionGain * 100)}% risk
                     </span>
                   )}
                   {choice.itemId && (

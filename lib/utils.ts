@@ -19,7 +19,7 @@ export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   ms: number
 ) {
-  let timer: NodeJS.Timeout;
+  let timer: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
@@ -28,11 +28,11 @@ export function debounce<T extends (...args: any[]) => void>(
 
 export function getDangerLabel(level: number): string {
   const labels: Record<number, string> = {
-    1: "minimal",
-    2: "caution advised",
-    3: "hazardous",
-    4: "extremely dangerous",
-    5: "do not enter",
+    1: "dormant",
+    2: "stirring",
+    3: "awake",
+    4: "watching",
+    5: "waiting",
   };
   return labels[level] || "unknown";
 }

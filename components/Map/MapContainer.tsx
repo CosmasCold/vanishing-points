@@ -16,7 +16,7 @@ interface Props {
   center?: [number, number];
   anniversarySlugs: string[];
   onGhostCapture?: (ghost: { name: string; slug: string; coords: string }) => void;
-  onTowerFound?: () => void;
+  onTowerFound?: (tower: { id: string; name: string; coords: [number, number] }) => void;
 }
 
 export default function MapContainer({
@@ -340,17 +340,28 @@ export default function MapContainer({
         .setLngLat(coords)
         .addTo(map.current!);
 
-      el.addEventListener("click", () => {
+            el.addEventListener("click", () => {
         setTowersFound((prev) => {
           const next = new Set(prev);
+          const wasNew = !next.has(idx);
           next.add(idx);
+
+          if (wasNew) {
+            const tower = { id: `tower-${idx}`, name: `Anomalous Tower ${idx + 1}`, coords };
+            const existing = JSON.parse(localStorage.getItem("vp-towers-found") || "[]");
+            if (!existing.some((t: any) => t.id === tower.id)) {
+              localStorage.setItem("vp-towers-found", JSON.stringify([...existing, { ...tower, discoveredAt: new Date().toISOString() }]));
+              window.dispatchEvent(new CustomEvent("vp-tower-found"));
+            }
+            onTowerFound?.(tower);
+          }
+
           if (next.size === 3) {
-            localStorage.setItem("bunker-triangulated", "true");
-            onTowerFound?.();
             showToast("Triangulation complete. Signal origin located.", "warning");
           } else {
             showToast(`Tower ${next.size}/3 acquired.`, "info");
           }
+
           return next;
         });
         el.style.opacity = "0.6";

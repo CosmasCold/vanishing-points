@@ -11,6 +11,18 @@ export interface Bookmark {
   addedAt: string;
 }
 
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+function addDust(amount: number) {
+  if (typeof window === "undefined") return;
+  const next = Math.min(100, getDust() + amount);
+  localStorage.setItem("vp-dust-accumulation", next.toString());
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+}
+
 export function useBookmarks() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -21,11 +33,6 @@ export function useBookmarks() {
       if (raw) setBookmarks(JSON.parse(raw));
     } catch {}
     setLoaded(true);
-  }, []);
-
-  const save = useCallback((next: Bookmark[]) => {
-    setBookmarks(next);
-    localStorage.setItem(KEY, JSON.stringify(next));
   }, []);
 
   const toggle = useCallback(
@@ -40,6 +47,7 @@ export function useBookmarks() {
             ...prev,
             { _id: place._id, name: place.name, slug: place.slug, addedAt: new Date().toISOString() },
           ];
+          addDust(2);
         }
         localStorage.setItem(KEY, JSON.stringify(next));
         return next;

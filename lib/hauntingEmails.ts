@@ -50,7 +50,7 @@ BUNKER_7`,
   {
     id: 4,
     sendAfterDays: 12,
-    subject: "URGENT: Check your walls",
+    subject: "Check your walls",
     body: `The atlas updated itself. New coordinates. I didn't add them. The system did.
 
 I looked up the location. It's your city. Not exactly where you are, but close. Within the radius of your signal. The grid is mapping you now. I don't know when it started.
@@ -105,13 +105,16 @@ BUNKER_7`,
   },
 ];
 
+const STORAGE_KEY = "vp-emails-sent";
+
 export function getPendingEmails(registeredAt: string): HauntEmail[] {
+  if (typeof window === "undefined") return [];
   const now = new Date();
   const registered = new Date(registeredAt);
   const daysSince = Math.floor((now.getTime() - registered.getTime()) / (1000 * 60 * 60 * 24));
 
-  const sentIds = JSON.parse(localStorage.getItem("bunker-emails-sent") || "[]");
-  
+  const sentIds = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
   return HAUNT_SEQUENCE.filter((email) => {
     if (sentIds.includes(email.id)) return false;
     return daysSince >= email.sendAfterDays;
@@ -119,7 +122,10 @@ export function getPendingEmails(registeredAt: string): HauntEmail[] {
 }
 
 export function markEmailSent(id: number) {
-  const sent = JSON.parse(localStorage.getItem("bunker-emails-sent") || "[]");
-  sent.push(id);
-  localStorage.setItem("bunker-emails-sent", JSON.stringify(sent));
+  if (typeof window === "undefined") return;
+  const sent = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  if (!sent.includes(id)) {
+    sent.push(id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sent));
+  }
 }

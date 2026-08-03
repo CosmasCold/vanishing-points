@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, X, Trash2, MapPin, Calendar, ChevronRight, } from "lucide-react";
+import { BookOpen, X, Trash2, MapPin, Calendar, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useVisitedPlaces } from "@/hooks/useVisitedPlaces";
 
@@ -21,7 +21,7 @@ export default function ExpeditionLog({ onClose }: Props) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ background: "rgba(8,6,4,0.85)", backdropFilter: "blur(6px)" }}
+      style={{ backgroundColor: "rgba(12,10,8,0.9)" }}
       onClick={onClose}
     >
       <motion.div
@@ -30,12 +30,12 @@ export default function ExpeditionLog({ onClose }: Props) {
         exit={{ scale: 0.96, y: 12, opacity: 0 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col relative"
+        className="rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col relative"
         style={{
           background: "linear-gradient(180deg, rgba(18,14,10,0.95), rgba(12,10,8,0.98))",
           border: "1px solid rgba(122,107,82,0.18)",
           borderLeft: "3px solid #9a8a72",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(122,107,82,0.06)",
+          boxShadow: "0 24px 64px rgba(12,10,8,0.7), inset 0 1px 0 rgba(122,107,82,0.06)",
         }}
       >
         {/* Header */}
@@ -47,15 +47,23 @@ export default function ExpeditionLog({ onClose }: Props) {
             <BookOpen size={15} style={{ color: "#9a8a72" }} />
             <h2
               className="font-cinzel text-base md:text-lg font-medium tracking-wide"
-              style={{ color: "#ddd0bc", textShadow: "0 0 8px rgba(221,208,188,0.08)" }}
+              style={{ color: "#ddd0bc" }}
             >
               Expedition Log
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded transition-colors hover:bg-white/5"
+            className="p-1 rounded transition-colors"
             style={{ color: "#5a4e42" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(122,107,82,0.1)";
+              (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+              (e.currentTarget as HTMLElement).style.color = "#5a4e42";
+            }}
             title="Close"
           >
             <X size={16} />
@@ -78,7 +86,7 @@ export default function ExpeditionLog({ onClose }: Props) {
             <>
               <p
                 className="text-[11px] font-mono uppercase tracking-[0.2em] mb-4"
-                style={{ color: "#9a8a72", opacity: 0.6 }}
+                style={{ color: "rgba(154,138,114,0.6)" }}
               >
                 {count} site{count !== 1 ? "s" : ""} documented
               </p>
@@ -89,24 +97,25 @@ export default function ExpeditionLog({ onClose }: Props) {
                     key={v._id}
                     href={`/place/${v.slug}`}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-3 rounded-lg transition-all duration-300 group"
+                    className="flex items-center gap-3 p-3 rounded-lg transition-colors group"
                     style={{
-                      background: "rgba(122,107,82,0.04)",
+                      backgroundColor: "rgba(122,107,82,0.04)",
                       border: "1px solid rgba(122,107,82,0.08)",
+                      transitionDuration: "150ms",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(122,107,82,0.08)";
+                      e.currentTarget.style.backgroundColor = "rgba(122,107,82,0.08)";
                       e.currentTarget.style.borderColor = "rgba(122,107,82,0.2)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(122,107,82,0.04)";
+                      e.currentTarget.style.backgroundColor = "rgba(122,107,82,0.04)";
                       e.currentTarget.style.borderColor = "rgba(122,107,82,0.08)";
                     }}
                   >
                     <div
-                      className="w-8 h-8 flex items-center justify-center rounded-full transition-colors flex-shrink-0"
+                      className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
                       style={{
-                        background: "rgba(122,107,82,0.12)",
+                        backgroundColor: "rgba(122,107,82,0.12)",
                         color: "#9a8a72",
                       }}
                     >
@@ -121,7 +130,7 @@ export default function ExpeditionLog({ onClose }: Props) {
                       </p>
                       <p
                         className="text-[11px] font-mono flex items-center gap-1.5 mt-0.5"
-                        style={{ color: "#9a8a72", opacity: 0.5 }}
+                        style={{ color: "rgba(154,138,114,0.5)" }}
                       >
                         <Calendar size={10} />
                         {new Date(v.addedAt).toLocaleDateString("en-GB", {
@@ -141,8 +150,8 @@ export default function ExpeditionLog({ onClose }: Props) {
                 {!confirmClear ? (
                   <button
                     onClick={() => setConfirmClear(true)}
-                    className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.15em] transition-colors duration-300"
-                    style={{ color: "#7a3a2a" }}
+                    className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.15em] transition-colors"
+                    style={{ color: "#7a3a2a", transitionDuration: "150ms" }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = "#c4785a")}
                     onMouseLeave={(e) => (e.currentTarget.style.color = "#7a3a2a")}
                   >
@@ -157,18 +166,19 @@ export default function ExpeditionLog({ onClose }: Props) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={clearLog}
-                        className="px-3.5 py-1.5 rounded text-[11px] font-mono uppercase tracking-wider transition-all active:scale-95"
+                        className="px-3.5 py-1.5 rounded text-[11px] font-mono uppercase tracking-wider active:scale-95"
                         style={{
                           color: "#c4785a",
-                          background: "rgba(196,120,90,0.08)",
+                          backgroundColor: "rgba(196,120,90,0.08)",
                           border: "1px solid rgba(196,120,90,0.25)",
+                          transition: "all 150ms ease",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "rgba(196,120,90,0.15)";
+                          e.currentTarget.style.backgroundColor = "rgba(196,120,90,0.15)";
                           e.currentTarget.style.borderColor = "rgba(196,120,90,0.4)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "rgba(196,120,90,0.08)";
+                          e.currentTarget.style.backgroundColor = "rgba(196,120,90,0.08)";
                           e.currentTarget.style.borderColor = "rgba(196,120,90,0.25)";
                         }}
                       >
@@ -177,7 +187,7 @@ export default function ExpeditionLog({ onClose }: Props) {
                       <button
                         onClick={() => setConfirmClear(false)}
                         className="text-[11px] font-mono uppercase tracking-wider transition-colors"
-                        style={{ color: "#5a4e42" }}
+                        style={{ color: "#5a4e42", transitionDuration: "150ms" }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#9a8a72")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#5a4e42")}
                       >

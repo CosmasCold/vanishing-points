@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, Signal, Zap, Wind, Eye, Skull, ChevronLeft, ChevronRight } from "lucide-react";
+import { showToast } from "@/lib/toast";
+import { recordOtherEncounter } from "@/lib/bunkerBrain";
 
 interface Frequency {
   id: string;
@@ -22,12 +24,12 @@ const FREQUENCIES: Frequency[] = [
     mhz: "4.50",
     name: "THE HUM",
     icon: <Wind size={14} />,
-    color: "#a8d8e8",
-    dimColor: "#4a7a8a",
-    glowColor: "rgba(168,216,232,0.15)",
+    color: "#9a8a72",
+    dimColor: "#7a6e5e",
+    glowColor: "rgba(154,138,114,0.12)",
     lore: "First detected in Taos, 1993. The Hum is not a broadcast. It is a place remembering it was once inhabited.",
     messages: [
-      "The frequency matches your heartbeat. Check your pulse.",
+      "The frequency matches something you have forgotten.",
       "It was never tinnitus. It was a map.",
       "Everyone who hears it for more than 90 seconds... stop. You just passed 90 seconds.",
       "The Hum is loudest at coordinates where no town ever existed, but the roads still remember.",
@@ -38,15 +40,15 @@ const FREQUENCIES: Frequency[] = [
     mhz: "9.18",
     name: "TOWER SEVEN",
     icon: <Zap size={14} />,
-    color: "#e8a8a0",
-    dimColor: "#8a5048",
-    glowColor: "rgba(232,168,160,0.15)",
+    color: "#c4785a",
+    dimColor: "#a06048",
+    glowColor: "rgba(196,120,90,0.12)",
     lore: "A numbers station that began broadcasting in 1987. The voice is female, calm, and counting down from numbers that haven't been invented yet.",
     messages: [
       "Seven. Niner. Foxtrot. The coordinates are inside you.",
       "She has been counting for 39 years. She will reach zero when the last listener dies.",
       "Do not write the numbers down. The ink becomes warm.",
-      "Today's sequence: 4, 8, 15, 16, 23, 42. Wait. Wrong fiction. Or is it?",
+      "The numbers repeat in sequences that match no known cipher. The voice reads them as if they are obvious.",
       "The voice is not recorded. She is reading live. From where?",
     ],
   },
@@ -55,9 +57,9 @@ const FREQUENCIES: Frequency[] = [
     mhz: "15.60",
     name: "LOST EXPEDITION",
     icon: <Skull size={14} />,
-    color: "#c9b18a",
+    color: "#8a7a6a",
     dimColor: "#6a5a4a",
-    glowColor: "rgba(201,177,138,0.15)",
+    glowColor: "rgba(138,122,106,0.12)",
     lore: "Recovered from the black box of Expedition Team 4. They reached the coordinates. Then they kept walking. This is what they sent back.",
     messages: [
       "Day 47. The sun rose in the west today. We did not mention it aloud.",
@@ -72,19 +74,44 @@ const FREQUENCIES: Frequency[] = [
     mhz: "21.00",
     name: "STATIC VEIL",
     icon: <Eye size={14} />,
-    color: "#b8a8d8",
-    dimColor: "#6a5a8a",
-    glowColor: "rgba(184,168,216,0.15)",
+    color: "#c4785a",
+    dimColor: "#a06048",
+    glowColor: "rgba(196,120,90,0.12)",
     lore: "Not a signal. A curtain. The static between stations is not empty. It is full of things that haven't happened yet, trying to get through.",
     messages: [
       "The white noise is not random. It is every possible conversation, layered.",
       "If you listen long enough, you will hear your own voice. Older. Scared.",
       "We thought the veil was a barrier. It is a membrane. And something is pushing.",
-      "The static shaped itself into a face. It smiled. I smiled back before I could stop myself.",
-      "Frequency 21.00 is not a number. It is a question. The answer is behind you.",
+      "The static shaped itself into a question. You knew the answer once.",
+      "Frequency 21.00 is not a number. It is a question. The question is: are you still there?",
     ],
   },
 ];
+
+const DECODE_COST = 2;
+
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+function spendDust(amount: number): number {
+  if (typeof window === "undefined") return 0;
+  const current = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+  const next = Math.max(0, current - amount);
+  localStorage.setItem("vp-dust-accumulation", next.toString());
+  return next;
+}
+
+function recordDecode(freqId: string) {
+  if (typeof window === "undefined") return;
+  const key = "vp-numbers-station-decoded";
+  const decoded = JSON.parse(localStorage.getItem(key) || "[]") as string[];
+  if (!decoded.includes(freqId)) {
+    decoded.push(freqId);
+    localStorage.setItem(key, JSON.stringify(decoded));
+  }
+}
 
 export default function NumbersStation({ compact = false }: { compact?: boolean }) {
   const [freqIndex, setFreqIndex] = useState(0);
@@ -93,9 +120,28 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
   const [decodedMsg, setDecodedMsg] = useState<string | null>(null);
   const [typedText, setTypedText] = useState("");
   const [powerOn, setPowerOn] = useState(true);
+  const [dust, setDust] = useState(0);
+  const [tick, setTick] = useState(0); // For oscilloscope animation
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const freq = FREQUENCIES[freqIndex];
+
+  useEffect(() => {
+    setDust(getDust());
+  }, []);
+
+  // Oscilloscope ticker — client-side only, avoids hydration mismatch
+  useEffect(() => {
+    const animate = () => {
+      setTick((t) => t + 1);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   // Fluctuate signal strength
   useEffect(() => {
@@ -134,6 +180,17 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
 
   const decode = useCallback(() => {
     if (!powerOn) return;
+    const currentDust = getDust();
+    if (currentDust < DECODE_COST) {
+      showToast(`Insufficient dust. Decoding requires ${DECODE_COST}% contamination. You carry ${currentDust}%.`, "warning");
+      return;
+    }
+
+    const nextDust = spendDust(DECODE_COST);
+    setDust(nextDust);
+    recordDecode(freq.id);
+    recordOtherEncounter();
+
     setIsDecoding(true);
     setDecodedMsg(null);
     setTimeout(() => {
@@ -155,17 +212,32 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
     setTypedText("");
   };
 
+  // Oscilloscope path generator — uses tick state, not Date.now()
+  const oscilloscopePath = (frameOffset: number) => {
+    const points = Array.from({ length: 20 }, (_, i) => {
+      const x = (i + 1) * 5;
+      const y = 32 + Math.sin(i * 0.8 + tick * 0.05 + frameOffset) * (signalStrength / 3) * (isDecoding ? 1.5 : 0.8);
+      return `L${x}%,${y}`;
+    }).join(" ");
+    return `M0,${32 + Math.sin(tick * 0.05 + frameOffset) * 5} ${points}`;
+  };
+
   if (compact) {
-    // Compact version for Atlas header area
     return (
       <div className="relative z-40">
         <button
           onClick={() => setPowerOn(!powerOn)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1612]/80 backdrop-blur-sm border border-[#c9b18a]/20 rounded-lg text-[#c9b18a] hover:border-[#c9b18a]/40 transition-all text-[10px] font-mono uppercase tracking-wider active:scale-95"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all active:scale-95 border"
+          style={{
+            background: "rgba(18,14,10,0.8)",
+            backdropFilter: "blur(8px)",
+            borderColor: "rgba(154,138,114,0.2)",
+            color: powerOn ? "#9a8a72" : "#5a4e42",
+          }}
         >
           <Radio size={12} className={powerOn ? "animate-pulse" : "opacity-30"} />
           <span>Numbers Station</span>
-          <Signal size={10} className={powerOn ? "text-[#c9b18a]" : "opacity-20"} />
+          <Signal size={10} className={powerOn ? "" : "opacity-20"} style={{ color: powerOn ? "#9a8a72" : "#5a4e42" }} />
         </button>
 
         <AnimatePresence>
@@ -174,7 +246,12 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
               initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              className="absolute top-full left-0 mt-2 w-72 bg-[#12100e] border border-[#c9b18a]/20 rounded-lg shadow-2xl overflow-hidden"
+              className="absolute top-full left-0 mt-2 w-72 rounded-lg shadow-2xl overflow-hidden border"
+              style={{
+                background: "rgba(12,10,8,0.96)",
+                borderColor: "rgba(154,138,114,0.15)",
+                backdropFilter: "blur(8px)",
+              }}
             >
               <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
@@ -184,17 +261,17 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
                       <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: freq.color }}>
                         {freq.name}
                       </p>
-                      <p className="text-[9px] font-mono text-[#5a4e42]">{freq.mhz} MHz</p>
+                      <p className="text-[10px] font-mono" style={{ color: "#5a4e42" }}>{freq.mhz} MHz</p>
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={prevFreq} className="p-1 hover:bg-white/5 rounded"><ChevronLeft size={12} style={{ color: freq.dimColor }} /></button>
-                    <button onClick={nextFreq} className="p-1 hover:bg-white/5 rounded"><ChevronRight size={12} style={{ color: freq.dimColor }} /></button>
+                    <button onClick={prevFreq} className="p-1 rounded transition-colors" style={{ color: freq.dimColor }} onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(122,107,82,0.1)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}><ChevronLeft size={12} /></button>
+                    <button onClick={nextFreq} className="p-1 rounded transition-colors" style={{ color: freq.dimColor }} onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(122,107,82,0.1)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}><ChevronRight size={12} /></button>
                   </div>
                 </div>
 
                 {/* Signal bar */}
-                <div className="h-1 bg-[#252018] rounded-full overflow-hidden">
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(90,78,66,0.2)" }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ backgroundColor: freq.color }}
@@ -209,7 +286,7 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
                   className="w-full py-2 border rounded text-[10px] font-mono uppercase tracking-wider transition-all active:scale-95 disabled:opacity-30"
                   style={{ borderColor: `${freq.color}30`, color: freq.color }}
                 >
-                  {isDecoding ? "Acquiring signal..." : "Decode transmission"}
+                  {isDecoding ? "Acquiring signal..." : `Decode (${DECODE_COST}% dust)`}
                 </button>
 
                 <AnimatePresence>
@@ -233,26 +310,36 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
     );
   }
 
-  // Full version for Terminal
+  // ─── FULL VERSION (Terminal) ───
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="border border-[#333] rounded-lg bg-[#0a0908] overflow-hidden shadow-2xl">
+      <div
+        className="rounded-lg overflow-hidden border"
+        style={{
+          background: "rgba(12,10,8,0.95)",
+          borderColor: "rgba(122,107,82,0.15)",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+        }}
+      >
         {/* Header / Tuning display */}
-        <div className="relative p-4 md:p-6 border-b border-[#222]">
-          <div className="absolute inset-0 opacity-5" style={{
+        <div className="relative p-4 md:p-6 border-b" style={{ borderColor: "rgba(122,107,82,0.1)" }}>
+          <div className="absolute inset-0 opacity-[0.03]" style={{
             backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 2px, ${freq.color} 2px, ${freq.color} 4px)`
           }} />
           
           <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border flex items-center justify-center" style={{ borderColor: `${freq.color}40`, color: freq.color }}>
+              <div
+                className="w-10 h-10 rounded-full border flex items-center justify-center"
+                style={{ borderColor: `${freq.color}30`, color: freq.color }}
+              >
                 <Radio size={18} />
               </div>
               <div>
                 <h2 className="font-cinzel text-lg md:text-xl tracking-wide" style={{ color: freq.color }}>
                   {freq.name}
                 </h2>
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#5a4e42]">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "#5a4e42" }}>
                   Shortwave Numbers Station // {freq.mhz} MHz
                 </p>
               </div>
@@ -261,16 +348,19 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setPowerOn(!powerOn)}
-                className="w-8 h-8 rounded-full border border-[#333] flex items-center justify-center transition-all hover:border-[#555]"
-                style={{ color: powerOn ? freq.color : "#333" }}
+                className="w-8 h-8 rounded-full border flex items-center justify-center transition-all"
+                style={{
+                  borderColor: powerOn ? `${freq.color}30` : "rgba(90,78,66,0.2)",
+                  color: powerOn ? freq.color : "#5a4e42",
+                }}
               >
                 <Zap size={14} />
               </button>
               <div className="flex gap-1">
-                <button onClick={prevFreq} className="px-2 py-1 border border-[#222] rounded hover:border-[#444] text-[#666] transition-colors">
+                <button onClick={prevFreq} className="px-2 py-1 border rounded transition-colors" style={{ borderColor: "rgba(122,107,82,0.15)", color: "#5a4e42" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(122,107,82,0.3)"; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(122,107,82,0.15)"; }}>
                   <ChevronLeft size={14} />
                 </button>
-                <button onClick={nextFreq} className="px-2 py-1 border border-[#222] rounded hover:border-[#444] text-[#666] transition-colors">
+                <button onClick={nextFreq} className="px-2 py-1 border rounded transition-colors" style={{ borderColor: "rgba(122,107,82,0.15)", color: "#5a4e42" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(122,107,82,0.3)"; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(122,107,82,0.15)"; }}>
                   <ChevronRight size={14} />
                 </button>
               </div>
@@ -278,8 +368,8 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
           </div>
 
           {/* Frequency strip */}
-          <div className="relative mt-4 h-8 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-between px-4 text-[9px] font-mono text-[#222]">
+          <div className="relative mt-4 h-8 rounded border overflow-hidden" style={{ background: "rgba(8,6,4,0.8)", borderColor: "rgba(122,107,82,0.1)" }}>
+            <div className="absolute inset-0 flex items-center justify-between px-4 text-[10px] font-mono" style={{ color: "#3a2e22" }}>
               {FREQUENCIES.map((f, i) => (
                 <span key={f.id} className={i === freqIndex ? "font-bold" : ""} style={{ color: i === freqIndex ? freq.dimColor : undefined }}>
                   {f.mhz}
@@ -287,7 +377,8 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
               ))}
             </div>
             <motion.div
-              className="absolute top-0 bottom-0 w-px bg-white/20"
+              className="absolute top-0 bottom-0 w-px"
+              style={{ background: "rgba(154,138,114,0.2)" }}
               animate={{ left: `${(freqIndex / (FREQUENCIES.length - 1)) * 100}%` }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
             />
@@ -304,14 +395,13 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Signal strength */}
             <div className="md:col-span-1 space-y-2">
-              <p className="text-[9px] font-mono uppercase tracking-widest text-[#444]">Signal Strength</p>
-              <div className="h-32 bg-[#050505] rounded border border-[#1a1a1a] relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 right-0 bg-[#111]" style={{ height: `${signalStrength}%`, transition: "height 0.4s ease" }}>
+              <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#3a2e22" }}>Signal Strength</p>
+              <div className="h-32 rounded border relative overflow-hidden" style={{ background: "rgba(8,6,4,0.8)", borderColor: "rgba(122,107,82,0.1)" }}>
+                <div className="absolute bottom-0 left-0 right-0" style={{ height: `${signalStrength}%`, background: "rgba(18,14,10,0.8)", transition: "height 0.4s ease" }}>
                   <div className="absolute top-0 left-0 right-0 h-px" style={{ backgroundColor: freq.color, opacity: 0.5 }} />
                 </div>
-                {/* Grid lines */}
                 {[25, 50, 75].map((mark) => (
-                  <div key={mark} className="absolute left-0 right-0 h-px bg-[#1a1a1a]" style={{ bottom: `${mark}%` }} />
+                  <div key={mark} className="absolute left-0 right-0 h-px" style={{ bottom: `${mark}%`, background: "rgba(122,107,82,0.08)" }} />
                 ))}
               </div>
               <p className="text-right text-[10px] font-mono" style={{ color: freq.dimColor }}>
@@ -320,34 +410,16 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
             </div>
 
             {/* Tuning eye (oscilloscope) */}
-            <div className="md:col-span-2 bg-[#050505] rounded border border-[#1a1a1a] relative overflow-hidden h-32 md:h-auto">
+            <div className="md:col-span-2 rounded border relative overflow-hidden h-32 md:h-auto" style={{ background: "rgba(8,6,4,0.8)", borderColor: "rgba(122,107,82,0.1)" }}>
               <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
                 <path
-                  d={`M0,${32 + Math.sin(Date.now() / 200) * 10} ${Array.from({ length: 20 }, (_, i) => {
-                    const x = (i + 1) * 5;
-                    const y = 32 + Math.sin(i * 0.8 + Date.now() / 300) * (signalStrength / 3) * (isDecoding ? 1.5 : 0.8);
-                    return `L${x}%,${y}`;
-                  }).join(" ")}`}
+                  d={oscilloscopePath(0)}
                   fill="none"
                   stroke={freq.color}
                   strokeWidth="1.5"
                   opacity="0.6"
                   style={{ filter: `drop-shadow(0 0 4px ${freq.glowColor})` }}
-                >
-                  <animate
-                    attributeName="d"
-                    dur="0.1s"
-                    repeatCount="indefinite"
-                    calcMode="discrete"
-                    values={Array.from({ length: 5 }, (_, frame) => {
-                      return `M0,${32 + Math.sin(frame) * 5} ${Array.from({ length: 20 }, (_, i) => {
-                        const x = (i + 1) * 5;
-                        const y = 32 + Math.sin(i * 0.8 + frame * 2) * (signalStrength / 3) * (isDecoding ? 1.5 : 0.8);
-                        return `L${x}%,${y}`;
-                      }).join(" ")}`;
-                    }).join(";")}
-                  />
-                </path>
+                />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-24 h-24 rounded-full border opacity-10" style={{ borderColor: freq.color }} />
@@ -364,7 +436,7 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
           </div>
 
           {/* Lore text */}
-          <div className="border-l-2 pl-4 py-1" style={{ borderColor: `${freq.color}30` }}>
+          <div className="border-l-2 pl-4 py-1" style={{ borderColor: `${freq.color}20` }}>
             <p className="text-xs md:text-sm font-mono leading-relaxed italic" style={{ color: freq.dimColor }}>
               {freq.lore}
             </p>
@@ -375,9 +447,11 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
             onClick={decode}
             disabled={isDecoding || !powerOn}
             className="w-full py-3 md:py-4 border rounded-lg font-mono uppercase tracking-[0.2em] text-[11px] md:text-xs transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed relative overflow-hidden"
-            style={{ borderColor: `${freq.color}40`, color: freq.color }}
+            style={{ borderColor: `${freq.color}30`, color: freq.color }}
           >
-            <span className="relative z-10">{isDecoding ? "Scanning bands..." : "Initiate Decryption Sequence"}</span>
+            <span className="relative z-10">
+              {isDecoding ? "Scanning bands..." : `Initiate Decryption Sequence (${DECODE_COST}% dust)`}
+            </span>
             {isDecoding && (
               <motion.div
                 className="absolute inset-0 opacity-10"
@@ -396,9 +470,10 @@ export default function NumbersStation({ compact = false }: { compact?: boolean 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-[#050505] border border-[#1a1a1a] rounded-lg p-4 md:p-5 relative overflow-hidden"
+                className="rounded-lg p-4 md:p-5 relative overflow-hidden border"
+                style={{ background: "rgba(8,6,4,0.8)", borderColor: "rgba(122,107,82,0.1)" }}
               >
-                <div className="absolute top-2 right-2 text-[9px] font-mono uppercase tracking-widest" style={{ color: freq.dimColor }}>
+                <div className="absolute top-2 right-2 text-[10px] font-mono uppercase tracking-widest" style={{ color: freq.dimColor }}>
                   DECODED // {freq.mhz}
                 </div>
                 <p className="text-sm md:text-base font-mono leading-relaxed mt-4" style={{ color: freq.color }}>

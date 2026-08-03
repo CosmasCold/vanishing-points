@@ -19,10 +19,19 @@ export default function PlaceCard({ place, index }: Props) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.5 }}
-      whileHover={{ y: -4 }}
       className="archive-card rounded-xl overflow-hidden group"
+      style={
+        typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
+          ? {}
+          : undefined
+      }
+      whileHover={
+        typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
+          ? { y: -4 }
+          : undefined
+      }
     >
-      <Link href={`/place/${place.slug}`} className="block relative z-10">
+      <Link href={`/place/${place.slug}`} className="block relative">
         <div className="relative h-48 overflow-hidden">
           {place.photos[0] ? (
             <Image
@@ -34,21 +43,30 @@ export default function PlaceCard({ place, index }: Props) {
               priority={index < 3}
             />
           ) : (
-            <div className="w-full h-full bg-[rgba(60,40,20,0.1)] flex items-center justify-center">
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: "rgba(60,40,20,0.06)" }}
+            >
               <span className="text-[#9a8a72] font-mono text-xs">No visual record</span>
             </div>
           )}
-          
-          {/* Dark gradient overlay for badge readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,8,6,0.5)] via-transparent to-[rgba(42,31,20,0.6)]" />
-          
+
+          {/* Gradient overlay for badge readability */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(10,8,6,0.5), transparent, rgba(42,31,20,0.6))",
+            }}
+          />
+
           <div className="absolute top-3 left-3 badge-overlay">
             <StatusBadge category={place.category} variant="light" />
           </div>
         </div>
 
         <div className="p-5">
-          <h3 className="archive-title text-lg font-medium group-hover:text-[#1a120b] transition-colors">
+          <h3 className="archive-title text-lg font-medium group-hover:text-[#3d3228] transition-colors">
             {place.name}
           </h3>
           <div className="flex items-center gap-1.5 mt-1.5 archive-meta">
@@ -58,7 +76,10 @@ export default function PlaceCard({ place, index }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[rgba(62,43,26,0.12)]">
+          <div
+            className="flex items-center justify-between mt-4 pt-3 border-t"
+            style={{ borderColor: "rgba(62,43,26,0.1)" }}
+          >
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] text-[#7a6e5e] font-mono">Danger</span>
               <DangerIndicator level={place.dangerLevel} variant="parchment" />

@@ -15,6 +15,26 @@ interface Props {
   onSuccess?: () => void;
 }
 
+/* ─── dust helpers ─── */
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+function addDust(amount: number) {
+  if (typeof window === "undefined") return;
+  const current = getDust();
+  const next = Math.min(100, current + amount);
+  localStorage.setItem("vp-dust-accumulation", next.toString());
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+}
+
+const categoryLabels = {
+  abandoned: "Forsaken",
+  haunted: "Spectral",
+  both: "Twinned",
+} as const;
+
 export default function SubmissionForm({ onSuccess }: Props) {
   const router = useRouter();
   const [toasts, setToasts] = useState<
@@ -120,6 +140,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
       });
 
       if (res.ok) {
+        addDust(10);
         addToast(
           "Your discovery has been logged in the archives. Awaiting verification.",
           "success"
@@ -169,20 +190,36 @@ export default function SubmissionForm({ onSuccess }: Props) {
         >
           <label className="submit-label block mb-3">Classification</label>
           <div className="flex gap-2">
-            {(["abandoned", "haunted", "both"] as const).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setForm({ ...form, category: cat })}
-                className={`px-4 py-2 rounded-lg border text-xs font-mono uppercase tracking-wider transition-all ${
-                  form.category === cat
-                    ? "bg-[#4a3e32] border-[#4a3e32] text-[#ddd0bc]"
-                    : "border-[rgba(139,115,85,0.3)] text-[#7a6e5e] hover:border-[#9a8a72]"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {(["abandoned", "haunted", "both"] as const).map((cat) => {
+              const isActive = form.category === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setForm({ ...form, category: cat })}
+                  className="px-4 py-2 rounded-lg border text-xs font-mono uppercase tracking-wider transition-all"
+                  style={
+                    isActive
+                      ? { backgroundColor: "#4a3e32", borderColor: "#4a3e32", color: "#ddd0bc" }
+                      : { borderColor: "rgba(122,107,82,0.3)", color: "#7a6e5e" }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.borderColor = "#9a8a72";
+                      (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(122,107,82,0.3)";
+                      (e.currentTarget as HTMLElement).style.color = "#7a6e5e";
+                    }
+                  }}
+                >
+                  {categoryLabels[cat]}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -198,7 +235,8 @@ export default function SubmissionForm({ onSuccess }: Props) {
             <div className="relative flex-1">
               <MapPin
                 size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9a8a72]"
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: "#9a8a72" }}
               />
               <input
                 type="text"
@@ -212,20 +250,50 @@ export default function SubmissionForm({ onSuccess }: Props) {
             <button
               type="button"
               onClick={handleAddressSearch}
-              className="px-4 py-2 bg-[rgba(60,40,20,0.08)] border border-[rgba(139,115,85,0.25)] rounded-lg text-[#7a6e5e] text-xs font-mono hover:text-[#3d3228] hover:border-[#9a8a72] transition-all"
+              className="px-4 py-2 rounded-lg text-xs font-mono transition-all"
+              style={{
+                backgroundColor: "rgba(60,40,20,0.08)",
+                border: "1px solid rgba(122,107,82,0.25)",
+                color: "#7a6e5e",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "#9a8a72";
+                (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(122,107,82,0.25)";
+                (e.currentTarget as HTMLElement).style.color = "#7a6e5e";
+              }}
             >
               Locate
             </button>
           </div>
 
           {addressResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-[#e8dcc8] border border-[rgba(139,115,85,0.25)] rounded-lg shadow-xl overflow-hidden">
+            <div
+              className="absolute z-10 mt-1 w-full rounded-lg overflow-hidden border"
+              style={{
+                backgroundColor: "#0c0a08",
+                borderColor: "rgba(122,107,82,0.2)",
+              }}
+            >
               {addressResults.map((result, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => selectAddress(result)}
-                  className="w-full px-4 py-3 text-left text-sm text-[#4a3e32] hover:bg-[rgba(139,115,85,0.1)] hover:text-[#1a120b] transition-colors border-b border-[rgba(139,115,85,0.15)] last:border-0"
+                  className="w-full px-4 py-3 text-left text-sm transition-colors border-b last:border-0"
+                  style={{
+                    color: "#ddd0bc",
+                    borderColor: "rgba(122,107,82,0.1)",
+                    backgroundColor: "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(122,107,82,0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                  }}
                 >
                   {result.place_name}
                 </button>
@@ -265,7 +333,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
           >
             <label className="submit-label block mb-2">Danger level</label>
             <div className="flex items-center gap-3">
-              <AlertTriangle size={14} className="text-[#9a8a72]" />
+              <AlertTriangle size={14} style={{ color: "#9a8a72" }} />
               <input
                 type="range"
                 min={1}
@@ -277,9 +345,10 @@ export default function SubmissionForm({ onSuccess }: Props) {
                     dangerLevel: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5,
                   })
                 }
-                className="flex-1 accent-[#7a3a2a]"
+                className="flex-1"
+                style={{ accentColor: "#7a3a2a" }}
               />
-              <span className="font-mono text-sm text-[#3d3228] w-4">
+              <span className="font-mono text-sm w-4" style={{ color: "#ddd0bc" }}>
                 {form.dangerLevel}
               </span>
             </div>
@@ -302,7 +371,7 @@ export default function SubmissionForm({ onSuccess }: Props) {
             placeholder="Document what you know about this place..."
             maxLength={2000}
           />
-          <div className="text-right text-[10px] text-[#9a8a72] font-mono mt-1">
+          <div className="text-right text-[10px] font-mono mt-1" style={{ color: "#9a8a72" }}>
             {(form.history?.length || 0)}/2000
           </div>
         </motion.div>
@@ -344,13 +413,13 @@ export default function SubmissionForm({ onSuccess }: Props) {
             }`}
           >
             <input {...getInputProps()} />
-            <Upload size={24} className="mx-auto text-[#9a8a72] mb-2" />
-            <p className="text-sm text-[#7a6e5e]">
+            <Upload size={24} className="mx-auto mb-2" style={{ color: "#9a8a72" }} />
+            <p className="text-sm" style={{ color: "#7a6e5e" }}>
               {isDragActive
                 ? "Drop the evidence here..."
                 : "Drag & drop photos, or click to select"}
             </p>
-            <p className="text-[11px] text-[#9a8a72] mt-1 font-mono">
+            <p className="text-[11px] mt-1 font-mono" style={{ color: "#9a8a72" }}>
               JPG, PNG up to 5MB each
             </p>
           </div>
@@ -358,7 +427,11 @@ export default function SubmissionForm({ onSuccess }: Props) {
           {form.photos && form.photos.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {form.photos.map((photo, i) => (
-                <div key={photo} className="relative w-20 h-20 rounded-lg overflow-hidden group border border-[rgba(139,115,85,0.2)]">
+                <div
+                  key={photo}
+                  className="relative w-20 h-20 rounded-lg overflow-hidden group"
+                  style={{ border: "1px solid rgba(122,107,82,0.2)" }}
+                >
                   <Image
                     src={photo}
                     alt={`Upload ${i + 1}`}
@@ -374,7 +447,14 @@ export default function SubmissionForm({ onSuccess }: Props) {
                         photos: form.photos?.filter((_, idx) => idx !== i),
                       })
                     }
-                    className="absolute top-1 right-1 w-5 h-5 bg-[#3d3228]/80 rounded-full flex items-center justify-center text-[#d4c8b4] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ backgroundColor: "rgba(61,50,40,0.8)", color: "#d4c8b4" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "#d4c8b4";
+                    }}
                   >
                     <X size={10} />
                   </button>

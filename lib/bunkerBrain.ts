@@ -10,11 +10,14 @@ export interface Memory {
   lastVisit: number | null;
 }
 
+const MEMORY_KEY = "vp-memory";
+const OTHER_COUNT_KEY = "vp-other-count";
+
 export function getMemory(): Memory {
   if (typeof window === "undefined") {
     return { name: null, lastTopics: [], visitCount: 0, lastVisit: null };
   }
-  const raw = localStorage.getItem("bunker-memory");
+  const raw = localStorage.getItem(MEMORY_KEY);
   if (raw) return JSON.parse(raw);
   return { name: null, lastTopics: [], visitCount: 0, lastVisit: null };
 }
@@ -32,7 +35,7 @@ export function updateMemory(field: keyof Memory, value: string) {
   } else if (field === "lastVisit") {
     mem.lastVisit = Date.now();
   }
-  localStorage.setItem("bunker-memory", JSON.stringify(mem));
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(mem));
 }
 
 export function getSentiment(text: string): "positive" | "negative" | "neutral" {
@@ -53,13 +56,14 @@ export function getSentiment(text: string): "positive" | "negative" | "neutral" 
 
 export function getOtherEncounters(): number {
   if (typeof window === "undefined") return 0;
-  return parseInt(localStorage.getItem("bunker-other-count") || "0", 10);
+  return parseInt(localStorage.getItem(OTHER_COUNT_KEY) || "0", 10);
 }
 
 export function recordOtherEncounter() {
   if (typeof window === "undefined") return;
   const count = getOtherEncounters() + 1;
-  localStorage.setItem("bunker-other-count", count.toString());
+  localStorage.setItem(OTHER_COUNT_KEY, count.toString());
+  window.dispatchEvent(new CustomEvent("vp-corruption-change"));
 }
 
 export function getOtherEscalationStage(): number {
@@ -80,7 +84,7 @@ export function shouldTriggerOther(event: OtherEvent): boolean {
   if (typeof window === "undefined") return false;
   const encounters = getOtherEncounters();
   const corruption = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
-  const breachTime = localStorage.getItem("bunker-breach-time");
+  const breachTime = localStorage.getItem("vp-breach-time");
   const breach = breachTime ? parseInt(breachTime, 10) <= Date.now() : false;
 
   if (breach && event === "ghost") return true;

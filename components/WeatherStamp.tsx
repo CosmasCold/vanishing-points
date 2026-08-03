@@ -15,24 +15,24 @@ interface Weather {
 }
 
 const CODE_MAP: Record<number, { label: string; icon: React.ReactNode }> = {
-  0: { label: "Clear skies", icon: <Sun size={12} /> },
-  1: { label: "Partly clear", icon: <Sun size={12} /> },
-  2: { label: "Partly cloudy", icon: <Cloud size={12} /> },
-  3: { label: "Overcast", icon: <Cloud size={12} /> },
-  45: { label: "Fog", icon: <Wind size={12} /> },
-  48: { label: "Depositing rime fog", icon: <Wind size={12} /> },
-  51: { label: "Light drizzle", icon: <Droplets size={12} /> },
-  53: { label: "Drizzle", icon: <Droplets size={12} /> },
-  55: { label: "Heavy drizzle", icon: <Droplets size={12} /> },
-  61: { label: "Light rain", icon: <CloudRain size={12} /> },
-  63: { label: "Rain", icon: <CloudRain size={12} /> },
-  65: { label: "Heavy rain", icon: <CloudRain size={12} /> },
-  71: { label: "Light snow", icon: <CloudSnow size={12} /> },
-  73: { label: "Snow", icon: <CloudSnow size={12} /> },
-  75: { label: "Heavy snow", icon: <CloudSnow size={12} /> },
-  95: { label: "Thunderstorm", icon: <CloudLightning size={12} /> },
-  96: { label: "Thunderstorm with hail", icon: <CloudLightning size={12} /> },
-  99: { label: "Severe thunderstorm", icon: <CloudLightning size={12} /> },
+  0: { label: "open", icon: <Sun size={12} /> },
+  1: { label: "thinning", icon: <Sun size={12} /> },
+  2: { label: "broken", icon: <Cloud size={12} /> },
+  3: { label: "sealed", icon: <Cloud size={12} /> },
+  45: { label: "blind", icon: <Wind size={12} /> },
+  48: { label: "frozen blind", icon: <Wind size={12} /> },
+  51: { label: "mist", icon: <Droplets size={12} /> },
+  53: { label: "fine rain", icon: <Droplets size={12} /> },
+  55: { label: "thick mist", icon: <Droplets size={12} /> },
+  61: { label: "soft fall", icon: <CloudRain size={12} /> },
+  63: { label: "steady fall", icon: <CloudRain size={12} /> },
+  65: { label: "hard fall", icon: <CloudRain size={12} /> },
+  71: { label: "sparse", icon: <CloudSnow size={12} /> },
+  73: { label: "white fall", icon: <CloudSnow size={12} /> },
+  75: { label: "whiteout", icon: <CloudSnow size={12} /> },
+  95: { label: "discharge", icon: <CloudLightning size={12} /> },
+  96: { label: "fracture", icon: <CloudLightning size={12} /> },
+  99: { label: "rupture", icon: <CloudLightning size={12} /> },
 };
 
 function describeWeather(code: number) {
@@ -45,7 +45,7 @@ function describeWeather(code: number) {
   if (code >= 85 && code <= 86) return CODE_MAP[73];
   if (code >= 95 && code <= 99) return CODE_MAP[95];
 
-  return { label: "Unknown conditions", icon: <Cloud size={12} /> };
+  return { label: "no signal", icon: <Cloud size={12} /> };
 }
 
 export default function WeatherStamp({ lat, lon }: Props) {
@@ -81,7 +81,10 @@ export default function WeatherStamp({ lat, lon }: Props) {
 
   if (loading) {
     return (
-      <span className="text-[10px] font-mono text-[#9a8a72] animate-pulse">
+      <span
+        className="text-[10px] font-mono animate-flicker"
+        style={{ color: "#9a8a72" }}
+      >
         Scanning skies...
       </span>
     );
@@ -92,9 +95,12 @@ export default function WeatherStamp({ lat, lon }: Props) {
   const desc = describeWeather(weather.code);
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-[#7a6e5e]">
+    <span
+      className="inline-flex items-center gap-1.5 text-[10px] font-mono"
+      style={{ color: "#7a6e5e" }}
+    >
       {desc.icon}
-      {Math.round(weather.temp)}°C, {desc.label.toLowerCase()}, wind {Math.round(weather.windspeed)} km/h
+      {Math.round(weather.temp)}°C, {desc.label}, wind {Math.round(weather.windspeed)} km/h
     </span>
   );
 }

@@ -1,42 +1,49 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDustLevel } from "@/hooks/useDustLevel";
 
 export default function DustCorruption() {
   const { level, isCorrupted, isSevere } = useDustLevel();
+  const flickerEls = useRef<HTMLDivElement[]>([]);
 
   useEffect(() => {
     const body = document.body;
 
-    // Base corruption: subtle scanlines
     if (level > 20) {
       body.style.setProperty("--dust-scanline", "0.04");
     } else {
       body.style.setProperty("--dust-scanline", "0");
     }
 
-    // Corrupted: green tint bleed
     if (isCorrupted) {
       body.classList.add("dust-corrupted");
     } else {
       body.classList.remove("dust-corrupted");
     }
 
-    // Severe: occasional flicker interval
-    let flicker: NodeJS.Timeout;
+    let flicker: ReturnType<typeof setInterval>;
     if (isSevere) {
       flicker = setInterval(() => {
         const el = document.createElement("div");
-        el.className = "fixed inset-0 z-[9998] bg-[#33ff00] mix-blend-overlay pointer-events-none";
+        el.className = "fixed inset-0 z-[9998] mix-blend-overlay pointer-events-none";
+        el.style.backgroundColor = "#c4785a";
         el.style.opacity = "0.06";
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 80);
+        flickerEls.current.push(el);
+        setTimeout(() => {
+          el.remove();
+          flickerEls.current = flickerEls.current.filter((x) => x !== el);
+        }, 80);
       }, 15000 + Math.random() * 20000);
     }
 
     return () => {
       if (flicker) clearInterval(flicker);
+      flickerEls.current.forEach((el) => el.remove());
+      flickerEls.current = [];
+      body.classList.remove("dust-corrupted");
+      body.style.setProperty("--dust-scanline", "0");
     };
   }, [level, isCorrupted, isSevere]);
 
@@ -51,7 +58,7 @@ export default function DustCorruption() {
         inset: 0;
         border-radius: inherit;
         pointer-events: none;
-        box-shadow: inset 0 0 40px rgba(51, 255, 0, 0.03);
+        box-shadow: inset 0 0 40px rgba(196, 120, 90, 0.03);
         opacity: 0;
         animation: dust-pulse 8s ease-in-out infinite;
       }
@@ -66,11 +73,10 @@ export default function DustCorruption() {
         z-index: 9997;
         pointer-events: none;
         background: linear-gradient(
-          rgba(18, 16, 20, 0) 50%,
-          rgba(0, 0, 0, var(--dust-scanline, 0)) 50%
+          rgba(122, 107, 82, 0) 50%,
+          rgba(12, 10, 8, var(--dust-scanline, 0)) 50%
         );
         background-size: 100% 4px;
-        transition: --dust-scanline 2s ease;
       }
     `}</style>
   );

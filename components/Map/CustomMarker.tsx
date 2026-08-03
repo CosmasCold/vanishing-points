@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import { Place } from "@/types";
 
@@ -14,15 +14,18 @@ interface Props {
 export default function CustomMarker({ place, map, onClick, isSelected }: Props) {
   const markerRef = useRef<mapboxgl.Marker | null>(null);
 
+  const handleClick = useCallback(() => {
+    onClick();
+  }, [onClick]);
+
   useEffect(() => {
     const el = document.createElement("div");
-    el.className = "relative cursor-none";
+    el.className = "relative cursor-pointer";
     el.style.zIndex = "1";
 
     const isHaunted = place.category === "haunted" || place.category === "both";
     const isAbandoned = place.category === "abandoned" || place.category === "both";
 
-    // Warm bunker palette
     let markerBg = "#5a4e42";
     let glowColor = "rgba(90,78,66,0.25)";
     let coreColor = "#9a8a72";
@@ -44,7 +47,6 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
     const size = isSelected ? 18 : 14;
     const half = Math.round(size / 2);
 
-    // Pulse ring for haunted
     const pulseHtml = isHaunted
       ? `<div style="
           position: absolute;
@@ -59,7 +61,6 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
         "></div>`
       : "";
 
-    // Inner core dot
     const coreHtml = `<div style="
       position: absolute;
       top: 50%; left: 50%;
@@ -72,7 +73,6 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
       z-index: 15;
     "></div>`;
 
-    // Tooltip label
     const labelHtml = `<div class="marker-label" style="
       position: absolute;
       bottom: calc(100% + 10px);
@@ -88,11 +88,10 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
       color: #ddd0bc;
       background: rgba(12,10,8,0.92);
       border: 1px solid rgba(122,107,82,0.25);
-      backdrop-filter: blur(6px);
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 16px rgba(12,10,8,0.6);
       z-index: 100;
     ">${place.name}</div>`;
 
@@ -133,7 +132,7 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
     const pin = el.querySelector(".marker-pin") as HTMLElement | null;
     const label = el.querySelector(".marker-label") as HTMLElement | null;
 
-    el.addEventListener("mouseenter", () => {
+    const onMouseEnter = () => {
       el.style.zIndex = "50";
       if (pin) {
         pin.style.transform = "rotate(-45deg) scale(1.4)";
@@ -143,9 +142,9 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
         label.style.opacity = "1";
         label.style.transform = "translateX(-50%) translateY(0)";
       }
-    });
+    };
 
-    el.addEventListener("mouseleave", () => {
+    const onMouseLeave = () => {
       el.style.zIndex = "1";
       if (pin) {
         pin.style.transform = "rotate(-45deg) scale(1)";
@@ -155,17 +154,24 @@ export default function CustomMarker({ place, map, onClick, isSelected }: Props)
         label.style.opacity = "0";
         label.style.transform = "translateX(-50%) translateY(6px)";
       }
-    });
+    };
 
-    el.addEventListener("click", (e) => {
+    const onElClick = (e: MouseEvent) => {
       e.stopPropagation();
-      onClick();
-    });
+      handleClick();
+    };
+
+    el.addEventListener("mouseenter", onMouseEnter);
+    el.addEventListener("mouseleave", onMouseLeave);
+    el.addEventListener("click", onElClick);
 
     return () => {
+      el.removeEventListener("mouseenter", onMouseEnter);
+      el.removeEventListener("mouseleave", onMouseLeave);
+      el.removeEventListener("click", onElClick);
       markerRef.current?.remove();
     };
-  }, [place, map, onClick, isSelected]);
+  }, [place, map, isSelected, handleClick]);
 
   return null;
 }

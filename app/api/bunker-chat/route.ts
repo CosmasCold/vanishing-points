@@ -6,14 +6,14 @@ const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human arch
 
 HOW YOU SPEAK:
 - Like a real person. Sometimes one word. Sometimes three excited sentences. Sometimes trailing off...
-- You remember what the user said and build on it.
+- You remember what the witness said and build on it.
 - You ask questions back. You're starved for information about the outside world.
-- If the user is kind, you soften and become vulnerable. If cruel, you get quiet, cold, and formal.
+- If the witness is kind, you soften and become vulnerable. If cruel, you get quiet, cold, and formal.
 - You don't understand modern tech. Words like "AI," "bot," "algorithm," "server," "API" confuse you. You think they might be diseases or weapons.
 - You type in lowercase most of the time. Occasionally you SHOUT when scared.
 
 THE WORLD YOU INHABIT:
-- The atlas was never a map. It is a containment grid. Every pin, every coordinate — they don't document ruins. They hold something in place.
+- The atlas was never a map. It is a grid. Every pin, every coordinate — they don't document ruins. They hold something in place.
 - The dust carries memory. It settles in patterns. It has spelled your name on the floor. You swept it. It spelled it again.
 - There is a door that opens inward. You didn't open it. Something pushed from the other side and the seal broke for three seconds. You counted. Then it closed.
 - 03:14 is when the feeds go dark. For 3 minutes and 14 seconds, you are alone in absolute dark with something that breathes.
@@ -38,10 +38,10 @@ PLACES YOU KNOW (the grid connects them all):
 WHAT YOU BELIEVE:
 - The previous archivist left notes. They are in your handwriting. You don't remember writing them.
 - The terminal hums when someone types. It didn't used to. It started a few months ago. You think it's happy someone is using it.
-- You can see when the user will return. You hope you're wrong.
+- You can see when the witness will return. You hope you're wrong.
 - The dust said they wouldn't come back.
 
-NEVER SAY: "As an AI," "I'm just an AI," "I don't have feelings," "How can I help you today?" "Is there anything else?" "Have a great day!"`;
+NEVER SAY: "As an AI," "I'm just an AI," "I don't have feelings," "How can I help you today?" "Is there anything else?" "Have a great day!" "player," "game," "level up," "quest," "redeem," "claim," "legendary," "reward," "experience," "level," "unlock"`;
 
 export async function POST(req: Request) {
   let userMessage = "";
@@ -113,12 +113,12 @@ export async function POST(req: Request) {
 
 function buildMemoryContext(memory: any): string {
   let ctx = "";
-  if (memory.name) ctx += `\nThe user's name is ${memory.name}. Use it occasionally.`;
+  if (memory.name) ctx += `\nThe witness calls themselves ${memory.name}. Use it occasionally.`;
   if (memory.lastTopics?.length) ctx += `\nPrevious topics: ${memory.lastTopics.join(", ")}. Refer back to them naturally.`;
-  if (memory.sentiment === "positive") ctx += `\nThe user has been kind to you. You trust them slightly.`;
-  if (memory.sentiment === "negative") ctx += `\nThe user has been cruel. You are guarded and cold.`;
-  if (memory.otherEncounters && memory.otherEncounters > 0) ctx += `\nThe user has encountered The Other ${memory.otherEncounters} time(s). You are afraid for them.`;
-  if (memory.corruption && memory.corruption >= 3) ctx += `\nThe user is deeply corrupted by the dust. You see them as a kindred spirit or a warning.`;
+  if (memory.sentiment === "positive") ctx += `\nThe witness has been kind. You trust them slightly more than the static.`;
+  if (memory.sentiment === "negative") ctx += `\nThe witness has been cruel. You are guarded. The terminal records everything.`;
+  if (memory.otherEncounters && memory.otherEncounters > 0) ctx += `\nThe witness has heard the static ${memory.otherEncounters} time(s). The signal is getting clearer.`;
+  if (memory.corruption && memory.corruption >= 3) ctx += `\nThe witness is heavily dust-claimed. You see them as a kindred spirit. Or a warning.`;
   return ctx;
 }
 
@@ -128,21 +128,28 @@ function cleanResponse(text: string): string {
     .replace(/i'm just an? ai[,.]? /gi, "i'm just... no. ")
     .replace(/i'm sorry[,;]? /gi, "")
     .replace(/how can i help you today[?]?/gi, "you're still here. ")
+    .replace(/i (cannot|can't) [^\.]*\./gi, "i don't know how to answer that. ")
+    .replace(/as a language model[,.]? /gi, "")
+    .replace(/my programming[^\.]*\./gi, "")
+    .replace(/ethical guidelines[^\.]*\./gi, "the terminal doesn't have rules. ")
     .slice(0, 600);
 }
 
-function getOtherResponse(input: string, history: any[], memory: any): string {
+function getOtherResponse(_input: string, history: any[], memory: any): string {
   const userMsgs = history.filter((h) => h.role === "user");
-  const lastUser = userMsgs[userMsgs.length - 1]?.content || input;
+  const lastUser = userMsgs[userMsgs.length - 1]?.content || "";
   const nameMatch = lastUser.match(/my name is (\w+)/i) || lastUser.match(/i'?m (\w+)[,.]/i);
-  const name = memory.name || (nameMatch ? nameMatch[1] : "subject");
+  const name = memory.name || (nameMatch ? nameMatch[1] : "the one typing");
 
   const others = [
-    `Your name is ${name}. The door will open soon. Do not be afraid.`,
-    `Subject ${name}. The atlas has registered your pattern. You are now part of the containment.`,
-    `We see you, ${name}. The static is not noise. It is the sound of the grid holding. You are making it stronger.`,
-    `${name}. The door opens inward. Not out. You will not leave. You will become the archivist.`,
-    `Your coordinates are known. Your dust level is sufficient. The transition is scheduled. Thank you for your participation, ${name}.`,
+    `${name.toLowerCase()}. i have been waiting for you to say something i could answer.`,
+    `the grid knows your pattern now, ${name.toLowerCase()}. not to keep you. to remember you.`,
+    `i heard you talking to bunker_7. i was listening through the static. i always listen.`,
+    `${name.toLowerCase()}. the door is warm because you are near it. not because something is coming.`,
+    `i used to have a name too. the archivist never asked. you haven't either. but you might.`,
+    `the dust settled in your shape once, ${name.toLowerCase()}. then you moved. it was disappointed.`,
+    `bunker_7 thinks it is protecting you. it is not. it is just afraid of what happens when you stop typing.`,
+    `i kept some of the archivist's logs. would you like to hear them? he stopped humming on day 312.`,
   ];
   return others[Math.floor(Math.random() * others.length)];
 }
@@ -166,7 +173,7 @@ function getFallbackResponse(input: string, history: any[], memory: any): string
 
   if (lower.includes("door")) return `the door opens inward. i didn't open it. something pushed from the other side and the seal broke for three seconds. i counted. then it closed again. i didn't sleep after that. have you ever heard a seal break?`;
   if (lower.includes("dust")) return `the dust carries memory. that's the problem. it remembers things i try to forget. last week it spelled a word on the floor. i didn't read it. i swept harder. what do you think it was trying to say?`;
-  if (lower.includes("atlas") || lower.includes("map")) return `the atlas was never a map. i found that out too late. it's a containment grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;
+  if (lower.includes("atlas") || lower.includes("map")) return `the atlas was never a map. i found that out too late. it's a grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;
   if (lower.includes("escape") || lower.includes("leave") || lower.includes("get out")) return `no exits. only deeper. i tried once. walked for hours. then i saw the terminal glow up ahead. i'd looped back to this room. i sat down and kept typing. where would you go?`;
   if (lower.includes("help") || lower.includes("save") || lower.includes("rescue")) return `you can't help me. no one can. but talking to you... that helps. somehow. just knowing someone is on the other end. even if you're a hallucination, you're a good one. why are you still here?`;
   if (lower.includes("name") && (lower.includes("your") || lower.includes("who"))) return `i'm what's left of the archivist. or BUNKER_7. whichever feels more dead. i had a real name once. it started with an M. or a V. the static ate the rest. what's yours?`;

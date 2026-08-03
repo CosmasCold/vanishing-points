@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Grid3X3, Map as MapIcon, Radio } from "lucide-react";
+import { ArrowLeft, Grid3X3, Map as MapIcon } from "lucide-react";
 import PlaceCard from "@/components/PlaceCard";
 import FilterBar from "@/components/FilterBar";
 import SkeletonCard from "@/components/SkeletonCard";
+import { useCorruptionStage } from "@/hooks/useCorruptionStage";
 import { Place, PlaceCategory } from "@/types";
 
 export default function ListPage() {
@@ -15,6 +16,16 @@ export default function ListPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<PlaceCategory | "all">("all");
   const [sort, setSort] = useState<"recent" | "danger" | "views">("recent");
+  const [dust, setDust] = useState(0);
+  const corruption = useCorruptionStage();
+
+  useEffect(() => {
+    const readDust = () =>
+      setDust(parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10));
+    readDust();
+    window.addEventListener("vp-dust-change", readDust);
+    return () => window.removeEventListener("vp-dust-change", readDust);
+  }, []);
 
   useEffect(() => {
     fetch("/api/places")
@@ -45,10 +56,11 @@ export default function ListPage() {
     }
 
     switch (sort) {
-      case "danger":
-        result.sort((a, b) => b.dangerLevel - a.dangerLevel);
-        break;
       case "views":
+        result.sort((a, b) => b.viewCount - a.viewCount);
+        break;
+      case "danger":
+        // Narrative: "danger" maps to atmospheric weight / resonance
         result.sort((a, b) => b.viewCount - a.viewCount);
         break;
       case "recent":
@@ -75,6 +87,17 @@ export default function ListPage() {
           background: "radial-gradient(circle at 50% 30%, transparent 50%, rgba(8,6,4,0.6) 100%)",
         }}
       />
+
+      {/* Corruption bleed from Terminal layer */}
+      {corruption.stage >= 2 && (
+        <div
+          className="pointer-events-none fixed inset-0 z-[1] animate-pulse"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, rgba(196,120,90,0.03) 0%, transparent 70%)`,
+            animationDuration: "4s",
+          }}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-6 md:py-10 lg:py-14 relative z-10">
         {/* ─── HEADER ─── */}
@@ -119,28 +142,44 @@ export default function ListPage() {
               </div>
             </div>
 
-            <Link
-              href="/"
-              className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-mono uppercase tracking-wider transition-all duration-300 active:scale-95 flex-shrink-0"
-              style={{
-                color: "#9a8a72",
-                background: "rgba(18,14,10,0.65)",
-                border: "1px solid rgba(122,107,82,0.18)",
-                backdropFilter: "blur(6px)",
-                boxShadow: "inset 0 1px 0 rgba(122,107,82,0.06), 0 2px 8px rgba(0,0,0,0.3)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#ddd0bc";
-                e.currentTarget.style.borderColor = "rgba(154,138,114,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9a8a72";
-                e.currentTarget.style.borderColor = "rgba(122,107,82,0.18)";
-              }}
-            >
-              <MapIcon size={13} />
-              <span className="hidden sm:inline">Map View</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              {/* Dust bleed — the archive knows you've been in the terminal */}
+              {dust > 0 && (
+                <div
+                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded text-[9px] font-mono uppercase tracking-widest opacity-40"
+                  style={{ color: "#c4785a", border: "1px solid rgba(196,120,90,0.15)" }}
+                >
+                  <span
+                    className="inline-block w-1 h-1 rounded-full animate-pulse"
+                    style={{ background: "#c4785a" }}
+                  />
+                  Dust: {dust}%
+                </div>
+              )}
+
+              <Link
+                href="/"
+                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-mono uppercase tracking-wider transition-all duration-300 active:scale-95 flex-shrink-0"
+                style={{
+                  color: "#9a8a72",
+                  background: "rgba(18,14,10,0.65)",
+                  border: "1px solid rgba(122,107,82,0.18)",
+                  backdropFilter: "blur(6px)",
+                  boxShadow: "inset 0 1px 0 rgba(122,107,82,0.06), 0 2px 8px rgba(0,0,0,0.3)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#ddd0bc";
+                  e.currentTarget.style.borderColor = "rgba(154,138,114,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#9a8a72";
+                  e.currentTarget.style.borderColor = "rgba(122,107,82,0.18)";
+                }}
+              >
+                <MapIcon size={13} />
+                <span className="hidden sm:inline">Map View</span>
+              </Link>
+            </div>
           </div>
 
           {/* Bronze trim */}
@@ -183,10 +222,10 @@ export default function ListPage() {
           >
             <Grid3X3 size={32} className="mx-auto mb-5 opacity-20" style={{ color: "#9a8a72" }} />
             <p className="font-cinzel text-lg md:text-xl" style={{ color: "#ddd0bc" }}>
-              No records match your query.
+              The archive holds no such record.
             </p>
             <p className="text-xs md:text-sm mt-2 font-mono uppercase tracking-wider opacity-30" style={{ color: "#9a8a72" }}>
-              The archives are silent on this matter.
+              That name is not in the grid.
             </p>
             <button
               onClick={() => { setSearch(""); setCategory("all"); setSort("recent"); }}
@@ -197,7 +236,7 @@ export default function ListPage() {
                 background: "rgba(18,14,10,0.5)",
               }}
             >
-              Clear Filters
+              Reset Parameters
             </button>
           </motion.div>
         ) : (
@@ -221,6 +260,11 @@ export default function ListPage() {
             <p className="text-[10px] md:text-xs font-mono uppercase tracking-[0.3em] opacity-20" style={{ color: "#9a8a72" }}>
               {filtered.length} entries retrieved from the archive
             </p>
+            {corruption.stage >= 3 && Math.random() < 0.15 && (
+              <p className="text-[9px] font-mono uppercase tracking-[0.3em] mt-2 opacity-15 italic" style={{ color: "#c4785a" }}>
+                The dust settled differently while you were reading.
+              </p>
+            )}
           </div>
         )}
       </div>

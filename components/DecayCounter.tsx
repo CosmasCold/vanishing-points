@@ -16,12 +16,15 @@ export default function DecayCounter({ yearAbandoned }: Props) {
       setDays(Math.floor((now - start) / (1000 * 60 * 60 * 24)));
     };
     update();
-    const interval = setInterval(update, 60000); // Update every minute
+    const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
   }, [yearAbandoned]);
 
   return (
-    <span className="text-[10px] font-mono text-[#7a6e5e]">
+    <span
+      className="text-[10px] font-mono"
+      style={{ color: "#7a6e5e" }}
+    >
       {days.toLocaleString()} days of silence
     </span>
   );

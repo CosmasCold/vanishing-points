@@ -112,13 +112,30 @@ export default function BackgroundAudio() {
       </div>
 
       <button
-      aria-label={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
+        aria-label={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
         onClick={toggleMute}
-        className="fixed bottom-16 right-6 z-[9999] flex items-center gap-2 px-3 py-2 bg-[#252018]/80 backdrop-blur-sm border border-[rgba(122,107,82,0.2)] rounded-lg text-[10px] font-mono uppercase tracking-wider text-[#7a6e5e] hover:text-[#c4b8a4] hover:border-[rgba(122,107,82,0.4)] transition-all shadow-lg"
+        className="fixed bottom-16 right-6 z-[9999] flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-colors"
+        style={{
+          backgroundColor: "rgba(12,10,8,0.9)",
+          border: "1px solid rgba(122,107,82,0.2)",
+          color: enabled ? "#ddd0bc" : "#7a6e5e",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,138,114,0.4)";
+          (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(122,107,82,0.2)";
+          (e.currentTarget as HTMLElement).style.color = enabled ? "#ddd0bc" : "#7a6e5e";
+        }}
         title={enabled ? "Mute atmosphere" : "Unmute atmosphere"}
       >
-        <span className="text-sm leading-none">{enabled ? "🔊" : "🔇"}</span>
-        <span className="hidden sm:inline">{enabled ? "Sound On" : "Muted"}</span>
+        <span className="text-sm leading-none font-mono">
+          {enabled ? "[A]" : "[—]"}
+        </span>
+        <span className="hidden sm:inline">
+          {enabled ? "Audio Active" : "Silence"}
+        </span>
       </button>
     </>
   );

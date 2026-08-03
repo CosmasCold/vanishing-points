@@ -1,23 +1,22 @@
 const STYLES = `
 <style>
-  body { margin: 0; padding: 0; background: #0a0806; color: #c4b8a4; font-family: 'Courier New', monospace; }
-  .container { max-width: 600px; margin: 0 auto; background: #0f0c09; border: 1px solid #2a2018; }
+  body { margin: 0; padding: 0; background: #0c0a08; color: #ddd0bc; font-family: 'Courier New', monospace; }
+  .container { max-width: 600px; margin: 0 auto; background: #0c0a08; border: 1px solid #2a2018; }
   .header { padding: 40px 30px 20px; border-bottom: 1px solid #1a1612; }
   .logo { font-size: 11px; letter-spacing: 0.4em; color: #5a4e42; text-transform: uppercase; }
   .title { font-family: Georgia, serif; font-size: 22px; color: #ddd0bc; margin-top: 8px; font-weight: 400; letter-spacing: 0.02em; }
   .body { padding: 30px; line-height: 1.8; font-size: 14px; color: #9a8a72; }
   .body p { margin: 0 0 18px; }
-  .highlight { color: #c4a882; }
+  .highlight { color: #a67c52; }
   .ghost { color: #5a4e42; font-style: italic; }
   .code { background: #1a1612; padding: 2px 8px; border-radius: 3px; font-size: 12px; color: #a67c52; letter-spacing: 0.1em; border: 1px solid #2a2018; }
   .footer { padding: 20px 30px; border-top: 1px solid #1a1612; font-size: 10px; color: #3a3028; letter-spacing: 0.2em; text-transform: uppercase; }
   .divider { height: 1px; background: linear-gradient(90deg, transparent, #2a2018, transparent); margin: 24px 0; }
-  .coordinates { font-family: monospace; font-size: 11px; color: #5a6a5a; letter-spacing: 0.15em; }
+  .coordinates { font-family: monospace; font-size: 11px; color: #5a4e42; letter-spacing: 0.15em; }
 </style>
 `;
 
 export const EMAILS = [
-  // EMAIL 1
   {
     subject: "Transmission 001 — You found the frequency",
     html: `<!DOCTYPE html>
@@ -43,7 +42,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 2
   {
     subject: "Transmission 002 — The dust carries memory",
     html: `<!DOCTYPE html>
@@ -61,7 +59,7 @@ export const EMAILS = [
       <p class="ghost">In Pripyat, the dust is radioactive and alive. In Kolmanskop, the dust is sand and diamond grit. Here, it is something older. It remembers things I try to forget.</p>
       <div class="divider"></div>
       <p>Have you visited any of the marked places yet? If you stand still long enough, the dust tells you what happened in a room. Not the history. The feeling.</p>
-      <p>Redeem code: <span class="code">DUST</span></p>
+      <p>Archive code: <span class="code">DUST</span></p>
     </div>
     <div class="footer">Do not reply to this transmission // One-way channel only</div>
   </div>
@@ -69,7 +67,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 3
   {
     subject: "Transmission 003 — 03:14",
     html: `<!DOCTYPE html>
@@ -95,7 +92,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 4
   {
     subject: "Transmission 004 — The door opens inward",
     html: `<!DOCTYPE html>
@@ -121,7 +117,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 5
   {
     subject: "Transmission 005 — You are not the first",
     html: `<!DOCTYPE html>
@@ -139,7 +134,7 @@ export const EMAILS = [
       <p class="ghost">In the Catacombs of Paris, the bones are arranged in patterns that predate the quarry. In the tunnels beneath Budapest, the bricks are stamped with dates that haven't happened yet. In Hashima, the concrete remembers the hands that poured it.</p>
       <div class="divider"></div>
       <p>The atlas updates itself. I didn't add the last three coordinates. They appeared while I was sleeping. Or while I thought I was sleeping.</p>
-      <p>Redeem code: <span class="code">MIRROR</span></p>
+      <p>Archive code: <span class="code">MIRROR</span></p>
     </div>
     <div class="footer">Do not reply to this transmission // One-way channel only</div>
   </div>
@@ -147,7 +142,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 6
   {
     subject: "Transmission 006 — The grid is holding",
     html: `<!DOCTYPE html>
@@ -172,7 +166,6 @@ export const EMAILS = [
 </html>`,
   },
 
-  // EMAIL 7
   {
     subject: "Transmission 007 — The dust said you wouldn't come back",
     html: `<!DOCTYPE html>

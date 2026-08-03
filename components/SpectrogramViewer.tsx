@@ -7,9 +7,27 @@ interface Props {
   color?: string;
 }
 
-export default function SpectrogramViewer({ active, color = "#c4a882" }: Props) {
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "");
+  if (clean.length === 3) {
+    const [r, g, b] = clean.split("").map((c) => parseInt(c + c, 16));
+    return { r: r ?? 154, g: g ?? 138, b: b ?? 114 };
+  }
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return {
+    r: Number.isNaN(r) ? 154 : r,
+    g: Number.isNaN(g) ? 138 : g,
+    b: Number.isNaN(b) ? 114 : b,
+  };
+}
+
+export default function SpectrogramViewer({ active, color = "#9a8a72" }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
+
+  const { r, g, b } = hexToRgb(color);
 
   useEffect(() => {
     if (!active) return;
@@ -28,14 +46,11 @@ export default function SpectrogramViewer({ active, color = "#c4a882" }: Props) 
     let offset = 0;
     const draw = () => {
       if (!ctx) return;
-      ctx.fillStyle = "rgba(5, 5, 5, 0.15)";
+      ctx.fillStyle = "rgba(12, 10, 8, 0.15)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const bars = 64;
       const barW = canvas.width / bars;
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
 
       for (let i = 0; i < bars; i++) {
         const noise = Math.sin(i * 0.3 + offset) * Math.cos(i * 0.7 - offset * 0.5);
@@ -54,7 +69,7 @@ export default function SpectrogramViewer({ active, color = "#c4a882" }: Props) 
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animRef.current);
     };
-  }, [active, color]);
+  }, [active, r, g, b]);
 
   if (!active) return null;
 
@@ -62,7 +77,10 @@ export default function SpectrogramViewer({ active, color = "#c4a882" }: Props) 
     <canvas
       ref={canvasRef}
       className="w-full h-32 rounded border"
-      style={{ borderColor: `${color}20`, backgroundColor: "#050505" }}
+      style={{
+        borderColor: `rgba(${r}, ${g}, ${b}, 0.12)`,
+        backgroundColor: "#0c0a08",
+      }}
     />
   );
 }

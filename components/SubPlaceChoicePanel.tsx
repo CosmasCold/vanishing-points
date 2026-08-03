@@ -33,15 +33,15 @@ export default function SubPlaceChoicePanel({ subPlace, theme, onConsequence }: 
     if (effect) {
       switch (effect.type) {
         case "add_item": {
-          const inv = JSON.parse(localStorage.getItem("bunker-inventory") || "[]");
+          const inv = JSON.parse(localStorage.getItem("vp-bunker-inventory") || "[]");
           inv.push(effect.value);
-          localStorage.setItem("bunker-inventory", JSON.stringify(inv));
+          localStorage.setItem("vp-bunker-inventory", JSON.stringify(inv));
           break;
         }
         case "remove_item": {
-          const inv = JSON.parse(localStorage.getItem("bunker-inventory") || "[]");
+          const inv = JSON.parse(localStorage.getItem("vp-bunker-inventory") || "[]");
           localStorage.setItem(
-            "bunker-inventory",
+            "vp-bunker-inventory",
             JSON.stringify(inv.filter((i: string) => i !== effect.value))
           );
           break;
@@ -49,7 +49,9 @@ export default function SubPlaceChoicePanel({ subPlace, theme, onConsequence }: 
         case "add_dust": {
           const dustKey = "vp-dust-accumulation";
           const currentDust = parseInt(localStorage.getItem(dustKey) || "0", 10);
-          localStorage.setItem(dustKey, String(currentDust + (effect.value as number)));
+          const nextDust = Math.min(100, currentDust + (effect.value as number));
+          localStorage.setItem(dustKey, String(nextDust));
+          window.dispatchEvent(new CustomEvent("vp-dust-change"));
           break;
         }
         case "add_corruption": {
@@ -59,8 +61,8 @@ export default function SubPlaceChoicePanel({ subPlace, theme, onConsequence }: 
           break;
         }
         case "add_encounter": {
-          const count = parseInt(localStorage.getItem("bunker-other-count") || "0", 10);
-          localStorage.setItem("bunker-other-count", String(count + (effect.value as number)));
+          const count = parseInt(localStorage.getItem("vp-other-count") || "0", 10);
+          localStorage.setItem("vp-other-count", String(count + (effect.value as number)));
           break;
         }
       }
@@ -126,9 +128,9 @@ export default function SubPlaceChoicePanel({ subPlace, theme, onConsequence }: 
                 setShowResult(false);
                 setCurrentChoice(null);
               }}
-              className="text-[9px] opacity-50 hover:opacity-100 pt-1"
+              className="text-[10px] opacity-50 hover:opacity-100 pt-1"
             >
-              [continue]
+              [dismiss]
             </button>
           </motion.div>
         )}

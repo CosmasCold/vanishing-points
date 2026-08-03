@@ -43,11 +43,11 @@ const FREQUENCIES: Frequency[] = [
     name: "THE HUM",
     place: "Duga Radar Array",
     placeSlug: "duga-radar-array",
-    color: "#88c0d0",
-    dimColor: "#4c566a",
+    color: "#9a8a72",
+    dimColor: "#7a6e5e",
     lore: "The Russian Woodpecker. A sharp tapping that interfered with shortwave radios worldwide from 1976 to 1989. Officially an over-the-horizon radar. BUNKER_7 believes otherwise.",
     transmissions: [
-      { type: "code", text: "AGENT. REDEEM: WOODPECKER-314", encoded: "NTRAG. ERQRZR: JBBQCRPXRE-314", cipher: "caesar", key: 13, payload: "WOODPECKER-314" },
+      { type: "code", text: "ARCHIVE KEY: WOODPECKER-314", encoded: "NTRAGV XLRL: JBBQCRPXRE-314", cipher: "caesar", key: 13, payload: "WOODPECKER-314" },
       { type: "mission", text: "The Woodpecker has shifted frequency. Check Duga Radar Array at 03:14. Bring a radiation badge.", encoded: "GUR JBBQCRPXRE UNF FUVSGRQ SERDHrapl...", cipher: "caesar", key: 13 },
       { type: "clue", text: "The door opens inward. The number is half of twenty-six.", encoded: "GUR QBBE BCRAF VAJNEQ. GUR AHZORE VF UNYS BS gjragl-fvk.", cipher: "caesar", key: 13 },
     ],
@@ -58,11 +58,11 @@ const FREQUENCIES: Frequency[] = [
     name: "THE COUNTING HOUSE",
     place: "Hashima Island",
     placeSlug: "hashima-island",
-    color: "#e8a8a0",
-    dimColor: "#8a5048",
+    color: "#c4785a",
+    dimColor: "#a06048",
     lore: "A numbers station broadcasting since 1987. The voice counts down from numbers that have not been invented yet. She has been counting for 39 years.",
     transmissions: [
-      { type: "code", text: "AGENT. REDEEM: CONCRETE-5000", encoded: "ZTLIG. IVKVMXL: XLIXVIXL-5000", cipher: "atbash", payload: "CONCRETE-5000" },
+      { type: "code", text: "ARCHIVE KEY: CONCRETE-5000", encoded: "ZTLIG. IVKVMXL: XLIXVIXL-5000", cipher: "atbash", payload: "CONCRETE-5000" },
       { type: "mission", text: "Five thousand people lived on a rock. Now only the concrete remembers. Visit Hashima. Count the windows.", encoded: "Uirx tlirmg droo rgsh ziv wlmvcmg...", cipher: "atbash" },
       { type: "clue", text: "The concrete that remembers is the same concrete that forgets.", encoded: "Gsv xlirxvm gszg ivnvmgli rh gsv hvnk...", cipher: "atbash" },
     ],
@@ -73,11 +73,11 @@ const FREQUENCIES: Frequency[] = [
     name: "LOST EXPEDITION",
     place: "Aokigahara Forest",
     placeSlug: "aokigahara-forest",
-    color: "#c9b18a",
-    dimColor: "#6a5a4a",
+    color: "#b8a080",
+    dimColor: "#8a7060",
     lore: "Recovered from the black box of Expedition Team 4. They reached the coordinates. Then they kept walking.",
     transmissions: [
-      { type: "code", text: "AGENT. REDEEM: SILENCE-91", encoded: "SXLXVMGVC XLMG 4 GZEMG RG ...", cipher: "vigenere", key: "AOKI", payload: "SILENCE-91" },
+      { type: "code", text: "ARCHIVE KEY: SILENCE-91", encoded: "SXLXVMGVC XLMG 4 GZEMG RG ...", cipher: "vigenere", key: "AOKI", payload: "SILENCE-91" },
       { type: "mission", text: "Expedition Team 4 walked into Aokigahara with six members. The black box recorded seven voices.", encoded: "Sxlxvmgvc Xlmg 4 gzemg rg ...", cipher: "vigenere", key: "AOKI" },
       { type: "clue", text: "The trees grow in spirals. The silence has weight. When your compass fails, trust the roots.", encoded: "Gsv givv hilt rm hkvmgzoh...", cipher: "vigenere", key: "AOKI" },
     ],
@@ -88,11 +88,11 @@ const FREQUENCIES: Frequency[] = [
     name: "STATIC VEIL",
     place: "Poveglia Island",
     placeSlug: "poveglia-island",
-    color: "#b8a8d8",
-    dimColor: "#6a5a8a",
+    color: "#8a7a6a",
+    dimColor: "#6a5a4a",
     lore: "Not a signal. A curtain. The static between stations is full of things that have not happened yet, trying to get through.",
     transmissions: [
-      { type: "code", text: "AGENT. REDEEM: PLAGUE-95", encoded: "95-EVUALP :EMEER .TNEGA", cipher: "reverse", payload: "PLAGUE-95" },
+      { type: "code", text: "ARCHIVE KEY: PLAGUE-95", encoded: "95-EVUALP :EYRK EVIHCRA", cipher: "reverse", payload: "PLAGUE-95" },
       { type: "mission", text: "The tide carries voices. At Poveglia, record the static at 03:14. The voices form coordinates.", encoded: ".ehT edit seirrac seicov ...", cipher: "reverse" },
       { type: "clue", text: "The static shaped itself into a face. It smiled. Do not smile at the static.", encoded: ".eht citats depihs flesti ...", cipher: "reverse" },
     ],
@@ -147,6 +147,12 @@ function getFrequencyData(text: string): number[] {
   return counts.map((c) => c / max);
 }
 
+function notifyDustChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("vp-dust-change"));
+  }
+}
+
 export default function SignalTab({ theme, onPushTerminal }: Props) {
   const [breachActive, setBreachActive] = useState(false);
 
@@ -155,6 +161,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     window.addEventListener("breach-triggered", handler);
     return () => window.removeEventListener("breach-triggered", handler);
   }, []);
+
   const [freqIndex, setFreqIndex] = useState(0);
   const [needle, setNeedle] = useState(50);
   const [sweetSpot, setSweetSpot] = useState(() => 20 + Math.random() * 60);
@@ -191,8 +198,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
     const drift = setInterval(() => {
       setSweetSpot((prev) => {
         const jitter = breachActive
-  ? (Math.random() - 0.5) * 24
-  : (Math.random() - 0.5) * 12;
+          ? (Math.random() - 0.5) * 24
+          : (Math.random() - 0.5) * 12;
         return Math.max(5, Math.min(95, prev + jitter));
       });
     }, 900);
@@ -210,7 +217,7 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
       clearInterval(drift);
       clearInterval(burst);
     };
-  }, [freqIndex, locked]);
+  }, [freqIndex, locked, breachActive]);
 
   useEffect(() => {
     if (!masterGainRef.current || !audioCtx.current) return;
@@ -475,7 +482,8 @@ export default function SignalTab({ theme, onPushTerminal }: Props) {
       setTimeout(() => playTone(1600, 0.3, "sine"), 150);
       setDecodeResult(guess);
       localStorage.setItem(`vp-signal-${freq.placeSlug}`, "true");
-markTransmission();
+      markTransmission();
+      notifyDustChange();
       setLog((prev) => [...prev, `DECODE SUCCESSFUL.`, `CLEAR TEXT ACQUIRED.`, ""]);
     } else {
       playTone(150, 0.4, "sawtooth");
@@ -515,18 +523,21 @@ markTransmission();
     if (!ctx) return;
     let frame: number;
     const draw = () => {
-      ctx.fillStyle = "#050505";
+      ctx.fillStyle = "#0c0a08";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       const bars = 32;
       const barW = canvas.width / bars;
       for (let i = 0; i < bars; i++) {
         const h = Math.random() * (locked ? 80 : 40) * (signalStrength / 100);
-        const hue = locked ? 120 + freqIndex * 30 : 60;
-        ctx.fillStyle = locked ? `hsla(${hue}, 60%, 50%, 0.6)` : `hsla(0, 0%, 20%, 0.4)`;
+        const hue = locked ? 25 + freqIndex * 8 : 30;
+        const sat = locked ? "35%" : "10%";
+        ctx.fillStyle = locked
+          ? `hsla(${hue}, ${sat}, 45%, 0.5)`
+          : `hsla(30, 10%, 20%, 0.3)`;
         ctx.fillRect(i * barW, canvas.height - h, barW - 1, h);
       }
       if (locked && decoded) {
-        ctx.strokeStyle = `${freq.color}40`;
+        ctx.strokeStyle = "rgba(154,138,114,0.12)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = 0; x < canvas.width; x++) {
@@ -539,10 +550,10 @@ markTransmission();
     };
     draw();
     return () => cancelAnimationFrame(frame);
-  }, [showSpectral, locked, signalStrength, freqIndex, decoded, freq.color]);
+  }, [showSpectral, locked, signalStrength, freqIndex, decoded]);
 
   const freqData = decoded ? getFrequencyData(decoded.encoded) : [];
-  const meterColor = signalStrength >= 75 ? "#7a9a6a" : signalStrength >= 40 ? "#9a8a5a" : "#9a5a5a";
+  const meterColor = signalStrength >= 75 ? "#7a9a6a" : signalStrength >= 40 ? "#9a8a5a" : "#c4785a";
 
   return (
     <div className="space-y-5 text-[11px] md:text-[13px] font-mono select-none">
@@ -565,7 +576,10 @@ markTransmission();
           Enable Audio Receiver
         </button>
       ) : (
-        <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ borderColor: `${theme.primary}15`, backgroundColor: `${theme.primary}04` }}>
+        <div
+          className="flex items-center gap-3 p-3 rounded-lg border"
+          style={{ borderColor: `${theme.primary}15`, backgroundColor: `${theme.primary}04` }}
+        >
           <button
             onClick={() => setMuted((m) => !m)}
             className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95 hover:opacity-80"
@@ -574,7 +588,7 @@ markTransmission();
             {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
           <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between text-[9px] uppercase tracking-wider" style={{ color: theme.dim }}>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider" style={{ color: theme.dim }}>
               <span>Receiver Volume</span>
               <span>{muted ? "MUTED" : `${Math.round(volume * 100)}%`}</span>
             </div>
@@ -588,7 +602,8 @@ markTransmission();
                 setVolume(parseFloat(e.target.value));
                 setMuted(false);
               }}
-              className="w-full h-1 accent-[#9a8a72] cursor-pointer"
+              className="w-full h-1 cursor-pointer"
+              style={{ accentColor: "#9a8a72" }}
             />
           </div>
         </div>
@@ -603,18 +618,18 @@ markTransmission();
               onClick={() => selectFrequency(i)}
               className="relative text-left p-3 rounded-lg border transition-all active:scale-[0.98]"
               style={{
-                borderColor: active ? `${f.color}50` : "#1a1a1a",
+                borderColor: active ? `${f.color}50` : "rgba(122,107,82,0.12)",
                 backgroundColor: active ? `${f.color}08` : "transparent",
               }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Radio size={12} style={{ color: active ? f.color : "#444" }} />
+                <Radio size={12} style={{ color: active ? f.color : "#5a4e42" }} />
                 <span className="text-[10px] uppercase tracking-wider" style={{ color: active ? f.color : theme.dim }}>
                   {f.mhz} MHz
                 </span>
               </div>
               <p className="text-xs font-bold" style={{ color: active ? theme.primary : theme.dim }}>{f.name}</p>
-              <p className="text-[9px] mt-0.5" style={{ color: active ? f.dimColor : "#444" }}>{f.place}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: active ? f.dimColor : "#5a4e42" }}>{f.place}</p>
               {active && (
                 <motion.div
                   layoutId="freq-glow"
@@ -630,17 +645,17 @@ markTransmission();
       <div
         className={`p-4 rounded-lg border space-y-3 transition-all ${interference ? "animate-pulse" : ""}`}
         style={{
-          borderColor: interference ? "#9a5a5a80" : `${freq.color}15`,
-          backgroundColor: interference ? "rgba(154,90,90,0.05)" : `${freq.color}04`,
+          borderColor: interference ? "rgba(196,120,90,0.15)" : `${freq.color}15`,
+          backgroundColor: interference ? "rgba(196,120,90,0.04)" : `${freq.color}04`,
         }}
       >
         <div className="flex items-center justify-between">
-          <span className="text-[9px] uppercase tracking-widest font-bold" style={{ color: freq.dimColor }}>
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: freq.dimColor }}>
             Tuner // {freq.name}
           </span>
           <div className="flex items-center gap-2">
             {interference && (
-              <span className="flex items-center gap-1 text-[9px] text-[#9a5a5a] animate-pulse">
+              <span className="flex items-center gap-1 text-[10px] animate-pulse" style={{ color: "#c4785a" }}>
                 <AlertTriangle size={10} />
                 INTERFERENCE
               </span>
@@ -651,23 +666,34 @@ markTransmission();
           </div>
         </div>
 
-        <div className="relative h-10 bg-[#050505] rounded border border-[#1a1a1a] overflow-hidden">
+        <div
+          className="relative h-10 rounded border overflow-hidden"
+          style={{ background: "#0c0a08", borderColor: "rgba(122,107,82,0.12)" }}
+        >
           <div className="absolute inset-0 flex items-center justify-between px-2">
             {Array.from({ length: 21 }, (_, i) => (
-              <div key={i} className={`w-px ${i % 5 === 0 ? "h-3 bg-[#333]" : "h-1.5 bg-[#1a1a1a]"}`} />
+              <div
+                key={i}
+                className="w-px"
+                style={{
+                  height: i % 5 === 0 ? "12px" : "6px",
+                  background: i % 5 === 0 ? "rgba(122,107,82,0.2)" : "rgba(122,107,82,0.08)",
+                }}
+              />
             ))}
           </div>
           <motion.div
-            className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
+            className="absolute top-0 bottom-0 w-0.5 z-10"
+            style={{ background: "rgba(221,208,188,0.6)" }}
             animate={{ left: `${needle}%` }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           />
           <div
             className="absolute top-0 bottom-0 w-4 blur-lg z-0"
-            style={{ left: `${needle}%`, backgroundColor: `${freq.color}25`, transform: "translateX(-50%)" }}
+            style={{ left: `${needle}%`, backgroundColor: `${freq.color}20`, transform: "translateX(-50%)" }}
           />
           <div
-            className="absolute top-0 bottom-0 opacity-[0.04] rounded"
+            className="absolute top-0 bottom-0 rounded opacity-[0.04]"
             style={{
               left: `${Math.max(0, sweetSpot - sweetSpotWidth / 2)}%`,
               width: `${sweetSpotWidth}%`,
@@ -684,8 +710,9 @@ markTransmission();
               const up = () => clearInterval(interval);
               document.addEventListener("mouseup", up, { once: true });
             }}
-            className="flex-1 py-2.5 border border-[#222] rounded hover:border-[#555] active:border-[#777] active:bg-[#1a1a1a] transition-all active:scale-95 flex items-center justify-center gap-1"
-            style={{ color: theme.dim }}
+            className="flex-1 py-2.5 border rounded transition-all active:scale-95 flex items-center justify-center gap-1"
+            style={{ color: theme.dim, borderColor: "rgba(122,107,82,0.15)" }}
+            aria-label="Tune left"
           >
             <ChevronLeft size={14} /> Tune Left
           </button>
@@ -696,15 +723,16 @@ markTransmission();
               const up = () => clearInterval(interval);
               document.addEventListener("mouseup", up, { once: true });
             }}
-            className="flex-1 py-2.5 border border-[#222] rounded hover:border-[#555] active:border-[#777] active:bg-[#1a1a1a] transition-all active:scale-95 flex items-center justify-center gap-1"
-            style={{ color: theme.dim }}
+            className="flex-1 py-2.5 border rounded transition-all active:scale-95 flex items-center justify-center gap-1"
+            style={{ color: theme.dim, borderColor: "rgba(122,107,82,0.15)" }}
+            aria-label="Tune right"
           >
             Tune Right <ChevronRight size={14} />
           </button>
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-wider">
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
             <span className="flex items-center gap-1.5" style={{ color: theme.dim }}>
               <Activity size={10} />
               Signal Strength
@@ -714,8 +742,11 @@ markTransmission();
               {signalStrength >= 75 ? " — LOCK READY" : signalStrength >= 40 ? " — ACQUIRING" : " — NOISE"}
             </span>
           </div>
-          <div className="h-3 bg-[#0a0a0a] rounded-full overflow-hidden border border-[#1a1a1a] relative">
-            <div className="absolute left-[75%] top-0 bottom-0 w-px bg-[#333] z-10" />
+          <div
+            className="h-3 rounded-full overflow-hidden relative border"
+            style={{ background: "#0c0a08", borderColor: "rgba(122,107,82,0.1)" }}
+          >
+            <div className="absolute left-[75%] top-0 bottom-0 w-px z-10" style={{ background: "rgba(122,107,82,0.15)" }} />
             <motion.div
               className="h-full rounded-full relative"
               style={{ backgroundColor: meterColor }}
@@ -739,8 +770,8 @@ markTransmission();
           disabled={signalStrength < 75 || locked}
           className="w-full py-3 rounded-lg border text-[11px] uppercase tracking-[0.15em] font-bold transition-all disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
           style={{
-            borderColor: signalStrength >= 75 ? `${meterColor}70` : "#222",
-            color: signalStrength >= 75 ? meterColor : "#444",
+            borderColor: signalStrength >= 75 ? `${meterColor}70` : "rgba(122,107,82,0.1)",
+            color: signalStrength >= 75 ? meterColor : "#5a4e42",
             backgroundColor: signalStrength >= 75 ? `${meterColor}12` : "transparent",
             opacity: signalStrength < 75 ? 0.5 : 1,
           }}
@@ -762,13 +793,14 @@ markTransmission();
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-5 bg-[#050505] rounded-lg border border-[#1a1a1a] text-center space-y-3"
+            className="p-5 rounded-lg border text-center space-y-3"
+            style={{ background: "#0c0a08", borderColor: "rgba(122,107,82,0.1)" }}
           >
             <Zap size={20} className="mx-auto animate-pulse" style={{ color: freq.color }} />
             <p className="text-[10px] uppercase tracking-widest" style={{ color: freq.dimColor }}>
               Acquiring transmission...
             </p>
-            <div className="h-1.5 w-40 mx-auto bg-[#1a1a1a] rounded-full overflow-hidden">
+            <div className="h-1.5 w-40 mx-auto rounded-full overflow-hidden" style={{ background: "rgba(122,107,82,0.1)" }}>
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: freq.color }}
@@ -783,18 +815,18 @@ markTransmission();
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="bg-[#050505] border rounded-lg overflow-hidden"
-            style={{ borderColor: `${freq.color}25` }}
+            className="border rounded-lg overflow-hidden"
+            style={{ background: "#0c0a08", borderColor: `${freq.color}25` }}
           >
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] uppercase tracking-widest font-bold" style={{ color: freq.dimColor }}>
+                <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: freq.dimColor }}>
                   Encoded // {decoded.cipher.toUpperCase()}
                 </span>
                 {decodeResult && (
                   <button
                     onClick={sendToTerminal}
-                    className="text-[9px] uppercase tracking-wider px-2.5 py-1 border rounded hover:opacity-80 transition-opacity"
+                    className="text-[10px] uppercase tracking-wider px-2.5 py-1 border rounded hover:opacity-80 transition-opacity"
                     style={{ borderColor: `${freq.color}30`, color: freq.dimColor }}
                   >
                     Send to terminal
@@ -802,7 +834,10 @@ markTransmission();
                 )}
               </div>
 
-              <div className="p-3 bg-[#0a0a0a] rounded border border-[#1a1a1a]">
+              <div
+                className="p-3 rounded border"
+                style={{ background: "rgba(18,14,10,0.6)", borderColor: "rgba(122,107,82,0.1)" }}
+              >
                 <p className="text-sm md:text-base leading-relaxed font-mono" style={{ color: freq.color }}>
                   {typed}
                   <span className="inline-block w-2 h-4 ml-1 align-middle animate-pulse" style={{ backgroundColor: freq.color }} />
@@ -810,13 +845,13 @@ markTransmission();
               </div>
 
               {!decodeResult && (
-                <div className="space-y-3 border-t border-[#1a1a1a] pt-4">
+                <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(122,107,82,0.08)" }}>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={cipherGuess}
                       onChange={(e) => setCipherGuess(e.target.value)}
-                      className="bg-[#0a0a0a] border border-[#333] rounded px-2 py-2 text-[11px] outline-none"
-                      style={{ color: theme.primary }}
+                      className="rounded px-2 py-2 text-[11px] outline-none"
+                      style={{ background: "rgba(18,14,10,0.6)", border: "1px solid rgba(122,107,82,0.15)", color: theme.primary }}
                     >
                       <option value="caesar">Caesar Shift</option>
                       <option value="atbash">Atbash</option>
@@ -828,8 +863,8 @@ markTransmission();
                       onChange={(e) => setKeyGuess(e.target.value)}
                       placeholder={cipherGuess === "caesar" ? "Shift (1-25)" : cipherGuess === "vigenere" ? "Key word" : "No key needed"}
                       disabled={cipherGuess === "reverse"}
-                      className="bg-[#0a0a0a] border border-[#333] rounded px-2 py-2 text-[11px] outline-none placeholder:text-[#444] disabled:opacity-30"
-                      style={{ color: theme.primary }}
+                      className="rounded px-2 py-2 text-[11px] outline-none placeholder:opacity-20 disabled:opacity-30"
+                      style={{ background: "rgba(18,14,10,0.6)", border: "1px solid rgba(122,107,82,0.15)", color: theme.primary }}
                     />
                   </div>
 
@@ -842,7 +877,7 @@ markTransmission();
                   </button>
 
                   {failedAttempts > 0 && (
-                    <p className="text-[9px] text-[#a05050]">
+                    <p className="text-[10px]" style={{ color: "#c4785a" }}>
                       Failed attempts: {failedAttempts}/3. Three failures will lose the signal.
                     </p>
                   )}
@@ -853,10 +888,11 @@ markTransmission();
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="p-3 bg-[#0c0a08] rounded border border-[#9a8a72]/20"
+                  className="p-3 rounded border"
+                  style={{ background: "rgba(18,14,10,0.6)", borderColor: "rgba(154,138,114,0.15)" }}
                 >
-                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: theme.dim }}>Decoded</p>
-                  <p className="text-sm leading-relaxed" style={{ color: "#c9b18a" }}>{decodeResult}</p>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.dim }}>Decoded</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "#ddd0bc" }}>{decodeResult}</p>
                 </motion.div>
               )}
             </div>
@@ -867,7 +903,7 @@ markTransmission();
       <div className="space-y-2">
         <button
           onClick={() => setShowSpectral((s) => !s)}
-          className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest transition-colors hover:opacity-80"
+          className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest transition-colors hover:opacity-80"
           style={{ color: theme.dim }}
         >
           <Activity size={10} />
@@ -882,11 +918,11 @@ markTransmission();
               exit={{ height: 0, opacity: 0 }}
               className="space-y-2 overflow-hidden"
             >
-              <canvas ref={canvasRef} width={300} height={80} className="w-full h-20 bg-[#050505] rounded border border-[#1a1a1a]" />
+              <canvas ref={canvasRef} width={300} height={80} className="w-full h-20 rounded border" style={{ background: "#0c0a08", borderColor: "rgba(122,107,82,0.1)" }} />
 
               {decoded && (
                 <div className="space-y-1">
-                  <p className="text-[9px] uppercase tracking-widest" style={{ color: theme.dim }}>Letter Frequency</p>
+                  <p className="text-[10px] uppercase tracking-widest" style={{ color: theme.dim }}>Letter Frequency</p>
                   <div className="flex items-end gap-px h-16">
                     {freqData.map((h, i) => (
                       <div
@@ -901,7 +937,7 @@ markTransmission();
                       />
                     ))}
                   </div>
-                  <p className="text-[8px] leading-tight" style={{ color: theme.dim }}>
+                  <p className="text-[10px] leading-tight" style={{ color: theme.dim }}>
                     Frequency analysis reveals cipher patterns. High bars suggest common letters (E, T, A, O, I, N).
                   </p>
                 </div>
@@ -912,8 +948,8 @@ markTransmission();
       </div>
 
       {log.length > 0 && (
-        <div className="space-y-1 border-t border-[#1a1a1a] pt-3">
-          <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: theme.dim }}>Session Log</p>
+        <div className="space-y-1 border-t pt-3" style={{ borderColor: "rgba(122,107,82,0.08)" }}>
+          <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.dim }}>Session Log</p>
           <div className="max-h-32 overflow-y-auto space-y-0.5">
             {log.map((entry, i) => (
               <p
@@ -921,7 +957,7 @@ markTransmission();
                 className="text-[10px]"
                 style={{
                   color: entry.startsWith("DECODE FAILED")
-                    ? "#a05050"
+                    ? "#c4785a"
                     : entry.startsWith("DECODE SUCCESS")
                     ? "#7a9a6a"
                     : theme.dim,

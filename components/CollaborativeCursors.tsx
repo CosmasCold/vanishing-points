@@ -17,7 +17,7 @@ interface Lantern {
   flicker: boolean;
 }
 
-const COLORS = ["#9a8a72", "#7a3a2a", "#a67c52", "#6b7a5a", "#8a7a6a"];
+const COLORS = ["#9a8a72", "#7a3a2a", "#a67c52", "#b8a080", "#8a7a6a"];
 
 export function getLanterns(): Lantern[] {
   if (typeof window === "undefined") return [];
@@ -52,7 +52,6 @@ export default function CollaborativeCursors() {
   const idRef = useRef(Math.random().toString(36).slice(2, 8));
   const colorRef = useRef(COLORS[Math.floor(Math.random() * COLORS.length)]);
 
-  // ALL hooks above ANY early return
   useEffect(() => { setLanternCount(getLanternCount()); }, []);
   
   useEffect(() => {
@@ -101,40 +100,147 @@ export default function CollaborativeCursors() {
     window.dispatchEvent(new CustomEvent("lantern-placed", { detail: lantern }));
   };
 
-  // Safe early return AFTER all hooks
   if (isEchoes) return null;
+
+  const toggleBtnStyle: React.CSSProperties = show
+    ? { borderColor: "#9a8a72", color: "#ddd0bc" }
+    : { borderColor: "rgba(122,107,82,0.25)", color: "#9a8a72" };
 
   return (
     <>
-      <button onClick={() => setShow((s) => !s)} className={`fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 px-2 py-3 md:px-2.5 md:py-4 bg-[#252018]/80 backdrop-blur-sm border rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all shadow-lg ${show ? "border-[#9a8a72] text-[#ddd0bc] shadow-[0_0_15px_rgba(154,138,114,0.3)]" : "border-[rgba(122,107,82,0.25)] text-[#9a8a72] hover:text-[#ddd0bc] hover:border-[#9a8a72]"}`} title="Toggle collaborative lanterns">
-        <Flame size={14} className={show ? "text-[#a67c52]" : ""} />
-        <span className="[writing-mode:vertical-lr] rotate-180 tracking-[0.15em] text-[9px] md:text-[10px]">{show ? "Lit" : "Lanterns"}</span>
-        {lanternCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#a67c52] rounded-full text-[8px] flex items-center justify-center text-black font-bold">{lanternCount}</span>}
+      <button
+        onClick={() => setShow((s) => !s)}
+        className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 px-2 py-3 md:px-2.5 md:py-4 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-colors"
+        style={{
+          backgroundColor: "rgba(12,10,8,0.9)",
+          border: "1px solid",
+          ...toggleBtnStyle,
+        }}
+        onMouseEnter={(e) => {
+          if (!show) {
+            (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+            (e.currentTarget as HTMLElement).style.borderColor = "#9a8a72";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!show) {
+            (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(122,107,82,0.25)";
+          }
+        }}
+        title="Toggle collaborative lanterns"
+      >
+        <Flame size={14} style={{ color: show ? "#a67c52" : "currentColor" }} />
+        <span
+          className="rotate-180 tracking-[0.15em] text-[10px]"
+          style={{ writingMode: "vertical-lr" }}
+        >
+          {show ? "Lit" : "Lanterns"}
+        </span>
+        {lanternCount > 0 && (
+          <span
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold"
+            style={{ backgroundColor: "#a67c52", color: "#0c0a08" }}
+          >
+            {lanternCount}
+          </span>
+        )}
       </button>
 
       {show && (
-        <button onClick={() => setPlacingMode((p) => !p)} className={`fixed left-4 md:left-6 top-[calc(50%+70px)] md:top-[calc(50%+80px)] -translate-y-1/2 z-40 px-2 py-1.5 md:px-2.5 md:py-2 bg-[#252018]/80 backdrop-blur-sm border rounded-lg text-[9px] font-mono uppercase tracking-wider transition-all ${placingMode ? "border-[#a67c52] text-[#a67c52] shadow-[0_0_10px_rgba(166,124,82,0.3)]" : "border-[rgba(122,107,82,0.25)] text-[#9a8a72] hover:text-[#ddd0bc]"}`}>
+        <button
+          onClick={() => setPlacingMode((p) => !p)}
+          className="fixed left-4 md:left-6 top-[calc(50%+70px)] md:top-[calc(50%+80px)] -translate-y-1/2 z-40 px-2 py-1.5 md:px-2.5 md:py-2 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-colors"
+          style={{
+            backgroundColor: "rgba(12,10,8,0.9)",
+            border: "1px solid",
+            borderColor: placingMode ? "#a67c52" : "rgba(122,107,82,0.25)",
+            color: placingMode ? "#a67c52" : "#9a8a72",
+          }}
+          onMouseEnter={(e) => {
+            if (!placingMode) {
+              (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!placingMode) {
+              (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+            }
+          }}
+        >
           {placingMode ? "Cancel" : "Place"}
         </button>
       )}
 
       {placingMode && (
-        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 bg-[#252018] border border-[#a67c52] rounded-lg px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-[11px] font-mono text-[#a67c52] animate-pulse whitespace-nowrap">
-          PLACEMENT MODE — Click a ruin to place a lantern
+        <div
+          className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-lg px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-[11px] font-mono whitespace-nowrap animate-flicker"
+          style={{
+            backgroundColor: "#0c0a08",
+            border: "1px solid #a67c52",
+            color: "#a67c52",
+          }}
+        >
+          Placement active — Click a ruin to place a lantern
         </div>
       )}
 
       <AnimatePresence>
         {pendingLantern && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => { setPendingLantern(null); setPlacingMode(false); }}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={(e) => e.stopPropagation()} className="bg-[#0f0c09] border border-[#a67c52]/30 rounded-lg p-4 md:p-5 max-w-sm w-full space-y-3">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            style={{ backgroundColor: "rgba(12,10,8,0.6)" }}
+            onClick={() => { setPendingLantern(null); setPlacingMode(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-lg p-4 md:p-5 max-w-sm w-full space-y-3"
+              style={{
+                backgroundColor: "#0c0a08",
+                border: "1px solid rgba(166,124,82,0.3)",
+              }}
+            >
               <div className="flex items-center justify-between">
-                <h3 className="text-[11px] uppercase tracking-widest text-[#a67c52]">Place Lantern</h3>
-                <button onClick={() => { setPendingLantern(null); setPlacingMode(false); }}><X size={14} className="text-[#9a8a72]" /></button>
+                <h3 className="text-[11px] uppercase tracking-widest" style={{ color: "#a67c52" }}>Place Lantern</h3>
+                <button onClick={() => { setPendingLantern(null); setPlacingMode(false); }}>
+                  <X size={14} style={{ color: "#9a8a72" }} />
+                </button>
               </div>
-              <p className="text-[12px] md:text-[13px] text-[#ddd0bc]">{pendingLantern.name}</p>
-              <input value={lanternMessage} onChange={(e) => setLanternMessage(e.target.value)} placeholder="Leave a message (optional)..." maxLength={50} className="w-full bg-transparent border-b border-[#a67c52]/30 text-[12px] md:text-[13px] font-mono text-[#ddd0bc] outline-none py-1 placeholder:text-[10px]" />
-              <button onClick={confirmLantern} className="w-full py-2 border border-[#a67c52]/40 rounded text-[10px] uppercase tracking-widest text-[#a67c52] hover:bg-[#a67c52]/10 transition-colors">Ignite Lantern</button>
+              <p className="text-[12px] md:text-[13px]" style={{ color: "#ddd0bc" }}>{pendingLantern.name}</p>
+              <input
+                value={lanternMessage}
+                onChange={(e) => setLanternMessage(e.target.value)}
+                placeholder="Leave a message (optional)..."
+                maxLength={50}
+                className="w-full bg-transparent outline-none py-1 font-mono"
+                style={{
+                  borderBottom: "1px solid rgba(166,124,82,0.3)",
+                  fontSize: "12px",
+                  color: "#ddd0bc",
+                }}
+              />
+              <button
+                onClick={confirmLantern}
+                className="w-full py-2 rounded text-[10px] uppercase tracking-widest transition-colors"
+                style={{
+                  border: "1px solid rgba(166,124,82,0.4)",
+                  color: "#a67c52",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(166,124,82,0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                }}
+              >
+                Ignite Lantern
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -142,9 +248,27 @@ export default function CollaborativeCursors() {
 
       <AnimatePresence>
         {cursors.map((cursor) => (
-          <motion.div key={cursor.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.6, scale: 1 }} exit={{ opacity: 0, scale: 0 }} className="fixed pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2" style={{ left: cursor.x, top: cursor.y }}>
-            <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: cursor.color, color: cursor.color }} />
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono whitespace-nowrap" style={{ color: cursor.color }}>{cursor.id}</div>
+          <motion.div
+            key={cursor.id}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 0.6, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            className="fixed pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2"
+            style={{ left: cursor.x, top: cursor.y }}
+          >
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{
+                backgroundColor: cursor.color,
+                boxShadow: `0 0 10px ${cursor.color}`,
+              }}
+            />
+            <div
+              className="absolute top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono whitespace-nowrap"
+              style={{ color: cursor.color }}
+            >
+              {cursor.id}
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

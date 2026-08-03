@@ -20,7 +20,7 @@ import {
 import { Place } from "@/types";
 import { getExpedition } from "@/lib/expeditions";
 import ExpeditionModal from "./ExpeditionModal";
-import { bumpCorruption, spendDust } from "@/hooks/useDustLevel";
+import { spendDust } from "@/hooks/useDustLevel";
 import { showToast } from "@/lib/toast";
 
 type Tier = "surface" | "surveyed" | "documented" | "sealed";
@@ -34,6 +34,12 @@ function getDust(): number {
   return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
 }
 
+function notifyDustChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("vp-dust-change"));
+  }
+}
+
 /* ─── localStorage helpers ─── */
 function getPlaceTier(placeId: string): Tier {
   if (typeof window === "undefined") return "surface";
@@ -45,10 +51,12 @@ function setPlaceTier(placeId: string, tier: Tier) {
   localStorage.setItem(`vp-tier-${placeId}`, tier);
 }
 
-function hasLantern(placeId: string): boolean {
+function hasLantern(placeId: string, placeName: string): boolean {
   if (typeof window === "undefined") return false;
   const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
-  return lanterns.some((l: any) => l.placeId === placeId);
+  return lanterns.some(
+    (l: any) => l.placeId === placeId || l.placeName === placeName
+  );
 }
 
 function getUnlockedReports(placeId: string): number[] {
@@ -120,7 +128,7 @@ export default function PlacePanel({ place, onClose }: Props) {
   useEffect(() => {
     let current = getPlaceTier(place._id);
 
-    if (current === "surface" && hasLantern(place._id)) {
+    if (current === "surface" && hasLantern(place._id, place.name)) {
       current = "surveyed";
       setPlaceTier(place._id, current);
     }
@@ -133,32 +141,30 @@ export default function PlacePanel({ place, onClose }: Props) {
       setPlaceTier(place._id, current);
     }
     setTier(current);
-  }, [place._id, expeditionOpen]);
+  }, [place._id, expeditionOpen, place.name]);
+
+  /* Auto-unlock dossier on open if signal decoded — matches full page behavior */
+  useEffect(() => {
+    if (getSignalUnlock(place.slug) && SIGNAL_DOSSIERS[place.slug] && !isDossierUnlocked(place.slug)) {
+      unlockDossier(place.slug);
+    }
+  }, [place.slug]);
 
   const handleExpeditionComplete = (result: {
     dust: number;
     items: string[];
     reportsUnlocked: number[];
-    corruptionTriggered: boolean;
   }) => {
     localStorage.setItem(`vp-expedition-${place._id}`, "true");
-
-    if (result.corruptionTriggered) {
-      bumpCorruption(1);
-    }
 
     const existing = getUnlockedReports(place._id);
     const merged = Array.from(new Set([...existing, ...result.reportsUnlocked]));
     localStorage.setItem(`vp-reports-${place._id}`, JSON.stringify(merged));
 
-    const currentDust = parseInt(
-      localStorage.getItem("vp-dust-accumulation") || "0",
-      10
-    );
-    localStorage.setItem(
-      "vp-dust-accumulation",
-      String(Math.min(100, currentDust + result.dust))
-    );
+    const currentDust = getDust();
+    const nextDust = Math.min(100, currentDust + result.dust);
+    localStorage.setItem("vp-dust-accumulation", String(nextDust));
+    notifyDustChange();
 
     const invKey = "vp-inventory";
     const inv = JSON.parse(localStorage.getItem(invKey) || "[]");
@@ -177,18 +183,14 @@ export default function PlacePanel({ place, onClose }: Props) {
     setTier("sealed");
 
     /* Sealing cleanses dust slightly */
-    const currentDust = parseInt(
-      localStorage.getItem("vp-dust-accumulation") || "0",
-      10
-    );
-    localStorage.setItem(
-      "vp-dust-accumulation",
-      String(Math.max(0, currentDust - 5))
-    );
+    const currentDust = getDust();
+    const nextDust = Math.max(0, currentDust - 5);
+    localStorage.setItem("vp-dust-accumulation", String(nextDust));
+    notifyDustChange();
   };
 
   const summary =
-    place.history.split(". ").slice(0, 2).join(". ") + ".";
+    place.history?.split(". ").slice(0, 2).join(". ") + "." || "No summary available.";
 
   const unlockedReports = getUnlockedReports(place._id);
   const signalDossier = SIGNAL_DOSSIERS[place.slug];
@@ -202,39 +204,79 @@ export default function PlacePanel({ place, onClose }: Props) {
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
-        className="fixed inset-y-0 right-0 z-50 w-full md:w-[28rem] bg-[#0c0a08] border-l border-[#9a8a72]/20 shadow-2xl flex flex-col"
+        className="fixed inset-y-0 right-0 z-50 w-full md:w-[28rem] flex flex-col border-l"
+        style={{
+          background: "#0c0a08",
+          borderColor: "rgba(154,138,114,0.15)",
+          boxShadow: "-8px 0 40px rgba(0,0,0,0.5)",
+        }}
       >
         {/* Mobile drag handle */}
         <div className="md:hidden w-full flex justify-center pt-2 pb-1">
-          <div className="w-8 h-1 rounded-full bg-white/20" />
+          <div
+            className="w-8 h-1 rounded-full"
+            style={{ background: "rgba(221,208,188,0.15)" }}
+          />
         </div>
 
         {/* Header Image */}
         <div className="relative h-40 md:h-48 flex-shrink-0">
-          <img
-            src={place.photos[0]}
-            alt={place.name}
-            className="w-full h-full object-cover opacity-80"
+          {place.photos?.[0] ? (
+            <img
+              src={place.photos[0]}
+              alt={place.name}
+              className="w-full h-full object-cover"
+              style={{ opacity: 0.8 }}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: "rgba(20,16,12,0.8)" }}
+            >
+              <span className="font-mono text-xs" style={{ color: "#9a8a72" }}>
+                No visual record
+              </span>
+            </div>
+          )}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to top, #0c0a08, rgba(12,10,8,0.4), transparent)",
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a08] via-[#0c0a08]/40 to-transparent" />
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-colors"
+            className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors active:scale-95 border"
+            style={{
+              background: "rgba(12,10,8,0.5)",
+              borderColor: "rgba(221,208,188,0.08)",
+              color: "rgba(221,208,188,0.6)",
+            }}
           >
             <X size={14} />
           </button>
           <div className="absolute bottom-3 left-4 right-4">
-            <h2 className="font-cinzel text-lg md:text-xl text-[#ddd0bc] leading-tight">
+            <h2
+              className="font-cinzel text-lg md:text-xl leading-tight"
+              style={{ color: "#ddd0bc" }}
+            >
               {place.name}
             </h2>
-            <p className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72] mt-1">
+            <p
+              className="text-[10px] font-mono uppercase tracking-wider mt-1"
+              style={{ color: "#9a8a72" }}
+            >
               {place.address.city}, {place.address.country}
             </p>
           </div>
         </div>
 
         {/* Tier Bar */}
-        <div className="px-4 py-2 border-b border-[#9a8a72]/10 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div
+          className="px-4 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b"
+          style={{ borderColor: "rgba(154,138,114,0.08)" }}
+        >
           {(["surface", "surveyed", "documented", "sealed"] as Tier[]).map(
             (t, i) => {
               const active = tier === t;
@@ -250,17 +292,27 @@ export default function PlacePanel({ place, onClose }: Props) {
                   {i > 0 && (
                     <ChevronRight
                       size={10}
-                      className="text-[#9a8a72]/30 shrink-0"
+                      className="shrink-0"
+                      style={{ color: "rgba(154,138,114,0.2)" }}
                     />
                   )}
                   <div
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border transition-colors ${
-                      active
-                        ? "bg-[#9a8a72]/15 border-[#9a8a72]/40 text-[#ddd0bc]"
+                    className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider border transition-colors"
+                    style={{
+                      borderColor: active
+                        ? "rgba(154,138,114,0.3)"
                         : unlocked
-                        ? "border-[#9a8a72]/20 text-[#9a8a72]/60"
-                        : "border-white/5 text-white/20"
-                    }`}
+                        ? "rgba(154,138,114,0.12)"
+                        : "rgba(221,208,188,0.04)",
+                      color: active
+                        ? "#ddd0bc"
+                        : unlocked
+                        ? "rgba(154,138,114,0.5)"
+                        : "rgba(221,208,188,0.12)",
+                      background: active
+                        ? "rgba(154,138,114,0.08)"
+                        : "transparent",
+                    }}
                   >
                     {unlocked ? (
                       active ? (
@@ -284,26 +336,50 @@ export default function PlacePanel({ place, onClose }: Props) {
           {/* ── Surface tier ── */}
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <MapPin size={12} className="text-[#9a8a72]" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+              <MapPin size={12} style={{ color: "#9a8a72" }} />
+              <span
+                className="text-[10px] font-mono uppercase tracking-wider"
+                style={{ color: "#9a8a72" }}
+              >
                 Surface Scan
               </span>
             </div>
-            <p className="text-sm text-[#b8a99a] leading-relaxed font-light">
+            <p
+              className="text-sm leading-relaxed font-light"
+              style={{ color: "#b8a99a" }}
+            >
               {summary}
             </p>
 
             {/* Meta badges */}
             <div className="flex flex-wrap gap-2 mt-3">
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-[#9a8a72]/20 text-[#9a8a72]/70">
+              <span
+                className="px-2 py-0.5 rounded text-[10px] font-mono border"
+                style={{
+                  borderColor: "rgba(154,138,114,0.15)",
+                  color: "rgba(154,138,114,0.5)",
+                }}
+              >
                 {place.category}
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-red-900/30 text-red-400/70 flex items-center gap-1">
+              <span
+                className="px-2 py-0.5 rounded text-[10px] font-mono border flex items-center gap-1"
+                style={{
+                  borderColor: "rgba(196,120,90,0.15)",
+                  color: "rgba(196,120,90,0.5)",
+                }}
+              >
                 <AlertTriangle size={9} />
                 Danger {place.dangerLevel}/5
               </span>
               {place.coordinates && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-white/5 text-white/30">
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-mono border"
+                  style={{
+                    borderColor: "rgba(221,208,188,0.06)",
+                    color: "rgba(221,208,188,0.15)",
+                  }}
+                >
                   {place.coordinates[0].toFixed(4)},{" "}
                   {place.coordinates[1].toFixed(4)}
                 </span>
@@ -322,12 +398,18 @@ export default function PlacePanel({ place, onClose }: Props) {
                 transition={{ delay: 0.1 }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Wind size={12} className="text-[#9a8a72]" />
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                  <Wind size={12} style={{ color: "#9a8a72" }} />
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-wider"
+                    style={{ color: "#9a8a72" }}
+                  >
                     Surveyed Depth
                   </span>
                 </div>
-                <p className="text-sm text-[#b8a99a]/80 leading-relaxed font-light">
+                <p
+                  className="text-sm leading-relaxed font-light"
+                  style={{ color: "rgba(184,169,154,0.8)" }}
+                >
                   {place.history}
                 </p>
 
@@ -335,8 +417,11 @@ export default function PlacePanel({ place, onClose }: Props) {
                 {place.hauntingReports && place.hauntingReports.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Skull size={12} className="text-red-400/60" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-red-400/60">
+                      <Skull size={12} style={{ color: "rgba(196,120,90,0.4)" }} />
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-wider"
+                        style={{ color: "rgba(196,120,90,0.4)" }}
+                      >
                         Haunting Reports ({place.hauntingReports.length})
                       </span>
                     </div>
@@ -345,23 +430,29 @@ export default function PlacePanel({ place, onClose }: Props) {
                       return (
                         <div
                           key={idx}
-                          className={`p-3 rounded border text-xs leading-relaxed ${
-                            isUnlocked
-                              ? "border-[#9a8a72]/20 bg-[#9a8a72]/5 text-[#b8a99a]"
-                              : "border-white/5 bg-white/[0.02] text-white/20"
-                          }`}
+                          className="p-3 rounded border text-xs leading-relaxed"
+                          style={{
+                            borderColor: isUnlocked
+                              ? "rgba(154,138,114,0.12)"
+                              : "rgba(221,208,188,0.04)",
+                            background: isUnlocked
+                              ? "rgba(154,138,114,0.03)"
+                              : "rgba(221,208,188,0.01)",
+                            color: isUnlocked ? "#b8a99a" : "rgba(221,208,188,0.1)",
+                          }}
                         >
                           {isUnlocked ? (
                             <>
-                              <span className="text-[9px] font-mono text-[#9a8a72]/50 block mb-1">
+                              <span
+                                className="text-[10px] font-mono block mb-1"
+                                style={{ color: "rgba(154,138,114,0.3)" }}
+                              >
                                 REPORT #{String(idx + 1).padStart(2, "0")}
                               </span>
                               {report}
                             </>
                           ) : (
-                            <span className="font-mono">
-                              {redact(report)}
-                            </span>
+                            <span className="font-mono">{redact(report)}</span>
                           )}
                         </div>
                       );
@@ -369,23 +460,32 @@ export default function PlacePanel({ place, onClose }: Props) {
                   </div>
                 )}
 
-                {/* 🔧 FIX: Expedition button moved to SURVEYED tier */}
+                {/* Expedition button */}
                 {expedition && tier !== "documented" && tier !== "sealed" && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  <button
                     onClick={() => {
-                      if (!spendDust(10)) {
-                        showToast(`Insufficient dust. Need 10% (you have ${getDust()}%). Visit more places.`, "warning");
+                      const currentDust = getDust();
+                      if (currentDust < 10) {
+                        showToast(
+                          `Insufficient dust. The expedition requires 10% contamination. You carry ${currentDust}%.`,
+                          "warning"
+                        );
                         return;
                       }
+                      spendDust(10);
+                      notifyDustChange();
                       setExpeditionOpen(true);
                     }}
-                    className="w-full mt-4 py-3 px-4 rounded border border-[#9a8a72]/30 bg-[#9a8a72]/10 text-[#ddd0bc] text-xs font-mono uppercase tracking-wider hover:bg-[#9a8a72]/20 hover:border-[#9a8a72]/50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-4 py-3 px-4 rounded border text-xs font-mono uppercase tracking-wider transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{
+                      color: "#ddd0bc",
+                      borderColor: "rgba(154,138,114,0.2)",
+                      background: "rgba(154,138,114,0.06)",
+                    }}
                   >
                     <Flame size={14} />
-                    Begin Expedition (-10 dust)
-                  </motion.button>
+                    Begin Expedition
+                  </button>
                 )}
               </motion.section>
             )}
@@ -401,67 +501,64 @@ export default function PlacePanel({ place, onClose }: Props) {
                 className="space-y-4"
               >
                 <div className="flex items-center gap-2">
-                  <FileText size={12} className="text-[#9a8a72]" />
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#9a8a72]">
+                  <FileText size={12} style={{ color: "#9a8a72" }} />
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-wider"
+                    style={{ color: "#9a8a72" }}
+                  >
                     Documented Evidence
                   </span>
                 </div>
 
-                {/* Signal dossier (unlocked via SignalTab decode) */}
+                {/* Signal dossier (auto-unlocked on mount if signal decoded) */}
                 {hasSignalDossier && signalDossier && isDossierUnlocked(place.slug) && (
-                  <div className="p-3 rounded border border-amber-900/30 bg-amber-950/10">
+                  <div
+                    className="p-3 rounded border"
+                    style={{
+                      borderColor: "rgba(196,120,90,0.12)",
+                      background: "rgba(196,120,90,0.03)",
+                    }}
+                  >
                     <div className="flex items-center gap-2 mb-2">
-                      <Radio size={12} className="text-amber-500/70" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500/70">
+                      <Radio size={12} style={{ color: "rgba(196,120,90,0.5)" }} />
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-wider"
+                        style={{ color: "rgba(196,120,90,0.5)" }}
+                      >
                         {signalDossier.title}
                       </span>
                     </div>
-                    <p className="text-xs text-amber-200/60 leading-relaxed font-mono">
+                    <p
+                      className="text-xs leading-relaxed font-mono"
+                      style={{ color: "rgba(221,208,188,0.5)" }}
+                    >
                       {signalDossier.text}
                     </p>
                   </div>
                 )}
 
-                {/* Signal decoded but dossier not yet purchased */}
-                {hasSignalDossier && signalDossier && !isDossierUnlocked(place.slug) && (
-                  <div className="p-3 rounded border border-amber-900/20 bg-amber-950/5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lock size={12} className="text-amber-500/40" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500/40">
-                        {signalDossier.title}
-                      </span>
-                    </div>
-                    <p className="text-xs text-amber-200/30 leading-relaxed font-mono mb-3">
-                      {redact(signalDossier.text.slice(0, 60))}...
-                    </p>
-                    <button
-                      onClick={() => {
-                        if (spendDust(20)) {
-                          unlockDossier(place.slug);
-                          // Force re-render
-                          setTier(getPlaceTier(place._id));
-                        } else {
-                          showToast(`Insufficient dust. Need 20% (you have ${getDust()}%).`, "warning");
-                        }
-                      }}
-                      className="w-full py-2 rounded border border-amber-700/30 bg-amber-900/10 text-[10px] font-mono uppercase tracking-wider text-amber-400/70 hover:bg-amber-900/20 hover:border-amber-600/40 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Unlock size={12} />
-                      Decrypt Dossier (-20 dust)
-                    </button>
-                  </div>
-                )}
-
-                {/* If signal dossier exists but signal not yet decoded */}
+                {/* Signal not yet decoded */}
                 {signalDossier && !hasSignalDossier && (
-                  <div className="p-3 rounded border border-white/5 bg-white/[0.02]">
+                  <div
+                    className="p-3 rounded border"
+                    style={{
+                      borderColor: "rgba(221,208,188,0.04)",
+                      background: "rgba(221,208,188,0.01)",
+                    }}
+                  >
                     <div className="flex items-center gap-2 mb-1">
-                      <Lock size={12} className="text-white/20" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/20">
+                      <Lock size={12} style={{ color: "rgba(221,208,188,0.1)" }} />
+                      <span
+                        className="text-[10px] font-mono uppercase tracking-wider"
+                        style={{ color: "rgba(221,208,188,0.1)" }}
+                      >
                         Encrypted Dossier
                       </span>
                     </div>
-                    <p className="text-xs text-white/10 font-mono">
+                    <p
+                      className="text-xs font-mono"
+                      style={{ color: "rgba(221,208,188,0.06)" }}
+                    >
                       {redact(
                         "Awaiting signal authentication. Tune to the frequency associated with this location."
                       )}
@@ -471,15 +568,18 @@ export default function PlacePanel({ place, onClose }: Props) {
 
                 {/* Seal button */}
                 {tier !== "sealed" && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  <button
                     onClick={handleSeal}
-                    className="w-full py-3 px-4 rounded border border-emerald-900/30 bg-emerald-950/10 text-emerald-200/70 text-xs font-mono uppercase tracking-wider hover:bg-emerald-950/20 hover:border-emerald-800/40 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 rounded border text-xs font-mono uppercase tracking-wider transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{
+                      color: "rgba(122,154,106,0.7)",
+                      borderColor: "rgba(122,154,106,0.15)",
+                      background: "rgba(122,154,106,0.04)",
+                    }}
                   >
                     <Shield size={14} />
-                    Seal Record (-5 Dust)
-                  </motion.button>
+                    Seal Record
+                  </button>
                 )}
               </motion.section>
             )}
@@ -492,18 +592,27 @@ export default function PlacePanel({ place, onClose }: Props) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="p-4 rounded border border-emerald-900/20 bg-emerald-950/5"
+                className="p-4 rounded border"
+                style={{
+                  borderColor: "rgba(122,154,106,0.1)",
+                  background: "rgba(122,154,106,0.02)",
+                }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Shield size={14} className="text-emerald-500/60" />
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-500/60">
+                  <Shield size={14} style={{ color: "rgba(122,154,106,0.4)" }} />
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-wider"
+                    style={{ color: "rgba(122,154,106,0.4)" }}
+                  >
                     Record Sealed
                   </span>
                 </div>
-                <p className="text-xs text-emerald-200/40 leading-relaxed">
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{ color: "rgba(122,154,106,0.25)" }}
+                >
                   This location has been sealed by BUNKER_7 protocol. All anomalous
-                  activity has been contained and the file is closed. Dust levels
-                  recalibrated.
+                  activity has been contained. The archive considers this file closed.
                 </p>
               </motion.section>
             )}

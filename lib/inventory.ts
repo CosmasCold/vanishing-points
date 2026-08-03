@@ -136,50 +136,35 @@ export const INVENTORY_ITEMS: InventoryItem[] = [
   },
 ];
 
-export function findItem(): InventoryItem | null {
-  if (typeof window === "undefined") return null;
-  if (Math.random() > 0.3) return null;
-
-  const inventory = getInventory();
-  const available = INVENTORY_ITEMS.filter((i) => !inventory.includes(i.id));
-  if (available.length === 0) return null;
-
-  const item = available[Math.floor(Math.random() * available.length)];
-  inventory.push(item.id);
-  localStorage.setItem("bunker-inventory", JSON.stringify(inventory));
-  return item;
-}
-
-/** Find an item appropriate for a place's category. Used by procedural expeditions. */
-export function findItemForCategory(category: string): InventoryItem | null {
-  if (typeof window === "undefined") return null;
-  if (Math.random() > 0.4) return null;
-
-  const inventory = getInventory();
-  const available = INVENTORY_ITEMS.filter(
-    (i) => !inventory.includes(i.id) && i.foundAt.includes(category)
-  );
-  if (available.length === 0) {
-    // Fallback to any available item
-    const fallback = INVENTORY_ITEMS.filter((i) => !inventory.includes(i.id));
-    if (fallback.length === 0) return null;
-    const item = fallback[Math.floor(Math.random() * fallback.length)];
-    inventory.push(item.id);
-    localStorage.setItem("bunker-inventory", JSON.stringify(inventory));
-    return item;
-  }
-
-  const item = available[Math.floor(Math.random() * available.length)];
-  inventory.push(item.id);
-  localStorage.setItem("bunker-inventory", JSON.stringify(inventory));
-  return item;
-}
+const STORAGE_KEY = "vp-bunker-inventory";
 
 export function getInventory(): string[] {
   if (typeof window === "undefined") return [];
-  return JSON.parse(localStorage.getItem("bunker-inventory") || "[]");
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 
 export function hasItem(id: string): boolean {
+  if (typeof window === "undefined") return false;
   return getInventory().includes(id);
 }
+
+/** Recover an item from the field. Called deterministically by expedition resolution. */
+export function recoverItem(itemId: string): InventoryItem | null {
+  if (typeof window === "undefined") return null;
+  const inventory = getInventory();
+  if (inventory.includes(itemId)) return null;
+
+  const item = INVENTORY_ITEMS.find((i) => i.id === itemId);
+  if (!item) return null;
+
+  inventory.push(itemId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+  window.dispatchEvent(new CustomEvent("vp-inventory-updated"));
+  return item;
+}
+
+/** Remove the random drop functions. Items are earned through expedition choices, not dice rolls. */

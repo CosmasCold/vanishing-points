@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const DUST_KEY = "vp-dust-accumulation";
 const CORRUPTION_KEY = "vp-corruption-stage";
-const ECHOES_KEY = "echoes-visited";
+const ECHOES_KEY = "vp-echoes-visited";
 const LAST_TX_KEY = "vp-last-transmission";
 
 interface DustState {
@@ -15,75 +15,98 @@ interface DustState {
   corruptionStage: number;
 }
 
+function readDust(): number {
+  if (typeof window === "undefined") return 0;
+  return Math.min(100, parseInt(localStorage.getItem(DUST_KEY) || "0", 10));
+}
+
+function readCorruption(): number {
+  if (typeof window === "undefined") return 0;
+  return Math.min(10, parseInt(localStorage.getItem(CORRUPTION_KEY) || "0", 10));
+}
+
+function readEchoes(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(ECHOES_KEY) === "true";
+}
+
 export function useDustLevel(): DustState {
   const [level, setLevel] = useState(0);
   const [echoesVisited, setEchoesVisited] = useState(false);
   const [corruptionStage, setCorruptionStage] = useState(0);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const d = parseInt(localStorage.getItem(DUST_KEY) || "0", 10);
-    const e = localStorage.getItem(ECHOES_KEY) === "true";
-    const c = parseInt(localStorage.getItem(CORRUPTION_KEY) || "0", 10);
-    setLevel(Math.min(100, d));
-    setEchoesVisited(e);
-    setCorruptionStage(c);
+  const refresh = useCallback(() => {
+    setLevel(readDust());
+    setEchoesVisited(readEchoes());
+    setCorruptionStage(readCorruption());
   }, []);
+
+  useEffect(() => {
+    refresh();
+    const handler = () => refresh();
+    window.addEventListener("vp-dust-change", handler);
+    window.addEventListener("vp-corruption-change", handler);
+    return () => {
+      window.removeEventListener("vp-dust-change", handler);
+      window.removeEventListener("vp-corruption-change", handler);
+    };
+  }, [refresh]);
 
   return {
     level,
     echoesVisited,
-    isCorrupted: level > 40,
-    isSevere: level > 75,
+    isCorrupted: corruptionStage > 2,
+    isSevere: corruptionStage > 6,
     corruptionStage,
   };
 }
 
 export function markEchoesVisited() {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(ECHOES_KEY, "true");
-  }
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ECHOES_KEY, "true");
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
 }
 
 export function accumulateDust(amount: number = 2) {
   if (typeof window === "undefined") return;
   const current = parseInt(localStorage.getItem(DUST_KEY) || "0", 10);
   localStorage.setItem(DUST_KEY, Math.min(100, current + amount).toString());
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
 }
 
-/** Spend dust. Returns true if successful, false if insufficient. */
 export function spendDust(amount: number): boolean {
   if (typeof window === "undefined") return false;
   const current = parseInt(localStorage.getItem(DUST_KEY) || "0", 10);
   if (current < amount) return false;
   localStorage.setItem(DUST_KEY, String(Math.max(0, current - amount)));
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
   return true;
 }
 
-/** Call when an expedition triggers corruption or a decode fails critically */
 export function bumpCorruption(amount: number = 1) {
   if (typeof window === "undefined") return;
   const current = parseInt(localStorage.getItem(CORRUPTION_KEY) || "0", 10);
   localStorage.setItem(CORRUPTION_KEY, String(Math.min(10, current + amount)));
+  window.dispatchEvent(new CustomEvent("vp-corruption-change"));
 }
 
-/** Call when a signal is successfully locked/decoded */
 export function markTransmission() {
   if (typeof window === "undefined") return;
   localStorage.setItem(LAST_TX_KEY, Date.now().toString());
 }
 
-/** Dust decays slowly when the player seals places or stays away */
 export function decayDust(amount: number = 5) {
   if (typeof window === "undefined") return;
   const current = parseInt(localStorage.getItem(DUST_KEY) || "0", 10);
   localStorage.setItem(DUST_KEY, String(Math.max(0, current - amount)));
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
 }
 
-/** Reset dust and corruption to 0. Used by `purge` terminal command. */
 export function purgeDust(): { dustReset: boolean; corruptionReset: boolean } {
   if (typeof window === "undefined") return { dustReset: false, corruptionReset: false };
   localStorage.setItem(DUST_KEY, "0");
   localStorage.setItem(CORRUPTION_KEY, "0");
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+  window.dispatchEvent(new CustomEvent("vp-corruption-change"));
   return { dustReset: true, corruptionReset: true };
 }

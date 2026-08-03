@@ -4,7 +4,7 @@ export interface PlaceAtmosphere {
   sensory: string[];
   whispers: string[];
   at314: string[];
-  inventoryChance: string[];
+  inventoryChance: string[]; // IDs from INVENTORY_ITEMS
 }
 
 export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
@@ -24,7 +24,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
       "At 03:14, the tapping becomes a voice counting down from numbers that do not exist.",
       "The radar dish turns to face you. It was decommissioned. It is not.",
     ],
-    inventoryChance: ["copper-wire", "soviet-badge", "woodpecker-feather"],
+    inventoryChance: ["woodpecker-tape", "corrupted-drive", "breathing-mask"],
   },
   {
     slug: "hashima-island",
@@ -42,7 +42,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
       "At 03:14, the sea wall becomes transparent. You can see the shafts below the waterline.",
       "A light turns on in Room 405. The light was removed in 1974.",
     ],
-    inventoryChance: ["coal-dust-vial", "concrete-shard", "hashima-photo"],
+    inventoryChance: ["concrete-shard", "rusty-key", "polaroid"],
   },
   {
     slug: "aokigahara-forest",
@@ -59,7 +59,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
     at314: [
       "At 03:14, the trees reveal their roots. Among them: bones, cassette tapes, and your own footprints from a walk you have not taken yet.",
     ],
-    inventoryChance: ["forest-ribbon", "cassette-tape", "compass-needle"],
+    inventoryChance: ["frozen-journal", "white-robe-fragment", "sealed-letter"],
   },
   {
     slug: "poveglia-island",
@@ -77,7 +77,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
       "At 03:14, the bell rings. It rings inside your chest cavity.",
       "The plague doctors are standing at the dock. They are waiting for you to return.",
     ],
-    inventoryChance: ["plague-mask-fragment", "bell-clapper", "asylum-key"],
+    inventoryChance: ["plague-mask", "exposed-film", "corrupted-drive"],
   },
   {
     slug: "chernobyl",
@@ -94,7 +94,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
     at314: [
       "At 03:14, the ferris wheel completes one full rotation. It takes exactly 60 seconds. It is empty. It is not empty.",
     ],
-    inventoryChance: ["geiger-counter", "ferris-wheel-gear", "dosimeter-badge"],
+    inventoryChance: ["radiation-badge", "photo-the-view", "childs-drawing"],
   },
   {
     slug: "centralia",
@@ -111,7 +111,7 @@ export const PLACE_ATMOSPHERES: PlaceAtmosphere[] = [
     at314: [
       "At 03:14, the steam forms a grid. It matches the constellation in the Lantern tab.",
     ],
-    inventoryChance: ["coal-fire-ember", "road-crack-map", "smoke-vial"],
+    inventoryChance: ["polaroid", "rusty-key", "breathing-mask"],
   },
 ];
 

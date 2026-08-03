@@ -18,10 +18,10 @@ interface Props {
 }
 
 const RARITY_COLORS: Record<string, string> = {
-  legendary: "#a855f7",
-  rare: "#ef4444",
-  uncommon: "#3b82f6",
-  common: "#6b7280",
+  legendary: "#c4785a",
+  rare: "#a67c52",
+  uncommon: "#9a8a72",
+  common: "#7a6e5e",
 };
 
 const RARITY_STAMPS: Record<string, string> = {
@@ -31,7 +31,7 @@ const RARITY_STAMPS: Record<string, string> = {
   common: "UNCLASSIFIED",
 };
 
-export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }: Props) {
+export default function AssetGallery({ isOpen, onClose, themeColor = "#9a8a72" }: Props) {
   const [unlocked, setUnlocked] = useState<string[]>([]);
   const [dates, setDates] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<StoryAsset | null>(null);
@@ -40,7 +40,10 @@ export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }
   useEffect(() => {
     if (!isOpen) return;
     const pending = tryUnlockPendingAssets();
-    if (pending.length > 0) setNewlyUnlocked(pending);
+    if (pending.length > 0) {
+      setNewlyUnlocked(pending);
+      window.dispatchEvent(new CustomEvent("vp-dust-change"));
+    }
     setUnlocked(getUnlockedAssets());
     setDates(getAssetRecoveryDates());
   }, [isOpen]);
@@ -56,7 +59,7 @@ export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[80] flex items-center justify-center p-3 md:p-6"
-        style={{ backgroundColor: "rgba(8, 7, 5, 0.96)" }}
+        style={{ backgroundColor: "rgba(12, 10, 8, 0.96)" }}
         onClick={onClose}
       >
         <motion.div
@@ -67,8 +70,8 @@ export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }
           className="w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-sm flex flex-col border-2"
           style={{
             borderColor: "#3a3530",
-            backgroundColor: "#141210",
-            boxShadow: "0 0 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.4)",
+            backgroundColor: "#0c0a08",
+            boxShadow: "0 0 40px rgba(12,10,8,0.8), inset 0 0 60px rgba(12,10,8,0.4)",
           }}
         >
           {/* Header — Soviet-American directive style */}
@@ -78,12 +81,14 @@ export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }
           >
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 opacity-60">
-                <span className="text-[9px] font-mono tracking-[0.2em] text-[#8b0000]">ПРОЕКТ ИСЧЕЗАЮЩИЕ ТОЧКИ</span>
+                <span className="text-[10px] font-mono tracking-[0.2em]" style={{ color: "#8b0000" }}>
+                  ПРОЕКТ ИСЧЕЗАЮЩИЕ ТОЧКИ
+                </span>
               </div>
               <h2 className="text-xs md:text-sm font-mono uppercase tracking-[0.25em]" style={{ color: themeColor }}>
                 Project Vanishing Point — Evidence Archive
               </h2>
-              <p className="text-[9px] font-mono opacity-40" style={{ color: themeColor }}>
+              <p className="text-[10px] font-mono opacity-40" style={{ color: themeColor }}>
                 Joint Directive 1946–1989 • {unlocked.length} / {STORY_ASSETS.length} files declassified
               </p>
             </div>
@@ -104,9 +109,9 @@ export default function AssetGallery({ isOpen, onClose, themeColor = "#c4a882" }
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="px-4 py-2 border-b text-center"
-                style={{ borderColor: "#2d4a22", backgroundColor: "#1a2a15" }}
+                style={{ borderColor: "rgba(122,107,82,0.2)", backgroundColor: "rgba(90,78,66,0.15)" }}
               >
-                <p className="text-[10px] font-mono uppercase tracking-wider text-[#7aa855]">
+                <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: "#9a8a72" }}>
                   Conditions met — {newlyUnlocked.length} file{newlyUnlocked.length > 1 ? "s" : ""} declassified
                 </p>
               </motion.div>
@@ -157,21 +162,21 @@ function LockedFolder({ asset, themeColor }: { asset: StoryAsset; themeColor: st
       className="w-full h-full rounded-sm flex flex-col items-center justify-center p-3 relative overflow-hidden"
       style={{
         backgroundColor: "#c9b896",
-        boxShadow: "2px 2px 8px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.05)",
+        boxShadow: "2px 2px 8px rgba(26,20,12,0.5), inset 0 0 20px rgba(26,20,12,0.05)",
       }}
     >
       {/* Paper texture overlay */}
       <div
         className="absolute inset-0 opacity-20 pointer-events-none"
         style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(26,20,12,0.03) 2px, rgba(26,20,12,0.03) 4px)",
         }}
       />
 
       {/* Classified stamp */}
       <div
-        className="absolute top-2 right-2 border-2 border-[#8b0000] text-[#8b0000] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rotate-12 opacity-80"
-        style={{ fontFamily: "monospace" }}
+        className="absolute top-2 right-2 border-2 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider rotate-12 opacity-80"
+        style={{ fontFamily: "monospace", borderColor: "#8b0000", color: "#8b0000" }}
       >
         CLASSIFIED
       </div>
@@ -182,10 +187,13 @@ function LockedFolder({ asset, themeColor }: { asset: StoryAsset; themeColor: st
         <div className="h-2 bg-black/80 w-3/4" />
         <div className="h-2 bg-black/60 w-1/2" />
       </div>
-      <p className="absolute bottom-2 left-2 right-2 text-[7px] font-mono uppercase text-[#5a4a3a] text-center leading-tight">
+      <p
+        className="absolute bottom-2 left-2 right-2 text-[10px] font-mono uppercase text-center leading-tight"
+        style={{ color: "#5a4a3a" }}
+      >
         {asset.category} • {asset.rarity}
       </p>
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#8b0000]/30" />
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: "rgba(139,0,0,0.3)" }} />
     </div>
   );
 }
@@ -197,13 +205,13 @@ function UnlockedPolaroid({ asset, date, themeColor }: { asset: StoryAsset; date
       className="w-full h-full rounded-sm flex flex-col p-2 pb-3 relative overflow-hidden"
       style={{
         backgroundColor: "#e8e0d4",
-        boxShadow: "2px 3px 10px rgba(0,0,0,0.4), inset 0 0 15px rgba(0,0,0,0.03)",
+        boxShadow: "2px 3px 10px rgba(26,20,12,0.4), inset 0 0 15px rgba(26,20,12,0.03)",
       }}
     >
       {/* Tape corners */}
-      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 bg-[#d4c9a8]/60 rotate-1" />
+      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 rotate-1" style={{ backgroundColor: "rgba(180,160,100,0.5)" }} />
       
-      <div className="flex-1 relative overflow-hidden bg-black/5 border border-black/10">
+      <div className="flex-1 relative overflow-hidden border" style={{ backgroundColor: "rgba(26,20,12,0.05)", borderColor: "rgba(26,20,12,0.1)" }}>
         <img
           src={`/story-assets/${asset.filename}`}
           alt={asset.title}
@@ -213,16 +221,17 @@ function UnlockedPolaroid({ asset, date, themeColor }: { asset: StoryAsset; date
         />
         {/* Recovered stamp */}
         <div
-          className="absolute bottom-1 right-1 border border-[#2d4a22] text-[#2d4a22] px-1 py-0.5 text-[7px] font-black uppercase tracking-wider -rotate-6 opacity-70"
+          className="absolute bottom-1 right-1 border px-1 py-0.5 text-[10px] font-black uppercase tracking-wider -rotate-6 opacity-70"
+          style={{ borderColor: "#5a4e42", color: "#5a4e42" }}
         >
           RECOVERED
         </div>
       </div>
 
       <div className="mt-2 space-y-0.5">
-        <p className="text-[8px] font-mono uppercase text-[#3a3020] truncate tracking-wider">{asset.title}</p>
+        <p className="text-[10px] font-mono uppercase truncate tracking-wider" style={{ color: "#3a3020" }}>{asset.title}</p>
         {date && (
-          <p className="text-[7px] font-mono text-[#5a4a3a]">
+          <p className="text-[10px] font-mono" style={{ color: "#5a4a3a" }}>
             ACQ: {new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
           </p>
         )}
@@ -230,8 +239,8 @@ function UnlockedPolaroid({ asset, date, themeColor }: { asset: StoryAsset; date
 
       {/* Rarity dot */}
       <div
-        className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full border border-white/50"
-        style={{ backgroundColor: RARITY_COLORS[asset.rarity] || "#6b7280" }}
+        className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full border"
+        style={{ backgroundColor: RARITY_COLORS[asset.rarity] || "#7a6e5e", borderColor: "rgba(255,255,255,0.5)" }}
       />
     </div>
   );
@@ -276,10 +285,10 @@ function CaseFileDetail({
             className="relative p-3 md:p-4 rounded-sm"
             style={{
               backgroundColor: "#c9b896",
-              boxShadow: "4px 4px 15px rgba(0,0,0,0.5)",
+              boxShadow: "4px 4px 15px rgba(26,20,12,0.5)",
             }}
           >
-            <div className="border border-black/20 bg-black/5 overflow-hidden">
+            <div className="border overflow-hidden" style={{ borderColor: "rgba(26,20,12,0.2)", backgroundColor: "rgba(26,20,12,0.05)" }}>
               <img
                 src={`/story-assets/${asset.filename}`}
                 alt={asset.title}
@@ -289,10 +298,16 @@ function CaseFileDetail({
               />
             </div>
             {/* Stamps */}
-            <div className="absolute top-4 right-4 border-2 border-[#2d4a22] text-[#2d4a22] bg-[#c9b896]/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider -rotate-12">
+            <div
+              className="absolute top-4 right-4 border-2 bg-[#c9b896]/80 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider -rotate-12"
+              style={{ borderColor: "#5a4e42", color: "#5a4e42" }}
+            >
               DECLASSIFIED 1989
             </div>
-            <div className="absolute bottom-6 left-4 border border-[#8b0000] text-[#8b0000] bg-[#c9b896]/80 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider rotate-6">
+            <div
+              className="absolute bottom-6 left-4 border bg-[#c9b896]/80 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider rotate-6"
+              style={{ borderColor: "#8b0000", color: "#8b0000" }}
+            >
               {RARITY_STAMPS[asset.rarity] || "UNCLASSIFIED"}
             </div>
           </div>
@@ -304,12 +319,12 @@ function CaseFileDetail({
           <div className="space-y-1 border-b pb-3" style={{ borderColor: `${themeColor}20` }}>
             <div className="flex items-center gap-2">
               <span
-                className="text-[9px] font-mono uppercase px-1.5 py-0.5 border"
+                className="text-[10px] font-mono uppercase px-1.5 py-0.5 border"
                 style={{ borderColor: RARITY_COLORS[asset.rarity], color: RARITY_COLORS[asset.rarity] }}
               >
                 {asset.rarity}
               </span>
-              <span className="text-[9px] font-mono uppercase opacity-40" style={{ color: themeColor }}>
+              <span className="text-[10px] font-mono uppercase opacity-40" style={{ color: themeColor }}>
                 {asset.category}
               </span>
             </div>
@@ -328,16 +343,16 @@ function CaseFileDetail({
               backgroundColor: "#e8dcc4",
               color: "#1a1a1a",
               fontFamily: "monospace",
-              boxShadow: "inset 0 0 20px rgba(0,0,0,0.05)",
+              boxShadow: "inset 0 0 20px rgba(26,20,12,0.05)",
             }}
           >
-            <div className="border-b border-black/10 pb-2 mb-2">
-              <p className="text-[9px] uppercase tracking-[0.2em] opacity-60">Field Report</p>
+            <div className="border-b pb-2 mb-2" style={{ borderColor: "rgba(26,20,12,0.1)" }}>
+              <p className="text-[10px] uppercase tracking-[0.2em] opacity-60">Field Report</p>
             </div>
             <p>{asset.description}</p>
             {asset.lore && (
-              <div className="border-l-2 border-[#8b0000]/40 pl-3 mt-2">
-                <p className="text-[10px] uppercase tracking-wider text-[#8b0000]/70 mb-1">Analyst Remarks</p>
+              <div className="border-l-2 pl-3 mt-2" style={{ borderColor: "rgba(139,0,0,0.4)" }}>
+                <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "rgba(139,0,0,0.7)" }}>Analyst Remarks</p>
                 <p className="italic opacity-80">{asset.lore}</p>
               </div>
             )}
@@ -345,7 +360,7 @@ function CaseFileDetail({
 
           {/* Metadata grid */}
           <div
-            className="grid grid-cols-2 gap-2 p-3 rounded-sm text-[9px] font-mono uppercase tracking-wider"
+            className="grid grid-cols-2 gap-2 p-3 rounded-sm text-[10px] font-mono uppercase tracking-wider"
             style={{ backgroundColor: `${themeColor}08`, border: `1px solid ${themeColor}15` }}
           >
             <div>
@@ -362,13 +377,13 @@ function CaseFileDetail({
             </div>
             <div>
               <p className="opacity-40">Status</p>
-              <p className="text-[#2d4a22]">RECOVERED</p>
+              <p style={{ color: "#5a4e42" }}>RECOVERED</p>
             </div>
           </div>
 
           {/* Origin myth footer */}
           <div className="pt-2 border-t" style={{ borderColor: `${themeColor}10` }}>
-            <p className="text-[8px] font-mono opacity-30 leading-relaxed" style={{ color: themeColor }}>
+            <p className="text-[10px] font-mono opacity-30 leading-relaxed" style={{ color: themeColor }}>
               ORIGIN NOTE: Anomalous residue first catalogued at Trinity Site, NM (1945) and
               Semipalatinsk-21 (1949). Joint directive concluded the dust is not fallout.
               It is something that fed on fallout. BUNKER_7 was established to monitor

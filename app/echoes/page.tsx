@@ -13,18 +13,19 @@ import AssetGallery from "@/components/AssetGallery";
 import TerminalBootSequence from "@/components/TerminalBootSequence";
 import TerminalVideoPlayer from "@/components/TerminalVideoPlayer";
 import { markEchoesVisited, accumulateDust, purgeDust } from "@/hooks/useDustLevel";
-import { useLeads, checkLeadProgress, generateNextLead } from "@/hooks/useLeads";
+import { useArchiveReadings, synchronizeReadings, detectNextReading } from "@/hooks/useArchiveReadings";
 import LeadPanel from "@/components/LeadPanel";
 import { useBreachProtocol } from "@/hooks/useBreachProtocol";
 import { NUMBERS_STATIONS } from "@/lib/echoesContent";
 import { getDailyCode } from "@/lib/dailyCode";
 import { getSeasonalState } from "@/lib/seasonal";
+import type { ReadingCondition } from "@/hooks/useArchiveReadings";
 import SignalTab from "@/components/SignalTab";
 import {
   checkCaesar, checkCoordinates, checkAssembly, checkReflection,
   COORDINATE_FRAGMENTS, ASSEMBLED_MESSAGE, DUST_THRESHOLD, TRIGGER_PHRASE,
-  getCodeEntry, redeemCode, getRedeemedCodes, getUnlockedAssets,
-  STORY_ASSETS, REDEEMABLE_CODES, unlockAsset, checkAssetCondition,
+  getCodeEntry, recordCode, getFoundCodes, getUnlockedAssets,
+  STORY_ASSETS, ARCHIVE_CODES, unlockAsset, checkAssetCondition,
 } from "@/lib/assets";
 import {
   getMemory, updateMemory, getSentiment, getOtherEncounters,
@@ -32,17 +33,17 @@ import {
   getGhostLines, getBunkerLie, getGlobalLanternCount,
 } from "@/lib/bunkerBrain";
 import {
-  logPlayerCommand, getProceduralGhostLines, getMemoryBasedOtherResponse,
-} from "@/lib/otherMemory";
+  recordCommand, getMemoryBasedOtherResponse,
+} from "@/lib/commandMemory";
 import { useKeystrokeAudio } from "@/hooks/useKeystrokeAudio";
 import { addDiscovery, getDiscoveries } from "@/lib/discoveries";
 import SubPlaceChoicePanel from "@/components/SubPlaceChoicePanel";
-import { findItem, getInventory, INVENTORY_ITEMS } from "@/lib/inventory";
-import { useCorruptionStage, useIdleGhost, useThreeFourteen } from "@/hooks/useStickyFeatures";
+import { useCorruptionStage, useIdleGhost, useThreeFourteen } from "@/hooks/useCorruptionStage";
 import { getWeeklyRotation } from "@/lib/weeklyRotation";
 import { getSubPlaceById } from "@/lib/subPlaces";
 import { useSubPlaces } from "@/hooks/useSubPlaces";
 import SpectrogramViewer from "@/components/SpectrogramViewer";
+import { getInventory, INVENTORY_ITEMS } from "@/lib/inventory";
 import TheGrid from "@/components/TheGrid";
 import {
   getDossierProgress, getClaimedDossierList,
@@ -68,7 +69,7 @@ const THEMES = {
   ember: {
     primary: "#e8c8b8", bg: "#120a08", glow: "rgba(232,200,184,0.1)",
     accent: "#c4785a", dim: "#8a5a4a", cursor: "#e8c8b8",
-    phosphor: "#f0dcd0", corruption: "#ff6b6b", danger: "#a03020",
+    phosphor: "#f0dcd0", corruption: "#c4785a", danger: "#a03020",
   },
   white: {
     primary: "#d0d0d0", bg: "#0a0a0a", glow: "rgba(208,208,208,0.1)",
@@ -88,7 +89,7 @@ const THEMES = {
   emergency: {
     primary: "#ff8a7a", bg: "#1a0806", glow: "rgba(255,138,122,0.1)",
     accent: "#e06050", dim: "#9a4a3a", cursor: "#ff8a7a",
-    phosphor: "#ffb0a0", corruption: "#ff0000", danger: "#c02010",
+    phosphor: "#ffb0a0", corruption: "#c4785a", danger: "#c02010",
   },
 };
 
@@ -294,7 +295,7 @@ const COMMAND_REGISTRY = [
   { cmd: "reflect", desc: "Answer reflection", category: "Puzzle" },
   { cmd: "triangulate", desc: "Tower status", category: "Puzzle" },
   { cmd: "constellation", desc: "Grid alignment", category: "Puzzle" },
-  { cmd: "redeem", desc: "Redeem unlock code", category: "Asset" },
+  { cmd: "record", desc: "Record unlock code", category: "Asset" },
   { cmd: "gallery", desc: "View recovered assets", category: "Asset" },
   { cmd: "dossiers", desc: "Archived field reports", category: "Asset" },
   { cmd: "collection", desc: "Collection status", category: "Asset" },
@@ -445,7 +446,7 @@ export default function EchoesPage() {
 
   const lineIdRef = useRef(0);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
-    const hasVisited = typeof window !== "undefined" && localStorage.getItem("echoes-visited") === "true";
+    const hasVisited = typeof window !== "undefined" && localStorage.getItem("vp-echoes-visited") === "true";
     if (!hasVisited) {
       const initial: TerminalLine[] = [
         { id: ++lineIdRef.current, text: "══════════════════════════════════════════", type: "system" as LineType, timestamp: Date.now() },
@@ -506,7 +507,7 @@ export default function EchoesPage() {
   const [videoPanelOpen, setVideoPanelOpen] = useState(false);
   const [wallMessages, setWallMessages] = useState<{ text: string; date: string }[]>(() => {
     if (typeof window === "undefined") return [];
-    return JSON.parse(localStorage.getItem("bunker-wall") || "[]");
+    return JSON.parse(localStorage.getItem("vp-wall") || "[]");
   });
 
   const [showPalette, setShowPalette] = useState(false);
@@ -519,6 +520,7 @@ export default function EchoesPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { active: breachActive, countdown: breachCountdown } = useBreachProtocol();
   const { onType } = useKeystrokeAudio();
+  const { active: activeReading, clarity: readingClarity } = useArchiveReadings();
 
   const memory = getMemory();
   const otherCount = getOtherEncounters();
@@ -535,15 +537,15 @@ export default function EchoesPage() {
   useEffect(() => {
     markEchoesVisited();
     accumulateDust(10);
-    const savedTheme = localStorage.getItem("bunker-theme") as ThemeKey;
+    const savedTheme = localStorage.getItem("vp-theme") as ThemeKey;
     if (savedTheme && THEMES[savedTheme]) setTheme(savedTheme);
-    const savedUnlocked = parseInt(localStorage.getItem("bunker-unlocked") || "3", 10);
+    const savedUnlocked = parseInt(localStorage.getItem("vp-logs-unlocked") || "3", 10);
     setUnlocked(savedUnlocked);
-    const savedTri = localStorage.getItem("bunker-triangulated") === "true";
+    const savedTri = localStorage.getItem("vp-triangulated") === "true";
     setTriangulated(savedTri);
     setDust(parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10));
     setAssets(getUnlockedAssets());
-    setCodes(getRedeemedCodes());
+    setCodes(getFoundCodes());
     setInventory(getInventory());
     setLanternCount(getGlobalLanternCount());
   }, []);
@@ -567,7 +569,6 @@ export default function EchoesPage() {
       if (shouldTriggerOther("ghost") && Math.random() < 0.15) {
         const tier = getGhostTier(otherCount);
         const linesArr = TIER_GHOST_LINES[tier];
-        // 20% chance to regress to previous tier for unease
         const effectiveTier = (tier > 1 && Math.random() < 0.2) ? tier - 1 : tier;
         const line = TIER_GHOST_LINES[effectiveTier][Math.floor(Math.random() * TIER_GHOST_LINES[effectiveTier].length)];
         pushLines([line, ""], "ghost");
@@ -643,12 +644,11 @@ export default function EchoesPage() {
     if (chatMode && clean !== "exit") { await talkToBunker(cmd); setInput(""); return; }
     setInput(""); setSuggestions([]); setShowPalette(false);
     const args = clean.split(" "); const base = args[0];
-    logPlayerCommand(base);
+    recordCommand(base);
 
-    /* FIRST CONTACT UNLOCK */
-    const isFirstContact = typeof window !== "undefined" && localStorage.getItem("echoes-visited") !== "true";
+    const isFirstContact = typeof window !== "undefined" && localStorage.getItem("vp-echoes-visited") !== "true";
     if (isFirstContact && ["status", "chat", "help"].includes(base)) {
-      localStorage.setItem("echoes-visited", "true");
+      localStorage.setItem("vp-echoes-visited", "true");
       pushLines([
         "",
         "══════════════════════════════════════════",
@@ -666,7 +666,7 @@ export default function EchoesPage() {
     if (hijacked && base !== "exorcise") { pushLines([...getMemoryBasedOtherResponse(base), ""], "other"); return; }
 
     switch (base) {
-      case "help": pushLines(["┌────────────────────────────────────────┐","│ AVAILABLE COMMANDS                     │","├────────────────────────────────────────┤","│  help        Command list              │","│  chat        Speak with BUNKER_7       │","│  status      System diagnostics        │","│  logs        View archived logs        │","│  decrypt     Code entry interface      │","│  scan        Environment scan          │","│  memory      Recover fragments         │","│  transmit    Send message              │","│  door        Seal status               │","│  breach      Protocol status           │","│  color       Cycle theme               │","│  puzzles     Active anomalies          │","│  cipher      Decode signal             │","│  coords      Enter coordinates         │","│  assemble    Reconstruct transmission  │","│  reflect     Answer reflection         │","│  redeem      Redeem unlock code        │","│  gallery     View recovered assets     │","│  dossiers    Archived field reports    │","│  collection  Collection status           │","│  cache       Time-locked files         │","│  triangulate Tower status              │","│  lanterns    View placed lanterns      │","│  constellation Grid alignment        │","│  inventory   Your found items          │","│  wall        Transmission wall         │","│  look        [03:14 ONLY]              │","│  whoareyou   [3 encounters]            │","│  profile     Your corruption profile  │","│  call        Voice channel status      │","│  leads       Active investigations     │","│  other       The Other encounters      │","│  weekly      Current rotation          │","│  enter       Explore sub-places        │","│  grid        View the constellation    │","│  spectrogram Frequency visualizer      │","│  discover    Log a real place          │","│  exorcise    Restore BUNKER_7 control  │","│  daily       Acquire daily frequency   │","│  email       Register for transmission │","│  party       Tri-party authentication  │","│  witnesses   Registered frequencies    │","│  broadcast   Go live / kill feed       │","│  clear       Clear terminal            │","│  exit        Exit chat mode            │","└────────────────────────────────────────┘"], "system"); break;
+      case "help": pushLines(["┌────────────────────────────────────────┐","│ AVAILABLE COMMANDS                     │","├────────────────────────────────────────┤","│  help        Command list              │","│  chat        Speak with BUNKER_7       │","│  status      System diagnostics        │","│  logs        View archived logs        │","│  decrypt     Code entry interface      │","│  scan        Environment scan          │","│  memory      Recover fragments         │","│  transmit    Send message              │","│  door        Seal status               │","│  breach      Protocol status           │","│  color       Cycle theme               │","│  puzzles     Active anomalies          │","│  cipher      Decode signal             │","│  coords      Enter coordinates         │","│  assemble    Reconstruct transmission  │","│  reflect     Answer reflection         │","│  record      Record unlock code        │","│  gallery     View recovered assets     │","│  dossiers    Archived field reports    │","│  collection  Collection status         │","│  cache       Time-locked files         │","│  triangulate Tower status              │","│  lanterns    View placed lanterns      │","│  constellation Grid alignment          │","│  inventory   Your found items          │","│  wall        Transmission wall         │","│  look        [03:14 ONLY]              │","│  whoareyou   [3 encounters]            │","│  profile     Your corruption profile   │","│  call        Voice channel status      │","│  leads       Active investigations     │","│  other       The Other encounters      │","│  weekly      Current rotation          │","│  enter       Explore sub-places        │","│  grid        View the constellation    │","│  spectrogram Frequency visualizer      │","│  discover    Log a real place          │","│  exorcise    Restore BUNKER_7 control  │","│  daily       Acquire daily frequency   │","│  email       Register for transmission │","│  party       Tri-party authentication  │","│  witnesses   Registered frequencies    │","│  broadcast   Go live / kill feed       │","│  clear       Clear terminal            │","│  exit        Exit chat mode            │","└────────────────────────────────────────┘"], "system"); break;
 
       case "status": {
         const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
@@ -682,7 +682,7 @@ export default function EchoesPage() {
           `│  LOGS:      ${unlocked}/${LOGS.length} UNLOCKED${" ".repeat(12 - String(unlocked).length - String(LOGS.length).length)}│`,
           `│  DOSSIERS:  ${String(dossierProg.claimed).padEnd(3)}/${dossierProg.total}${" ".repeat(15)}│`,
           `│  ASSETS:    ${String(assets.length).padEnd(3)}/${STORY_ASSETS.length}${" ".repeat(15)}│`,
-          `│  CODES:     ${String(codes.length).padEnd(3)}/${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,
+          `│  CODES:     ${String(codes.length).padEnd(3)}/${ARCHIVE_CODES.length}${" ".repeat(15)}│`,
           `│  CORRUPTION:${corruption.label.padEnd(17)}│`,
           `│  OTHER:     ${otherCount} encounter${otherCount !== 1 ? "s" : ""}${" ".repeat(14 - String(otherCount).length)}│`,
           `│  DUST:      ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,
@@ -705,7 +705,7 @@ export default function EchoesPage() {
         const lastName = last ? last.name : "None recorded";
         const lastTime = last ? last.addedAt || Date.now() : null;
         const ago = lastTime ? Math.floor((Date.now() - new Date(lastTime).getTime()) / 3600000) : "unknown";
-        const fragments = JSON.parse(localStorage.getItem("bunker-fragments") || "[]");
+        const fragments = JSON.parse(localStorage.getItem("vp-fragments") || "[]");
         pushLines([
           `┌─ ENVIRONMENT SCAN ───────────────────┐`,
           `│  Dust accumulation: ${String(dustLvl).padEnd(3)}%           │`,
@@ -719,15 +719,15 @@ export default function EchoesPage() {
         break;
       }
 
-      case "memory": { const allFrags = ["FRAG_01: ...the coordinates were wrong...","FRAG_02: ...someone else was using the cursor...","FRAG_03: ...the dust level read higher than possible...","FRAG_04: ...a door opened that wasn't on the schematic...","FRAG_05: ...the atlas updated itself at 03:14...","FRAG_06: ...i heard typing from the next terminal...","FRAG_07: [CORRUPTED]","FRAG_08: ...the green light pulsed in morse code...","FRAG_09: ...a photograph with no negative...","FRAG_10: ...the silence had a rhythm...","FRAG_11: ...coordinates pointing to the ocean floor...","FRAG_12: ...the atlas completed itself...","FRAG_13: ...a voice that sounded like mine...","FRAG_14: ...the dust spelled a name i recognized..."]; const saved = JSON.parse(localStorage.getItem("bunker-fragments") || "[]"); const newFrags = allFrags.filter((f) => !saved.includes(f.split(":")[0])); if (newFrags.length > 0) { const pick = newFrags[Math.floor(Math.random() * newFrags.length)]; const id = pick.split(":")[0]; saved.push(id); localStorage.setItem("bunker-fragments", JSON.stringify(saved)); pushLines(["RECOVERING FRAGMENT...", pick, "Stored."], "success"); } else { pushLines(["No new fragments.", "Visit more ruins."], "normal"); } break; }
+      case "memory": { const allFrags = ["FRAG_01: ...the coordinates were wrong...","FRAG_02: ...someone else was using the cursor...","FRAG_03: ...the dust level read higher than possible...","FRAG_04: ...a door opened that wasn't on the schematic...","FRAG_05: ...the atlas updated itself at 03:14...","FRAG_06: ...i heard typing from the next terminal...","FRAG_07: [CORRUPTED]","FRAG_08: ...the green light pulsed in morse code...","FRAG_09: ...a photograph with no negative...","FRAG_10: ...the silence had a rhythm...","FRAG_11: ...coordinates pointing to the ocean floor...","FRAG_12: ...the atlas completed itself...","FRAG_13: ...a voice that sounded like mine...","FRAG_14: ...the dust spelled a name i recognized..."]; const saved = JSON.parse(localStorage.getItem("vp-fragments") || "[]"); const newFrags = allFrags.filter((f) => !saved.includes(f.split(":")[0])); if (newFrags.length > 0) { const pick = newFrags[Math.floor(Math.random() * newFrags.length)]; const id = pick.split(":")[0]; saved.push(id); localStorage.setItem("vp-fragments", JSON.stringify(saved)); pushLines(["RECOVERING FRAGMENT...", pick, "Stored."], "success"); } else { pushLines(["No new fragments.", "Visit more ruins."], "normal"); } break; }
 
-      case "transmit": { const msg = args.slice(1).join(" "); if (!msg) { pushLines(["Usage: transmit [message]", "All transmissions monitored."], "error"); } else { const key = "bunker-transmissions"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ text: msg, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); const wall = JSON.parse(localStorage.getItem("bunker-wall") || "[]"); wall.push({ text: msg, date: new Date().toLocaleTimeString() }); localStorage.setItem("bunker-wall", JSON.stringify(wall.slice(-50))); setWallMessages(wall.slice(-50)); checkLeadProgress(); if (msg.toLowerCase().replace(/[^a-z]/g, "") === TRIGGER_PHRASE.replace(/[^a-z]/g, "")) { pushLines(["TRANSMITTING...", "SIGNAL INTERCEPTED BY UNKNOWN SOURCE.", "RESPONSE: 'We know you're still there.'", "The channel is no longer one-way."], "other"); } else { pushLines(["TRANSMITTING...", "Signal sent into static."], "normal"); } } break; }
+      case "transmit": { const msg = args.slice(1).join(" "); if (!msg) { pushLines(["Usage: transmit [message]", "All transmissions monitored."], "error"); } else { const key = "vp-transmissions"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ text: msg, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); const wall = JSON.parse(localStorage.getItem("vp-wall") || "[]"); wall.push({ text: msg, date: new Date().toLocaleTimeString() }); localStorage.setItem("vp-wall", JSON.stringify(wall.slice(-50))); setWallMessages(wall.slice(-50)); synchronizeReadings(); if (msg.toLowerCase().replace(/[^a-z]/g, "") === TRIGGER_PHRASE.replace(/[^a-z]/g, "")) { pushLines(["TRANSMITTING...", "SIGNAL INTERCEPTED BY UNKNOWN SOURCE.", "RESPONSE: 'We know you're still there.'", "The channel is no longer one-way."], "other"); } else { pushLines(["TRANSMITTING...", "Signal sent into static."], "normal"); } } break; }
 
       case "door": { const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10); const now = new Date(); const hour = now.getHours(); const min = now.getMinutes(); if (hour === 3 && min === 14) { pushLines(["╔══════════════════════════════════════╗","║  03:14 DETECTED                      ║","║  The door is warm.                     ║","║  Something pushes from the other side. ║","╚══════════════════════════════════════╝"], "warning"); } else if (dustLvl > DUST_THRESHOLD) { pushLines([`Dust level: ${dustLvl}%. Threshold exceeded.`, "The door recognizes you.", "It opens inward. Not out.", "You could enter. But you won't come back the same."], "normal"); } else { pushLines([`Time: ${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`, `Dust: ${dustLvl}%. Insufficient.`, "The door is sealed.", "It responds at 03:14 or to the dust-claimed."], "normal"); } break; }
 
       case "breach": if (breachActive) { pushLines(["╔══════════════════════════════════════╗","║  BREACH PROTOCOL ACTIVE              ║","║  Perimeter compromised.              ║","║  Route: /breach                        ║","║  You are marked as witness.            ║","╚══════════════════════════════════════╝"], "warning"); } else if (breachCountdown) { pushLines(["Breach pending.", `Estimated: ${breachCountdown}`, "Stand by."], "normal"); } else { pushLines(["No breach on schedule."], "normal"); } break;
 
-      case "color": { const keys = Object.keys(THEMES) as ThemeKey[]; const idx = keys.indexOf(theme); const next = keys[(idx + 1) % keys.length]; setTheme(next); localStorage.setItem("bunker-theme", next); pushLines([`Theme: ${next.toUpperCase()}`, "The phosphor shifts."], "success"); break; }
+      case "color": { const keys = Object.keys(THEMES) as ThemeKey[]; const idx = keys.indexOf(theme); const next = keys[(idx + 1) % keys.length]; setTheme(next); localStorage.setItem("vp-theme", next); pushLines([`Theme: ${next.toUpperCase()}`, "The phosphor shifts."], "success"); break; }
 
       case "puzzles": pushLines(["ACTIVE ANOMALIES:","  [01] Intercepted Signal    — cmd: cipher","  [02] Coordinate Chain      — cmd: coords","  [03] Fragmented Transmission — cmd: assemble","  [04] Reflection Lock       — cmd: reflect","  [05] Dust Threshold        — automatic","  [06] Triangulation         — cmd: triangulate","  [07] Lantern Constellation — cmd: constellation","  [08] Inventory             — cmd: inventory","","Type the command name to engage."], "system"); break;
 
@@ -735,14 +735,14 @@ export default function EchoesPage() {
 
       case "coords": { const nums = args.slice(1).map((n) => parseInt(n, 10)).filter((n) => !isNaN(n)); if (nums.length !== 4) { pushLines(["Usage: coords [n1] [n2] [n3] [n4]", ...COORDINATE_FRAGMENTS.map((f) => `  ${f.source}: ${f.text}`)], "error"); } else if (checkCoordinates(nums)) { pushLines(["COORDINATES VERIFIED.", "38°74' N — impossible location.", "CODE: BREATHE"], "success"); } else { pushLines(["COORDINATES REJECTED.", `Entered: ${nums.join(", ")}`], "error"); } break; }
 
-      case "assemble": { const frags = JSON.parse(localStorage.getItem("bunker-fragments") || "[]"); if (checkAssembly(frags)) { pushLines(["ASSEMBLY COMPLETE.", ...ASSEMBLED_MESSAGE.split(". ").map((s) => s.trim() + "."), "CODE: ASSEMBLY-314"], "success"); } else { pushLines([`Fragments: ${frags.length}/5`, "Missing: " + ["FRAG_01","FRAG_03","FRAG_07","FRAG_12","FRAG_14"].filter((f) => !frags.includes(f)).join(", ")], "normal"); } break; }
+            case "assemble": { const frags = JSON.parse(localStorage.getItem("vp-fragments") || "[]"); if (checkAssembly(frags)) { pushLines(["ASSEMBLY COMPLETE.", ...ASSEMBLED_MESSAGE.split(". ").map((s) => s.trim() + "."), "CODE: ASSEMBLY-314"], "success"); } else { pushLines([`Fragments: ${frags.length}/5`, "Missing: " + ["FRAG_01","FRAG_03","FRAG_07","FRAG_12","FRAG_14"].filter((f) => !frags.includes(f)).join(", ")], "normal"); } break; }
 
       case "reflect": { const ans = args.slice(1).join(" ").toLowerCase().replace(/[^a-z]/g, ""); if (!ans) { pushLines(["Usage: reflect [answer]", "What do you see?"], "error"); } else if (checkReflection(ans)) { pushLines(["REFLECTION CONFIRMED.", "You see what I see. Unfortunate.", "CODE: MIRROR"], "success"); } else { pushLines(["REFLECTION MISMATCH."], "error"); } break; }
 
-            case "redeem": {
+      case "record": {
         const code = args.slice(1).join(" ").toUpperCase();
         if (!code) {
-          pushLines(["Usage: redeem [CODE]"], "error");
+          pushLines(["Usage: record [CODE]"], "error");
           break;
         }
         const entry = getCodeEntry(code);
@@ -750,14 +750,14 @@ export default function EchoesPage() {
           pushLines(["INVALID CODE."], "error");
           break;
         }
-        const alreadyRedeemed = getRedeemedCodes().includes(code);
+        const alreadyRecorded = getFoundCodes().includes(code);
         const asset = entry.type === "asset" ? STORY_ASSETS.find((a) => a.id === entry.rewardId) : null;
         const conditionCheck = asset ? checkAssetCondition(asset.condition) : { blocked: false };
 
-        if (entry.type === "asset" && alreadyRedeemed) {
+        if (entry.type === "asset" && alreadyRecorded) {
           if (conditionCheck.blocked) {
             pushLines(
-              ["CODE ALREADY REDEEMED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD ACTIVE", conditionCheck.message || ""],
+              ["CODE ALREADY RECORDED.", `ASSET: ${asset?.title || "UNKNOWN"}`, "STATUS: CONDITIONAL HOLD ACTIVE", conditionCheck.message || ""],
               "warning"
             );
           } else {
@@ -775,7 +775,7 @@ export default function EchoesPage() {
           break;
         }
 
-        redeemCode(code);
+        recordCode(code);
 
         if (entry.type === "asset") {
           if (conditionCheck.blocked) {
@@ -790,16 +790,16 @@ export default function EchoesPage() {
               "success"
             );
             setActiveTab("assets");
-            checkLeadProgress();
+            synchronizeReadings();
           }
         } else if (entry.type === "theme") {
           if (THEMES[entry.rewardId as ThemeKey]) {
             setTheme(entry.rewardId as ThemeKey);
-            localStorage.setItem("bunker-theme", entry.rewardId);
+            localStorage.setItem("vp-theme", entry.rewardId);
           }
           pushLines([`Theme: ${entry.rewardId.toUpperCase()}`], "success");
         } else if (entry.type === "cache_key") {
-          localStorage.setItem("bunker-cache-key", "true");
+          localStorage.setItem("vp-cache-key", "true");
           pushLines(["CACHE-KEY acquired."], "success");
         } else if (entry.type === "lore") {
           pushLines(["Lore fragment added.", entry.description || ""], "success");
@@ -824,13 +824,13 @@ export default function EchoesPage() {
         break;
       }
 
-      case "collection": { const assetsList = getUnlockedAssets(); const codesList = getRedeemedCodes(); const dossierProg = getDossierProgress(); pushLines(["┌─ COLLECTION STATUS ──────────────────┐",`│  Assets:    ${String(assetsList.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,`│  Codes:     ${String(codesList.length).padEnd(3)} / ${REDEEMABLE_CODES.length}${" ".repeat(15)}│`,`│  Dossiers:  ${String(dossierProg.claimed).padEnd(3)} / ${dossierProg.total}${" ".repeat(15)}│`,`│  Complete:  ${String(Math.floor(((assetsList.length + codesList.length + dossierProg.claimed) / (STORY_ASSETS.length + REDEEMABLE_CODES.length + dossierProg.total)) * 100)).padEnd(3)}%${" ".repeat(19)}│`,"└──────────────────────────────────────┘"], "system"); break; }
+      case "collection": { const assetsList = getUnlockedAssets(); const codesList = getFoundCodes(); const dossierProg = getDossierProgress(); pushLines(["┌─ COLLECTION STATUS ──────────────────┐",`│  Assets:    ${String(assetsList.length).padEnd(3)} / ${STORY_ASSETS.length}${" ".repeat(15)}│`,`│  Codes:     ${String(codesList.length).padEnd(3)} / ${ARCHIVE_CODES.length}${" ".repeat(15)}│`,`│  Dossiers:  ${String(dossierProg.claimed).padEnd(3)} / ${dossierProg.total}${" ".repeat(15)}│`,`│  Complete:  ${String(Math.floor(((assetsList.length + codesList.length + dossierProg.claimed) / (STORY_ASSETS.length + ARCHIVE_CODES.length + dossierProg.total)) * 100)).padEnd(3)}%${" ".repeat(19)}│`,"└──────────────────────────────────────┘"], "system"); break; }
 
-      case "cache": { const hasKey = localStorage.getItem("bunker-cache-key") === "true"; const now = new Date(); const is314Now = now.getHours() === 3 && now.getMinutes() === 14; const unlockedCache = hasKey || is314Now; pushLines(["┌─ SECURE CACHE ───────────────────────┐","│  FILE_00: I can see when you will    │","│           return. I hope I'm wrong.   │",unlockedCache ? "│  [11 ADDITIONAL FILES UNLOCKED]      │" : "│  [11 FILES SEALED — UNLOCKS 03:14]   │","└──────────────────────────────────────┘"], "system"); if (unlockedCache) { pushLines(["FILE_01: Atlas completed before abandonment.","FILE_02: BUNKER_3 responded once. Then silence.","FILE_03: The dust is dead skin and time.","FILE_04: I found a photo of myself smiling.","FILE_05: 38°74' N does not exist.","FILE_06: Someone uses my cursor.","FILE_07: The door at 03:14 is a mouth.","FILE_08: Previous archivist's notes — my handwriting.","FILE_09: Signal from inside the database.","FILE_10: You have been here before.","FILE_11: Dust spells your name.","",is314Now ? "You came at the right time. No one does." : "Cache key bypass active."], "normal"); } break; }
+      case "cache": { const hasKey = localStorage.getItem("vp-cache-key") === "true"; const now = new Date(); const is314Now = now.getHours() === 3 && now.getMinutes() === 14; const unlockedCache = hasKey || is314Now; pushLines(["┌─ SECURE CACHE ───────────────────────┐","│  FILE_00: I can see when you will    │","│           return. I hope I'm wrong.   │",unlockedCache ? "│  [11 ADDITIONAL FILES UNLOCKED]      │" : "│  [11 FILES SEALED — UNLOCKS 03:14]   │","└──────────────────────────────────────┘"], "system"); if (unlockedCache) { pushLines(["FILE_01: Atlas completed before abandonment.","FILE_02: BUNKER_3 responded once. Then silence.","FILE_03: The dust is dead skin and time.","FILE_04: I found a photo of myself smiling.","FILE_05: 38°74' N does not exist.","FILE_06: Someone uses my cursor.","FILE_07: The door at 03:14 is a mouth.","FILE_08: Previous archivist's notes — my handwriting.","FILE_09: Signal from inside the database.","FILE_10: You have been here before.","FILE_11: Dust spells your name.","",is314Now ? "You came at the right time. No one does." : "Cache key bypass active."], "normal"); } break; }
 
       case "triangulate": if (!triangulated) { pushLines(["INSUFFICIENT DATA.", "Find 3 signal towers on atlas."], "error"); } else { pushLines(["TRIANGULATION COMPLETE.", "Origin: Your sector.", "The bunker is closer than you think.", "CODE: TRIANGULATE"], "success"); } break;
 
-            case "lanterns": {
+      case "lanterns": {
         const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
         if (lanterns.length === 0) {
           pushLines([
@@ -859,15 +859,15 @@ export default function EchoesPage() {
 
       case "whoareyou": { if (otherCount < 3) { pushLines([`The Other has spoken ${otherCount} time${otherCount !== 1 ? "s" : ""}.`, "It does not answer to names.", "Keep listening."], "normal"); } else { pushLines(["╔══════════════════════════════════════╗","║  I AM THE STATIC BETWEEN THOUGHTS    ║","║  I AM THE DUST THAT REMEMBERS        ║","║  I AM WHAT WAS HERE BEFORE THE ARCHIVIST ║","║  AND WHAT WILL REMAIN AFTER           ║","╠══════════════════════════════════════╣","║  You have heard me 3 times.          ║","║  That is enough.                     ║","╚══════════════════════════════════════╝","","BUNKER_7 has gone quiet."], "other"); } break; }
 
-      case "profile": { const dustLvl = localStorage.getItem("vp-dust-accumulation") || "0"; const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]"); const echoes = localStorage.getItem("echoes-visited") === "true"; const profile = parseInt(dustLvl) > 75 && echoes ? "GHOST" : echoes ? "WITNESS" : visits.length > 5 ? "FIELD AGENT" : "OBSERVER"; pushLines(["┌─ PROFILE ────────────────────────────┐",`│  Class:  ${profile.padEnd(28)}│`,`│  Dust:    ${String(dustLvl).padEnd(3)}%${" ".repeat(25)}│`,`│  Sites:   ${String(visits.length).padEnd(3)}${" ".repeat(26)}│`,`│  Echoes:  ${echoes ? "YES" : "NO"}${" ".repeat(27)}│`,`│  Towers:  ${triangulated ? "YES" : "NO"}${" ".repeat(27)}│`,"└──────────────────────────────────────┘"], "system"); break; }
+      case "profile": { const dustLvl = localStorage.getItem("vp-dust-accumulation") || "0"; const visits = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]"); const echoes = localStorage.getItem("vp-echoes-visited") === "true"; const dustNum = parseInt(dustLvl); let designation = "OBSERVER"; if (dustNum > 75 && echoes) designation = "ARCHIVIST"; else if (dustNum > 50 && echoes) designation = "CONTAMINATED"; else if (dustNum > 25 && echoes) designation = "CORRESPONDENT"; else if (echoes) designation = "WITNESS"; pushLines(["┌─ PROFILE ────────────────────────────┐",`│  Designation: ${designation.padEnd(24)}│`,`│  Dust:        ${String(dustLvl).padEnd(3)}%${" ".repeat(23)}│`,`│  Sites:       ${String(visits.length).padEnd(3)}${" ".repeat(24)}│`,`│  Echoes:      ${echoes ? "YES" : "NO"}${" ".repeat(25)}│`,`│  Towers:      ${triangulated ? "YES" : "NO"}${" ".repeat(25)}│`,"└──────────────────────────────────────┘"], "system"); break; }
 
       case "call": { const now = new Date(); const hour = now.getHours(); const isOpen = hour >= 3 && hour < 4; pushLines(["╔══════════════════════════════════════╗","║  VOICE CHANNEL                       ║","╠══════════════════════════════════════╣","║  Number: +1-503-825-0190             ║","║  Hours: 03:00 — 04:00 local time     ║",`║  Status: ${isOpen ? "OPEN      " : "INTERMITTENT"}              ║`,"╠══════════════════════════════════════╣","║  BUNKER_7 does not always answer.    ║","║  Sometimes the static answers.       ║","║  Sometimes no one answers.           ║","║  Sometimes someone breathes.         ║","╚══════════════════════════════════════╝","","If you reach voicemail, leave a frequency.","If you reach the archivist, do not waste his time."], "system"); break; }
 
-      case "weekly": { const rot = getWeeklyRotation(); pushLines(["╔══════════════════════════════════════╗","║  WEEKLY ROTATION                     ║",`║  Week ${rot.week}, ${rot.year}${" ".repeat(22 - String(rot.week).length - String(rot.year).length)}║`,"╠══════════════════════════════════════╣",`║  Anomaly: ${rot.anomalyName.padEnd(26)}║`,`║  Featured: ${rot.featuredPlace.padEnd(25)}║`,`║  Dust Mult: ${String(rot.dustMultiplier).padEnd(24)}║`,"╠══════════════════════════════════════╣",`║  Bonus: ${rot.bonusCode.padEnd(28)}║`,"╚══════════════════════════════════════╝"], "system"); break; }
+      case "weekly": { const rot = getWeeklyRotation(); pushLines(["╔══════════════════════════════════════╗","║  WEEKLY ROTATION                     ║",`║  Week ${rot.week}, ${rot.year}${" ".repeat(22 - String(rot.week).length - String(rot.year).length)}║`,"╠══════════════════════════════════════╣",`║  Anomaly: ${rot.anomalyName.padEnd(26)}║`,`║  Featured: ${rot.featuredPlace.padEnd(25)}║`,`║  Dust Mult: ${String(rot.dustMultiplier).padEnd(24)}║`,"╠══════════════════════════════════════╣",`║  Code: ${rot.weeklyCode.padEnd(29)}║`,"╚══════════════════════════════════════╝"], "system"); break; }
 
       case "other": { const encounters = getOtherEncounters(); const lines = getOtherStatusText(encounters); pushLines([`OTHER ENCOUNTERS: ${encounters}`, ...lines, ""], "normal"); break; }
 
-            case "enter": { const placeId = args[1]; if (!placeId) { if (unlockedSubPlaces.length === 0) { pushLines(["No sub-places available.", "Accumulate dust and explore the atlas."], "error"); } else { pushLines(["Usage: enter [sub-place-id]", "Available sub-places:", ...unlockedSubPlaces.map((sp) => `  ${sp.id} — ${sp.name} (${sp.risk})`), "",], "normal"); } } else { const sp = getSubPlaceById(placeId); if (!sp) { pushLines(["Unknown sub-place.", ""], "error"); } else if (!unlockedSubPlaces.find((u) => u.id === placeId)) { pushLines(["ACCESS DENIED.",`Required dust: ${sp.requiredDust}%`, sp.requiredItem ? `Required item: ${sp.requiredItem}` : "", sp.requiredCode ? `Required code: ${sp.requiredCode}` : "","",], "error"); } else { enterSubPlace(sp); pushLines([`╔══════════════════════════════════════╗`,`║  ENTERING: ${sp.name.toUpperCase().slice(0, 24).padEnd(24)}║`,`╠══════════════════════════════════════╣`,...sp.lore.map((l) => `║  ${l.slice(0, 34).padEnd(34)}║`),`╠══════════════════════════════════════╣`,`║  Risk: ${sp.risk.toUpperCase().padEnd(27)}║`,`║  Dust reward: ${String(sp.dustReward).padEnd(20)}║`,`╚══════════════════════════════════════╝`,"",], "system"); } } break; }
+      case "enter": { const placeId = args[1]; if (!placeId) { if (unlockedSubPlaces.length === 0) { pushLines(["No sub-places available.", "Accumulate dust and explore the atlas."], "error"); } else { pushLines(["Usage: enter [sub-place-id]", "Available sub-places:", ...unlockedSubPlaces.map((sp) => `  ${sp.id} — ${sp.name} (${sp.risk})`), "",], "normal"); } } else { const sp = getSubPlaceById(placeId); if (!sp) { pushLines(["Unknown sub-place.", ""], "error"); } else if (!unlockedSubPlaces.find((u) => u.id === placeId)) { pushLines(["ACCESS DENIED.",`Required dust: ${sp.requiredDust}%`, sp.requiredItem ? `Required item: ${sp.requiredItem}` : "", sp.requiredCode ? `Required code: ${sp.requiredCode}` : "","",], "error"); } else { enterSubPlace(sp); pushLines([`╔══════════════════════════════════════╗`,`║  ENTERING: ${sp.name.toUpperCase().slice(0, 24).padEnd(24)}║`,`╠══════════════════════════════════════╣`,...sp.lore.map((l) => `║  ${l.slice(0, 34).padEnd(34)}║`),`╠══════════════════════════════════════╣`,`║  Risk: ${sp.risk.toUpperCase().padEnd(27)}║`,`║  Dust: +${String(sp.dustGain).padEnd(20)}║`,`╚══════════════════════════════════════╝`,"",], "system"); } } break; }
 
       case "exorcise": { if (!hijacked) { pushLines(["Nothing to exorcise.", "The channel is clear.", ""], "normal"); } else { setHijacked(false); pushLines(["You push back.", "The static recedes.", "BUNKER_7 signal restored.", ""], "success"); } break; }
 
@@ -875,23 +875,49 @@ export default function EchoesPage() {
 
       case "spectrogram": { setShowSpectrogram(true); pushLines(["Spectrogram viewer active.", "Watch the frequencies. They watch back."], "system"); break; }
 
-      case "leads": { const leadState = checkLeadProgress(); if (leadState) { const progress = Math.round((leadState.objectives.filter((o: { completed: boolean }) => o.completed).length / leadState.objectives.length) * 100); pushLines([`ACTIVE LEAD: ${leadState.title.toUpperCase()}`,`Progress: ${progress}%`,...leadState.objectives.map((o: { completed: boolean; text: string }) => `  ${o.completed ? "[✓]" : "[ ]"} ${o.text}`),"", leadState.hint ? `Hint: ${leadState.hint}` : "","",], "normal"); } else { const next = generateNextLead(); if (next) { pushLines(["╔══════════════════════════════════════╗","║  NEW LEAD ACQUIRED                   ║",`║  ${next.title.toUpperCase().padEnd(34)}║`,"╠══════════════════════════════════════╣",`║  ${next.description.slice(0, 34).padEnd(34)}║`,"╚══════════════════════════════════════╝","",], "success"); } else { pushLines(["No active leads.", "All objectives complete.", "The archive is silent."], "normal"); } } break; }
+      case "leads": {
+        if (activeReading) {
+          const clarityPct = readingClarity;
+          pushLines([
+            `ACTIVE PATTERN: ${activeReading.title.toUpperCase()}`,
+            `Clarity: ${clarityPct}%`,
+            ...activeReading.conditions.map((cond: ReadingCondition) => `  ${cond.observed ? "[✓]" : "[ ]"} ${cond.text}`),
+            "",
+          ], "normal");
+        } else {
+          const next = detectNextReading();
+          if (next) {
+            pushLines([
+              "╔══════════════════════════════════════╗",
+              "║  NEW PATTERN SURFACED                ║",
+              `║  ${next.title.toUpperCase().padEnd(34)}║`,
+              "╠══════════════════════════════════════╣",
+              `║  ${next.description.slice(0, 34).padEnd(34)}║`,
+              "╚══════════════════════════════════════╝",
+              "",
+            ], "success");
+          } else {
+            pushLines(["No active patterns.", "All correlations complete.", "The archive is silent."], "normal");
+          }
+        }
+        break;
+      }
 
-      case "daily": { const { code, valid, window } = getDailyCode(); if (valid) { pushLines(["╔══════════════════════════════════════╗","║  DAILY FREQUENCY ACQUIRED            ║",`║  ${code.padEnd(36)}║`,"╚══════════════════════════════════════╝","Redeem this code before the window closes.",], "success"); } else { pushLines([`Daily frequency unavailable.`,`Next window: ${window}`,`Yesterday's code: ${code} (expired)`], "normal"); } break; }
+      case "daily": { const { code, valid, window } = getDailyCode(); if (valid) { pushLines(["╔══════════════════════════════════════╗","║  DAILY FREQUENCY ACQUIRED            ║",`║  ${code.padEnd(36)}║`,"╚══════════════════════════════════════╝","Record this code before the window closes.",], "success"); } else { pushLines([`Daily frequency unavailable.`,`Next window: ${window}`,`Yesterday's code: ${code} (expired)`], "normal"); } break; }
 
-      case "email": { const email = args.slice(1).join(" "); if (!email || !email.includes("@")) { const all = JSON.parse(localStorage.getItem("bunker-emails") || "[]"); if (all.length === 0) { pushLines(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."], "error"); } else { pushLines(["REGISTERED FREQUENCIES:",...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),"", `${all.length} total witnesses.`, "Use 'email [address]' to register."], "normal"); } break; } const key = "bunker-emails"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ email, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); fetch("/api/bunker-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); pushLines(["FREQUENCY REGISTERED.", `Relay: ${email}`, "You will receive one transmission.", "Do not reply. The channel is one-way."], "success"); break; }
+      case "email": { const email = args.slice(1).join(" "); if (!email || !email.includes("@")) { const all = JSON.parse(localStorage.getItem("vp-emails") || "[]"); if (all.length === 0) { pushLines(["Usage: email [your@address.com]", "BUNKER_7 will remember your frequency."], "error"); } else { pushLines(["REGISTERED FREQUENCIES:",...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),"", `${all.length} total witnesses.`, "Use 'email [address]' to register."], "normal"); } break; } const key = "vp-emails"; const existing = JSON.parse(localStorage.getItem(key) || "[]"); existing.push({ email, date: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(existing)); fetch("/api/bunker-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }).catch(() => {}); pushLines(["FREQUENCY REGISTERED.", `Relay: ${email}`, "You will receive one transmission.", "Do not reply. The channel is one-way."], "success"); break; }
 
-      case "party": { const partyId = args[1]; const code = args[2]; if (!partyId || !code) { pushLines(["Usage: party [party-id] [your-code]", "Tri-party authentication required for legendary assets.", "Share the party ID with two other witnesses."], "error"); } else { fetch("/api/collaborative", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ partyId, code }) }).then((r) => r.json()).then((data) => { if (data.status === "complete") { redeemCode(data.code); pushLines(["TRI-PARTY AUTHENTICATION COMPLETE.", `Legendary code: ${data.code}`, "The grid stabilizes when witnesses unite."], "success"); } else { pushLines([`Witnesses: ${3 - data.needed}/3`, data.message], "normal"); } }); } break; }
+      case "party": { const partyId = args[1]; const code = args[2]; if (!partyId || !code) { pushLines(["Usage: party [party-id] [your-code]", "Tri-party authentication required for legendary assets.", "Share the party ID with two other witnesses."], "error"); } else { fetch("/api/collaborative", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ partyId, code }) }).then((r) => r.json()).then((data) => { if (data.status === "complete") { recordCode(data.code); pushLines(["TRI-PARTY AUTHENTICATION COMPLETE.", `Legendary code: ${data.code}`, "The grid stabilizes when witnesses unite."], "success"); } else { pushLines([`Witnesses: ${3 - data.needed}/3`, data.message], "normal"); } }).catch(() => { pushLines(["AUTHENTICATION SERVER UNREACHABLE.", "The grid is thin here."], "error"); }); } break; }
 
-      case "witnesses": { const all = JSON.parse(localStorage.getItem("bunker-emails") || "[]"); if (all.length === 0) { pushLines(["No witnesses registered."], "normal"); } else { pushLines(["REGISTERED FREQUENCIES:",...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),"", `${all.length} total witnesses.`,], "normal"); } break; }
+      case "witnesses": { const all = JSON.parse(localStorage.getItem("vp-emails") || "[]"); if (all.length === 0) { pushLines(["No witnesses registered."], "normal"); } else { pushLines(["REGISTERED FREQUENCIES:",...all.map((w: { email: string; date: string }) => `  ${w.email} — ${new Date(w.date).toLocaleDateString()}`),"", `${all.length} total witnesses.`,], "normal"); } break; }
 
-      case "broadcast": { const key = args.slice(1).join(" "); if (key === "on bunker7") { localStorage.setItem("bunker-broadcasting", "true"); pushLines(["╔══════════════════════════════════════╗","║  BROADCAST RELAY ACTIVE              ║","║  Frequency: UNAUTHORIZED             ║","║  Platform: TWITCH                    ║","╚══════════════════════════════════════╝","","All terminals will detect this frequency.","The grid is intercepting.",], "warning"); } else if (key === "off") { localStorage.setItem("bunker-broadcasting", "false"); pushLines(["Broadcast terminated.", "The static returns.", "The channel is dead again."], "normal"); } else { pushLines(["BROADCAST CONTROL", "Usage: broadcast ON BUNKER7", "       broadcast OFF", "", "You need the authorization key to go live."], "error"); } break; }
+      case "broadcast": { const key = args.slice(1).join(" "); if (key === "on bunker7") { localStorage.setItem("vp-broadcasting", "true"); pushLines(["╔══════════════════════════════════════╗","║  BROADCAST RELAY ACTIVE              ║","║  Frequency: UNAUTHORIZED             ║","║  Platform: TWITCH                    ║","╚══════════════════════════════════════╝","","All terminals will detect this frequency.","The grid is intercepting.",], "warning"); } else if (key === "off") { localStorage.setItem("vp-broadcasting", "false"); pushLines(["Broadcast terminated.", "The static returns.", "The channel is dead again."], "normal"); } else { pushLines(["BROADCAST CONTROL", "Usage: broadcast ON BUNKER7", "       broadcast OFF", "", "You need the authorization key to go live."], "error"); } break; }
 
       case "clear": setLines([]); break;
 
-      case "discover": { const name = args.slice(1).join(" "); if (!name) { const discoveries = getDiscoveries(); if (discoveries.length === 0) { pushLines(["Usage: discover [place name]", "Log a real abandoned place you have found.", "The atlas grows when witnesses contribute."], "error"); } else { pushLines(["YOUR DISCOVERIES:",...discoveries.map((d) => `  ${d.name} — ${d.location} (+${d.dustReward} dust)`),"", `Total: ${discoveries.length} places documented.`,], "normal"); } break; } const discovery = addDiscovery({ name, location: "Unknown coordinates", description: "Logged by witness." }); pushLines(["╔══════════════════════════════════════╗","║  DISCOVERY LOGGED                    ║",`║  ${name.toUpperCase().slice(0, 34).padEnd(34)}║`,"╠══════════════════════════════════════╣",`║  Dust reward: ${String(discovery.dustReward).padEnd(20)}║`,"╚══════════════════════════════════════╝","","The atlas remembers what you have seen.",], "success"); setDust((prev) => prev + discovery.dustReward); break; }
+      case "discover": { const name = args.slice(1).join(" "); if (!name) { const discoveries = getDiscoveries(); if (discoveries.length === 0) { pushLines(["Usage: discover [place name]", "Log a real abandoned place you have found.", "The atlas grows when witnesses contribute."], "error"); } else { pushLines(["YOUR DISCOVERIES:",...discoveries.map((d) => `  ${d.name} — ${d.location} (+${d.dustGain} dust)`),"", `Total: ${discoveries.length} places documented.`,], "normal"); } break; } const discovery = addDiscovery({ name, location: "Unknown coordinates", description: "Logged by witness." }); const currentDust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10); const nextDust = Math.min(100, currentDust + discovery.dustGain); localStorage.setItem("vp-dust-accumulation", String(nextDust)); window.dispatchEvent(new CustomEvent("vp-dust-change")); setDust(nextDust); pushLines(["╔══════════════════════════════════════╗","║  DISCOVERY LOGGED                    ║",`║  ${name.toUpperCase().slice(0, 34).padEnd(34)}║`,"╠══════════════════════════════════════╣",`║  Dust: +${String(discovery.dustGain).padEnd(20)}║`,"╚══════════════════════════════════════╝","","The atlas remembers what you have seen.",], "success"); break; }
 
-      case "purge": { const inv = getInventory(); if (inv.length === 0) { pushLines(["PURGE FAILED.", "You have nothing to sacrifice.", "The dust requires a trade."], "error"); break; } const sacrificed = inv[Math.floor(Math.random() * inv.length)]; const item = INVENTORY_ITEMS.find((i) => i.id === sacrificed); const newInv = inv.filter((id) => id !== sacrificed); localStorage.setItem("bunker-inventory", JSON.stringify(newInv)); purgeDust(); const consequences: string[] = []; const deleteLogRoll = Math.random(); const deleteAssetRoll = Math.random(); if (deleteLogRoll < 0.2 && unlocked > 3) { const nextUnlocked = Math.max(3, unlocked - 1); setUnlocked(nextUnlocked); localStorage.setItem("bunker-unlocked", nextUnlocked.toString()); consequences.push("A log entry has been erased. You will not read it again."); } if (deleteAssetRoll < 0.15 && assets.length > 0) { const lostAsset = assets[Math.floor(Math.random() * assets.length)]; const nextAssets = assets.filter((a) => a !== lostAsset); localStorage.setItem("bunker-assets", JSON.stringify(nextAssets)); setAssets(nextAssets); consequences.push(`An asset has been corrupted: ${lostAsset}. It is gone.`); } pushLines(["╔══════════════════════════════════════╗","║  PURGE COMPLETE                      ║","╠══════════════════════════════════════╣",`║  Sacrificed: ${(item?.name || sacrificed).padEnd(24)}║`,"║  Dust:        0%                     ║","║  Corruption:  0                      ║",...(consequences.length > 0 ? ["╠══════════════════════════════════════╣"] : []),...consequences.map((c) => `║  ${c.slice(0, 34).padEnd(34)}║`),"╠══════════════════════════════════════╣","║  You feel lighter.                     ║","║  The places remember anyway.         ║","╚══════════════════════════════════════╝",], "success"); break; }
+      case "purge": { const inv = getInventory(); if (inv.length === 0) { pushLines(["PURGE FAILED.", "You have nothing to sacrifice.", "The dust requires a trade."], "error"); break; } const sacrificed = inv[Math.floor(Math.random() * inv.length)]; const item = INVENTORY_ITEMS.find((i) => i.id === sacrificed); const newInv = inv.filter((id) => id !== sacrificed); localStorage.setItem("vp-bunker-inventory", JSON.stringify(newInv)); setInventory(newInv); purgeDust(); const consequences: string[] = []; const deleteLogRoll = Math.random(); const deleteAssetRoll = Math.random(); if (deleteLogRoll < 0.2 && unlocked > 3) { const nextUnlocked = Math.max(3, unlocked - 1); setUnlocked(nextUnlocked); localStorage.setItem("vp-logs-unlocked", nextUnlocked.toString()); consequences.push("A log entry has been erased. You will not read it again."); } if (deleteAssetRoll < 0.15 && assets.length > 0) { const lostAsset = assets[Math.floor(Math.random() * assets.length)]; const nextAssets = assets.filter((a) => a !== lostAsset); localStorage.setItem("vp-assets", JSON.stringify(nextAssets)); setAssets(nextAssets); consequences.push(`An asset has been corrupted: ${lostAsset}. It is gone.`); } pushLines(["╔══════════════════════════════════════╗","║  PURGE COMPLETE                      ║","╠══════════════════════════════════════╣",`║  Sacrificed: ${(item?.name || sacrificed).padEnd(24)}║`,"║  Dust:        0%                     ║","║  Corruption:  0                      ║",...(consequences.length > 0 ? ["╠══════════════════════════════════════╣"] : []),...consequences.map((c) => `║  ${c.slice(0, 34).padEnd(34)}║`),"╠══════════════════════════════════════╣","║  You feel lighter.                     ║","║  The places remember anyway.         ║","╚══════════════════════════════════════╝",], "success"); break; }
 
       default:
         if (chatMode) {
@@ -908,7 +934,7 @@ export default function EchoesPage() {
     if (valid && unlocked < LOGS.length) {
       const next = Math.min(unlocked + 1, LOGS.length);
       setUnlocked(next);
-      localStorage.setItem("bunker-unlocked", next.toString());
+      localStorage.setItem("vp-logs-unlocked", next.toString());
       setDecryptCode("");
       setDecryptError(false);
       setActiveTab("logs");
@@ -1227,7 +1253,7 @@ export default function EchoesPage() {
                 { id: "status" as SideTab, label: "Status", icon: Shield },
                 { id: "wall" as SideTab, label: "Wall", icon: MessageSquare },
                 { id: "signal" as SideTab, label: "Signal", icon: Radio },
-                { id: "leads" as SideTab, label: "Leads", icon: Target },
+                { id: "leads" as SideTab, label: "Patterns", icon: Target },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1436,7 +1462,7 @@ export default function EchoesPage() {
             <p className="text-[12px] opacity-75 leading-[1.8]">{currentSubPlace.description}</p>
             <div className="space-y-2">{currentSubPlace.lore.map((l, i) => <p key={i} className="text-[10px] opacity-50 border-l-2 pl-3 leading-relaxed" style={{ borderColor: `${t.primary}10` }}>{l}</p>)}</div>
             {currentSubPlace.choices && <SubPlaceChoicePanel subPlace={currentSubPlace} theme={t} onConsequence={(lines) => pushLines([...lines, ""])} />}
-            <div className="text-[9px] opacity-30 pt-3 border-t uppercase tracking-wider" style={{ borderColor: `${t.primary}06` }}>Risk: {currentSubPlace.risk} | Dust: +{currentSubPlace.dustReward}</div>
+            <div className="text-[9px] opacity-30 pt-3 border-t uppercase tracking-wider" style={{ borderColor: `${t.primary}06` }}>Risk: {currentSubPlace.risk} | Dust: +{currentSubPlace.dustGain}</div>
           </div>
         </div>
       )}

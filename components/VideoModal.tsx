@@ -40,7 +40,8 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] bg-[#050a05]/95 backdrop-blur-sm flex items-center justify-center p-3 md:p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 md:p-4"
+          style={{ backgroundColor: "rgba(12,10,8,0.95)" }}
           onClick={onClose}
         >
           <motion.div
@@ -50,17 +51,41 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-3xl relative mx-auto"
           >
-            <div className="border border-[#33ff00]/30 rounded-lg overflow-hidden bg-[#0a0f0a] shadow-[0_0_40px_rgba(51,255,0,0.1)]">
-              <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-[#33ff00]/20">
-                <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-[#33ff00]/70 truncate pr-2">
+            <div
+              className="rounded-lg overflow-hidden border"
+              style={{
+                backgroundColor: "#0c0a08",
+                borderColor: "rgba(154,138,114,0.2)",
+              }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-3 md:px-4 py-2 border-b"
+                style={{ borderColor: "rgba(154,138,114,0.12)" }}
+              >
+                <span
+                  className="text-[10px] font-mono uppercase tracking-widest truncate pr-2"
+                  style={{ color: "rgba(154,138,114,0.7)" }}
+                >
                   {label}
                 </span>
-                <button onClick={onClose} className="text-[#33ff00]/50 hover:text-[#33ff00] flex-shrink-0">
+                <button
+                  onClick={onClose}
+                  className="transition-colors"
+                  style={{ color: "rgba(154,138,114,0.5)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(154,138,114,0.5)";
+                  }}
+                >
                   <X size={14} />
                 </button>
               </div>
               
-              <div className="relative aspect-video bg-black">
+              {/* Video */}
+              <div className="relative aspect-video" style={{ backgroundColor: "#0c0a08" }}>
                 <video
                   ref={videoRef}
                   src={src}
@@ -69,20 +94,48 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
                   onClick={togglePlay}
                   playsInline
                 />
-                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(51,255,0,0.03)_50%,transparent_50%)] bg-[length:100%_4px]" />
+                {/* Warm scanlines */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(rgba(154,138,114,0.03) 50%, transparent 50%)",
+                    backgroundSize: "100% 4px",
+                  }}
+                />
                 
                 {!playing && (
                   <button
                     onClick={togglePlay}
-                    className="absolute inset-0 flex items-center justify-center bg-black/40"
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(12,10,8,0.4)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(12,10,8,0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(12,10,8,0.4)";
+                    }}
                   >
-                    <Play size={36} className="text-[#33ff00]/80 md:w-12 md:h-12" />
+                    <Play size={36} className="md:w-12 md:h-12" style={{ color: "rgba(154,138,114,0.8)" }} />
                   </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 border-t border-[#33ff00]/20">
-                <button onClick={togglePlay} className="text-[#33ff00]/70 hover:text-[#33ff00]">
+              {/* Controls */}
+              <div
+                className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 border-t"
+                style={{ borderColor: "rgba(154,138,114,0.12)" }}
+              >
+                <button
+                  onClick={togglePlay}
+                  className="transition-colors"
+                  style={{ color: "rgba(154,138,114,0.7)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(154,138,114,0.7)";
+                  }}
+                >
                   {playing ? <Pause size={14} /> : <Play size={14} />}
                 </button>
                 <button
@@ -92,11 +145,21 @@ export default function VideoModal({ src, label, isOpen, onClose }: Props) {
                       setMuted(!muted);
                     }
                   }}
-                  className="text-[#33ff00]/70 hover:text-[#33ff00]"
+                  className="transition-colors"
+                  style={{ color: "rgba(154,138,114,0.7)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "#9a8a72";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(154,138,114,0.7)";
+                  }}
                 >
                   {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                 </button>
-                <span className="text-[8px] md:text-[9px] font-mono text-[#33ff00]/40 ml-auto">
+                <span
+                  className="text-[10px] font-mono ml-auto"
+                  style={{ color: "rgba(154,138,114,0.4)" }}
+                >
                   ECHOES & DUST // CLASSIFIED
                 </span>
               </div>

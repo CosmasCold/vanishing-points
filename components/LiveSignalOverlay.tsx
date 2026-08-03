@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Activity, X, Minus } from "lucide-react";
+import { Activity, X, Minus } from "lucide-react";
 
 interface Props {
   twitchChannel: string;
@@ -58,14 +58,12 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  // Detect domain for Twitch embed
   useEffect(() => {
     if (typeof window !== "undefined") {
       setParentDomain(window.location.hostname);
     }
   }, []);
 
-  // Poll broadcast status
   useEffect(() => {
     const check = () => {
       const broadcasting = localStorage.getItem("bunker-broadcasting") === "true";
@@ -77,14 +75,12 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  // If broadcast turns off, reset dismissed state so it shows again next time
   useEffect(() => {
     if (!isLive) {
       setPanelState((prev) => ({ ...prev, dismissed: false }));
     }
   }, [isLive]);
 
-  // Clamp position on resize
   useEffect(() => {
     const onResize = () => {
       if (typeof window === "undefined") return;
@@ -103,21 +99,17 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Persist state
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(panelState));
     }
   }, [panelState]);
 
-  // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     isDragging.current = true;
-    const clientX = e.clientX;
-    const clientY = e.clientY;
     dragOffset.current = {
-      x: clientX - panelState.x,
-      y: clientY - panelState.y,
+      x: e.clientX - panelState.x,
+      y: e.clientY - panelState.y,
     };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [panelState.x, panelState.y]);
@@ -145,16 +137,19 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
 
   const handleExpand = () => {
     setPanelState((prev) => ({ ...prev, collapsed: false }));
+    // Bridge: log that the player acknowledged the signal
+    if (typeof window !== "undefined") {
+      localStorage.setItem("vp-signal-seen-at", Date.now().toString());
+    }
   };
 
   const handleDismiss = () => {
     setPanelState((prev) => ({ ...prev, dismissed: true }));
   };
 
-  // Don't render anything if not live or permanently dismissed this session
   if (!isLive || panelState.dismissed) return null;
 
-  // ─── COLLAPSED: Floating Signal Bar ───
+  // ─── COLLAPSED: Ember pulse badge ───
   if (panelState.collapsed) {
     return (
       <motion.button
@@ -162,33 +157,48 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         onClick={handleExpand}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-3 py-2 rounded-lg border border-[#a03030]/40 bg-[#0a0808]/90 backdrop-blur-md cursor-pointer select-none transition-colors hover:border-[#a03030]/70"
-        style={{ boxShadow: "0 0 20px rgba(160,48,48,0.15)" }}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-3 py-2 rounded-lg border backdrop-blur-md select-none transition-all active:scale-95"
+        style={{
+          borderColor: "rgba(196,120,90,0.22)",
+          background: "rgba(12,10,8,0.92)",
+          boxShadow: "0 0 20px rgba(196,120,90,0.06)",
+          color: "#c4785a",
+        }}
       >
-        <div className="w-2 h-2 rounded-full bg-[#a03030] animate-pulse" />
-        <span className="text-[10px] uppercase tracking-widest text-[#c04040] font-bold">
-          LIVE
+        <span className="relative flex h-2 w-2">
+          <span
+            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40"
+            style={{ background: "#c4785a" }}
+          />
+          <span
+            className="relative inline-flex rounded-full h-2 w-2"
+            style={{ background: "#c4785a" }}
+          />
         </span>
-        <span className="text-[9px] opacity-60 font-mono">
-          SIG:{liveSignal}%
+        <span className="text-[11px] uppercase tracking-widest font-bold font-mono">
+          Signal
+        </span>
+        <span className="text-[10px] opacity-40 font-mono">
+          {liveSignal}%
         </span>
       </motion.button>
     );
   }
 
-  // ─── EXPANDED: Draggable Video Panel ───
+  // ─── EXPANDED: Draggable intercept panel ───
   return (
     <motion.div
       ref={panelRef}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="fixed z-40 w-[calc(100vw-16px)] md:w-[480px] rounded-xl overflow-hidden border border-[#a03030]/30 touch-none"
+      className="fixed z-40 w-[calc(100vw-16px)] md:w-[480px] rounded-xl overflow-hidden touch-none"
       style={{
         left: panelState.x,
         top: panelState.y,
-        background: "rgba(10,8,8,0.96)",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(160,48,48,0.08)",
+        background: "rgba(12,10,8,0.96)",
+        border: "1px solid rgba(196,120,90,0.15)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.6), 0 0 40px rgba(196,120,90,0.04)",
       }}
     >
       {/* Drag Handle */}
@@ -196,28 +206,35 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        className="h-8 flex items-center justify-between px-3 cursor-grab active:cursor-grabbing border-b border-[#ffffff08] bg-[#0c0a08] select-none"
+        className="h-8 flex items-center justify-between px-3 select-none"
+        style={{
+          cursor: "grab",
+          background: "rgba(18,14,10,0.8)",
+          borderBottom: "1px solid rgba(122,107,82,0.08)",
+        }}
       >
         <div className="flex items-center gap-2">
-          <Activity size={12} className="text-[#a03030] animate-pulse" />
-          <span className="text-[9px] uppercase tracking-widest text-[#a03030] font-bold">
-            UNAUTHORIZED SIGNAL
+          <Activity size={12} style={{ color: "#c4785a" }} className="animate-pulse" />
+          <span className="text-[11px] uppercase tracking-widest font-bold font-mono" style={{ color: "#c4785a" }}>
+            Intercepted Transmission
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[9px] opacity-50 font-mono">
+          <span className="text-[11px] opacity-40 font-mono" style={{ color: "#9a8a72" }}>
             SIG:{liveSignal}%
           </span>
           <button
             onClick={handleMinimize}
-            className="opacity-40 hover:opacity-100 transition-opacity p-0.5"
+            className="opacity-30 hover:opacity-80 transition-opacity p-0.5"
+            style={{ color: "#9a8a72" }}
             title="Minimize"
           >
             <Minus size={12} />
           </button>
           <button
             onClick={handleDismiss}
-            className="opacity-40 hover:opacity-100 transition-opacity p-0.5"
+            className="opacity-30 hover:opacity-80 transition-opacity p-0.5"
+            style={{ color: "#9a8a72" }}
             title="Dismiss"
           >
             <X size={12} />
@@ -229,20 +246,33 @@ export default function LiveSignalOverlay({ twitchChannel }: Props) {
       <div className="relative bg-black aspect-video">
         <iframe
           src={`https://player.twitch.tv/?channel=${twitchChannel}&parent=${parentDomain}&muted=false&autoplay=true`}
+          title="Intercepted bunker transmission"
           className="w-full h-full border-0"
+          allow="autoplay; fullscreen"
           allowFullScreen
         />
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 flex items-center justify-between border-t border-[#ffffff06]">
+      <div
+        className="px-3 py-2 flex items-center justify-between"
+        style={{
+          borderTop: "1px solid rgba(122,107,82,0.06)",
+          background: "rgba(18,14,10,0.6)",
+        }}
+      >
         <div className="flex items-center gap-1.5">
-          <div className="w-1 h-1 rounded-full bg-[#a03030] animate-pulse" />
-          <span className="text-[8px] opacity-50 uppercase tracking-wider">
+          <div
+            className="w-1.5 h-1.5 rounded-full animate-pulse"
+            style={{ background: "#c4785a" }}
+          />
+          <span className="text-[10px] opacity-40 uppercase tracking-wider font-mono" style={{ color: "#9a8a72" }}>
             BUNKER_7 RELAY
           </span>
         </div>
-        <span className="text-[8px] opacity-30">TWITCH // UNAUTHORIZED</span>
+        <span className="text-[10px] opacity-25 font-mono" style={{ color: "#5a4e42" }}>
+          UNAUTHORIZED FEED
+        </span>
       </div>
     </motion.div>
   );

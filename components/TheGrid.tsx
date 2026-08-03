@@ -24,6 +24,34 @@ const NODES: GridNode[] = [
 
 const CORRECT_PATH = ["duga", "chernobyl", "centralia", "thevoid"];
 
+/* ─── dust helpers ─── */
+function getDust(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+}
+
+function addDust(amount: number) {
+  if (typeof window === "undefined") return;
+  const next = Math.min(100, getDust() + amount);
+  localStorage.setItem("vp-dust-accumulation", next.toString());
+  window.dispatchEvent(new CustomEvent("vp-dust-change"));
+}
+
+function validatePath(lines: [string, string][]): boolean {
+  const adj = new Map<string, string[]>();
+  for (const [from, to] of lines) {
+    if (!adj.has(from)) adj.set(from, []);
+    adj.get(from)!.push(to);
+  }
+  for (let i = 0; i < CORRECT_PATH.length - 1; i++) {
+    const from = CORRECT_PATH[i];
+    const to = CORRECT_PATH[i + 1];
+    const neighbors = adj.get(from) || [];
+    if (!neighbors.includes(to)) return false;
+  }
+  return true;
+}
+
 export default function TheGrid() {
   const [discovered, setDiscovered] = useState<string[]>(["bunker7"]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -54,7 +82,7 @@ export default function TheGrid() {
   const nodes = NODES.map((n) => ({ ...n, unlocked: discovered.includes(n.id) }));
 
   const handleNodeClick = useCallback(
-        (nodeId: string) => {
+    (nodeId: string) => {
       if (!selectedNode) {
         setSelectedNode(nodeId);
         setMessage(null);
@@ -79,15 +107,11 @@ export default function TheGrid() {
       setDrawnLines(nextLines);
       setSelectedNode(null);
 
-      // Validate path: duga → chernobyl → centralia → thevoid
-      const pathString = nextLines.map((l) => l.join("→")).join(",");
-      const isCorrect =
-        pathString.includes("duga→chernobyl") &&
-        pathString.includes("chernobyl→centralia") &&
-        pathString.includes("centralia→thevoid");
+      const isCorrect = validatePath(nextLines);
 
       if (isCorrect && !solved) {
         setSolved(true);
+        addDust(20);
         setMessage(
           "The grid aligns. Coordinates: 38°74'N, 000°00'E. The ocean floor. The door opens."
         );
@@ -121,7 +145,7 @@ export default function TheGrid() {
               y1={n1.y}
               x2={n2.x}
               y2={n2.y}
-              stroke={solved ? "#33ff00" : "#c4a882"}
+              stroke={solved ? "#c4785a" : "#9a8a72"}
               strokeWidth="0.5"
               opacity={0.6}
             />
@@ -138,15 +162,15 @@ export default function TheGrid() {
             top: `${node.y}%`,
             borderColor:
               selectedNode === node.id
-                ? "#fff"
+                ? "#ddd0bc"
                 : node.unlocked
-                ? "#c4a882"
-                : "#c4a88220",
+                ? "#9a8a72"
+                : "rgba(154,138,114,0.12)",
             backgroundColor:
               selectedNode === node.id
-                ? "#fff"
+                ? "#ddd0bc"
                 : node.unlocked
-                ? "#c4a88240"
+                ? "rgba(154,138,114,0.25)"
                 : "transparent",
           }}
           whileHover={node.unlocked ? { scale: 1.5 } : {}}
@@ -161,12 +185,20 @@ export default function TheGrid() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="absolute bottom-0 left-0 right-0 p-3 border-t text-center"
-          style={{ borderColor: "#c4a88230", backgroundColor: "rgba(5,5,5,0.9)" }}
+          style={{
+            borderColor: "rgba(154,138,114,0.18)",
+            backgroundColor: "rgba(12,10,8,0.92)",
+          }}
         >
-          <p className="text-[10px] uppercase tracking-widest text-[#c4a882]">
+          <p
+            className="text-[10px] uppercase tracking-widest"
+            style={{ color: solved ? "#c4785a" : "#9a8a72" }}
+          >
             {solved ? "GRID ALIGNED" : "ANOMALY"}
           </p>
-          <p className="text-[9px] opacity-70 mt-1">{message}</p>
+          <p className="text-[10px] opacity-70 mt-1" style={{ color: "#ddd0bc" }}>
+            {message}
+          </p>
         </motion.div>
       )}
     </div>

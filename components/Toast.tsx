@@ -34,16 +34,16 @@ function ToastItem({
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
 
-  const icons = {
-    success: <CheckCircle size={16} className="text-specter" />,
-    error: <XCircle size={16} className="text-warning" />,
-    info: <Info size={16} className="text-ash" />,
-  };
+  const palette = {
+    success: { icon: "#7a9a6a", border: "rgba(122,154,106,0.3)" },
+    error: { icon: "#c4785a", border: "rgba(196,120,90,0.3)" },
+    info: { icon: "#9a8a72", border: "rgba(154,138,114,0.3)" },
+  }[toast.type];
 
-  const borders = {
-    success: "border-specter/30",
-    error: "border-warning/30",
-    info: "border-ash/30",
+  const icons = {
+    success: <CheckCircle size={16} style={{ color: palette.icon }} />,
+    error: <XCircle size={16} style={{ color: palette.icon }} />,
+    info: <Info size={16} style={{ color: palette.icon }} />,
   };
 
   return (
@@ -51,13 +51,27 @@ function ToastItem({
       initial={{ opacity: 0, x: 20, scale: 0.95 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 20, scale: 0.95 }}
-      className={`pointer-events-auto flex items-center gap-3 px-4 py-3 bg-shadow/95 backdrop-blur-sm border ${borders[toast.type]} rounded-lg shadow-lg shadow-void/50 min-w-[280px]`}
+      className="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg"
+      style={{
+        minWidth: 280,
+        backgroundColor: "rgba(12,10,8,0.95)",
+        border: `1px solid ${palette.border}`,
+      }}
     >
       {icons[toast.type]}
-      <span className="text-sm text-bone/90 flex-1">{toast.message}</span>
+      <span className="text-sm flex-1" style={{ color: "rgba(221,208,188,0.9)" }}>
+        {toast.message}
+      </span>
       <button
         onClick={() => onRemove(toast.id)}
-        className="text-ash hover:text-bone transition-colors"
+        className="transition-colors"
+        style={{ color: "#7a6e5e" }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "#ddd0bc";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "#7a6e5e";
+        }}
       >
         <X size={14} />
       </button>

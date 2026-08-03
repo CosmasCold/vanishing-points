@@ -11,6 +11,18 @@ interface Props {
   onClose: () => void;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  if (clean.length === 3) {
+    const [r, g, b] = clean.split("").map((c) => parseInt(c + c, 16));
+    return `rgba(${r ?? 154}, ${g ?? 138}, ${b ?? 114}, ${alpha})`;
+  }
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${Number.isNaN(r) ? 154 : r}, ${Number.isNaN(g) ? 138 : g}, ${Number.isNaN(b) ? 114 : b}, ${alpha})`;
+}
+
 export default function TerminalVideoPlayer({
   src,
   label,
@@ -46,23 +58,35 @@ export default function TerminalVideoPlayer({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       className="border rounded-lg overflow-hidden relative"
-      style={{ borderColor: `${themeColor}15`, backgroundColor: `${themeColor}04` }}
+      style={{
+        borderColor: hexToRgba(themeColor, 0.08),
+        backgroundColor: hexToRgba(themeColor, 0.02),
+      }}
     >
       {/* Header */}
-      <div className="px-3 py-2 flex items-center justify-between border-b" style={{ borderColor: `${themeColor}10` }}>
+      <div
+        className="px-3 py-2 flex items-center justify-between border-b"
+        style={{ borderColor: hexToRgba(themeColor, 0.06) }}
+      >
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: playing ? "#7a9a6a" : "#5a5a5a" }} />
-          <span className="text-[9px] md:text-[10px] uppercase tracking-wider opacity-50 font-mono">
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: playing ? "#7a9a6a" : "#5a4e42" }}
+          />
+          <span
+            className="text-[10px] uppercase tracking-wider opacity-50 font-mono"
+            style={{ color: "#ddd0bc" }}
+          >
             {label || "ARCHIVED_SIGNAL"}
           </span>
         </div>
         <button onClick={onClose} className="opacity-40 hover:opacity-100 transition-opacity">
-          <span className="text-[10px]">×</span>
+          <span className="text-[10px]" style={{ color: "#ddd0bc" }}>×</span>
         </button>
       </div>
 
       {/* Video */}
-      <div className="relative bg-black aspect-video">
+      <div className="relative aspect-video" style={{ backgroundColor: "#0c0a08" }}>
         <video
           ref={videoRef}
           src={src}
@@ -76,7 +100,14 @@ export default function TerminalVideoPlayer({
         {!playing && (
           <button
             onClick={togglePlay}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
+            className="absolute inset-0 flex items-center justify-center transition-colors"
+            style={{ backgroundColor: "rgba(12,10,8,0.4)" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(12,10,8,0.2)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(12,10,8,0.4)";
+            }}
           >
             <Play size={32} style={{ color: themeColor, opacity: 0.8 }} />
           </button>
@@ -84,14 +115,20 @@ export default function TerminalVideoPlayer({
       </div>
 
       {/* Controls */}
-      <div className="px-3 py-2 flex items-center gap-3 border-t" style={{ borderColor: `${themeColor}10` }}>
+      <div
+        className="px-3 py-2 flex items-center gap-3 border-t"
+        style={{ borderColor: hexToRgba(themeColor, 0.06) }}
+      >
         <button onClick={togglePlay} className="opacity-60 hover:opacity-100 transition-opacity">
           {playing ? <Pause size={14} /> : <Play size={14} />}
         </button>
         <button onClick={toggleMute} className="opacity-60 hover:opacity-100 transition-opacity">
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
-        <div className="flex-1 h-1 rounded-full overflow-hidden bg-[#1a1612]">
+        <div
+          className="flex-1 h-1 rounded-full overflow-hidden"
+          style={{ backgroundColor: "rgba(122,107,82,0.1)" }}
+        >
           <div className="h-full w-0" />
         </div>
       </div>

@@ -5,12 +5,21 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   try {
+    // Defensive: works in Next.js 14 (sync) and 15 (async params)
+    const params = await Promise.resolve(context.params);
+    const slug = params.slug;
+
+    if (!slug) {
+      return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+    }
+
     await dbConnect();
+
     const place = await PlaceModel.findOneAndUpdate(
-      { slug: params.slug },
+      { slug },
       { $inc: { viewCount: 1 } },
       { new: true }
     ).lean();
@@ -20,7 +29,8 @@ export async function POST(
     }
 
     return NextResponse.json({ viewCount: place.viewCount });
-  } catch {
+  } catch (err) {
+    console.error("View increment error:", err);
     return NextResponse.json(
       { error: "Failed to increment views" },
       { status: 500 }

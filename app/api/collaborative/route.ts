@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const { partyId, code } = await req.json();
 
     if (!partyId || !code) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json({ error: "Transmission incomplete. partyId and code required." }, { status: 400 });
     }
 
     const now = Date.now();
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         status: "waiting",
         needed: REQUIRED - 1,
-        message: "First witness registered. Two more required within 5 minutes.",
+        message: "One witness detected. The grid requires three voices within five minutes.",
       });
     }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         status: "waiting",
         needed: REQUIRED - 1,
-        message: "Window expired. New session started.",
+        message: "The grid forgot. It remembers only what is simultaneous. New convergence started.",
       });
     }
 
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         status: "waiting",
         needed: REQUIRED - entry.codes.length,
-        message: "Code already registered. Share the party ID with others.",
+        message: "Frequency already registered. The grid waits for distinct voices.",
       });
     }
 
@@ -50,21 +50,21 @@ export async function POST(req: Request) {
     parties.set(partyId, entry);
 
     if (entry.codes.length >= REQUIRED) {
-      const legendaryCode = "TRINITY-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const convergenceCode = "TRINITY-" + Math.random().toString(36).substring(2, 6).toUpperCase();
       parties.delete(partyId);
       return NextResponse.json({
         status: "complete",
-        code: legendaryCode,
-        message: "Tri-party authentication successful. Legendary asset unlocked.",
+        code: convergenceCode,
+        message: "Grid convergence complete. Three witnesses registered. The archive grows.",
       });
     }
 
     return NextResponse.json({
       status: "waiting",
       needed: REQUIRED - entry.codes.length,
-      message: `Witness ${entry.codes.length}/${REQUIRED} registered.`,
+      message: `Witness ${entry.codes.length}/${REQUIRED} detected. The grid is listening.`,
     });
   } catch {
-    return NextResponse.json({ error: "System failure" }, { status: 500 });
+    return NextResponse.json({ error: "Signal lost. The static interfered." }, { status: 500 });
   }
 }

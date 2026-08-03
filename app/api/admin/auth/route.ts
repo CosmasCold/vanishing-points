@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const { code } = await req.json();
 
   if (!ADMIN_CODE || code !== ADMIN_CODE) {
-    return NextResponse.json({ error: "Invalid access code" }, { status: 401 });
+    return NextResponse.json({ error: "Access denied. The grid seal remains intact." }, { status: 401 });
   }
 
   const cookieStore = await cookies();
@@ -19,19 +19,19 @@ export async function POST(req: NextRequest) {
     path: "/",
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ status: "unsealed", message: "Grid maintenance authorized." });
 }
 
 export async function DELETE() {
   const cookieStore = await cookies();
   cookieStore.delete("vp_admin");
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ status: "sealed", message: "Maintenance session terminated. The vault is sealed." });
 }
 
 export async function GET() {
   const cookieStore = await cookies();
   if (cookieStore.get("vp_admin")?.value === "1") {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ status: "authorized" });
   }
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ error: "Maintenance authorization required. The vault is sealed." }, { status: 401 });
 }

@@ -27,13 +27,28 @@ const BOOT_SEQUENCE: BootLine[] = [
   { text: "BOOT COMPLETE.", delay: 8800, color: "success" },
 ];
 
+function getLineStyle(color?: string): { color: string; fontStyle?: string } {
+  switch (color) {
+    case "warning":
+      return { color: "rgba(196,120,90,0.8)" };
+    case "success":
+      return { color: "rgba(122,154,106,0.8)" };
+    case "ghost":
+      return { color: "rgba(154,138,114,0.4)", fontStyle: "italic" };
+    case "error":
+      return { color: "rgba(160,80,80,0.8)" };
+    default:
+      return { color: "rgba(221,208,188,0.8)" };
+  }
+}
+
 export default function TerminalBootSequence({ onComplete }: { onComplete: () => void }) {
   const [visibleLines, setVisibleLines] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     BOOT_SEQUENCE.forEach((line, idx) => {
       const timer = setTimeout(() => {
         setVisibleLines((prev) => prev + 1);
@@ -48,16 +63,6 @@ export default function TerminalBootSequence({ onComplete }: { onComplete: () =>
     return () => { timers.forEach(clearTimeout); clearInterval(cursorInterval); };
   }, [onComplete]);
 
-  const getColor = (color?: string) => {
-    switch (color) {
-      case "warning": return "text-[#c4a060]/80";
-      case "success": return "text-[#7a9a6a]/80";
-      case "ghost": return "text-[#9a8a72]/40 italic";
-      case "error": return "text-[#a05050]/80";
-      default: return "text-[#c8c0b4]/80";
-    }
-  };
-
   return (
     <AnimatePresence>
       {!finished && (
@@ -65,35 +70,101 @@ export default function TerminalBootSequence({ onComplete }: { onComplete: () =>
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1.2, ease: "easeInOut" }}
-          className="fixed inset-0 z-[100] bg-[#080605] flex items-center justify-center font-mono p-4 md:p-6"
+          className="fixed inset-0 z-[100] flex items-center justify-center font-mono p-4 md:p-6"
+          style={{ backgroundColor: "#0c0a08" }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,20,0.06)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_50%,rgba(0,0,0,0.85)_100%)]" />
+          {/* Scanlines */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: "linear-gradient(rgba(122,107,82,0.04) 50%, rgba(12,10,8,0.15) 50%)",
+              backgroundSize: "100% 4px",
+            }}
+          />
+          {/* Vignette */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: "radial-gradient(circle at center, transparent 50%, rgba(12,10,8,0.95) 100%)",
+            }}
+          />
           
           <div className="relative w-full max-w-xl space-y-1">
-            <div className="border-b border-[rgba(200,190,170,0.06)] pb-2 mb-4 md:mb-6">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-[#555]">BUNKER_7 // Secure Terminal // Cold Boot</p>
+            <div
+              className="border-b pb-2 mb-4 md:mb-6"
+              style={{ borderColor: "rgba(122,107,82,0.06)" }}
+            >
+              <p
+                className="text-[10px] uppercase tracking-[0.4em]"
+                style={{ color: "#5a4e42" }}
+              >
+                BUNKER_7 // Secure Terminal // Cold Boot
+              </p>
             </div>
 
             <div className="space-y-1 min-h-[280px] md:min-h-[320px]">
-              {BOOT_SEQUENCE.slice(0, visibleLines).map((line, idx) => (
-                <motion.div key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className={`text-[11px] md:text-[13px] tracking-wide ${getColor(line.color)}`}>
-                  {line.color === "ghost" ? <span className="pl-4">{line.text}</span> : <span><span className="text-[#444] mr-2">{`[${String(idx).padStart(2,"0")}]`}</span>{line.text}</span>}
-                </motion.div>
-              ))}
+              {BOOT_SEQUENCE.slice(0, visibleLines).map((line, idx) => {
+                const lineStyle = getLineStyle(line.color);
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-[11px] md:text-[13px] tracking-wide"
+                    style={{ color: lineStyle.color, fontStyle: lineStyle.fontStyle }}
+                  >
+                    {line.color === "ghost" ? (
+                      <span className="pl-4">{line.text}</span>
+                    ) : (
+                      <span>
+                        <span className="mr-2" style={{ color: "#4a3e32" }}>
+                          {`[${String(idx).padStart(2, "0")}]`}
+                        </span>
+                        {line.text}
+                      </span>
+                    )}
+                  </motion.div>
+                );
+              })}
               {visibleLines < BOOT_SEQUENCE.length && (
-                <div className="text-[11px] md:text-[13px] text-[#c8c0b4]/80">
-                  <span className="text-[#444] mr-2">{`[${String(visibleLines).padStart(2,"0")}]`}</span>
-                  <span className={`inline-block w-2 h-4 bg-[#9a8a72] align-middle ${showCursor ? "opacity-100" : "opacity-0"}`} />
+                <div
+                  className="text-[11px] md:text-[13px]"
+                  style={{ color: "rgba(221,208,188,0.8)" }}
+                >
+                  <span className="mr-2" style={{ color: "#4a3e32" }}>
+                    {`[${String(visibleLines).padStart(2, "0")}]`}
+                  </span>
+                  <span
+                    className={`inline-block w-2 h-4 align-middle ${showCursor ? "opacity-100" : "opacity-0"}`}
+                    style={{ backgroundColor: "#9a8a72" }}
+                  />
                 </div>
               )}
             </div>
 
-            <div className="pt-4 md:pt-6 border-t border-[rgba(200,190,170,0.04)]">
-              <div className="h-px w-full bg-[rgba(200,190,170,0.04)] relative overflow-hidden">
-                <motion.div className="absolute inset-y-0 left-0 bg-[#9a8a72]/15" initial={{ width: "0%" }} animate={{ width: `${(visibleLines / BOOT_SEQUENCE.length) * 100}%` }} transition={{ duration: 0.3 }} />
+            <div
+              className="pt-4 md:pt-6 border-t"
+              style={{ borderColor: "rgba(122,107,82,0.04)" }}
+            >
+              <div
+                className="h-px w-full relative overflow-hidden"
+                style={{ backgroundColor: "rgba(122,107,82,0.04)" }}
+              >
+                <motion.div
+                  className="absolute inset-y-0 left-0"
+                  style={{ backgroundColor: "rgba(154,138,114,0.15)" }}
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${(visibleLines / BOOT_SEQUENCE.length) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
               </div>
-              <p className="text-[9px] text-[#444] mt-2 uppercase tracking-widest">{Math.floor((visibleLines / BOOT_SEQUENCE.length) * 100)}% loaded</p>
+              <p
+                className="text-[10px] mt-2 uppercase tracking-widest"
+                style={{ color: "#4a3e32" }}
+              >
+                {Math.floor((visibleLines / BOOT_SEQUENCE.length) * 100)}% loaded
+              </p>
             </div>
           </div>
         </motion.div>

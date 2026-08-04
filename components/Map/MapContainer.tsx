@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Place } from "@/types";
 import { IMPOSSIBLE_COORDS } from "@/lib/echoesContent";
 import { showToast } from "@/lib/toast";
+import type { Feature, FeatureCollection, LineString } from "geojson";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
@@ -17,6 +18,14 @@ interface Props {
   anniversarySlugs: string[];
   onGhostCapture?: (ghost: { name: string; slug: string; coords: string }) => void;
   onTowerFound?: (tower: { id: string; name: string; coords: [number, number] }) => void;
+  // ─── ATLAS WHISPER & INVESTIGATION WEB ───
+  onHoverPlace?: (place: Place | null) => void;
+  selectedSlug?: string | null;
+  connectedSlugs?: string[];
+  // ─── NEW: Hidden places (sealed/whispered/mirage) to render as ghost outlines ───
+  hiddenPlaces?: Place[];
+  // ─── NEW: Dust agitation level (0-100) ───
+  agitationLevel?: number;
 }
 
 export default function MapContainer({
@@ -27,10 +36,16 @@ export default function MapContainer({
   anniversarySlugs,
   onGhostCapture,
   onTowerFound,
+  onHoverPlace,
+  selectedSlug,
+  connectedSlugs = [],
+  hiddenPlaces = [],
+  agitationLevel = 0,
 }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{ marker: mapboxgl.Marker; place: Place }[]>([]);
+  const ghostMarkersRef = useRef<{ marker: mapboxgl.Marker; place: Place }[]>([]);
   const ghostMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const towerMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const lanternMarkersRef = useRef<mapboxgl.Marker[]>([]);
@@ -41,6 +56,10 @@ export default function MapContainer({
   } | null>(null);
   const [towersFound, setTowersFound] = useState<Set<number>>(new Set());
   const [lanternKey, setLanternKey] = useState(0);
+
+  // Determine agitation intensity
+  const agitationIntensity = Math.min(1, Math.max(0, (agitationLevel - 25) / 75));
+  const isAgitated = agitationLevel > 25;
 
   // Init map
   useEffect(() => {
@@ -105,10 +124,70 @@ export default function MapContainer({
     };
   }, [hovered]);
 
-  // Render real markers
+  // ─── INVESTIGATION WEB (animated lines) ───
+  useEffect(() => {
+    if (!map.current) return;
+
+    const mapInstance = map.current;
+    const sourceId = "investigation-web-source";
+    const layerId = "investigation-web-layer";
+
+    if (mapInstance.getLayer(layerId)) mapInstance.removeLayer(layerId);
+    if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
+
+    if (!selectedSlug || connectedSlugs.length === 0) return;
+
+    const selectedPlace = places.find((p) => p.slug === selectedSlug);
+    if (!selectedPlace) return;
+
+    const connectedPlaces = places.filter((p) => connectedSlugs.includes(p.slug));
+    if (connectedPlaces.length === 0) return;
+
+    const features: Feature<LineString>[] = connectedPlaces.map(
+  (p) => ({
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: [selectedPlace.coordinates, p.coordinates],
+    },
+    properties: {},
+  })
+);
+
+const geojson: FeatureCollection<LineString> = {
+  type: "FeatureCollection",
+  features,
+};
+
+    mapInstance.addSource(sourceId, {
+      type: "geojson",
+      data: geojson,
+    });
+
+    mapInstance.addLayer({
+      id: layerId,
+      type: "line",
+      source: sourceId,
+      paint: {
+        "line-color": "#c4785a",
+        "line-width": 1.8,
+        "line-opacity": 0.4,
+        "line-blur": 3,
+        "line-dasharray": [3, 5],
+      },
+    });
+
+    return () => {
+      if (mapInstance.getLayer(layerId)) mapInstance.removeLayer(layerId);
+      if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
+    };
+  }, [places, selectedSlug, connectedSlugs]);
+
+  // ─── RENDER VISIBLE PINS ───
   useEffect(() => {
     if (!map.current || loading) return;
 
+    // Remove existing visible markers
     markersRef.current.forEach(({ marker }) => marker.remove());
     markersRef.current = [];
 
@@ -117,10 +196,18 @@ export default function MapContainer({
       const size = isAnniversary ? 16 : 12;
 
       const el = document.createElement("div");
-      el.className = "relative cursor-pointer";
+      el.className = `relative cursor-pointer ${isAgitated ? "vp-pin-agitated" : ""}`;
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
       el.style.zIndex = "1";
+      if (isAgitated) {
+        // Subtle random agitation via CSS custom property
+        const intensity = agitationIntensity;
+        const duration = 0.15 - intensity * 0.1;
+        const displacement = intensity * 0.8;
+        el.style.setProperty("--agitate-duration", `${duration}s`);
+        el.style.setProperty("--agitate-displacement", `${displacement}px`);
+      }
 
       const isHaunted = place.category === "haunted" || place.category === "both";
       const isAbandoned = place.category === "abandoned" || place.category === "both";
@@ -176,6 +263,7 @@ export default function MapContainer({
           left: pos.x,
           top: pos.y - 14,
         });
+        onHoverPlace?.(place);
         (dot as HTMLElement).style.transform = "rotate(-45deg) scale(1.35)";
         (dot as HTMLElement).style.boxShadow = `0 0 20px ${glow}, inset 0 1px 2px rgba(255,255,255,0.1)`;
       });
@@ -183,22 +271,145 @@ export default function MapContainer({
       el.addEventListener("mouseleave", () => {
         el.style.zIndex = "1";
         setHovered(null);
+        onHoverPlace?.(null);
         (dot as HTMLElement).style.transform = "rotate(-45deg) scale(1)";
         (dot as HTMLElement).style.boxShadow = `0 0 10px ${glow}, inset 0 1px 2px rgba(255,255,255,0.06)`;
       });
 
       el.addEventListener("click", () => {
-        window.dispatchEvent(new CustomEvent("place-selected", { 
-          detail: { slug: place.slug, name: place.name, coords: place.coordinates } 
-        }));
+        window.dispatchEvent(
+          new CustomEvent("place-selected", {
+            detail: { slug: place.slug, name: place.name, coords: place.coordinates },
+          })
+        );
         onSelectPlace(place);
       });
 
       markersRef.current.push({ marker, place });
     });
-  }, [places, loading, anniversarySlugs, onSelectPlace]);
 
-  // Wandering Marker (The Other)
+    // Cleanup old agitation styles
+    const styleEl = document.getElementById("vp-agitation-style");
+    if (!styleEl) {
+      const style = document.createElement("style");
+      style.id = "vp-agitation-style";
+      style.textContent = `
+        .vp-pin-agitated {
+          animation: vp-agitate var(--agitate-duration, 0.15s) ease-in-out infinite alternate;
+        }
+        @keyframes vp-agitate {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(var(--agitate-displacement, 0.5px), calc(-1 * var(--agitate-displacement, 0.5px))); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, [places, loading, anniversarySlugs, onSelectPlace, onHoverPlace, isAgitated, agitationIntensity]);
+
+  // ─── RENDER GHOST OUTLINES (Sealed / Whispered / Mirage) ───
+  useEffect(() => {
+    if (!map.current || loading) return;
+
+    // Remove existing ghost markers
+    ghostMarkersRef.current.forEach(({ marker }) => marker.remove());
+    ghostMarkersRef.current = [];
+
+    hiddenPlaces.forEach((place) => {
+      const size = 16;
+      const el = document.createElement("div");
+      el.className = "relative cursor-pointer vp-ghost-pin";
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.zIndex = "0";
+      el.style.opacity = "0.6";
+      el.style.pointerEvents = "auto";
+
+      // Ghost ring with pulsating glow
+      const ring = document.createElement("div");
+      ring.style.cssText = `
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        border: 1.5px solid rgba(196,120,90,0.4);
+        box-shadow: 0 0 12px rgba(196,120,90,0.2), inset 0 0 12px rgba(196,120,90,0.05);
+        animation: ghost-pulse 2.5s ease-in-out infinite;
+        transition: all 0.3s ease;
+      `;
+      el.appendChild(ring);
+
+      // Small dot in center
+      const dot = document.createElement("div");
+      dot.style.cssText = `
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: rgba(196,120,90,0.3);
+        transition: all 0.3s ease;
+      `;
+      el.appendChild(dot);
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -size / 2] })
+        .setLngLat(place.coordinates)
+        .addTo(map.current!);
+
+      el.addEventListener("mouseenter", () => {
+        if (!map.current) return;
+        el.style.zIndex = "50";
+        el.style.opacity = "1";
+        const pos = map.current.project(place.coordinates);
+        setHovered({
+          place,
+          left: pos.x,
+          top: pos.y - 14,
+        });
+        onHoverPlace?.(place);
+        ring.style.borderColor = "rgba(196,120,90,0.8)";
+        ring.style.boxShadow = "0 0 24px rgba(196,120,90,0.4), inset 0 0 24px rgba(196,120,90,0.1)";
+        dot.style.background = "rgba(196,120,90,0.8)";
+      });
+
+      el.addEventListener("mouseleave", () => {
+        el.style.zIndex = "0";
+        el.style.opacity = "0.6";
+        setHovered(null);
+        onHoverPlace?.(null);
+        ring.style.borderColor = "rgba(196,120,90,0.4)";
+        ring.style.boxShadow = "0 0 12px rgba(196,120,90,0.2), inset 0 0 12px rgba(196,120,90,0.05)";
+        dot.style.background = "rgba(196,120,90,0.3)";
+      });
+
+      el.addEventListener("click", () => {
+        // Ghost pins can't be opened; show a hint
+        showToast(`"${place.name}" — signal interference. Requires dust to resolve.`, "warning");
+      });
+
+      ghostMarkersRef.current.push({ marker, place });
+    });
+
+    // Add ghost pulse keyframes if not present
+    const ghostStyle = document.getElementById("vp-ghost-style");
+    if (!ghostStyle) {
+      const style = document.createElement("style");
+      style.id = "vp-ghost-style";
+      style.textContent = `
+        @keyframes ghost-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.3); opacity: 0.15; }
+        }
+        .vp-ghost-pin {
+          pointer-events: auto;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .vp-ghost-pin:hover {
+          transform: scale(1.1);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, [hiddenPlaces, loading, onHoverPlace]);
+
+  // ─── WANDERING MARKER (The Other) ─── (unchanged)
   useEffect(() => {
     if (!map.current || places.length === 0) return;
 
@@ -245,10 +456,13 @@ export default function MapContainer({
       const driftInterval = setInterval(() => {
         step++;
         const current = marker.getLngLat();
-        const nearest = places.reduce<{ p: Place; d: number }>((best, p) => {
-          const d = Math.hypot(p.coordinates[0] - current.lng, p.coordinates[1] - current.lat);
-          return d < best.d ? { p, d } : best;
-        }, { p: places[0], d: Infinity });
+        const nearest = places.reduce<{ p: Place; d: number }>(
+          (best, p) => {
+            const d = Math.hypot(p.coordinates[0] - current.lng, p.coordinates[1] - current.lat);
+            return d < best.d ? { p, d } : best;
+          },
+          { p: places[0], d: Infinity }
+        );
 
         const newLng = current.lng + (nearest.p.coordinates[0] - current.lng) * 0.02;
         const newLat = current.lat + (nearest.p.coordinates[1] - current.lat) * 0.02;
@@ -300,7 +514,7 @@ export default function MapContainer({
     };
   }, [places, onGhostCapture]);
 
-  // Signal Triangulation Towers
+  // ─── TOWERS ─── (unchanged)
   useEffect(() => {
     if (!map.current || places.length === 0) return;
     if (towerMarkersRef.current.length > 0) return;
@@ -340,7 +554,7 @@ export default function MapContainer({
         .setLngLat(coords)
         .addTo(map.current!);
 
-            el.addEventListener("click", () => {
+      el.addEventListener("click", () => {
         setTowersFound((prev) => {
           const next = new Set(prev);
           const wasNew = !next.has(idx);
@@ -350,7 +564,10 @@ export default function MapContainer({
             const tower = { id: `tower-${idx}`, name: `Anomalous Tower ${idx + 1}`, coords };
             const existing = JSON.parse(localStorage.getItem("vp-towers-found") || "[]");
             if (!existing.some((t: any) => t.id === tower.id)) {
-              localStorage.setItem("vp-towers-found", JSON.stringify([...existing, { ...tower, discoveredAt: new Date().toISOString() }]));
+              localStorage.setItem(
+                "vp-towers-found",
+                JSON.stringify([...existing, { ...tower, discoveredAt: new Date().toISOString() }])
+              );
               window.dispatchEvent(new CustomEvent("vp-tower-found"));
             }
             onTowerFound?.(tower);
@@ -376,46 +593,50 @@ export default function MapContainer({
     };
   }, [places, onTowerFound]);
 
-  // Render Lanterns
+  // ─── LANTERNS ─── (unchanged)
   useEffect(() => {
     if (!map.current) return;
-    
+
     lanternMarkersRef.current.forEach((m) => m.remove());
     lanternMarkersRef.current = [];
 
     const lanterns = JSON.parse(localStorage.getItem("vp-lanterns") || "[]");
 
-    lanterns.forEach((lantern: { coords: [number, number]; flicker: boolean; placeName: string }) => {
-      const el = document.createElement("div");
-      el.className = "relative cursor-pointer";
-      el.style.width = "14px";
-      el.style.height = "14px";
+    lanterns.forEach(
+      (lantern: { coords: [number, number]; flicker: boolean; placeName: string }) => {
+        const el = document.createElement("div");
+        el.className = "relative cursor-pointer";
+        el.style.width = "14px";
+        el.style.height = "14px";
 
-      const flame = document.createElement("div");
-      flame.style.cssText = `
-        width: 100%; height: 100%;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        background: #a67c52;
-        border: 1.5px solid #0c0a08;
-        box-shadow: ${lantern.flicker 
-          ? "0 0 14px rgba(166,124,82,0.9), 0 0 4px rgba(255,100,50,0.5)" 
-          : "0 0 10px rgba(166,124,82,0.6)"};
-        ${lantern.flicker ? "animation: ghost-flicker 3s ease-in-out infinite;" : ""}
-      `;
-      el.appendChild(flame);
+        const flame = document.createElement("div");
+        flame.style.cssText = `
+          width: 100%; height: 100%;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          background: #a67c52;
+          border: 1.5px solid #0c0a08;
+          box-shadow: ${
+            lantern.flicker
+              ? "0 0 14px rgba(166,124,82,0.9), 0 0 4px rgba(255,100,50,0.5)"
+              : "0 0 10px rgba(166,124,82,0.6)"
+          };
+          ${lantern.flicker ? "animation: ghost-flicker 3s ease-in-out infinite;" : ""}
+        `;
+        el.appendChild(flame);
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -7] })
-        .setLngLat(lantern.coords)
-        .addTo(map.current!);
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [0, -7] })
+          .setLngLat(lantern.coords)
+          .addTo(map.current!);
 
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        showToast(`${lantern.placeName}: A lantern burns here.`, "info");
-      });
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          showToast(`${lantern.placeName}: A lantern burns here.`, "info");
+        });
 
-      lanternMarkersRef.current.push(marker);
-    });
+        lanternMarkersRef.current.push(marker);
+      }
+    );
 
     const handler = () => {
       setLanternKey((k) => k + 1);
@@ -439,6 +660,24 @@ export default function MapContainer({
           0%, 100% { opacity: 0.85; }
           50% { opacity: 0.4; }
         }
+        @keyframes vp-agitate {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(var(--agitate-displacement, 0.5px), calc(-1 * var(--agitate-displacement, 0.5px))); }
+        }
+        .vp-pin-agitated {
+          animation: vp-agitate var(--agitate-duration, 0.15s) ease-in-out infinite alternate;
+        }
+        .vp-ghost-pin {
+          pointer-events: auto;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .vp-ghost-pin:hover {
+          transform: scale(1.1);
+        }
+        @keyframes ghost-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.3); opacity: 0.15; }
+        }
       `}</style>
       <div ref={mapContainer} className="w-full h-full" />
 
@@ -459,7 +698,9 @@ export default function MapContainer({
             {hovered.place.name}
           </p>
           <p className="text-[10px] md:text-[11px] font-mono text-[#9a8a72] uppercase tracking-wider mt-1">
-            {hovered.place.category}
+            {hovered.place.status === "sealed" || hovered.place.status === "whispered" || hovered.place.status === "mirage"
+              ? `SIGNAL INTERFERENCE (${hovered.place.status})`
+              : hovered.place.category}
           </p>
         </div>
       )}

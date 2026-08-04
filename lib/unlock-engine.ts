@@ -9,6 +9,7 @@ export interface WitnessState {
   unlockedCodes: string[];
   readingsComplete: boolean;
   now: Date;
+  name?: string;
 }
 
 export function evaluateUnlock(

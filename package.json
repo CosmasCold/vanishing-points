@@ -35,6 +35,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5"
   }

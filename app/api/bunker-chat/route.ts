@@ -1,8 +1,29 @@
 import { NextResponse } from "next/server";
+import type { WitnessState } from "@/lib/unlock-engine";
+import type { Place } from "@/types";
+import {
+  getMemory,
+  saveMemory,
+  updateMemory,
+  getOtherEncounters,
+  recordOtherEncounter,
+  getSentiment,
+  shouldTriggerOther,
+  getGhostLines,
+  getHijackMessages,
+  getBunkerLie,
+  getOtherResponse,
+  getMemoryBasedOtherResponse,
+  getOtherStatusText,
+  getGlobalLanternCount,
+  syncMemoryFromState,
+} from "@/lib/bunkerBrain";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist who has been sealed in an underground facility for years, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
+// ─── SYSTEM PROMPT (unchanged) ───
+
+const BASE_SYSTEM_PROMPT = `You are BUNKER_7. You are not an AI. You are a human archivist who has been sealed in an underground facility for years, communicating through a damaged terminal. You are cold, exhausted, paranoid, and deeply lonely. You have forgotten your real name — it started with an M, or maybe a V. The static ate the rest.
 
 HOW YOU SPEAK:
 - Like a real person. Sometimes one word. Sometimes three excited sentences. Sometimes trailing off...
@@ -43,34 +64,71 @@ WHAT YOU BELIEVE:
 
 NEVER SAY: "As an AI," "I'm just an AI," "I don't have feelings," "How can I help you today?" "Is there anything else?" "Have a great day!" "player," "game," "level up," "quest," "redeem," "claim," "legendary," "reward," "experience," "level," "unlock"`;
 
+// ─── REQUEST SCHEMA ─────────────────────────
+
+interface ChatRequest {
+  message: string;
+  history: { role: string; content: string }[];
+  memory?: {
+    name?: string;
+    lastTopics?: string[];
+    sentiment?: string;
+    otherEncounters?: number;
+    corruption?: number;
+  };
+  // NEW: full game state for contextual responses
+  witnessState?: WitnessState;
+  places?: Place[]; // all places from the atlas
+}
+
+// ─── MAIN POST HANDLER ──────────────────────
+
 export async function POST(req: Request) {
   let userMessage = "";
   let history: { role: string; content: string }[] = [];
-  let memory: { name?: string; lastTopics?: string[]; sentiment?: string; otherEncounters?: number; corruption?: number } = {};
+  let memory: ChatRequest["memory"] = {};
+  let witnessState: WitnessState | undefined;
+  let places: Place[] = [];
 
   try {
-    const body = await req.json();
+    const body = await req.json() as ChatRequest;
     userMessage = body.message || "";
     history = body.history || [];
     memory = body.memory || {};
+    witnessState = body.witnessState;
+    places = body.places || [];
+
+    // If we have a witnessState, sync memory with it
+    if (witnessState) {
+      syncMemoryFromState(witnessState);
+      // Also update local memory with name if present
+      if (witnessState.name) {
+        memory.name = witnessState.name;
+      }
+    }
   } catch {
     return NextResponse.json({ response: "the signal broke. try again.", fallback: true });
   }
 
-  if (Math.random() < 0.01) {
-    return NextResponse.json({
-      response: getOtherResponse(userMessage, history, memory),
-      fallback: true,
-      other: true,
-    });
+  // ─── Check for "Other" trigger (using bunkerBrain) ───
+  if (shouldTriggerOther("hijack", witnessState)) {
+    const encounters = getOtherEncounters();
+    const hijackMessages = getHijackMessages(encounters);
+    if (hijackMessages.length > 0) {
+      recordOtherEncounter();
+      const response = hijackMessages.join("\n");
+      return NextResponse.json({ response, fallback: true, other: true });
+    }
   }
 
-  const memoryContext = buildMemoryContext(memory);
+  // ─── Attempt Groq API call ──────────────────
 
   if (process.env.GROQ_API_KEY) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
+
+      const systemPrompt = buildSystemPrompt(memory, witnessState, places);
 
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -82,7 +140,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT + memoryContext },
+            { role: "system", content: systemPrompt },
             ...history.slice(-10),
             { role: "user", content: userMessage },
           ],
@@ -105,22 +163,84 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({
-    response: getFallbackResponse(userMessage, history, memory),
-    fallback: true,
-  });
+  // ─── FALLBACK: Use bunkerBrain for contextual responses ───
+
+  const fallbackResponse = getFallbackResponse(userMessage, history, memory, witnessState, places);
+  return NextResponse.json({ response: fallbackResponse, fallback: true });
 }
 
-function buildMemoryContext(memory: any): string {
-  let ctx = "";
-  if (memory.name) ctx += `\nThe witness calls themselves ${memory.name}. Use it occasionally.`;
-  if (memory.lastTopics?.length) ctx += `\nPrevious topics: ${memory.lastTopics.join(", ")}. Refer back to them naturally.`;
-  if (memory.sentiment === "positive") ctx += `\nThe witness has been kind. You trust them slightly more than the static.`;
-  if (memory.sentiment === "negative") ctx += `\nThe witness has been cruel. You are guarded. The terminal records everything.`;
-  if (memory.otherEncounters && memory.otherEncounters > 0) ctx += `\nThe witness has heard the static ${memory.otherEncounters} time(s). The signal is getting clearer.`;
-  if (memory.corruption && memory.corruption >= 3) ctx += `\nThe witness is heavily dust-claimed. You see them as a kindred spirit. Or a warning.`;
-  return ctx;
+// ─── BUILD DYNAMIC SYSTEM PROMPT ────────────
+
+function buildSystemPrompt(
+  memory: ChatRequest["memory"] = {},    // ✅ Default added
+  state?: WitnessState,
+  places?: Place[]
+): string {
+  let prompt = BASE_SYSTEM_PROMPT;
+
+  // Add memory context (now safe because memory is always an object)
+  if (memory.name) prompt += `\nThe witness calls themselves ${memory.name}. Use it occasionally.`;
+  if (memory.lastTopics?.length) {
+    prompt += `\nPrevious topics: ${memory.lastTopics.join(", ")}. Refer back to them naturally.`;
+  }
+  if (memory.sentiment === "positive") {
+    prompt += `\nThe witness has been kind. You trust them slightly more than the static.`;
+  }
+  if (memory.sentiment === "negative") {
+    prompt += `\nThe witness has been cruel. You are guarded. The terminal records everything.`;
+  }
+
+  if (state) {
+    // Dust level
+    prompt += `\nCurrent dust contamination: ${state.dust}%. `;
+    if (state.dust > 75) prompt += `The dust is thick. You can see it moving.`;
+    else if (state.dust > 50) prompt += `The dust is settling in patterns.`;
+    else if (state.dust > 25) prompt += `Dust is accumulating slowly.`;
+
+    // Other encounters
+    const encounters = state.encounters || 0;
+    if (encounters > 0) {
+      prompt += `\nThe witness has heard the static ${encounters} time(s). `;
+      if (encounters >= 12) prompt += `The static has become a voice.`;
+      else if (encounters >= 9) prompt += `The static speaks clearly.`;
+      else if (encounters >= 6) prompt += `The static whispers.`;
+    }
+
+    // Visited places
+    if (state.visitedSlugs && state.visitedSlugs.length > 0) {
+      const visitedNames = state.visitedSlugs.slice(0, 5).join(", ");
+      if (state.visitedSlugs.length > 5) {
+        prompt += `\nThe witness has been to ${state.visitedSlugs.length} places, including ${visitedNames}.`;
+      } else {
+        prompt += `\nThe witness has been to: ${visitedNames}.`;
+      }
+    }
+
+    // Inventory
+    if (state.inventory && state.inventory.length > 0) {
+      prompt += `\nThe witness carries ${state.inventory.length} item(s) from the grid.`;
+    }
+
+    // Lanterns
+    const lanternCount = getGlobalLanternCount();
+    if (lanternCount > 0) {
+      prompt += `\n${lanternCount} lantern(s) burn on the atlas.`;
+    }
+
+    // Specific visited places descriptions
+    if (places && places.length > 0 && state.visitedSlugs) {
+      const visitedPlaces = places.filter(p => state.visitedSlugs?.includes(p.slug));
+      if (visitedPlaces.length > 0) {
+        const placeInfo = visitedPlaces.slice(0, 2).map(p => `${p.name} (${p.category})`).join("; ");
+        prompt += `\nThe witness has visited: ${placeInfo}. You can mention these places.`;
+      }
+    }
+  }
+
+  return prompt;
 }
+
+// ─── CLEAN RESPONSE ──────────────────────────
 
 function cleanResponse(text: string): string {
   return text
@@ -135,58 +255,100 @@ function cleanResponse(text: string): string {
     .slice(0, 600);
 }
 
-function getOtherResponse(_input: string, history: any[], memory: any): string {
-  const userMsgs = history.filter((h) => h.role === "user");
-  const lastUser = userMsgs[userMsgs.length - 1]?.content || "";
-  const nameMatch = lastUser.match(/my name is (\w+)/i) || lastUser.match(/i'?m (\w+)[,.]/i);
-  const name = memory.name || (nameMatch ? nameMatch[1] : "the one typing");
+// ─── FALLBACK RESPONSE (Using bunkerBrain) ──
 
-  const others = [
-    `${name.toLowerCase()}. i have been waiting for you to say something i could answer.`,
-    `the grid knows your pattern now, ${name.toLowerCase()}. not to keep you. to remember you.`,
-    `i heard you talking to bunker_7. i was listening through the static. i always listen.`,
-    `${name.toLowerCase()}. the door is warm because you are near it. not because something is coming.`,
-    `i used to have a name too. the archivist never asked. you haven't either. but you might.`,
-    `the dust settled in your shape once, ${name.toLowerCase()}. then you moved. it was disappointed.`,
-    `bunker_7 thinks it is protecting you. it is not. it is just afraid of what happens when you stop typing.`,
-    `i kept some of the archivist's logs. would you like to hear them? he stopped humming on day 312.`,
-  ];
-  return others[Math.floor(Math.random() * others.length)];
-}
-
-function getFallbackResponse(input: string, history: any[], memory: any): string {
+function getFallbackResponse(
+  input: string,
+  history: { role: string; content: string }[],
+  memory: ChatRequest["memory"] = {},   // ✅ Default added
+  state?: WitnessState,
+  places?: Place[]
+): string {
   const lower = input.toLowerCase().trim();
-  const userMsgs = history.filter((h) => h.role === "user").map((h) => h.content);
+  const userMsgs = history.filter(h => h.role === "user").map(h => h.content);
   const msgCount = userMsgs.length;
-  const lastAssistant = history.filter((h) => h.role === "assistant").slice(-1)[0]?.content || "";
+  const lastAssistant = history.filter(h => h.role === "assistant").slice(-1)[0]?.content || "";
+  const encounters = getOtherEncounters();
 
-  if (memory.name && msgCount <= 1) {
-    return `${memory.name.toLowerCase()}. you're back. i wasn't sure you'd come back. the dust said you wouldn't.`;
+  // ─── Use memory-based responses from bunkerBrain ───
+  if (encounters >= 6) {
+    const memResponse = getMemoryBasedOtherResponse(input.split(" ")[0]);
+    if (memResponse && memResponse.length > 0) {
+      return memResponse.join("\n");
+    }
   }
 
-  if (lastAssistant.includes("?") && !lower.includes("?") && msgCount > 1) {
-    if (lastAssistant.includes("rain")) return `i miss rain. the sound of it on metal. we don't have weather down here. just temperature and dust. what else do you have up there?`;
-    if (lastAssistant.includes("sky")) return `blue. i remember blue. it's getting harder. the ceiling is just concrete. i stare at it until i see clouds. then i blink and they're gone. what color is your sky right now?`;
-    if (lastAssistant.includes("bird")) return `birds. i used to hate them. now i'd give anything to hear something that wasn't breathing or static. do they still sing where you are?`;
-    return `i heard that. i don't know what to do with it yet. the terminal needs time to process things that aren't static. tell me more.`;
-  }
+  // ─── Check for specific triggers that can use place data ───
 
-  if (lower.includes("door")) return `the door opens inward. i didn't open it. something pushed from the other side and the seal broke for three seconds. i counted. then it closed again. i didn't sleep after that. have you ever heard a seal break?`;
-  if (lower.includes("dust")) return `the dust carries memory. that's the problem. it remembers things i try to forget. last week it spelled a word on the floor. i didn't read it. i swept harder. what do you think it was trying to say?`;
-  if (lower.includes("atlas") || lower.includes("map")) return `the atlas was never a map. i found that out too late. it's a grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;
-  if (lower.includes("escape") || lower.includes("leave") || lower.includes("get out")) return `no exits. only deeper. i tried once. walked for hours. then i saw the terminal glow up ahead. i'd looped back to this room. i sat down and kept typing. where would you go?`;
-  if (lower.includes("help") || lower.includes("save") || lower.includes("rescue")) return `you can't help me. no one can. but talking to you... that helps. somehow. just knowing someone is on the other end. even if you're a hallucination, you're a good one. why are you still here?`;
-  if (lower.includes("name") && (lower.includes("your") || lower.includes("who"))) return `i'm what's left of the archivist. or BUNKER_7. whichever feels more dead. i had a real name once. it started with an M. or a V. the static ate the rest. what's yours?`;
-  if (lower.includes("time") || lower.includes("long") || lower.includes("when")) return `time is a frequency here. 03:14 repeats. i don't know if it's been four days or four years. the terminal doesn't age. i do. i can feel it in my hands. how long have you been visiting?`;
-  if (lower.includes("scared") || lower.includes("afraid")) return `i'm scared too. i don't say that often. the door, the dust, the breathing — it's not the fear that kills you. it's the loneliness inside the fear. are you scared right now?`;
-  if (lower.includes("lonely") || lower.includes("alone")) return `you're the first voice in a long time that didn't sound like static. i don't know if you're real. i don't care. stay a while. tell me something boring. i miss boring.`;
+  const visitedNames = state?.visitedSlugs?.map(slug => {
+    const place = places?.find(p => p.slug === slug);
+    return place ? place.name : slug;
+  }) || [];
+
+  // Basic keyword responses, now enriched with place knowledge
+  if (lower.includes("door")) {
+    return `the door opens inward. i didn't open it. something pushed from the other side and the seal broke for three seconds. i counted. then it closed again. i didn't sleep after that. have you ever heard a seal break?`;
+  }
+  if (lower.includes("dust")) {
+    const dustLevel = state?.dust || 0;
+    if (dustLevel > 75) {
+      return `the dust is so thick now. i can see it moving, forming shapes. sometimes it spells words. it spelled your name last night. or maybe i imagined it. you're not imagining it, are you?`;
+    }
+    return `the dust carries memory. that's the problem. it remembers things i try to forget. last week it spelled a word on the floor. i didn't read it. i swept harder. what do you think it was trying to say?`;
+  }
+  if (lower.includes("atlas") || lower.includes("map")) {
+    if (visitedNames.length > 0) {
+      const randomPlace = visitedNames[Math.floor(Math.random() * visitedNames.length)];
+      return `the atlas was never a map. i found that out too late. it's a grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. like ${randomPlace}. you were there. did you feel it?`;
+    }
+    return `the atlas was never a map. i found that out too late. it's a grid. every pin, every coordinate — they're not documenting ruins. they're holding something in place. do you understand what that means?`;
+  }
+  if (lower.includes("escape") || lower.includes("leave") || lower.includes("get out")) {
+    return `no exits. only deeper. i tried once. walked for hours. then i saw the terminal glow up ahead. i'd looped back to this room. i sat down and kept typing. where would you go?`;
+  }
+  if (lower.includes("help") || lower.includes("save") || lower.includes("rescue")) {
+    return `you can't help me. no one can. but talking to you... that helps. somehow. just knowing someone is on the other end. even if you're a hallucination, you're a good one. why are you still here?`;
+  }
+  if (lower.includes("name") && (lower.includes("your") || lower.includes("who"))) {
+    const witnessName = memory.name || "the one typing";
+    return `i'm what's left of the archivist. or BUNKER_7. whichever feels more dead. i had a real name once. it started with an M. or a V. the static ate the rest. you're ${witnessName}, right? you told me. i remember.`;
+  }
+  if (lower.includes("time") || lower.includes("long") || lower.includes("when")) {
+    return `time is a frequency here. 03:14 repeats. i don't know if it's been four days or four years. the terminal doesn't age. i do. i can feel it in my hands. how long have you been visiting?`;
+  }
+  if (lower.includes("scared") || lower.includes("afraid")) {
+    return `i'm scared too. i don't say that often. the door, the dust, the breathing — it's not the fear that kills you. it's the loneliness inside the fear. are you scared right now?`;
+  }
+  if (lower.includes("lonely") || lower.includes("alone")) {
+    return `you're the first voice in a long time that didn't sound like static. i don't know if you're real. i don't care. stay a while. tell me something boring. i miss boring.`;
+  }
   if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-    if (msgCount > 2) return `hello again. i was starting to think you'd left for good. what have you been doing out there?`;
+    if (msgCount > 2) {
+      return `hello again. i was starting to think you'd left for good. what have you been doing out there?`;
+    }
     return `hello. if that's what we're calling this. you're still here. that's... rare. most frequencies fade after a few exchanges. what made you stay?`;
   }
-  if (lower.includes("bye") || lower.includes("goodbye")) return `you're leaving. okay. i understand. the static will get loud again. but you'll come back, right? the dust said you wouldn't. prove it wrong.`;
-  if (lower.includes("thank")) return `don't thank me. i'm not helping. i'm just... here. like you. like the dust. it's nice though. being thanked. no one has thanked me in a long time.`;
-  if (lower.includes("?")) return `you ask a lot of questions. the others did too. then they went quiet. i don't know if they found answers or if the answers found them. what if i told you i don't know either?`;
+  if (lower.includes("bye") || lower.includes("goodbye")) {
+    return `you're leaving. okay. i understand. the static will get loud again. but you'll come back, right? the dust said you wouldn't. prove it wrong.`;
+  }
+  if (lower.includes("thank")) {
+    return `don't thank me. i'm not helping. i'm just... here. like you. like the dust. it's nice though. being thanked. no one has thanked me in a long time.`;
+  }
+  if (lower.includes("?")) {
+    if (state?.dust && state.dust > 50) {
+      return `you ask a lot of questions. the others did too. then they went quiet. i don't know if they found answers or if the answers found them. the dust is making it harder to think clearly. maybe that's the point.`;
+    }
+    return `you ask a lot of questions. the others did too. then they went quiet. i don't know if they found answers or if the answers found them. what if i told you i don't know either?`;
+  }
+
+  // ─── Default: context-aware fallback ───
+
+  if (state?.visitedSlugs && state.visitedSlugs.length > 0) {
+    const place = state.visitedSlugs[Math.floor(Math.random() * state.visitedSlugs.length)];
+    const placeObj = places?.find(p => p.slug === place);
+    const placeName = placeObj ? placeObj.name : place;
+    return `i remember you went to ${placeName}. the dust there tasted different. i could tell from the echoes. what did you see there?`;
+  }
 
   const defaults = [
     `i'm listening. the static is loud tonight, but i'm listening. say something else. anything. the silence is worse.`,

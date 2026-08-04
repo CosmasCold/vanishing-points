@@ -1,120 +1,62 @@
-// Numbers Station fragments with unlock codes
-export const NUMBERS_STATIONS = [
-  { freq: 91.7, text: "Seven. Four. Two. The door is not a door.", code: "742" },
-  { freq: 94.2, text: "BUNKER_7 to all frequencies: someone is reading this.", code: null },
-  { freq: 96.5, text: "Coordinates: 51.3890, 30.0984... no. That's wrong now. It's moved.", code: null },
-  { freq: 88.3, text: "The dust remembers the shape of the voice that disturbed it.", code: null },
-  { freq: 99.1, text: "Do not document the place at grid reference— [unintelligible static]", code: null },
-  { freq: 101.4, text: "You have been there before. You will go again.", code: null },
-  { freq: 104.8, text: "The silence has a frequency. You are tuning it.", code: null },
-  { freq: 93.0, text: "The reactor was not an accident. The atlas was.", code: "REACTOR" },
-  { freq: 97.6, text: "I am broadcasting from tomorrow. The static is yesterday.", code: null },
-  { freq: 89.5, text: "Check your expedition log for an entry dated Day Zero.", code: "DAYZERO" },
-  { freq: 102.3, text: "The nearest ruin is not the nearest ruin. It is the nearest door.", code: null },
-  { freq: 95.8, text: "Every pin you drop is a nail in something's coffin.", code: null },
-  { freq: 100.2, text: "The archivist is not who they claim to be. Check the signatures.", code: null },
-  { freq: 87.9, text: "Beneath the static there is a voice. Beneath the voice there is intent.", code: null },
-  { freq: 105.5, text: "The ember light is not a light. It is an eye.", code: null },
-  { freq: 92.4, text: "Do not come to the coordinates I am about to give you. Do not.", code: null },
-  { freq: 98.7, text: "The map lies. The map tells the truth. Both are dangerous.", code: null },
-  { freq: 103.1, text: "Your cursor is not alone on this screen.", code: null },
-  { freq: 90.6, text: "I have been trying to submit this for six days. The form keeps changing.", code: null },
-  { freq: 106.3, text: "The dust level in your sector is higher than reported.", code: null },
-  { freq: 94.9, text: "There are fifty-two documented sites. There should be fifty-one.", code: "52" },
-  { freq: 88.8, text: "The abandoned place is not empty. It is waiting.", code: null },
-  { freq: 101.9, text: "BUNKER_7: The walls are breathing in coordinates that don't exist.", code: null },
-  { freq: 97.1, text: "If you hear this, you are already inside the perimeter.", code: null },
-  { freq: 104.2, text: "The spectral accounts are not historical. They are predictions.", code: null },
-  { freq: 91.2, text: "Do not trust the danger rating. It was set by something that wants visitors.", code: null },
-  { freq: 99.8, text: "Your reflection in the screen is three seconds behind.", code: null },
-  { freq: 95.3, text: "The signal is coming from inside the database.", code: null },
-  { freq: 102.7, text: "I tried to delete this entry. It reappeared with more detail.", code: null },
-  { freq: 89.1, text: "The numbers are not coordinates. They are a countdown.", code: "COUNT" },
-  { freq: 107.4, text: "The door is open. I did not open it.", code: "DOOR" },
-  { freq: 96.0, text: "BUNKER_7: I can hear you clicking through the static.", code: null },
-  { freq: 100.6, text: "Every time you visit a site, something visits you.", code: null },
-  { freq: 93.5, text: "The archive is not a record. It is a warning that was ignored.", code: null },
-  { freq: 98.2, text: "Check the marginalia. The handwriting is yours.", code: null },
-  { freq: 105.0, text: "The atlas was completed before the places were abandoned.", code: null },
-  { freq: 90.3, text: "There is no BUNKER_7. There is only the dust.", code: null },
-  { freq: 103.8, text: "The static is not interference. It is a conversation.", code: null },
-  { freq: 94.6, text: "Stop looking for the signal. The signal is looking for you.", code: null },
-  { freq: 107.0, text: "Your location services are not accurate. They are precise.", code: null },
+// lib/echoesContent.ts
+
+export interface SignalDossier {
+  title: string;
+  text: string;
+}
+
+export const SIGNAL_DOSSIERS: Record<string, SignalDossier> = {
+  'duga-radar-array': {
+    title: 'Intercepted: THE HUM',
+    text: `BUNKER_7 ANALYSIS — The Woodpecker pulse does not match Soviet OTHR signatures. Frequency drift suggests an internal clock rather than an external detection sweep. The "countdown" theory is unconfirmed, but the arithmetic is disturbing. The array stopped in 1989. The count, if it existed, was interrupted, not concluded.`,
+  },
+  'hashima-island': {
+    title: 'Intercepted: THE COUNTING HOUSE',
+    text: `BUNKER_7 ANALYSIS — The numbers station broadcasting from Hashima coordinates uses a voice model not developed until 2011. The count is backward. The numbers have not been invented yet because they are counting down to a date, not up from zero. Current estimate: 5,000 days remain.`,
+  },
+  'aokigahara-forest': {
+    title: 'Intercepted: LOST EXPEDITION',
+    text: `BUNKER_7 ANALYSIS — Expedition Team 4's black box contains 7 hours of audio after the last confirmed human voice. The seventh voice speaks Japanese with a dialect last used in the Edo period. It is giving directions deeper into the forest.`,
+  },
+  'poveglia-island': {
+    title: 'Intercepted: STATIC VEIL',
+    text: `BUNKER_7 ANALYSIS — The static between stations is not empty. Spectral analysis reveals ordered data in the 19 Hz range — the frequency of human eyeball resonance. The static is not noise. It is trying to be seen.`,
+  },
+};
+
+export function getSignalDossier(slug: string): SignalDossier | undefined {
+  return SIGNAL_DOSSIERS[slug];
+}
+
+export interface UnsentMessage {
+  text: string;
+  addedAt: string;
+}
+
+export const UNSENT_MESSAGES: UnsentMessage[] = [
+  { text: 'The dust settles on coordinates no map records.', addedAt: '2024-01-01T00:00:00Z' },
+  { text: 'I heard breathing from the server room.', addedAt: '2024-01-02T00:00:00Z' },
 ];
 
-// Hijacked form messages (30)
-export const UNSENT_MESSAGES = [
-  "i found something do not come here the archivist is not",
-  "the walls are breathing in coordinates that dont exist",
-  "your expedition log has entries you didnt write",
-  "BUNKER_7 is not underground it is between",
-  "the map is wrong but the map is right",
-  "do not trust the nearest ruin calculation",
-  "someone is using your cursor i can see it",
-  "the dust level is higher than your screen shows",
-  "i tried to submit this three times already",
-  "check your expedition log for day zero",
-  "the danger ratings are invitations not warnings",
-  "the photos are developing something that wasnt there",
-  "i opened the drawer and something else opened too",
-  "the coordinates keep changing when im not looking",
-  "there are more sites on the map than in the database",
-  "the typewriter is typing by itself",
-  "do not click on the warm marker",
-  "the static burst was not random it was a name",
-  "your bookmark list is longer than you remember",
-  "the weather stamp shows a temperature that doesnt exist",
-  "i can hear the audio even when its muted",
-  "the corruption events are not bugs they are messages",
-  "someone approved my submission before i submitted it",
-  "the spectral accounts are written in my handwriting",
-  "the bunker door opens inward but something pushes",
-  "check the numbers station at 107.4",
-  "the decay counter is counting up too fast",
-  "there is a place on the map that only appears at night",
-  "your visit stamp is from a date that hasnt happened",
-  "the atlas is not mapping ruins it is making them",
+export interface NumbersStation {
+  code: string;
+  label: string;
+}
+
+export const NUMBERS_STATIONS: NumbersStation[] = [
+  { code: 'ECHO-7', label: 'Station 7' },
+  { code: 'BUNKER-1', label: 'Primary Relay' },
+  { code: 'STATIC-9', label: 'Ghost Frequency' },
+  { code: 'ARCHIVE-0', label: 'The Origin' },
 ];
 
-// Transmission feed expansions (25)
-export const BUNKER_TRANSMISSIONS = [
-  "BUNKER_7: The dust is thicker today.",
-  "BUNKER_7: Door 3 opened at 03:14. I did not open it.",
-  "BUNKER_7: The atlas is keeping them contained. I think.",
-  "BUNKER_7: If you're reading this, you're already inside.",
-  "BUNKER_7: Don't trust the coordinates near the reactor.",
-  "BUNKER_7: The silence has weight now.",
-  "SIGNAL: Echoes detected in your sector.",
-  "SIGNAL: Check your reflection. Check it again.",
-  "BUNKER_7: The atlas is a containment grid.",
-  "BUNKER_7: Every pin you drop is a nail in something's coffin.",
-  "SIGNAL: Echoes from a place not yet abandoned.",
-  "BUNKER_7: I can hear you clicking through the static.",
-  "SIGNAL: The dust settles in patterns.",
-  "BUNKER_7: The ember light is not a light. It is an eye.",
-  "SIGNAL: Your cursor is not alone on this screen.",
-  "BUNKER_7: The archive is not a record. It is a warning.",
-  "SIGNAL: The spectral accounts are predictions.",
-  "BUNKER_7: I have been trying to submit this for six days.",
-  "SIGNAL: The abandoned place is not empty. It is waiting.",
-  "BUNKER_7: The signal is coming from inside the database.",
-  "SIGNAL: Every time you visit a site, something visits you.",
-  "BUNKER_7: The numbers are not coordinates. They are a countdown.",
-  "SIGNAL: The map lies. The map tells the truth. Both are dangerous.",
-  "BUNKER_7: There is no BUNKER_7. There is only the dust.",
-  "SIGNAL: Stop looking for the signal. The signal is looking for you.",
-];
+export interface ImpossibleCoord {
+  name: string;
+  coords: string;
+  reason: string;
+}
 
-// Impossible coordinates for wandering marker log entries
-export const IMPOSSIBLE_COORDS = [
-  "41.4034° N, 2.1741° E",
-  "0.0000° N, 0.0000° E (Null Island)",
-  "85.0000° N, 135.0000° W",
-  "39.9042° N, 116.4074° E",
-  "48.8566° N, 2.3522° E",
-  "35.6762° N, 139.6503° E",
-  "51.5074° N, 0.1278° W",
-  "40.7128° N, 74.0060° W",
-  "55.7558° N, 37.6173° E",
-  "37.7749° N, 122.4194° W",
+export const IMPOSSIBLE_COORDS: ImpossibleCoord[] = [
+  { name: 'Null Island', coords: '0,0', reason: 'The grid rejects zero.' },
+  { name: 'The Mirror Point', coords: '180,90', reason: 'Coordinates fold inward.' },
 ];

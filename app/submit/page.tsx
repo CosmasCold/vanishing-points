@@ -154,13 +154,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+
 /* ─── HIJACKED FORM ─── */
 function HijackedForm() {
   const [display, setDisplay] = useState("");
   const [phase, setPhase] = useState<"typing" | "deleting" | "empty">("typing");
   const [submitted, setSubmitted] = useState(false);
-  const message = UNSENT_MESSAGES[Math.floor(Math.random() * UNSENT_MESSAGES.length)];
+    const message = UNSENT_MESSAGES[Math.floor(Math.random() * UNSENT_MESSAGES.length)].text;
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  
 
   useEffect(() => {
     let i = 0;

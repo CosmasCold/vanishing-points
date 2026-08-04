@@ -1,19 +1,17 @@
-"use client";
+// hooks/useTimeOfDay.ts
+'use client';
 
-import { useState, useEffect } from "react";
+import { useEffect } from 'react';
+import { gameState, deriveTimeOfDay } from '@/logic/gameState';
 
-type TimeOfDay = "dawn" | "day" | "dusk" | "night";
-
-export function useTimeOfDay(): TimeOfDay {
-  const [tod, setTod] = useState<TimeOfDay>("day");
-
+export function useTimeOfDay() {
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 8) setTod("dawn");
-    else if (hour >= 8 && hour < 17) setTod("day");
-    else if (hour >= 17 && hour < 21) setTod("dusk");
-    else setTod("night");
-  }, []);
+    const update = () => {
+      gameState.setState({ timeOfDay: deriveTimeOfDay() });
+    };
 
-  return tod;
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, []);
 }

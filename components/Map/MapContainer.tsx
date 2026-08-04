@@ -480,11 +480,11 @@ const geojson: FeatureCollection<LineString> = {
         marker.remove();
         ghostMarkerRef.current = null;
 
-        const coords = IMPOSSIBLE_COORDS[Math.floor(Math.random() * IMPOSSIBLE_COORDS.length)];
+        const coord = IMPOSSIBLE_COORDS[Math.floor(Math.random() * IMPOSSIBLE_COORDS.length)];
         onGhostCapture?.({
           name: "Unidentified Signal",
           slug: `anomaly-${Date.now()}`,
-          coords,
+          coords: coord.coords,
         });
 
         showToast("Anomaly logged in expedition record", "warning");

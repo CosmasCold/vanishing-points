@@ -1,10 +1,11 @@
-"use client";
+// components/ExpeditionModal.tsx
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Wind, MapPin, ChevronRight, ShieldAlert, Skull, Radio } from "lucide-react";
-import { ExpeditionDef, ExpeditionPhase } from "@/lib/expeditions";
-import { Place } from "@/types";
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Wind, MapPin, ChevronRight, ShieldAlert, Skull } from 'lucide-react';
+import { ExpeditionDef, ExpeditionPhase } from '@/lib/expeditions';
+import { type Place } from '@/logic/gameState';  // ← updated import
 
 interface Props {
   place: Place;

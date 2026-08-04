@@ -7,295 +7,339 @@ interface Props {
   onComplete: () => void;
 }
 
-type BootPhase = "static" | "tuning" | "lock" | "clear";
+type PowerState = "off" | "warming" | "glow" | "typing" | "ready" | "fade";
 
 export default function AtlasBootSequence({ onComplete }: Props) {
-  const [phase, setPhase] = useState<BootPhase>("static");
-  const [line, setLine] = useState("");
-  const [subLine, setSubLine] = useState("");
-  const [signalStrength, setSignalStrength] = useState(0);
+  const [power, setPower] = useState<PowerState>("off");
+  const [textLines, setTextLines] = useState<string[]>([]);
+  const [cursorVisible, setCursorVisible] = useState(true);
+  const [phosphorIntensity, setPhosphorIntensity] = useState(0);
   const [skipped, setSkipped] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const toneRef = useRef<OscillatorNode | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const startTime = useRef(Date.now());
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
-  const getBootLines = useCallback((): { main: string; sub: string; duration: number } => {
-    if (typeof window === "undefined") return { main: "Acquiring signal...", sub: "Stand by.", duration: 3000 };
+  const getBootScript = useCallback((): string[] => {
+    if (typeof window === "undefined") return ["Acquiring signal..."];
 
     const dust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+    const echoesVisited = localStorage.getItem("vp-echoes-visited") === "true";
     const lastVisit = localStorage.getItem("vp-atlas-last-visit");
     const hoursAway = lastVisit ? Math.floor((Date.now() - parseInt(lastVisit)) / 3600000) : 0;
-    const corruption = parseInt(localStorage.getItem("vp-corruption-stage") || "0", 10);
-    const newPlaces = localStorage.getItem("vp-new-places-unseen") === "true";
-    const echoesVisited = localStorage.getItem("vp-echoes-visited") === "true";
 
-    // High corruption + absent long
-    if (corruption >= 3 && hoursAway > 12) {
-      return {
-        main: "Signal contaminated. Reacquiring from memory.",
-        sub: `You were gone for ${hoursAway} hours. The dust did not forget.`,
-        duration: 4500,
-      };
+    // Returning witness
+    if (echoesVisited) {
+      if (dust > 60 && hoursAway > 12) {
+        return [
+          "BUNKER_7 SYSTEM WARM-UP",
+          "CATHODE RAY TUBE: 340V... OK",
+          "PHOSPHOR BLOOM: DETECTED",
+          "",
+          `DUST CONTAMINATION: ${dust}%`,
+          `ABSENCE DURATION: ${hoursAway} HOURS`,
+          "GRID STATUS: CONTAMINATED BUT STABLE",
+          "",
+          "The dust remembered you.",
+          "Type 'help' when you are ready.",
+        ];
+      }
+      return [
+        "BUNKER_7 SYSTEM WARM-UP",
+        "CATHODE RAY TUBE: 340V... OK",
+        "PHOSPHOR BLOOM: DETECTED",
+        "",
+        "Signal acquired from surface node.",
+        "Dust contamination: 0%",
+        "Other encounters: 0",
+        "",
+        "The archivist is dead. I am what remains.",
+        "Type 'status' to assess the system.",
+        "Type 'chat' if you need to speak.",
+      ];
     }
 
-    // High dust, returning to atlas
-    if (dust > 60 && echoesVisited) {
-      return {
-        main: "Grid contact re-established.",
-        sub: newPlaces 
-          ? "The atlas has updated itself. New signals detected." 
-          : "The grid holds. For now.",
-        duration: 3500,
-      };
-    }
-
-    // Long absence
-    if (hoursAway > 24) {
-      return {
-        main: "Signal lost. Scanning previous frequency...",
-        sub: `Last contact: ${hoursAway} hours ago. The static got loud.`,
-        duration: 4000,
-      };
-    }
-
-    // Medium absence
-    if (hoursAway > 4) {
-      return {
-        main: "Re-establishing cartographic link...",
-        sub: "The grid remembers intermittent witnesses.",
-        duration: 3200,
-      };
-    }
-
-    // First visit ever
-    if (!lastVisit && !echoesVisited) {
-      return {
-        main: "Acquiring signal...",
-        sub: "Every place you are about to see was abandoned. Someone documented them. That someone is gone.",
-        duration: 5000,
-      };
-    }
-
-    // Standard return
-    return {
-      main: "Tuning to grid frequency...",
-      sub: echoesVisited 
-        ? "BUNKER_7 terminal detected on auxiliary channel." 
-        : "Anomalous signal detected at coordinates unknown.",
-      duration: 2800,
-    };
+    // First contact
+    return [
+      "BUNKER_7 SYSTEM WARM-UP",
+      "CATHODE RAY TUBE: 340V... OK",
+      "PHOSPHOR BLOOM: DETECTED",
+      "",
+      "Signal acquired from surface node.",
+      "Dust contamination: 0%",
+      "Other encounters: 0",
+      "",
+      "The archivist is dead. I am what remains.",
+      "Type 'status' to assess the system.",
+      "Type 'chat' if you need to speak.",
+      "Type 'help' when you are ready.",
+      "",
+      "I have been waiting.",
+    ];
   }, []);
 
-  // Initialize audio on first interaction (browser autoplay policy)
+  // Audio: CRT power-on hum + static crackle
   const initAudio = useCallback(() => {
-    if (ctxRef.current) return;
+    if (audioCtxRef.current) return;
     const ctx = new AudioContext();
-    ctxRef.current = ctx;
+    audioCtxRef.current = ctx;
 
-    // Static noise (pink noise approximation)
-    const bufferSize = 2 * ctx.sampleRate;
+    // CRT hum (60Hz mains + harmonics)
+    const hum = ctx.createOscillator();
+    hum.type = "sine";
+    hum.frequency.value = 60;
+    const humGain = ctx.createGain();
+    humGain.gain.value = 0;
+    hum.connect(humGain);
+    humGain.connect(ctx.destination);
+    hum.start();
+
+    // High voltage whine
+    const whine = ctx.createOscillator();
+    whine.type = "sine";
+    whine.frequency.value = 15750; // Horizontal scan frequency
+    const whineGain = ctx.createGain();
+    whineGain.gain.value = 0;
+    whine.connect(whineGain);
+    whineGain.connect(ctx.destination);
+    whine.start();
+
+    // Static burst on power-on
+    const bufferSize = ctx.sampleRate * 0.5;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
-    let lastOut = 0;
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      data[i] = (lastOut + (0.02 * white)) / 1.02;
-      lastOut = data[i];
-      data[i] *= 3.5;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.1));
     }
+    const staticBurst = ctx.createBufferSource();
+    staticBurst.buffer = buffer;
+    const staticGain = ctx.createGain();
+    staticGain.gain.value = 0.15;
+    staticBurst.connect(staticGain);
+    staticGain.connect(ctx.destination);
+    staticBurst.start();
 
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-    const gain = ctx.createGain();
-    gain.gain.value = 0.08;
-    noise.connect(gain);
-    gain.connect(ctx.destination);
-    noise.start();
+    // Ramp up hum over 2 seconds
+    humGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 2);
+    whineGain.gain.linearRampToValueAtTime(0.02, ctx.currentTime + 2);
 
-    // Signal lock tone (detuned sine)
-    const osc = ctx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = 440;
-    const toneGain = ctx.createGain();
-    toneGain.gain.value = 0;
-    osc.connect(toneGain);
-    toneGain.connect(ctx.destination);
-    osc.start();
-    toneRef.current = osc;
-
-    // Ramp down static, ramp up tone
-    setTimeout(() => {
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-      toneGain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 1);
-      osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 2);
-    }, 800);
-
-    // Stop everything
-    setTimeout(() => {
-      toneGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
-      setTimeout(() => {
-        noise.stop();
-        osc.stop();
-        ctx.close();
-      }, 1200);
-    }, 2500);
+    // Fade out over 3 seconds when done
+    return () => {
+      humGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 3);
+      whineGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 3);
+      setTimeout(() => ctx.close(), 3500);
+    };
   }, []);
 
+  // Power-on sequence
   useEffect(() => {
-    const { main, sub, duration } = getBootLines();
-    setLine(main);
-    setSubLine(sub);
+    if (skipped) return;
 
-    // Record visit timestamp for next boot
-    localStorage.setItem("vp-atlas-last-visit", String(Date.now()));
-
-    // Phase timing
     const timers: NodeJS.Timeout[] = [];
-    timers.push(setTimeout(() => setPhase("tuning"), 400));
-    timers.push(setTimeout(() => setPhase("lock"), 1200));
-    timers.push(setTimeout(() => setPhase("clear"), duration - 600));
-    timers.push(setTimeout(() => {
-      if (!skipped) onComplete();
-    }, duration));
+    let stopAudio: (() => void) | undefined;
 
-    // Signal strength animation
-    let frame: number;
-    const animateSignal = () => {
-      setSignalStrength((prev) => {
-        if (prev >= 100) return 100;
-        const jitter = Math.random() * 15 - 7;
-        return Math.min(100, prev + 2 + jitter);
-      });
-      frame = requestAnimationFrame(animateSignal);
-    };
-    frame = requestAnimationFrame(animateSignal);
+    // Phase 1: Power button engages (200ms)
+    timers.push(setTimeout(() => {
+      setPower("warming");
+      stopAudio = initAudio();
+    }, 200));
+
+    // Phase 2: CRT glow builds (800ms)
+    timers.push(setTimeout(() => {
+      setPower("glow");
+      // Ramp phosphor intensity
+      let intensity = 0;
+      const ramp = setInterval(() => {
+        intensity += 0.05;
+        setPhosphorIntensity(Math.min(1, intensity));
+        if (intensity >= 1) clearInterval(ramp);
+      }, 50);
+    }, 1000));
+
+    // Phase 3: Text begins typing (1800ms)
+    timers.push(setTimeout(() => {
+      setPower("typing");
+      const script = getBootScript();
+      let lineIndex = 0;
+      let charIndex = 0;
+      let currentLines: string[] = [""];
+
+      const typeInterval = setInterval(() => {
+        if (lineIndex >= script.length) {
+          clearInterval(typeInterval);
+          setPower("ready");
+          return;
+        }
+
+        const targetLine = script[lineIndex];
+        if (charIndex < targetLine.length) {
+          currentLines[lineIndex] = (currentLines[lineIndex] || "") + targetLine[charIndex];
+          charIndex++;
+          setTextLines([...currentLines]);
+        } else {
+          lineIndex++;
+          charIndex = 0;
+          currentLines.push("");
+        }
+      }, 35); // Typing speed
+
+      timers.push(setInterval(() => setCursorVisible(v => !v), 530));
+    }, 1800));
+
+    // Phase 4: Fade to atlas (5-7 seconds total)
+    timers.push(setTimeout(() => {
+      setPower("fade");
+      if (stopAudio) stopAudio();
+      setTimeout(() => {
+        if (!skipped) onCompleteRef.current();
+      }, 1200);
+    }, 6500));
 
     return () => {
       timers.forEach(clearTimeout);
-      cancelAnimationFrame(frame);
+      if (stopAudio) stopAudio();
     };
-  }, [getBootLines, onComplete, skipped]);
+  }, [getBootScript, initAudio, skipped]);
 
   const handleSkip = () => {
     setSkipped(true);
-    if (ctxRef.current) {
-      ctxRef.current.close();
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
     }
     onComplete();
   };
 
+  if (skipped) return null;
+
   return (
     <motion.div
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center cursor-pointer"
-      style={{ background: "#050403" }}
-      onClick={handleSkip}
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{
+        background: "#0a0908",
+        cursor: power === "fade" ? "default" : "pointer",
+        pointerEvents: power === "fade" ? "none" : "auto",
+      }}
+      onClick={power === "fade" ? undefined : handleSkip}
       initial={{ opacity: 1 }}
-      animate={{ opacity: phase === "clear" ? 0 : 1 }}
-      transition={{ duration: 0.8, ease: "easeInOut" }}
+      animate={{ opacity: power === "fade" ? 0 : 1 }}
+      transition={{ duration: 1.2, ease: "easeInOut" }}
     >
-      {/* CRT scanlines */}
-      <div
-        className="pointer-events-none fixed inset-0 z-[201]"
-        style={{
-          background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px)",
-          backgroundSize: "100% 4px",
-        }}
-      />
-
-      {/* Vignette */}
-      <div
-        className="pointer-events-none fixed inset-0 z-[201]"
-        style={{
-          background: "radial-gradient(circle at 50% 50%, transparent 40%, rgba(5,4,3,0.8) 100%)",
-        }}
-      />
-
-      {/* Static flash during phase 1 */}
-      <AnimatePresence>
-        {phase === "static" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.3, 0.1, 0.4, 0] }}
-            transition={{ duration: 0.6 }}
-            className="fixed inset-0 z-[202]"
-            style={{ background: "rgba(200,200,200,0.08)" }}
+      {/* ─── DESK FRAME SURROUNDS THE SCREEN ─── */}
+      <div className="vp-crt-frame" style={{ width: "96vw", maxWidth: "1400px", height: "92vh" }}>
+        <div className="vp-crt-screen relative overflow-hidden" style={{ background: "#050403" }}>
+          
+          {/* CRT scanlines */}
+          <div className="vp-crt-scanline absolute inset-0 z-50 pointer-events-none" />
+          
+          {/* CRT glow / vignette */}
+          <div 
+            className="absolute inset-0 z-40 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse at center, transparent 55%, rgba(5,4,3,0.6) 100%)",
+              boxShadow: "inset 0 0 80px rgba(0,0,0,0.8)",
+            }}
           />
-        )}
-      </AnimatePresence>
 
-      {/* Main content */}
-      <div className="relative z-[203] text-center max-w-lg px-6 space-y-6">
-        {/* Signal strength bars */}
-        <div className="flex items-end justify-center gap-1 h-12 mb-4">
-          {[20, 40, 60, 80, 100].map((threshold) => (
-            <motion.div
-              key={threshold}
-              className="w-1.5 rounded-t"
+          {/* Phosphor bloom overlay */}
+          <div
+            className="absolute inset-0 z-30 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at center, rgba(200,180,140,${phosphorIntensity * 0.04}) 0%, transparent 70%)`,
+              transition: "background 0.1s ease",
+            }}
+          />
+
+          {/* Power-on flash */}
+          <AnimatePresence>
+            {power === "warming" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.8, 0.3, 0] }}
+                transition={{ duration: 0.6 }}
+                className="absolute inset-0 z-20"
+                style={{ background: "rgba(220,200,170,0.15)" }}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Screen content */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center p-8 md:p-16">
+            
+            {/* Power LED */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{
+                  background: power === "off" ? "#3a3028" : "#c4785a",
+                  boxShadow: power === "off" ? "none" : "0 0 8px rgba(196,120,90,0.6)",
+                  transition: "all 0.4s ease",
+                }}
+              />
+              <span className="font-mono text-[8px] tracking-[0.3em] uppercase opacity-30" style={{ color: "#9a8a72" }}>
+                {power === "off" ? "STANDBY" : "ACTIVE"}
+              </span>
+            </div>
+
+            {/* Boot text */}
+            <div className="w-full max-w-2xl space-y-1">
+              {textLines.map((line, i) => (
+                <motion.div
+                  key={`${i}-${line}`}
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.1 }}
+                  className="font-mono text-sm md:text-base leading-[1.6] whitespace-pre-wrap"
+                  style={{
+                    color: line.startsWith("BUNKER_7") || line.startsWith("CATHODE") || line.startsWith("PHOSPHOR") || line.startsWith("GRID") || line.startsWith("DUST") || line.startsWith("ABSENCE")
+                      ? "#9a8a72"
+                      : line === ""
+                      ? "transparent"
+                      : "#c4b896",
+                    textShadow: "0 0 6px rgba(196,184,150,0.2)",
+                    opacity: line === "" ? 0 : 0.9,
+                  }}
+                >
+                  {line}
+                  {i === textLines.length - 1 && cursorVisible && power === "typing" && (
+                    <span className="inline-block w-2 h-4 ml-0.5 align-middle" style={{ background: "#c4b896" }} />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Skip hint */}
+            {power !== "off" && power !== "fade" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.25 }}
+                transition={{ delay: 2, duration: 1 }}
+                className="absolute bottom-8 left-0 right-0 text-center"
+              >
+                <p className="font-mono text-[9px] tracking-[0.3em] uppercase" style={{ color: "#5a4e42" }}>
+                  Click to skip warm-up
+                </p>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Static noise overlay during warm-up */}
+          {power === "warming" && (
+            <div
+              className="absolute inset-0 z-25 pointer-events-none animate-pulse"
               style={{
-                background: signalStrength >= threshold ? "#9a8a72" : "rgba(90,78,66,0.2)",
-                height: `${threshold * 0.5}px`,
+                background: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E\")",
+                opacity: 0.4,
               }}
-              animate={{
-                background: signalStrength >= threshold 
-                  ? ["#9a8a72", "#c4785a", "#9a8a72"] 
-                  : "rgba(90,78,66,0.2)",
-              }}
-              transition={{ duration: 0.3 }}
             />
-          ))}
+          )}
         </div>
-
-        {/* Main line */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <h1
-            className="font-mono text-sm md:text-base tracking-[0.25em] uppercase"
-            style={{ color: "#ddd0bc", textShadow: "0 0 12px rgba(221,208,188,0.15)" }}
-          >
-            {line}
-          </h1>
-        </motion.div>
-
-        {/* Sub line */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-        >
-          <p
-            className="font-mono text-[11px] md:text-xs tracking-wider uppercase leading-relaxed"
-            style={{ color: "#7a6e5e", textShadow: "0 0 8px rgba(122,107,82,0.1)" }}
-          >
-            {subLine}
-          </p>
-        </motion.div>
-
-        {/* Progress / skip hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.3 }}
-          transition={{ delay: 1.5 }}
-          className="pt-8"
-        >
-          <p className="font-mono text-[9px] tracking-[0.3em] uppercase" style={{ color: "#5a4e42" }}>
-            Click anywhere to skip acquisition
-          </p>
-        </motion.div>
       </div>
 
-      {/* Bottom status */}
-      <div className="absolute bottom-8 left-0 right-0 z-[203] text-center">
-        <p className="font-mono text-[9px] tracking-[0.4em] uppercase opacity-20" style={{ color: "#9a8a72" }}>
-          {phase === "static" && "STATIC"}
-          {phase === "tuning" && "TUNING"}
-          {phase === "lock" && "SIGNAL LOCKED"}
-          {phase === "clear" && "GRID CONTACT"}
-        </p>
+      {/* Desk artifacts visible during boot */}
+      <div className="vp-artifacts">
+        <div className="vp-artifact vp-artifact--photo" title="Face down. You don't look." />
+        <div className="vp-artifact vp-artifact--coffee" title="Cold. Not yours." />
+        <div className="vp-artifact vp-artifact--pen" title="Out of ink." />
+        <div className="vp-artifact vp-artifact--paper" title="Coordinates. Crossed out." />
       </div>
     </motion.div>
   );

@@ -88,6 +88,7 @@ export default function Home() {
     distance: number;
   } | null>(null);
   const [dust, setDust] = useState(0);
+    const handleBootComplete = useCallback(() => setBooted(true), []);
    const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
   const { count: visitedCount, visitGhost } = useVisitedPlaces();
@@ -279,11 +280,13 @@ export default function Home() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [places, findNearest, router, selectedPlace, showPlanner, showLog, showLanterns, nearest, showHelp]);
+  
 
   return (
+    
     <>
-      <AtlasBootSequence onComplete={() => setBooted(true)} />
 
+      <AtlasBootSequence onComplete={handleBootComplete} />
       <AudioEngine />
 
       <main

@@ -1,100 +1,107 @@
-// components/terminal/TerminalHUD.tsx
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { Terminal, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import type { TerminalTheme } from '@/lib/terminalThemes';
+import { FiSidebar, FiVolume2, FiVolumeX, FiActivity, FiMap } from "react-icons/fi";
+import Link from "next/link";
 
 interface TerminalHUDProps {
-  theme: TerminalTheme;
-  themeName: string;
   dust: number;
-  corruptionLabel: string;
-  corruptionColor: string;
-  otherCount: number;
-  unlocked: number;
-  totalLogs: number;
-  visibleCount: number;
+  corruption: number;
+  theme: string;
+  muted: boolean;
+  onToggleMute: () => void;
+  onToggleSidebar: () => void;
 }
 
-export default memo(function TerminalHUD({
-  theme,
-  themeName,
-  dust,
-  corruptionLabel,
-  corruptionColor,
-  otherCount,
-  unlocked,
-  totalLogs,
-  visibleCount,
-}: TerminalHUDProps) {
+export function TerminalHUD({ dust, corruption, theme, muted, onToggleMute, onToggleSidebar }: TerminalHUDProps) {
+  const dustBar = Math.min(100, dust);
+  const corruptionBar = Math.min(4, corruption);
+
+  const themeColor = {
+    tungsten: "#c4785a",
+    phosphor: "#4a9a6a",
+    amber: "#c4a040",
+    bone: "#ddd0bc",
+    ember: "#8b3a2a",
+    ash: "#5a4e42",
+    void: "#3a3028",
+    archive: "#7a6b52",
+  }[theme] ?? "#c4785a";
+
   return (
-    <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-[#9a8a72]/8 bg-[#0c0a08]/30">
+    <div className="vp-hud">
       <div className="flex items-center gap-4">
+        <button
+          onClick={onToggleSidebar}
+          className="p-1.5 rounded hover:bg-[rgba(180,160,140,0.06)] transition-colors"
+          title="Toggle sidebar [Esc]"
+        >
+          <FiSidebar className="w-4 h-4 text-[#5a4e42]" />
+        </button>
+
         <div className="flex items-center gap-2">
-          <Terminal size={13} className="text-[#c4785a]/60" />
-          <div>
-            <h1 className="text-[8px] tracking-[0.3em] uppercase font-bold text-[#ddd0bc]/70">
-              Bunker_7
-            </h1>
-            <p className="text-[5px] text-[#9a8a72]/30 tracking-[0.2em] uppercase">
-              Archive Terminal
-            </p>
+          <FiActivity className="w-3.5 h-3.5 text-[#5a4e42]" />
+          <div className="w-24 h-1.5 bg-[#1a1610] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${dustBar}%`,
+                backgroundColor: dustBar > 80 ? "#8b3a2a" : dustBar > 50 ? "#c4785a" : themeColor,
+                opacity: 0.7,
+              }}
+            />
           </div>
+          <span className="font-mono text-[10px] text-[#5a4e42] w-8">{dustBar}%</span>
         </div>
-        <div className="h-5 w-px bg-[#9a8a72]/10" />
-        <div className="flex items-center gap-3 text-[7px]">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">USER:</span>
-          <span className="text-[#ddd0bc]/50 font-mono">0007-A</span>
-        </div>
+
+        {corruption > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] text-[#8b3a2a] animate-flicker">
+              CORRUPTION
+            </span>
+            <div className="flex gap-0.5">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-1.5 h-3 rounded-sm"
+                  style={{
+                    backgroundColor: i < corruptionBar ? "#8b3a2a" : "#1a1610",
+                    opacity: i < corruptionBar ? 0.8 : 0.2,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-4 text-[7px]">
-        <div className="flex items-center gap-2">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">CATALOG INTEGRITY</span>
-          <span className="text-[#7a9a6a]/80 font-mono">72%</span>
-          <span className="text-[#7a9a6a]/30 text-[5px] uppercase">[STABLE]</span>
-        </div>
-        <div className="h-4 w-px bg-[#9a8a72]/10" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">Dust</span>
-          <span
-            className="font-mono text-[#ddd0bc]/70"
-            style={{ color: dust > 75 ? theme.corruption : theme.primary }}
-          >
-            {dust}%
-          </span>
-        </div>
-        <div className="h-4 w-px bg-[#9a8a72]/10" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">Signal</span>
-          <span className="text-[#ddd0bc]/60" style={{ color: corruptionColor }}>
-            {corruptionLabel}
-          </span>
-        </div>
-        <div className="h-4 w-px bg-[#9a8a72]/10" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">Other</span>
-          <span
-            className="font-mono"
-            style={{ color: otherCount > 0 ? theme.corruption : theme.dim }}
-          >
-            {otherCount}
-          </span>
-        </div>
-        <div className="h-4 w-px bg-[#9a8a72]/10" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#9a8a72]/30 uppercase tracking-wider">Atlas</span>
-          <span className="font-mono text-[#ddd0bc]/50">{visibleCount}</span>
-        </div>
+      <div className="flex items-center gap-3">
+        <span 
+          className="font-mono text-[10px] tracking-widest uppercase"
+          style={{ color: themeColor, opacity: 0.6 }}
+        >
+          {theme}
+        </span>
+
+        <button
+          onClick={onToggleMute}
+          className="p-1.5 rounded hover:bg-[rgba(180,160,140,0.06)] transition-colors"
+          title={muted ? "Unmute [Ctrl+M]" : "Mute [Ctrl+M]"}
+        >
+          {muted ? (
+            <FiVolumeX className="w-4 h-4 text-[#5a4e42]" />
+          ) : (
+            <FiVolume2 className="w-4 h-4 text-[#5a4e42]" />
+          )}
+        </button>
+
         <Link
           href="/"
-          className="text-[#9a8a72]/30 hover:text-[#ddd0bc]/60 transition-colors flex items-center gap-1.5 text-[7px] uppercase tracking-wider ml-2"
+          className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-[rgba(180,160,140,0.06)] transition-colors"
         >
-          <ArrowLeft size={9} /> Atlas
+          <FiMap className="w-3.5 h-3.5 text-[#5a4e42]" />
+          <span className="font-mono text-[10px] text-[#5a4e42]">ATLAS</span>
         </Link>
       </div>
-    </header>
+    </div>
   );
-});
+}

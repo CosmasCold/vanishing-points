@@ -26,8 +26,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${cinzel.variable} ${spaceMono.variable}`}>
-      <body className="antialiased min-h-screen bg-[#1a1612] text-[#ddd0bc] overflow-x-hidden">
+        <html lang="en" className={`dark ${inter.variable} ${cinzel.variable} ${spaceMono.variable}`}>
+      <body className="antialiased min-h-screen bg-void text-bone overflow-x-hidden">
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

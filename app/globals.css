@@ -1120,191 +1120,255 @@ input::placeholder {
 
 
 /* ============================================================
-   TERMINAL SHELL
+   TERMINAL ATMOSPHERE — PREMIUM CREEPY LAYER
    ============================================================ */
 
-.vp-shell {
-  height: 100vh;
-  height: 100dvh;
-  background: #060504;
-  color: #b0a090;
-  font-family: "Courier New", Courier, monospace;
+/* ── Terminal viewport subtle warp ── */
+.vp-term-output {
   position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-.vp-atmosphere {
-  position: fixed;
+.vp-term-output::before {
+  content: "";
+  position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(30, 24, 18, 0.4) 0%, transparent 55%),
-    #060504;
   pointer-events: none;
-  z-index: 0;
-}
-
-.vp-scanlines {
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.12) 3px,
-    rgba(0, 0, 0, 0.12) 6px
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 70%,
+    rgba(6, 5, 4, 0.4) 100%
   );
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.35;
+  z-index: 5;
 }
 
-.vp-app {
-  position: relative;
-  z-index: 10;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-/* ─── HUD ─── */
-.vp-hud {
-  flex-shrink: 0;
-  height: 44px;
-  padding: 0 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
-}
-
-/* ─── WORKSPACE ─── */
-.vp-workspace {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr;
-  overflow: hidden;
-}
-
-@media (min-width: 1024px) {
-  .vp-workspace {
-    grid-template-columns: 1.65fr 1fr;
+/* ── Corruption vignette pulse ── */
+@keyframes corruption-pulse {
+  0%, 100% { 
+    box-shadow: inset 0 0 60px rgba(139, 58, 42, 0); 
+  }
+  50% { 
+    box-shadow: inset 0 0 100px rgba(139, 58, 42, 0.08); 
   }
 }
 
-/* ─── TERMINAL ─── */
-.vp-term {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-right: 1px solid rgba(180, 160, 140, 0.06);
+.vp-shell[data-corruption="high"] {
+  animation: corruption-pulse 4s ease-in-out infinite;
 }
 
-.vp-term-header {
-  flex-shrink: 0;
-  height: 32px;
-  padding: 0 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
-  background: rgba(180, 160, 140, 0.015);
+/* ── Terminal line hover reveal ── */
+.vp-term-output > div {
+  position: relative;
+  padding-left: 0;
+  transition: padding-left 0.2s ease;
 }
 
-.vp-term-output {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(180, 160, 140, 0.1) transparent;
+.vp-term-output > div:hover {
+  padding-left: 4px;
+  background: linear-gradient(90deg, rgba(180, 160, 140, 0.02) 0%, transparent 30%);
 }
 
-.vp-term-output::-webkit-scrollbar {
-  width: 4px;
+/* ── Ghost text decode effect ── */
+@keyframes ghost-decode {
+  0% { opacity: 0.2; filter: blur(1px); }
+  25% { opacity: 0.4; filter: blur(0.5px); }
+  50% { opacity: 0.15; filter: blur(2px); }
+  75% { opacity: 0.5; filter: blur(0.3px); }
+  100% { opacity: 0.35; filter: blur(0.8px); }
 }
 
-.vp-term-output::-webkit-scrollbar-track {
-  background: transparent;
+.ghost-text {
+  animation: ghost-decode 6s ease-in-out infinite;
+  color: #5a4a3a;
 }
 
-.vp-term-output::-webkit-scrollbar-thumb {
-  background: rgba(180, 160, 140, 0.12);
-  border-radius: 2px;
+/* ── Command input focus glow ── */
+.vp-term-input:focus-within {
+  background: rgba(180, 160, 140, 0.03);
+  border-top-color: rgba(180, 160, 140, 0.12);
 }
 
-.vp-term-input {
-  flex-shrink: 0;
-  height: 40px;
-  padding: 0 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-top: 1px solid rgba(180, 160, 140, 0.06);
-  background: rgba(180, 160, 140, 0.015);
+/* ── Sidebar tab active indicator ── */
+.vp-sidebar-tabs button {
   position: relative;
 }
 
-/* ─── SIDEBAR ─── */
-.vp-sidebar {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.vp-sidebar-tabs button::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 1px;
+  background: rgba(180, 160, 140, 0.3);
+  transition: transform 0.2s ease;
 }
 
-.vp-sidebar-tabs {
-  flex-shrink: 0;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0 0.75rem;
-  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
-  background: rgba(180, 160, 140, 0.015);
-  overflow-x: auto;
-  scrollbar-width: none;
+.vp-sidebar-tabs button:hover::after {
+  transform: translateX(-50%) scaleX(1);
 }
 
-.vp-sidebar-tabs::-webkit-scrollbar {
-  display: none;
+/* ── Signal bars animation ── */
+@keyframes signal-dance {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
 }
 
-.vp-sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem 1.25rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(180, 160, 140, 0.1) transparent;
+.signal-bar {
+  animation: signal-dance 0.8s ease-in-out infinite;
+  transform-origin: bottom;
 }
 
-.vp-sidebar-content::-webkit-scrollbar {
-  width: 4px;
+.signal-bar:nth-child(2n) { animation-delay: 0.1s; }
+.signal-bar:nth-child(3n) { animation-delay: 0.2s; }
+.signal-bar:nth-child(4n) { animation-delay: 0.15s; }
+.signal-bar:nth-child(5n) { animation-delay: 0.05s; }
+
+/* ── Inventory item hover ── */
+.vp-sidebar .grid > div {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.vp-sidebar-content::-webkit-scrollbar-thumb {
-  background: rgba(180, 160, 140, 0.12);
-  border-radius: 2px;
+.vp-sidebar .grid > div:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* ─── FOOTER ─── */
-.vp-footer {
-  flex-shrink: 0;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-top: 1px solid rgba(180, 160, 140, 0.04);
+/* ── Status bar corruption warning ── */
+@keyframes warning-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-/* ─── UTILITIES ─── */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.corruption-warning {
+  animation: warning-blink 1.5s steps(1) infinite;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* ── Terminal boot flicker ── */
+@keyframes boot-flicker {
+  0% { opacity: 0; }
+  10% { opacity: 0.8; }
+  20% { opacity: 0.2; }
+  30% { opacity: 1; }
+  40% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+  60% { opacity: 0.3; }
+  70% { opacity: 1; }
+  100% { opacity: 1; }
 }
+
+.boot-line {
+  animation: boot-flicker 0.3s ease-out forwards;
+}
+
+/* ── Cursor variants by theme ── */
+.cursor-tungsten { background: #c4785a; }
+.cursor-phosphor { background: #4a9a6a; box-shadow: 0 0 4px rgba(74, 154, 106, 0.4); }
+.cursor-amber { background: #c4a040; box-shadow: 0 0 4px rgba(196, 160, 64, 0.3); }
+.cursor-bone { background: #ddd0bc; box-shadow: 0 0 4px rgba(221, 208, 188, 0.2); }
+.cursor-ember { background: #8b3a2a; box-shadow: 0 0 4px rgba(139, 58, 42, 0.4); }
+
+/* ── Subtle screen breathing ── */
+@keyframes screen-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.4; }
+}
+
+.vp-scanlines {
+  animation: screen-breathe 8s ease-in-out infinite;
+}
+
+/* ── Dust particle overlay (CSS fallback) ── */
+@keyframes dust-float {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+}
+
+.css-dust-mote {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(196, 168, 130, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: dust-float 12s linear infinite;
+}
+
+/* ── Link hover underline effect ── */
+.vp-hud a,
+.vp-sidebar a {
+  position: relative;
+}
+
+.vp-hud a::after,
+.vp-sidebar a::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: rgba(180, 160, 140, 0.4);
+  transition: width 0.3s ease;
+}
+
+.vp-hud a:hover::after,
+.vp-sidebar a:hover::after {
+  width: 100%;
+}
+
+/* ── Scrollbar theming for terminal ── */
+.vp-term-output::-webkit-scrollbar-thumb {
+  background: rgba(90, 78, 66, 0.3);
+}
+
+.vp-term-output::-webkit-scrollbar-thumb:hover {
+  background: rgba(122, 107, 82, 0.4);
+}
+
+/* ── Mobile terminal adjustments ── */
+@media (max-width: 1023px) {
+  .vp-workspace {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vp-sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+    background: #060504;
+    border-top: 1px solid rgba(180, 160, 140, 0.08);
+    z-index: 50;
+  }
+
+  .vp-hud {
+    padding: 0 0.75rem;
+  }
+
+  .vp-term-header,
+  .vp-term-input {
+    padding: 0 0.75rem;
+  }
+
+  .vp-term-output {
+    padding: 0.75rem;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .vp-scanlines,
+  .ghost-text,
+  .corruption-warning,
+  .signal-bar,
+  .boot-line {
+    animation: none !important;
+  }
+}
+
+@import url('./terminal-atmosphere.css');

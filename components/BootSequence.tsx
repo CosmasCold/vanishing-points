@@ -8,7 +8,7 @@ import { colors, typography } from '@/styles/theme';
 
 export const BootSequence: React.FC = () => {
   const { phase, phaseIndex, phases, isComplete, startBoot } = useBootStore();
-  const { setBooted } = useUIStore();
+  const { booted, setBooted } = useUIStore();
   
   useEffect(() => {
     startBoot();
@@ -21,10 +21,16 @@ export const BootSequence: React.FC = () => {
     }
   }, [isComplete, setBooted]);
   
+  // Once the UI store marks boot as complete, unmount entirely
+  if (booted) return null;
+  
   const currentPhase = phases[phaseIndex];
   
   return (
-    <div 
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
       className="fixed inset-0 z-40 flex items-center justify-center"
       style={{ backgroundColor: colors.archive.black }}
     >
@@ -133,6 +139,6 @@ export const BootSequence: React.FC = () => {
           </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

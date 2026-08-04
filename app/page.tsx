@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence } from 'framer-motion';
 import { BootSequence } from '@/components/BootSequence';
 import { DashboardShell } from '@/components/DashboardShell';
 import { CRTOverlay } from '@/components/CRTOverlay';
@@ -14,7 +15,9 @@ export default function Home() {
       <CommandProvider />
       <KeyboardManager />
       <CRTOverlay />
-      <BootSequence />
+      <AnimatePresence>
+        <BootSequence />
+      </AnimatePresence>
       <DashboardShell />
     </main>
   );

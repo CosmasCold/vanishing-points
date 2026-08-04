@@ -1120,13 +1120,13 @@ input::placeholder {
 
 
 /* ============================================================
-   ARCHIVIST'S DESK — PREMIUM REDESIGN
+   THE DROWNED DESK — COMPLETE TERMINAL REDESIGN
    ============================================================ */
 
-.vp-archivist-room {
+.vp-drowned-room {
   min-height: 100vh;
   min-height: 100dvh;
-  background: #0a0908;
+  background: #060504;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1135,271 +1135,352 @@ input::placeholder {
   font-family: "Courier New", Courier, monospace;
 }
 
-/* Single warm light source from top-left, rest falls to black */
-.vp-room-ambient {
+/* Deep water — black-brown silt, not blue */
+.vp-water-ambient {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 15% 5%, rgba(200, 175, 130, 0.035) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 85% 95%, rgba(50, 35, 20, 0.2) 0%, transparent 50%),
-    linear-gradient(180deg, #0f0e0c 0%, #0a0908 50%, #080706 100%);
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(20, 15, 10, 0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(25, 18, 12, 0.3) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0908 0%, #070605 40%, #040302 100%);
   pointer-events: none;
   z-index: 0;
 }
 
-.vp-room-ambient::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(5, 4, 3, 0.85) 100%);
-  pointer-events: none;
-}
-
-/* Dust motes — very subtle, slow drift */
-.vp-dust-motes {
+/* Caustic light — surface refraction from above */
+.vp-caustics {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 5;
-  background-image:
-    radial-gradient(circle at 25% 25%, rgba(180, 160, 120, 0.12) 0%, transparent 1.5px),
-    radial-gradient(circle at 65% 15%, rgba(180, 160, 120, 0.08) 0%, transparent 2px),
-    radial-gradient(circle at 45% 65%, rgba(180, 160, 120, 0.1) 0%, transparent 1px),
-    radial-gradient(circle at 85% 55%, rgba(180, 160, 120, 0.07) 0%, transparent 2.5px),
-    radial-gradient(circle at 35% 45%, rgba(180, 160, 120, 0.09) 0%, transparent 1.5px);
-  background-size: 250% 250%;
-  animation: vp-dust-float 24s ease-in-out infinite;
-  opacity: 0.5;
+  z-index: 1;
+  opacity: 0.12;
+  background:
+    radial-gradient(ellipse 30% 20% at 35% 25%, rgba(130, 110, 80, 0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 25% 15% at 65% 55%, rgba(110, 95, 75, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 25% at 20% 65%, rgba(120, 105, 80, 0.09) 0%, transparent 70%);
+  animation: vp-caustic-shift 14s ease-in-out infinite;
+  mix-blend-mode: screen;
 }
 
-@keyframes vp-dust-float {
-  0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%; }
-  33% { background-position: 100% 50%, 0% 100%, 100% 0%, 50% 50%, 0% 100%; }
-  66% { background-position: 50% 100%, 100% 0%, 0% 100%, 100% 50%, 50% 0%; }
+@keyframes vp-caustic-shift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+  33% { transform: translate(-2%, 1%) scale(1.05); opacity: 0.13; }
+  66% { transform: translate(1%, -1%) scale(0.95); opacity: 0.08; }
 }
 
-/* Paper stacks — low, shadowy, not cartoon objects */
-.vp-paper-stack {
+/* Water stains — organic, blooming */
+.vp-water-stain {
   position: fixed;
-  bottom: 0;
-  height: 50px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.vp-paper-stack--left {
-  left: -30px;
-  width: 220px;
-  background: linear-gradient(180deg, transparent 0%, rgba(55, 45, 35, 0.25) 60%, rgba(40, 32, 25, 0.35) 100%);
-  transform: skewX(10deg);
-  box-shadow: inset -15px 0 30px rgba(0,0,0,0.6);
-}
-
-.vp-paper-stack--right {
-  right: -40px;
-  width: 260px;
-  background: linear-gradient(180deg, transparent 0%, rgba(55, 45, 35, 0.2) 60%, rgba(40, 32, 25, 0.3) 100%);
-  transform: skewX(-6deg);
-  box-shadow: inset 15px 0 30px rgba(0,0,0,0.6);
-}
-
-/* Coffee ring — faint, oxidized, off-center */
-.vp-coffee-stain {
-  position: fixed;
-  bottom: 10%;
-  right: 10%;
-  width: 100px;
-  height: 100px;
   border-radius: 50%;
-  border: 1.5px solid rgba(80, 60, 40, 0.06);
   pointer-events: none;
   z-index: 2;
-  box-shadow:
-    inset 0 0 30px rgba(80, 60, 40, 0.04),
-    0 0 0 6px rgba(80, 60, 40, 0.02),
-    0 0 0 14px rgba(80, 60, 40, 0.015);
-  transform: rotate(20deg) scaleY(0.85);
-  opacity: 0.6;
+  filter: blur(50px);
 }
 
-/* Phosphor glow — soft, behind the text only */
-.vp-phosphor-glow {
+.vp-water-stain--1 {
+  width: 350px;
+  height: 350px;
+  bottom: -80px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(50, 38, 28, 0.35) 0%, transparent 70%);
+  animation: vp-stain-bloom 22s ease-in-out infinite;
+}
+
+.vp-water-stain--2 {
+  width: 250px;
+  height: 250px;
+  top: 15%;
+  right: -60px;
+  background: radial-gradient(circle, rgba(45, 35, 25, 0.25) 0%, transparent 70%);
+  animation: vp-stain-bloom 28s ease-in-out infinite reverse;
+}
+
+@keyframes vp-stain-bloom {
+  0%, 100% { transform: scale(1); opacity: 0.05; }
+  50% { transform: scale(1.4); opacity: 0.1; }
+}
+
+/* Surface meniscus */
+.vp-water-surface {
   position: fixed;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 1100px;
-  height: 60vh;
-  background: radial-gradient(ellipse at center, rgba(200, 180, 140, 0.025) 0%, transparent 65%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(90, 78, 60, 0.12) 25%, rgba(90, 78, 60, 0.12) 75%, transparent 100%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Bubbles rising — barely visible */
+.vp-bubbles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background-image:
+    radial-gradient(circle at 15% 100%, rgba(110, 100, 88, 0.06) 0%, transparent 2px),
+    radial-gradient(circle at 45% 100%, rgba(110, 100, 88, 0.05) 0%, transparent 1.5px),
+    radial-gradient(circle at 75% 100%, rgba(110, 100, 88, 0.06) 0%, transparent 2px);
+  background-size: 100% 400%;
+  animation: vp-bubble-rise 18s linear infinite;
+  opacity: 0.25;
+}
+
+@keyframes vp-bubble-rise {
+  0% { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* Pressure vignette — looking through deep water */
+.vp-pressure {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(4, 3, 2, 0.7) 100%);
   pointer-events: none;
   z-index: 4;
 }
 
-/* Scanlines — finer, softer */
-.vp-crt-scanline {
+/* Depth marker — bottom right, faint */
+.vp-depth-marker {
   position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 4px,
-    rgba(0, 0, 0, 0.06) 4px,
-    rgba(0, 0, 0, 0.06) 8px
-  );
-  pointer-events: none;
-  z-index: 50;
-}
-
-/* Desk edge — a thin horizon line */
-.vp-desk-edge {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(90, 74, 58, 0.25) 15%, rgba(90, 74, 58, 0.25) 85%, transparent 100%);
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Dust contamination overlay — warm, subtle */
-.vp-dust-overlay {
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(circle at 30% 70%, rgba(160, 140, 100, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 70% 30%, rgba(140, 120, 90, 0.04) 0%, transparent 50%);
-  pointer-events: none;
+  bottom: 2rem;
+  right: 2rem;
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: #3a3228;
+  opacity: 0.35;
   z-index: 20;
-  transition: opacity 3s ease;
+  pointer-events: none;
+  text-transform: uppercase;
+  text-align: right;
+  line-height: 1.6;
 }
 
 /* ─── TERMINAL CONTENT ─── */
-.vp-output {
+.vp-drowned-output {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 2rem;
-  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  overflow-x: hidden;
+  padding-bottom: 4rem;
+  mask-image: linear-gradient(to bottom, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 92%, transparent 100%);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.vp-output::-webkit-scrollbar {
-  width: 3px;
+.vp-drowned-output::-webkit-scrollbar {
+  display: none;
 }
 
-.vp-output::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.vp-output::-webkit-scrollbar-thumb {
-  background: rgba(90, 74, 58, 0.25);
-  border-radius: 2px;
-}
-
-.vp-line {
-  margin: 0.2rem 0;
+/* Text waver — subtle, like reading through water */
+.vp-drowned-line {
+  margin: 0.4rem 0;
   white-space: pre-wrap;
   word-break: break-word;
-  line-height: 1.65;
-  font-size: 0.9rem;
-  letter-spacing: 0.01em;
+  line-height: 1.75;
+  font-size: 0.93rem;
+  letter-spacing: 0.015em;
+  color: #b0a090;
+  text-shadow: 0 0 1px rgba(176, 160, 144, 0.06);
+  animation: vp-text-waver 10s ease-in-out infinite;
+  animation-delay: calc(var(--line-index, 0) * 0.8s);
 }
 
-.vp-line--header {
-  color: #8b7355;
-  letter-spacing: 0.08em;
-  opacity: 0.7;
+@keyframes vp-text-waver {
+  0%, 100% { margin-left: 0; }
+  25% { margin-left: 0.4px; }
+  75% { margin-left: -0.3px; }
 }
 
-.vp-line--bunker {
-  color: #d4c4a8;
+/* Line type variants */
+.vp-drowned-line--input {
+  color: #4a4038;
+  opacity: 0.4;
+  font-size: 0.85rem;
+  margin-top: 2rem;
+}
+
+.vp-drowned-line--bunker {
+  color: #c8b8a0;
   font-style: italic;
-  opacity: 0.95;
+  opacity: 0.92;
+  text-shadow: 0 0 8px rgba(200, 184, 160, 0.1);
 }
 
-.vp-line--input {
-  color: #6a5a4a;
-  opacity: 0.6;
-}
-
-/* Corruption — more subtle, like a failing tube */
-.vp-output--corruption-2 .vp-line:nth-child(odd) {
-  animation: vp-flicker-subtle 6s infinite;
-}
-
-.vp-output--corruption-3 .vp-line {
-  animation: vp-flicker-subtle 3.5s infinite;
-}
-
-.vp-output--corruption-4 .vp-line {
-  animation: vp-flicker-subtle 1.8s infinite;
-  color: #b89878;
-  text-shadow: 0 0 10px rgba(180, 130, 90, 0.15);
-}
-
-@keyframes vp-flicker-subtle {
-  0%, 100% { opacity: 1; }
-  94% { opacity: 1; }
-  95% { opacity: 0.6; }
-  96% { opacity: 1; }
-  98% { opacity: 0.4; }
-  99% { opacity: 1; }
-}
-
-/* ─── INPUT ─── */
-.vp-input-form {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-top: 1px solid rgba(90, 74, 58, 0.15);
-  padding-top: 1rem;
-  margin-top: auto;
+.vp-drowned-line--other {
+  color: #a07860;
+  font-size: 0.82rem;
+  margin-left: 2rem;
+  opacity: 0.65;
   position: relative;
 }
 
-.vp-prompt {
-  color: #5a4a3a;
-  font-weight: bold;
-  font-size: 0.95rem;
-  user-select: none;
+.vp-drowned-line--other::before {
+  content: "› ";
+  position: absolute;
+  left: -1.2rem;
+  color: #804030;
+  opacity: 0.4;
 }
 
-.vp-input {
+.vp-drowned-line--system {
+  color: #6a5e50;
+  font-size: 0.8rem;
+  letter-spacing: 0.07em;
+  opacity: 0.55;
+}
+
+.vp-drowned-line--ghost {
+  color: #5a5048;
+  opacity: 0.3;
+  font-style: italic;
+  font-size: 0.86rem;
+  animation: vp-ghost-fade 5s ease-in-out infinite;
+}
+
+.vp-drowned-line--error {
+  color: #8a5040;
+  opacity: 0.75;
+}
+
+@keyframes vp-ghost-fade {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── CORRUPTION — INK RUNNING, NOT GLITCH ─── */
+.vp-drowned-output--corruption-1 .vp-drowned-line:nth-child(7n) {
+  opacity: 0.88;
+}
+
+.vp-drowned-output--corruption-2 .vp-drowned-line:nth-child(5n) {
+  animation: vp-ink-run 6s ease-in-out infinite;
+}
+
+.vp-drowned-output--corruption-3 .vp-drowned-line {
+  animation: vp-ink-run 3.5s ease-in-out infinite;
+}
+
+.vp-drowned-output--corruption-4 .vp-drowned-line {
+  animation: vp-ink-run 1.8s ease-in-out infinite;
+  color: #a08878;
+  text-shadow:
+    0 0 10px rgba(160, 100, 80, 0.12),
+    0 1px 0 rgba(160, 100, 80, 0.08);
+}
+
+@keyframes vp-ink-run {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 0 transparent;
+    filter: blur(0);
+  }
+  92% { opacity: 1; }
+  94% {
+    opacity: 0.72;
+    text-shadow: 0 1px 0 rgba(140, 90, 70, 0.2);
+    filter: blur(0.4px);
+  }
+  96% { opacity: 0.88; }
+  98% {
+    opacity: 0.62;
+    text-shadow: 0 2px 1px rgba(140, 90, 70, 0.12);
+    filter: blur(0.25px);
+  }
+}
+
+/* ─── INPUT — GHOST VISIBLE UNTIL TOUCHED ─── */
+.vp-drowned-input-form {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 2.5rem;
+  opacity: 0.12;
+  transition: opacity 2s ease;
+}
+
+.vp-drowned-input-form:hover,
+.vp-drowned-input-form:focus-within {
+  opacity: 1;
+}
+
+.vp-drowned-prompt {
+  color: #3a3228;
+  font-size: 0.9rem;
+  user-select: none;
+  transition: color 1s ease;
+}
+
+.vp-drowned-input-form:hover .vp-drowned-prompt,
+.vp-drowned-input-form:focus-within .vp-drowned-prompt {
+  color: #7a6a58;
+}
+
+.vp-drowned-input {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
-  color: #c4b896;
+  color: #c8b8a0;
   font-family: inherit;
-  font-size: 0.9rem;
-  caret-color: #c4b896;
-  text-shadow: 0 0 8px rgba(196, 184, 150, 0.15);
+  font-size: 0.93rem;
+  caret-color: #c8b8a0;
+  text-shadow: 0 0 12px rgba(200, 184, 160, 0.1);
   padding: 0.25rem 0;
+  letter-spacing: 0.02em;
 }
 
-.vp-cursor {
+.vp-drowned-input::placeholder {
+  color: transparent;
+}
+
+/* Cursor — phosphor breathing under pressure */
+.vp-drowned-cursor {
   display: inline-block;
-  width: 8px;
-  height: 1.1em;
-  background: #c4b896;
-  animation: vp-cursor-blink 1.1s step-end infinite;
-  box-shadow: 0 0 8px rgba(196, 184, 150, 0.35);
+  width: 9px;
+  height: 1.15em;
+  background: #a89888;
+  opacity: 0.5;
+  animation: vp-cursor-pressure 2.5s ease-in-out infinite;
+  box-shadow:
+    0 0 14px rgba(168, 152, 136, 0.2),
+    0 0 35px rgba(168, 152, 136, 0.06);
   margin-left: 2px;
+  vertical-align: text-bottom;
 }
 
-@keyframes vp-cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+@keyframes vp-cursor-pressure {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
 }
 
-/* Mobile — strip the ambient clutter, keep the darkness */
+/* Silt overlay — warm, heavy */
+.vp-silt-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 35% 85%, rgba(60, 48, 32, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 65% 15%, rgba(55, 45, 32, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 15;
+  transition: opacity 5s ease;
+}
+
+/* Mobile — strip caustics, keep the deep */
 @media (max-width: 768px) {
-  .vp-paper-stack,
-  .vp-coffee-stain {
-    display: none;
+  .vp-drowned-terminal {
+    padding: 2rem 1.25rem 5rem;
   }
-  .vp-terminal-main {
-    padding: 2rem 1.5rem 4rem;
+  .vp-caustics,
+  .vp-water-stain {
+    opacity: 0.06;
+  }
+  .vp-depth-marker {
+    font-size: 0.6rem;
+    bottom: 1rem;
+    right: 1rem;
   }
 }

@@ -1024,39 +1024,25 @@ export default function EchoesPage() {
     return c.cmd.includes(q) || c.desc.toLowerCase().includes(q) || c.category.toLowerCase().includes(q);
   });
 
-  /* ─── RENDER ─── */
-    return (
-    <div className="vp-archivist-room">
-      <div className="vp-room-ambient" />
-      <div className="vp-dust-motes" />
-      <div className="vp-paper-stack vp-paper-stack--left" />
-      <div className="vp-paper-stack vp-paper-stack--right" />
-      <div className="vp-coffee-stain" />
-      <div className="vp-phosphor-glow" />
-      <div className="vp-crt-scanline" />
+    /* ─── RENDER ─── */
+  return (
+    <div className="vp-drowned-room">
+      <div className="vp-water-ambient" />
+      <div className="vp-caustics" />
+      <div className="vp-water-stain vp-water-stain--1" />
+      <div className="vp-water-stain vp-water-stain--2" />
+      <div className="vp-water-surface" />
+      <div className="vp-bubbles" />
+      <div className="vp-pressure" />
+      <div className="vp-depth-marker">
+        Depth: {(dust * 12).toFixed(0)}m | Pressure: {(dust * 1.5).toFixed(1)} atm
+      </div>
       <main
-        className="min-h-screen w-full max-w-[900px] mx-auto font-mono relative overflow-hidden selection:bg-[#9a8a72]/20 flex flex-col px-6 py-16 md:px-12 md:py-20"
+        className="min-h-screen w-full max-w-[800px] mx-auto font-mono relative overflow-hidden selection:bg-[#8a7a6a]/20 flex flex-col px-6 py-16 md:px-10 md:py-24"
         style={{ backgroundColor: "transparent", color: t.primary }}
       >
-      {/* ─── CRT LAYER ─── */}
-      <div className="pointer-events-none fixed inset-0 z-[60]"
-        style={{
-          background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 1px, transparent 1px, transparent 3px)",
-          backgroundSize: "100% 4px",
-          mixBlendMode: "multiply",
-        }}
-      />
-      <div className="pointer-events-none fixed inset-0 z-[60]"
-        style={{
-          background: "radial-gradient(circle at 50% 45%, transparent 55%, rgba(12,10,8,0.35) 85%, rgba(8,6,4,0.55) 100%)",
-          boxShadow: `inset 0 0 60px rgba(0,0,0,0.25), inset 0 0 24px ${t.glow}`,
-        }}
-      />
-      <div className="pointer-events-none fixed inset-0 z-[60]"
-        style={{
-          background: "radial-gradient(circle at 50% 50%, transparent 65%, rgba(0,0,0,0.10) 100%)",
-        }}
-      />
+            {/* ─── DROWNED OVERLAYS ─── */}
+      <div className="pointer-events-none fixed inset-0 z-[60] vp-crt-scanline" />
       {corruption.stage >= 4 && (
         <div className="pointer-events-none fixed inset-0 z-[55] animate-pulse"
           style={{
@@ -1552,9 +1538,8 @@ export default function EchoesPage() {
 
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />
       <AssetGallery isOpen={galleryOpen} onClose={() => setGalleryOpen(false)} themeColor={t.primary} />
-              </main>
-      <div className="vp-desk-edge" />
-      <div className="vp-dust-overlay" style={{ opacity: Math.min(dust / 300, 0.4) }} />
+                            </main>
+      <div className="vp-silt-overlay" style={{ opacity: Math.min(dust / 250, 0.4) }} />
     </div>
   );
 }

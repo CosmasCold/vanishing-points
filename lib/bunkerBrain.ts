@@ -75,10 +75,10 @@ export function updateMemory(field: keyof Memory, value: any) {
     mem.visitCount += 1;
   } else if (field === "lastVisit") {
     mem.lastVisit = Date.now();
-  } else if (field === "visitedSlugs") {
+    } else if (field === "visitedSlugs") {
     // expects an array of slugs; merge unique
     const newSlugs = Array.isArray(value) ? value : [value];
-    mem.visitedSlugs = [...new Set([...mem.visitedSlugs, ...newSlugs])];
+    mem.visitedSlugs = Array.from(new Set([...mem.visitedSlugs, ...newSlugs]));
   } else if (field === "lastPlaceVisited") {
     mem.lastPlaceVisited = value;
   } else if (field === "dustAtLastVisit") {

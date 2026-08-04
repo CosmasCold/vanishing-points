@@ -1026,294 +1026,126 @@ export default function EchoesPage() {
 
     /* ─── RENDER ─── */
   return (
-    <div className="vp-drowned-room">
-      <div className="vp-water-ambient" />
-      <div className="vp-caustics" />
-      <div className="vp-water-stain vp-water-stain--1" />
-      <div className="vp-water-stain vp-water-stain--2" />
-      <div className="vp-water-surface" />
-      <div className="vp-bubbles" />
-      <div className="vp-pressure" />
-      <div className="vp-depth-marker">
-        Depth: {(dust * 12).toFixed(0)}m | Pressure: {(dust * 1.5).toFixed(1)} atm
-      </div>
-      <main
-        className="min-h-screen w-full max-w-[800px] mx-auto font-mono relative overflow-hidden selection:bg-[#8a7a6a]/20 flex flex-col px-6 py-16 md:px-10 md:py-24"
-        style={{ backgroundColor: "transparent", color: t.primary }}
-      >
-            {/* ─── DROWNED OVERLAYS ─── */}
-      <div className="pointer-events-none fixed inset-0 z-[60] vp-crt-scanline" />
+    <div className="vp-shell">
+      {/* Atmosphere */}
+      <div className="vp-atmosphere" />
+      <div className="vp-scanlines" />
+
+      {/* Dynamic overlays */}
       {corruption.stage >= 4 && (
         <div className="pointer-events-none fixed inset-0 z-[55] animate-pulse"
-          style={{
-            background: `radial-gradient(circle at 50% 50%, ${t.corruption}08 0%, transparent 70%)`,
-            animationDuration: "3.5s",
-          }}
+          style={{ background: `radial-gradient(circle at 50% 50%, ${t.corruption}08 0%, transparent 70%)`, animationDuration: "3.5s" }}
         />
       )}
       {hijacked && (
         <div className="pointer-events-none fixed inset-0 z-[56]"
-          style={{
-            background: "linear-gradient(90deg, rgba(255,0,0,0.015) 0%, transparent 50%, rgba(0,255,255,0.015) 100%)",
-          }}
+          style={{ background: "linear-gradient(90deg, rgba(255,0,0,0.015) 0%, transparent 50%, rgba(0,255,255,0.015) 100%)" }}
         />
       )}
 
       {!booted && <TerminalBootSequence onComplete={() => setBooted(true)} />}
 
-      <div className="min-h-screen flex flex-col relative z-10 p-3 md:p-6 gap-4">
-        {/* ─── STATUS HUD ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: booted ? 1 : 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-lg border"
-          style={{
-            borderColor: `${t.primary}15`,
-            background: `linear-gradient(180deg, ${t.primary}08 0%, ${t.primary}03 100%)`,
-            boxShadow: `inset 0 1px 0 ${t.primary}10, 0 4px 24px rgba(0,0,0,0.5)`,
-          }}
-        >
-          <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${t.accent}60, transparent)` }} />
-          <div className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-5 py-3 gap-3">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Terminal size={16} style={{ color: t.accent }} />
-                {hijacked && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse" style={{ background: t.corruption }} />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xs tracking-[0.25em] uppercase font-bold" style={{ color: t.primary, textShadow: `0 0 8px ${t.phosphor}30` }}>
-                  Bunker_7
-                </h1>
-                <p className="text-[8px] opacity-40 tracking-[0.15em] uppercase">Echoes & Dust // v2.4.1</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-xs overflow-x-auto no-scrollbar">
-              <div className="flex items-center gap-2">
-                <Activity size={10} className="opacity-40" />
-                <span className="opacity-50 uppercase tracking-wider">Dust</span>
-                <ProgressBar value={dust} max={100} color={dust > 75 ? t.corruption : t.accent} trackColor={`${t.primary}15`} />
-                <span className="font-bold tabular-nums" style={{ color: dust > 75 ? t.corruption : t.primary }}>{dust}%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Eye size={10} style={{ color: corruption.color, opacity: 0.6 }} />
-                <span className="uppercase tracking-wider" style={{ color: corruption.color, opacity: 0.7 }}>{corruption.label}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock size={10} className="opacity-40" />
-                <span className="opacity-50 tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Radio size={10} className="opacity-40" />
-                <span className="opacity-50 uppercase tracking-wider">Other</span>
-                <span className="font-bold tabular-nums" style={{ color: otherCount > 0 ? t.corruption : t.dim }}>{otherCount}</span>
-              </div>
-              <span className="opacity-30 hidden sm:inline uppercase tracking-widest text-[8px]">{theme}</span>
-              <Link href="/" className="opacity-30 hover:opacity-80 transition-opacity text-[8px] uppercase tracking-wider flex items-center gap-1">
-                <ArrowLeft size={10} /> Atlas
-              </Link>
+      <div className="vp-app" style={{ opacity: booted ? 1 : 0, transition: "opacity 0.5s ease" }}>
+        {/* ─── HUD ─── */}
+        <header className="vp-hud">
+          <div className="flex items-center gap-2.5">
+            <Terminal size={14} style={{ color: t.accent, opacity: 0.6 }} />
+            <div>
+              <h1 className="text-[10px] tracking-[0.3em] uppercase font-bold" style={{ color: t.primary }}>Bunker_7</h1>
+              <p className="text-[7px] opacity-30 tracking-[0.15em] uppercase">Echoes // v2.4.1</p>
             </div>
           </div>
-          <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${t.accent}30, transparent)` }} />
-        </motion.div>
+          <div className="flex items-center gap-4 md:gap-5 text-[10px] overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5">
+              <span className="opacity-30 uppercase tracking-wider">Dust</span>
+              <span className="tabular-nums font-bold" style={{ color: dust > 75 ? t.corruption : t.primary }}>{dust}%</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="opacity-30 uppercase tracking-wider">Signal</span>
+              <span style={{ color: corruption.color, opacity: 0.7 }}>{corruption.label}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="opacity-30 uppercase tracking-wider">Other</span>
+              <span className="tabular-nums font-bold" style={{ color: otherCount > 0 ? t.corruption : t.dim }}>{otherCount}</span>
+            </div>
+            <span className="opacity-25 tabular-nums hidden sm:inline">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <Link href="/" className="opacity-30 hover:opacity-80 transition-opacity flex items-center gap-1">
+              <ArrowLeft size={10} /> Atlas
+            </Link>
+          </div>
+        </header>
 
-        {/* ─── MAIN GRID ─── */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0">
-          {/* ─── TERMINAL COLUMN ─── */}
-          <div className="lg:col-span-3 flex flex-col gap-3 min-h-0">
-            <div
-              className="flex-1 rounded-lg flex flex-col overflow-hidden relative border"
-              style={{
-                background: `linear-gradient(180deg, ${t.primary}04 0%, ${t.primary}02 100%)`,
-                borderColor: `${t.primary}12`,
-                boxShadow: `inset 0 0 60px ${t.glow}, 0 8px 32px rgba(0,0,0,0.6)`,
-                minHeight: "280px",
-              }}
-            >
-              <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: `${t.primary}08`, background: `${t.primary}04` }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: `${t.danger}50`, background: hijacked ? `${t.corruption}40` : "transparent" }} />
-                  <div className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: `${t.accent}40`, background: chatMode ? `${t.accent}30` : "transparent" }} />
-                  <div className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: `${t.primary}20` }} />
-                  <span className={`text-[8px] uppercase tracking-[0.2em] ml-1 ${hijacked ? "animate-pulse" : "opacity-40"}`} style={{ color: hijacked ? t.corruption : undefined }}>
-                    {hijacked ? "THE OTHER // UNAUTHORIZED" : chatMode ? "BUNKER_7 CHANNEL // OPEN" : "CMD // READY"}
-                  </span>
-                </div>
-                {chatMode && (
-                  <button onClick={() => { setChatMode(false); pushLines(["Channel closed.", "Returning to command interface."], "system"); }} className="text-[8px] uppercase opacity-40 hover:opacity-100 transition-opacity tracking-wider">[close]</button>
-                )}
+        {/* ─── WORKSPACE ─── */}
+        <div className="vp-workspace">
+          {/* Terminal Column */}
+          <div className="vp-term">
+            <div className="vp-term-header">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: hijacked ? t.corruption : chatMode ? t.accent : t.dim, opacity: 0.5 }} />
+                <span className="text-[8px] uppercase tracking-[0.2em] opacity-40" style={{ color: hijacked ? t.corruption : undefined }}>
+                  {hijacked ? "The Other // Unauthorized" : chatMode ? "BUNKER_7 Channel Open" : "Ready"}
+                </span>
               </div>
-              <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 md:p-5 space-y-1">
-                {lines.map((line) => (
-                  <TerminalLineView key={line.id} line={line} theme={t} corruptionStage={corruption.stage} hijacked={hijacked} />
-                ))}
-                {isAiTyping && (
-                  <div className="flex items-center gap-2 mt-2 opacity-50" style={{ color: t.dim }}>
-                    <span className="inline-block w-1.5 h-3 animate-pulse" style={{ background: t.phosphor }} />
-                    <span className="text-[11px] italic tracking-wider">BUNKER_7 is typing...</span>
-                  </div>
-                )}
-              </div>
-              <div className="px-4 py-3 border-t relative" style={{ borderColor: `${t.primary}08`, background: `${t.primary}04` }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-bold select-none tracking-wider" style={{ color: hijacked ? t.corruption : chatMode ? t.accent : t.dim, opacity: 0.7 }}>
-                    {chatMode ? "~" : promptLabel}
-                  </span>
-                  <span className="text-xs opacity-30 select-none">{">"}</span>
-                  <input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => { setInput(e.target.value); onType(); window.dispatchEvent(new CustomEvent("vp-keystroke")); }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") { runCommand(input); }
-                      else if (e.key === "Tab" && suggestions.length > 0) { e.preventDefault(); setInput(suggestions[0]); setSuggestions([]); }
-                      else if (e.key === "?" && !chatMode && !input) { e.preventDefault(); setShowPalette(true); setPaletteQuery(""); }
-                    }}
-                    className="flex-1 bg-transparent text-[15px] font-mono outline-none placeholder:opacity-25 min-w-0"
-                    style={{ color: t.primary, caretColor: t.cursor, textShadow: `0 0 4px ${t.phosphor}40` }}
-                    placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command... (? for palette)"}
-                    spellCheck={false}
-                    autoFocus
-                  />
-                  <span
-                    className={`inline-block opacity-50 ${cursorStyle === "block" ? "w-2.5 h-4" : cursorStyle === "pipe" ? "w-0.5 h-4" : "w-3 h-0.5"}`}
-                    style={{ background: hijacked ? t.corruption : t.cursor }}
-                  />
-                </div>
-                <AnimatePresence>
-                  {suggestions.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      className="absolute left-4 right-4 bottom-full mb-2 border rounded-md overflow-hidden"
-                      style={{
-                        borderColor: `${t.primary}15`,
-                        background: `linear-gradient(180deg, ${t.bg}f0, ${t.bg}e8)`,
-                        boxShadow: `0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px ${t.primary}08`,
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      {suggestions.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
-                          className="w-full text-left px-4 py-2 text-[11px] hover:bg-white/5 transition-colors flex items-center justify-between group"
-                        >
-                          <span style={{ color: t.primary }}>{s}</span>
-                          <span className="opacity-30 text-[9px] uppercase tracking-wider">{COMMAND_REGISTRY.find((c) => c.cmd === s)?.desc}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {chatMode && (
+                <button onClick={() => { setChatMode(false); pushLines(["Channel closed.", "Returning to command interface."], "system"); }} className="text-[8px] uppercase opacity-40 hover:opacity-100 tracking-wider">[close]</button>
+              )}
             </div>
 
-            <AnimatePresence>
-              {showPalette && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[90] flex items-start justify-center pt-24 p-4"
-                  style={{ background: "rgba(8,6,4,0.75)", backdropFilter: "blur(4px)" }}
-                  onClick={() => setShowPalette(false)}
-                >
-                  <motion.div
-                    initial={{ scale: 0.96, y: -8, opacity: 0 }}
-                    animate={{ scale: 1, y: 0, opacity: 1 }}
-                    exit={{ scale: 0.96, y: -8, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full max-w-lg border rounded-lg overflow-hidden"
-                    style={{
-                      borderColor: `${t.accent}25`,
-                      background: `linear-gradient(180deg, ${t.bg}fa, ${t.bg}f0)`,
-                      boxShadow: `0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 ${t.primary}10`,
-                    }}
-                  >
-                    <div className="p-3 border-b flex items-center gap-3" style={{ borderColor: `${t.primary}08` }}>
-                      <HelpCircle size={12} className="opacity-40" />
-                      <input
-                        autoFocus
-                        value={paletteQuery}
-                        onChange={(e) => setPaletteQuery(e.target.value)}
-                        placeholder="Filter commands..."
-                        className="flex-1 bg-transparent text-[12px] outline-none placeholder:opacity-25 uppercase tracking-wider"
-                        style={{ color: t.primary }}
-                      />
-                      <button onClick={() => setShowPalette(false)} className="text-[9px] uppercase opacity-40 hover:opacity-100 tracking-wider">esc</button>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto p-2 space-y-0.5">
-                      {paletteCommands.map((c) => (
-                        <button
-                          key={c.cmd}
-                          onClick={() => { setShowPalette(false); setInput(c.cmd); inputRef.current?.focus(); }}
-                          className="w-full text-left px-4 py-2.5 rounded text-[11px] hover:bg-white/5 transition-all flex items-center justify-between group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="opacity-60 font-bold uppercase tracking-wider" style={{ color: t.accent }}>{c.cmd}</span>
-                            <span className="opacity-25">{c.desc}</span>
-                          </div>
-                          <span className="opacity-15 text-[9px] uppercase tracking-widest">{c.category}</span>
-                        </button>
-                      ))}
-                      {paletteCommands.length === 0 && (
-                        <p className="text-center text-[11px] opacity-20 py-6 italic">No commands match.</p>
-                      )}
-                    </div>
-                  </motion.div>
-                </motion.div>
+            <div ref={terminalRef} className="vp-term-output">
+              {lines.map((line) => (
+                <TerminalLineView key={line.id} line={line} theme={t} corruptionStage={corruption.stage} hijacked={hijacked} />
+              ))}
+              {isAiTyping && (
+                <div className="flex items-center gap-2 mt-2 opacity-40" style={{ color: t.dim }}>
+                  <span className="inline-block w-1 h-3 animate-pulse" style={{ background: t.phosphor }} />
+                  <span className="text-[10px] italic tracking-wider">BUNKER_7 is typing...</span>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
 
-            <button
-              onClick={() => setVideoPanelOpen((v) => !v)}
-              className="flex items-center gap-2 px-4 py-2.5 border rounded-lg text-[9px] uppercase tracking-[0.15em] hover:opacity-80 transition-all"
-              style={{
-                borderColor: `${t.primary}10`,
-                background: `${t.primary}03`,
-                boxShadow: `inset 0 1px 0 ${t.primary}06`,
-              }}
-            >
-              <Radio size={10} className={videoPanelOpen ? "animate-pulse" : ""} style={{ color: videoPanelOpen ? t.accent : undefined }} />
-              <span className="opacity-70">{videoPanelOpen ? "Hide" : "Show"} Transmissions</span>
-            </button>
-
-            <AnimatePresence>
-              {videoPanelOpen && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {VIDEO_LOGS.map((v) => (
-                      <button
-                        key={v.label}
-                        onClick={() => setInlineVideo({ src: v.src, label: v.label })}
-                        className="flex items-center sm:flex-col gap-2 p-3 border rounded-lg hover:opacity-80 transition-all text-left sm:text-center group"
-                        style={{
-                          borderColor: `${t.primary}10`,
-                          background: `${t.primary}03`,
-                          boxShadow: `inset 0 1px 0 ${t.primary}05`,
-                        }}
-                      >
-                        <Play size={12} className="opacity-40 group-hover:opacity-70 transition-opacity" />
-                        <div className="min-w-0">
-                          <span className="text-[9px] block truncate uppercase tracking-wider opacity-80">{v.label}</span>
-                          <span className="text-[8px] opacity-30 uppercase tracking-widest">{v.day}</span>
-                        </div>
+            <div className="vp-term-input">
+              <span className="text-[10px] font-bold select-none tracking-wider opacity-40" style={{ color: hijacked ? t.corruption : chatMode ? t.accent : t.dim }}>
+                {chatMode ? "~" : promptLabel}
+              </span>
+              <span className="text-xs opacity-20 select-none">{">"}</span>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => { setInput(e.target.value); onType(); window.dispatchEvent(new CustomEvent("vp-keystroke")); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { runCommand(input); }
+                  else if (e.key === "Tab" && suggestions.length > 0) { e.preventDefault(); setInput(suggestions[0]); setSuggestions([]); }
+                  else if (e.key === "?" && !chatMode && !input) { e.preventDefault(); setShowPalette(true); setPaletteQuery(""); }
+                }}
+                className="flex-1 bg-transparent text-sm font-mono outline-none placeholder:opacity-15 min-w-0"
+                style={{ color: t.primary, caretColor: t.cursor }}
+                placeholder={chatMode ? "Speak to BUNKER_7..." : "Enter command..."}
+                spellCheck={false}
+                autoFocus
+              />
+              <span className={`inline-block opacity-40 ${cursorStyle === "block" ? "w-2 h-3.5" : cursorStyle === "pipe" ? "w-px h-3.5" : "w-2.5 h-px"}`} style={{ background: hijacked ? t.corruption : t.cursor }} />
+              
+              <AnimatePresence>
+                {suggestions.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                    className="absolute left-4 right-4 bottom-full mb-1 border overflow-hidden"
+                    style={{ borderColor: `${t.primary}10`, background: `${t.bg}f2`, backdropFilter: "blur(6px)" }}>
+                    {suggestions.map((s) => (
+                      <button key={s} onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
+                        className="w-full text-left px-3 py-1.5 text-[10px] hover:bg-white/5 transition-colors flex justify-between">
+                        <span style={{ color: t.primary }}>{s}</span>
+                        <span className="opacity-25 text-[9px]">{COMMAND_REGISTRY.find((c) => c.cmd === s)?.desc}</span>
                       </button>
                     ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* ─── SIDE PANEL ─── */}
-          <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
-            <div className="flex gap-1 border-b pb-2 overflow-x-auto no-scrollbar" style={{ borderColor: `${t.primary}08` }}>
+          {/* Sidebar */}
+          <div className="vp-sidebar">
+            <div className="vp-sidebar-tabs">
               {[
                 { id: "logs" as SideTab, label: "Logs", icon: BookOpen },
                 { id: "decrypt" as SideTab, label: "Decrypt", icon: Lock },
@@ -1327,41 +1159,28 @@ export default function EchoesPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 text-[8px] md:text-[9px] uppercase tracking-[0.15em] rounded transition-all whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? "opacity-100" : "opacity-35 hover:opacity-60"}`}
-                  style={activeTab === tab.id ? {
-                    background: `${t.primary}08`,
-                    borderBottom: `2px solid ${t.accent}`,
-                    color: t.primary,
-                    textShadow: `0 0 6px ${t.phosphor}30`,
-                  } : {}}
+                  className={`flex items-center gap-1 py-1.5 px-2.5 text-[8px] uppercase tracking-[0.15em] transition-all whitespace-nowrap ${activeTab === tab.id ? "opacity-100" : "opacity-30 hover:opacity-60"}`}
+                  style={activeTab === tab.id ? { color: t.primary, borderBottom: `1px solid ${t.accent}` } : {}}
                 >
-                  <tab.icon size={10} />
+                  <tab.icon size={9} />
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
-            <div
-              className="flex-1 border rounded-lg overflow-y-auto p-4 md:p-5"
-              style={{
-                borderColor: `${t.primary}08`,
-                background: `linear-gradient(180deg, ${t.primary}02 0%, transparent 100%)`,
-                boxShadow: `inset 0 1px 0 ${t.primary}05`,
-                minHeight: "200px",
-              }}
-            >
+            <div className="vp-sidebar-content">
               <AnimatePresence mode="wait">
                 {activeTab === "logs" && (
                   <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
-                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Archived Logs</h3>
+                    <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 mb-3 font-bold">Archived Logs</h3>
                     {LOGS.slice(0, unlocked).map((log) => (
-                      <div key={log.day} className="border-l-2 pl-4 py-1" style={{ borderColor: `${t.accent}25` }}>
-                        <p className="text-[9px] tracking-[0.2em] opacity-40 mb-1.5 uppercase font-bold">{log.day}</p>
-                        <p className="text-[14px] md:text-[15px] leading-[1.8] opacity-85" style={{ color: t.primary }}>{log.text}</p>
+                      <div key={log.day} className="border-l border-[rgba(180,160,140,0.12)] pl-3 py-0.5">
+                        <p className="text-[8px] tracking-[0.2em] opacity-35 mb-1 uppercase font-bold">{log.day}</p>
+                        <p className="text-[13px] leading-[1.7] opacity-85" style={{ color: t.primary }}>{log.text}</p>
                       </div>
                     ))}
                     {unlocked < LOGS.length && (
-                      <div className="flex items-center gap-2 text-[10px] opacity-30 py-4 border-t mt-4" style={{ borderColor: `${t.primary}06` }}>
-                        <Lock size={10} />
+                      <div className="flex items-center gap-2 text-[9px] opacity-25 pt-3 border-t border-[rgba(180,160,140,0.06)]">
+                        <Lock size={9} />
                         <span className="uppercase tracking-wider">{LOGS.length - unlocked} entries encrypted</span>
                       </div>
                     )}
@@ -1369,62 +1188,42 @@ export default function EchoesPage() {
                 )}
                 {activeTab === "decrypt" && (
                   <motion.div key="decrypt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Decrypt</h3>
-                    <p className="text-[11px] opacity-50 leading-relaxed">Enter codes from the Numbers Station to recover sealed entries.</p>
-                    <div className="flex gap-3">
-                      <input
-                        value={decryptCode}
-                        onChange={(e) => setDecryptCode(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && attemptDecrypt()}
-                        placeholder="ENTER CODE..."
-                        className="flex-1 bg-transparent border-b-2 text-[13px] outline-none py-1.5 placeholder:text-[9px] placeholder:opacity-20 placeholder:uppercase placeholder:tracking-widest min-w-0"
-                        style={{ borderColor: decryptError ? t.danger : `${t.primary}20`, color: decryptError ? t.danger : t.primary }}
-                        spellCheck={false}
-                      />
-                      <button
-                        onClick={attemptDecrypt}
-                        className="px-4 py-1.5 border rounded text-[10px] font-mono uppercase tracking-wider hover:opacity-80 transition-all"
-                        style={{ borderColor: `${t.primary}18`, color: t.primary }}
-                      >
-                        Decrypt
-                      </button>
+                    <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 font-bold">Decrypt</h3>
+                    <p className="text-[10px] opacity-45 leading-relaxed">Enter codes from the Numbers Station to recover sealed entries.</p>
+                    <div className="flex gap-2">
+                      <input value={decryptCode} onChange={(e) => setDecryptCode(e.target.value)} onKeyDown={(e) => e.key === "Enter" && attemptDecrypt()}
+                        placeholder="ENTER CODE..." spellCheck={false}
+                        className="flex-1 bg-transparent border-b text-xs outline-none py-1 placeholder:text-[8px] placeholder:opacity-15 placeholder:uppercase placeholder:tracking-widest min-w-0"
+                        style={{ borderColor: decryptError ? t.danger : `${t.primary}15`, color: decryptError ? t.danger : t.primary }} />
+                      <button onClick={attemptDecrypt} className="px-3 py-1 border text-[9px] uppercase tracking-wider hover:opacity-80 transition-all" style={{ borderColor: `${t.primary}12`, color: t.primary }}>Decrypt</button>
                     </div>
-                    {decryptError && <p className="text-[10px] animate-pulse" style={{ color: t.danger }}>Invalid code. Access denied.</p>}
+                    {decryptError && <p className="text-[9px] animate-pulse" style={{ color: t.danger }}>Invalid code. Access denied.</p>}
                   </motion.div>
                 )}
                 {activeTab === "assets" && (
-                  <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                  <motion.div key="assets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Assets</h3>
-                      <button onClick={() => setGalleryOpen(true)} className="text-[9px] uppercase tracking-wider opacity-50 hover:opacity-100 transition-opacity flex items-center gap-1.5">
-                        <Image size={10} /> Gallery
-                      </button>
+                      <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 font-bold">Assets</h3>
+                      <button onClick={() => setGalleryOpen(true)} className="text-[8px] uppercase tracking-wider opacity-40 hover:opacity-100 transition-opacity flex items-center gap-1"><Image size={9} /> Gallery</button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {STORY_ASSETS.map((asset) => {
                         const isUnlocked = assets.includes(asset.id);
                         return (
-                          <div
-                            key={asset.id}
-                            className={`p-3 border rounded text-center space-y-1.5 transition-all ${isUnlocked ? "opacity-100" : "opacity-25"}`}
-                            style={{
-                              borderColor: isUnlocked ? `${t.accent}20` : `${t.primary}08`,
-                              background: isUnlocked ? `${t.primary}04` : "transparent",
-                            }}
-                          >
-                            <div className="text-[8px] uppercase tracking-[0.15em] font-bold" style={{ color: isUnlocked ? "#a855f7" : t.dim }}>{asset.rarity}</div>
-                            <div className="text-xs font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
-                            <div className="text-[8px] opacity-50 uppercase tracking-widest">{isUnlocked ? "Recovered" : "Encrypted"}</div>
+                          <div key={asset.id} className={`p-2.5 border text-center space-y-1 transition-all ${isUnlocked ? "opacity-100" : "opacity-20"}`} style={{ borderColor: isUnlocked ? `${t.accent}15` : `${t.primary}06`, background: isUnlocked ? `${t.primary}03` : "transparent" }}>
+                            <div className="text-[7px] uppercase tracking-[0.15em] font-bold" style={{ color: isUnlocked ? "#a855f7" : t.dim }}>{asset.rarity}</div>
+                            <div className="text-[11px] font-bold truncate uppercase tracking-wider" style={{ color: t.primary }}>{asset.title}</div>
+                            <div className="text-[7px] opacity-45 uppercase tracking-widest">{isUnlocked ? "Recovered" : "Encrypted"}</div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="text-center text-[10px] opacity-30 pt-2 uppercase tracking-widest">{assets.length} / {STORY_ASSETS.length} recovered</div>
+                    <div className="text-center text-[9px] opacity-25 pt-1 uppercase tracking-widest">{assets.length} / {STORY_ASSETS.length} recovered</div>
                   </motion.div>
                 )}
                 {activeTab === "puzzles" && (
-                  <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 text-[11px] md:text-[13px] leading-relaxed">
-                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-3 font-bold">Active Anomalies</h3>
+                  <motion.div key="puzzles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 text-[11px] leading-relaxed">
+                    <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 mb-2 font-bold">Active Anomalies</h3>
                     {[
                       { n: "01", title: "Intercepted Signal", body: "GUR QBBE BCRAF VAJNEQ", hint: "cmd: cipher [decoded]" },
                       { n: "02", title: "Coordinate Chain", body: "cmd: coords [n1] [n2] [n3] [n4]", hint: null },
@@ -1435,44 +1234,51 @@ export default function EchoesPage() {
                       { n: "07", title: "Lantern Constellation", body: "Place 5 lanterns", hint: "cmd: constellation" },
                       { n: "08", title: "Inventory", body: `${inventory.length}/${INVENTORY_ITEMS.length}`, hint: "cmd: inventory" },
                     ].map((p) => (
-                      <div key={p.n} className="p-3 md:p-4 border rounded" style={{ borderColor: `${t.primary}06`, background: `${t.primary}02` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[9px] opacity-30 font-bold">{p.n}</span>
-                          <span className="font-bold text-[10px] uppercase tracking-wider" style={{ color: t.accent }}>{p.title}</span>
+                      <div key={p.n} className="p-2.5 border" style={{ borderColor: `${t.primary}05`, background: `${t.primary}02` }}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[8px] opacity-25 font-bold">{p.n}</span>
+                          <span className="font-bold text-[9px] uppercase tracking-wider" style={{ color: t.accent }}>{p.title}</span>
                         </div>
-                        <p className="opacity-70 text-[11px] font-mono">{p.body}</p>
-                        {p.hint && <p className="text-[9px] opacity-25 mt-1.5 uppercase tracking-wider">{p.hint}</p>}
+                        <p className="opacity-65 text-[10px] font-mono">{p.body}</p>
+                        {p.hint && <p className="text-[8px] opacity-20 mt-1 uppercase tracking-wider">{p.hint}</p>}
                       </div>
                     ))}
                   </motion.div>
                 )}
                 {activeTab === "status" && (
-                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 text-[13px] md:text-[14px] font-mono">
-                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 font-bold">Status</h3>
-                    <div className="space-y-2 opacity-80">
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">ID</span><span>BUNKER_7</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">STATUS</span><span>SEALED</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">THEME</span><span className="uppercase">{theme}</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">LOGS</span><span>{unlocked}/{LOGS.length}</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">DUST</span><span style={{ color: dust > 75 ? t.corruption : undefined }}>{dust}%</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">ASSETS</span><span>{assets.length}/{STORY_ASSETS.length}</span></div>
-                      <div className="flex justify-between border-b pb-1" style={{ borderColor: `${t.primary}06` }}><span className="opacity-40">INVENTORY</span><span>{inventory.length}</span></div>
-                      <div className="pt-2 animate-pulse text-[10px] uppercase tracking-[0.3em] opacity-40">Listening...</div>
+                  <motion.div key="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 text-xs font-mono">
+                    <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 font-bold">Status</h3>
+                    <div className="space-y-1.5 opacity-75">
+                      {[
+                        ["ID", "BUNKER_7"],
+                        ["STATUS", "SEALED"],
+                        ["THEME", theme.toUpperCase()],
+                        ["LOGS", `${unlocked}/${LOGS.length}`],
+                        ["DUST", `${dust}%`],
+                        ["ASSETS", `${assets.length}/${STORY_ASSETS.length}`],
+                        ["INVENTORY", `${inventory.length}`],
+                      ].map(([k, v]) => (
+                        <div key={k} className="flex justify-between border-b border-[rgba(180,160,140,0.05)] pb-1">
+                          <span className="opacity-35">{k}</span>
+                          <span>{v}</span>
+                        </div>
+                      ))}
+                      <div className="pt-2 animate-pulse text-[9px] uppercase tracking-[0.3em] opacity-30">Listening...</div>
                     </div>
                   </motion.div>
                 )}
                 {activeTab === "wall" && (
                   <motion.div key="wall" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                    <h3 className="text-[10px] uppercase tracking-[0.35em] opacity-30 mb-2 font-bold">Transmission Wall</h3>
-                    <p className="text-[10px] opacity-40 mb-3">Use <span className="font-mono opacity-70">transmit [msg]</span> to add a signal.</p>
+                    <h3 className="text-[9px] uppercase tracking-[0.3em] opacity-25 mb-2 font-bold">Transmission Wall</h3>
+                    <p className="text-[9px] opacity-30 mb-2">Use <span className="font-mono opacity-60">transmit [msg]</span> to add a signal.</p>
                     {wallMessages.length === 0 ? (
-                      <p className="text-[12px] opacity-20 italic">The static is silent.</p>
+                      <p className="text-[11px] opacity-15 italic">The static is silent.</p>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2.5">
                         {wallMessages.slice(-20).map((m, i) => (
-                          <div key={i} className="border-l-2 pl-3 py-1" style={{ borderColor: `${t.primary}10` }}>
-                            <p className="text-[13px] opacity-80 leading-relaxed" style={{ color: t.primary }}>{m.text}</p>
-                            <p className="text-[8px] opacity-20 mt-1 font-mono uppercase tracking-wider">{m.date}</p>
+                          <div key={i} className="border-l border-[rgba(180,160,140,0.08)] pl-2.5 py-0.5">
+                            <p className="text-[12px] opacity-75 leading-relaxed" style={{ color: t.primary }}>{m.text}</p>
+                            <p className="text-[7px] opacity-15 mt-0.5 font-mono uppercase tracking-wider">{m.date}</p>
                           </div>
                         ))}
                       </div>
@@ -1486,60 +1292,82 @@ export default function EchoesPage() {
           </div>
         </div>
 
-        {inlineVideo && (
-          <div className="w-full max-w-3xl mx-auto">
-            <TerminalVideoPlayer src={inlineVideo.src} label={inlineVideo.label} themeColor={t.primary} onClose={() => setInlineVideo(null)} />
-          </div>
-        )}
-
-        <div className="text-center opacity-15 text-[8px] tracking-[0.4em] uppercase py-2">
-          <p style={{ textShadow: `0 0 10px ${t.phosphor}20` }}>The dust remembers everything</p>
+        {/* Footer */}
+        <div className="vp-footer">
+          <p className="opacity-15 text-[7px] tracking-[0.4em] uppercase">The dust remembers everything</p>
         </div>
       </div>
 
+      {/* Command Palette */}
+      <AnimatePresence>
+        {showPalette && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-start justify-center pt-20 p-4" style={{ background: "rgba(5,4,3,0.8)" }} onClick={() => setShowPalette(false)}>
+            <motion.div initial={{ scale: 0.96, y: -8, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: -8, opacity: 0 }} transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()} className="w-full max-w-md border overflow-hidden" style={{ borderColor: `${t.accent}20`, background: t.bg }}>
+              <div className="p-2.5 border-b flex items-center gap-2" style={{ borderColor: `${t.primary}06` }}>
+                <HelpCircle size={10} className="opacity-30" />
+                <input autoFocus value={paletteQuery} onChange={(e) => setPaletteQuery(e.target.value)} placeholder="Filter commands..."
+                  className="flex-1 bg-transparent text-[11px] outline-none placeholder:opacity-20 uppercase tracking-wider" style={{ color: t.primary }} />
+                <button onClick={() => setShowPalette(false)} className="text-[8px] uppercase opacity-30 hover:opacity-100 tracking-wider">esc</button>
+              </div>
+              <div className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">
+                {paletteCommands.map((c) => (
+                  <button key={c.cmd} onClick={() => { setShowPalette(false); setInput(c.cmd); inputRef.current?.focus(); }}
+                    className="w-full text-left px-3 py-2 text-[10px] hover:bg-white/5 transition-all flex justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="opacity-50 font-bold uppercase tracking-wider" style={{ color: t.accent }}>{c.cmd}</span>
+                      <span className="opacity-20">{c.desc}</span>
+                    </div>
+                    <span className="opacity-10 text-[8px] uppercase tracking-widest">{c.category}</span>
+                  </button>
+                ))}
+                {paletteCommands.length === 0 && <p className="text-center text-[10px] opacity-15 py-5 italic">No commands match.</p>}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modals */}
       {showGrid && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(8,6,4,0.92)", backdropFilter: "blur(6px)" }} onClick={() => setShowGrid(false)}>
-          <div className="w-full max-w-2xl border rounded-lg p-5 relative" style={{ borderColor: `${t.accent}20`, background: t.bg, boxShadow: `0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 ${t.primary}10` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xs uppercase tracking-[0.3em] font-bold" style={{ color: t.accent }}>The Grid</h2>
-              <button onClick={() => setShowGrid(false)} className="text-xs opacity-40 hover:opacity-100 uppercase tracking-wider">[x]</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(5,4,3,0.92)" }} onClick={() => setShowGrid(false)}>
+          <div className="w-full max-w-2xl border p-5 relative" style={{ borderColor: `${t.accent}18`, background: t.bg }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: t.accent }}>The Grid</h2>
+              <button onClick={() => setShowGrid(false)} className="text-[10px] opacity-30 hover:opacity-100 uppercase tracking-wider">[x]</button>
             </div>
             <TheGrid />
           </div>
         </div>
       )}
-
       {showSpectrogram && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(8,6,4,0.92)", backdropFilter: "blur(6px)" }} onClick={() => setShowSpectrogram(false)}>
-          <div className="w-full max-w-lg border rounded-lg p-5 relative" style={{ borderColor: `${t.accent}20`, background: t.bg, boxShadow: `0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 ${t.primary}10` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xs uppercase tracking-[0.3em] font-bold" style={{ color: t.accent }}>Spectrogram</h2>
-              <button onClick={() => setShowSpectrogram(false)} className="text-xs opacity-40 hover:opacity-100 uppercase tracking-wider">[x]</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(5,4,3,0.92)" }} onClick={() => setShowSpectrogram(false)}>
+          <div className="w-full max-w-lg border p-5 relative" style={{ borderColor: `${t.accent}18`, background: t.bg }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: t.accent }}>Spectrogram</h2>
+              <button onClick={() => setShowSpectrogram(false)} className="text-[10px] opacity-30 hover:opacity-100 uppercase tracking-wider">[x]</button>
             </div>
             <SpectrogramViewer active={true} color={t.primary} />
           </div>
         </div>
       )}
-
       {currentSubPlace && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(8,6,4,0.96)" }}>
-          <div className="w-full max-w-lg border rounded-lg p-5 space-y-4 relative" style={{ borderColor: `${t.corruption}25`, background: t.bg, boxShadow: `0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 ${t.primary}08` }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(5,4,3,0.96)" }}>
+          <div className="w-full max-w-lg border p-5 space-y-3 relative" style={{ borderColor: `${t.corruption}20`, background: t.bg }}>
             <div className="flex items-center justify-between">
-              <h2 className="text-xs uppercase tracking-[0.3em] font-bold" style={{ color: t.corruption }}>{currentSubPlace.name}</h2>
-              <button onClick={exitSubPlace} className="text-xs opacity-40 hover:opacity-100 uppercase tracking-wider">[exit]</button>
+              <h2 className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: t.corruption }}>{currentSubPlace.name}</h2>
+              <button onClick={exitSubPlace} className="text-[10px] opacity-30 hover:opacity-100 uppercase tracking-wider">[exit]</button>
             </div>
-            <p className="text-[12px] opacity-75 leading-[1.8]">{currentSubPlace.description}</p>
-            <div className="space-y-2">{currentSubPlace.lore.map((l, i) => <p key={i} className="text-[10px] opacity-50 border-l-2 pl-3 leading-relaxed" style={{ borderColor: `${t.primary}10` }}>{l}</p>)}</div>
+            <p className="text-[11px] opacity-70 leading-[1.7]">{currentSubPlace.description}</p>
+            <div className="space-y-1.5">{currentSubPlace.lore.map((l, i) => <p key={i} className="text-[9px] opacity-45 border-l border-[rgba(180,160,140,0.08)] pl-2.5 leading-relaxed">{l}</p>)}</div>
             {currentSubPlace.choices && <SubPlaceChoicePanel subPlace={currentSubPlace} theme={t} onConsequence={(lines) => pushLines([...lines, ""])} />}
-            <div className="text-[9px] opacity-30 pt-3 border-t uppercase tracking-wider" style={{ borderColor: `${t.primary}06` }}>Risk: {currentSubPlace.risk} | Dust: +{currentSubPlace.dustGain}</div>
+            <div className="text-[8px] opacity-25 pt-2 border-t border-[rgba(180,160,140,0.05)] uppercase tracking-wider">Risk: {currentSubPlace.risk} | Dust: +{currentSubPlace.dustGain}</div>
           </div>
         </div>
       )}
-
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />
       <AssetGallery isOpen={galleryOpen} onClose={() => setGalleryOpen(false)} themeColor={t.primary} />
-                            </main>
-      <div className="vp-silt-overlay" style={{ opacity: Math.min(dust / 250, 0.4) }} />
     </div>
   );
 }

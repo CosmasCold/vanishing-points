@@ -1120,367 +1120,191 @@ input::placeholder {
 
 
 /* ============================================================
-   THE DROWNED DESK — COMPLETE TERMINAL REDESIGN
+   TERMINAL SHELL
    ============================================================ */
 
-.vp-drowned-room {
-  min-height: 100vh;
-  min-height: 100dvh;
+.vp-shell {
+  height: 100vh;
+  height: 100dvh;
   background: #060504;
+  color: #b0a090;
+  font-family: "Courier New", Courier, monospace;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  font-family: "Courier New", Courier, monospace;
 }
 
-/* Deep water — black-brown silt, not blue */
-.vp-water-ambient {
+.vp-atmosphere {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(20, 15, 10, 0.5) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(25, 18, 12, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #0a0908 0%, #070605 40%, #040302 100%);
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(30, 24, 18, 0.4) 0%, transparent 55%),
+    #060504;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Caustic light — surface refraction from above */
-.vp-caustics {
+.vp-scanlines {
   position: fixed;
   inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.12) 3px,
+    rgba(0, 0, 0, 0.12) 6px
+  );
   pointer-events: none;
-  z-index: 1;
-  opacity: 0.12;
-  background:
-    radial-gradient(ellipse 30% 20% at 35% 25%, rgba(130, 110, 80, 0.1) 0%, transparent 70%),
-    radial-gradient(ellipse 25% 15% at 65% 55%, rgba(110, 95, 75, 0.08) 0%, transparent 70%),
-    radial-gradient(ellipse 35% 25% at 20% 65%, rgba(120, 105, 80, 0.09) 0%, transparent 70%);
-  animation: vp-caustic-shift 14s ease-in-out infinite;
-  mix-blend-mode: screen;
-}
-
-@keyframes vp-caustic-shift {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
-  33% { transform: translate(-2%, 1%) scale(1.05); opacity: 0.13; }
-  66% { transform: translate(1%, -1%) scale(0.95); opacity: 0.08; }
-}
-
-/* Water stains — organic, blooming */
-.vp-water-stain {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 2;
-  filter: blur(50px);
-}
-
-.vp-water-stain--1 {
-  width: 350px;
-  height: 350px;
-  bottom: -80px;
-  left: -80px;
-  background: radial-gradient(circle, rgba(50, 38, 28, 0.35) 0%, transparent 70%);
-  animation: vp-stain-bloom 22s ease-in-out infinite;
-}
-
-.vp-water-stain--2 {
-  width: 250px;
-  height: 250px;
-  top: 15%;
-  right: -60px;
-  background: radial-gradient(circle, rgba(45, 35, 25, 0.25) 0%, transparent 70%);
-  animation: vp-stain-bloom 28s ease-in-out infinite reverse;
-}
-
-@keyframes vp-stain-bloom {
-  0%, 100% { transform: scale(1); opacity: 0.05; }
-  50% { transform: scale(1.4); opacity: 0.1; }
-}
-
-/* Surface meniscus */
-.vp-water-surface {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(90, 78, 60, 0.12) 25%, rgba(90, 78, 60, 0.12) 75%, transparent 100%);
-  z-index: 5;
-  pointer-events: none;
-}
-
-/* Bubbles rising — barely visible */
-.vp-bubbles {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background-image:
-    radial-gradient(circle at 15% 100%, rgba(110, 100, 88, 0.06) 0%, transparent 2px),
-    radial-gradient(circle at 45% 100%, rgba(110, 100, 88, 0.05) 0%, transparent 1.5px),
-    radial-gradient(circle at 75% 100%, rgba(110, 100, 88, 0.06) 0%, transparent 2px);
-  background-size: 100% 400%;
-  animation: vp-bubble-rise 18s linear infinite;
-  opacity: 0.25;
-}
-
-@keyframes vp-bubble-rise {
-  0% { background-position: 0% 100%; }
-  100% { background-position: 0% 0%; }
-}
-
-/* Pressure vignette — looking through deep water */
-.vp-pressure {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(4, 3, 2, 0.7) 100%);
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* Depth marker — bottom right, faint */
-.vp-depth-marker {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  font-family: monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.18em;
-  color: #3a3228;
+  z-index: 100;
   opacity: 0.35;
-  z-index: 20;
-  pointer-events: none;
-  text-transform: uppercase;
-  text-align: right;
-  line-height: 1.6;
 }
 
-/* ─── TERMINAL CONTENT ─── */
-.vp-drowned-output {
+.vp-app {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ─── HUD ─── */
+.vp-hud {
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
+}
+
+/* ─── WORKSPACE ─── */
+.vp-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .vp-workspace {
+    grid-template-columns: 1.65fr 1fr;
+  }
+}
+
+/* ─── TERMINAL ─── */
+.vp-term {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid rgba(180, 160, 140, 0.06);
+}
+
+.vp-term-header {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
+  background: rgba(180, 160, 140, 0.015);
+}
+
+.vp-term-output {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: 4rem;
-  mask-image: linear-gradient(to bottom, black 92%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 92%, transparent 100%);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding: 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180, 160, 140, 0.1) transparent;
 }
 
-.vp-drowned-output::-webkit-scrollbar {
-  display: none;
+.vp-term-output::-webkit-scrollbar {
+  width: 4px;
 }
 
-/* Text waver — subtle, like reading through water */
-.vp-drowned-line {
-  margin: 0.4rem 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.75;
-  font-size: 0.93rem;
-  letter-spacing: 0.015em;
-  color: #b0a090;
-  text-shadow: 0 0 1px rgba(176, 160, 144, 0.06);
-  animation: vp-text-waver 10s ease-in-out infinite;
-  animation-delay: calc(var(--line-index, 0) * 0.8s);
+.vp-term-output::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-@keyframes vp-text-waver {
-  0%, 100% { margin-left: 0; }
-  25% { margin-left: 0.4px; }
-  75% { margin-left: -0.3px; }
+.vp-term-output::-webkit-scrollbar-thumb {
+  background: rgba(180, 160, 140, 0.12);
+  border-radius: 2px;
 }
 
-/* Line type variants */
-.vp-drowned-line--input {
-  color: #4a4038;
-  opacity: 0.4;
-  font-size: 0.85rem;
-  margin-top: 2rem;
-}
-
-.vp-drowned-line--bunker {
-  color: #c8b8a0;
-  font-style: italic;
-  opacity: 0.92;
-  text-shadow: 0 0 8px rgba(200, 184, 160, 0.1);
-}
-
-.vp-drowned-line--other {
-  color: #a07860;
-  font-size: 0.82rem;
-  margin-left: 2rem;
-  opacity: 0.65;
+.vp-term-input {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(180, 160, 140, 0.06);
+  background: rgba(180, 160, 140, 0.015);
   position: relative;
 }
 
-.vp-drowned-line--other::before {
-  content: "› ";
-  position: absolute;
-  left: -1.2rem;
-  color: #804030;
-  opacity: 0.4;
-}
-
-.vp-drowned-line--system {
-  color: #6a5e50;
-  font-size: 0.8rem;
-  letter-spacing: 0.07em;
-  opacity: 0.55;
-}
-
-.vp-drowned-line--ghost {
-  color: #5a5048;
-  opacity: 0.3;
-  font-style: italic;
-  font-size: 0.86rem;
-  animation: vp-ghost-fade 5s ease-in-out infinite;
-}
-
-.vp-drowned-line--error {
-  color: #8a5040;
-  opacity: 0.75;
-}
-
-@keyframes vp-ghost-fade {
-  0%, 100% { opacity: 0.22; }
-  50% { opacity: 0.4; }
-}
-
-/* ─── CORRUPTION — INK RUNNING, NOT GLITCH ─── */
-.vp-drowned-output--corruption-1 .vp-drowned-line:nth-child(7n) {
-  opacity: 0.88;
-}
-
-.vp-drowned-output--corruption-2 .vp-drowned-line:nth-child(5n) {
-  animation: vp-ink-run 6s ease-in-out infinite;
-}
-
-.vp-drowned-output--corruption-3 .vp-drowned-line {
-  animation: vp-ink-run 3.5s ease-in-out infinite;
-}
-
-.vp-drowned-output--corruption-4 .vp-drowned-line {
-  animation: vp-ink-run 1.8s ease-in-out infinite;
-  color: #a08878;
-  text-shadow:
-    0 0 10px rgba(160, 100, 80, 0.12),
-    0 1px 0 rgba(160, 100, 80, 0.08);
-}
-
-@keyframes vp-ink-run {
-  0%, 100% {
-    opacity: 1;
-    text-shadow: 0 0 0 transparent;
-    filter: blur(0);
-  }
-  92% { opacity: 1; }
-  94% {
-    opacity: 0.72;
-    text-shadow: 0 1px 0 rgba(140, 90, 70, 0.2);
-    filter: blur(0.4px);
-  }
-  96% { opacity: 0.88; }
-  98% {
-    opacity: 0.62;
-    text-shadow: 0 2px 1px rgba(140, 90, 70, 0.12);
-    filter: blur(0.25px);
-  }
-}
-
-/* ─── INPUT — GHOST VISIBLE UNTIL TOUCHED ─── */
-.vp-drowned-input-form {
+/* ─── SIDEBAR ─── */
+.vp-sidebar {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  margin-top: auto;
-  padding-top: 2.5rem;
-  opacity: 0.12;
-  transition: opacity 2s ease;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.vp-drowned-input-form:hover,
-.vp-drowned-input-form:focus-within {
-  opacity: 1;
+.vp-sidebar-tabs {
+  flex-shrink: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid rgba(180, 160, 140, 0.06);
+  background: rgba(180, 160, 140, 0.015);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.vp-drowned-prompt {
-  color: #3a3228;
-  font-size: 0.9rem;
-  user-select: none;
-  transition: color 1s ease;
+.vp-sidebar-tabs::-webkit-scrollbar {
+  display: none;
 }
 
-.vp-drowned-input-form:hover .vp-drowned-prompt,
-.vp-drowned-input-form:focus-within .vp-drowned-prompt {
-  color: #7a6a58;
-}
-
-.vp-drowned-input {
+.vp-sidebar-content {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #c8b8a0;
-  font-family: inherit;
-  font-size: 0.93rem;
-  caret-color: #c8b8a0;
-  text-shadow: 0 0 12px rgba(200, 184, 160, 0.1);
-  padding: 0.25rem 0;
-  letter-spacing: 0.02em;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180, 160, 140, 0.1) transparent;
 }
 
-.vp-drowned-input::placeholder {
-  color: transparent;
+.vp-sidebar-content::-webkit-scrollbar {
+  width: 4px;
 }
 
-/* Cursor — phosphor breathing under pressure */
-.vp-drowned-cursor {
-  display: inline-block;
-  width: 9px;
-  height: 1.15em;
-  background: #a89888;
-  opacity: 0.5;
-  animation: vp-cursor-pressure 2.5s ease-in-out infinite;
-  box-shadow:
-    0 0 14px rgba(168, 152, 136, 0.2),
-    0 0 35px rgba(168, 152, 136, 0.06);
-  margin-left: 2px;
-  vertical-align: text-bottom;
+.vp-sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(180, 160, 140, 0.12);
+  border-radius: 2px;
 }
 
-@keyframes vp-cursor-pressure {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.75; }
+/* ─── FOOTER ─── */
+.vp-footer {
+  flex-shrink: 0;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(180, 160, 140, 0.04);
 }
 
-/* Silt overlay — warm, heavy */
-.vp-silt-overlay {
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(circle at 35% 85%, rgba(60, 48, 32, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 65% 15%, rgba(55, 45, 32, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 15;
-  transition: opacity 5s ease;
+/* ─── UTILITIES ─── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-/* Mobile — strip caustics, keep the deep */
-@media (max-width: 768px) {
-  .vp-drowned-terminal {
-    padding: 2rem 1.25rem 5rem;
-  }
-  .vp-caustics,
-  .vp-water-stain {
-    opacity: 0.06;
-  }
-  .vp-depth-marker {
-    font-size: 0.6rem;
-    bottom: 1rem;
-    right: 1rem;
-  }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

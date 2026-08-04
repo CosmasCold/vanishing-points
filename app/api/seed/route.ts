@@ -1602,11 +1602,8 @@ const SEED_DATA: SeedPlace[] = [
 
 const SEED_DATA_80: SeedPlace[] = [
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
-  // EUROPE — DEEP CUTS  
-  // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Pripyat Hospital 126",  
     category: "both" as const,  
     coordinates: [30.0528, 51.4075] as [number, number],  
@@ -1631,7 +1628,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",  
   },
 
-&nbsp; {  
+ {  
     name: "Buzludzha Monument",  
     category: "abandoned" as const,  
     coordinates: [25.3894, 42.7392] as [number, number],  
@@ -1648,7 +1645,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["duga-radar-array"],  
   },
 
-&nbsp; {  
+ {  
     name: "Chernobyl Reactor 4 Control Room",  
     category: "both" as const,  
     coordinates: [30.0501, 51.3893] as [number, number],  
@@ -1673,7 +1670,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The button is still warm. I have the thermal imaging to prove it.",  
   },
 
-&nbsp; {  
+ {  
     name: "Hohenwerfen Dark Archive",  
     category: "haunted" as const,  
     coordinates: [13.1878, 47.4814] as [number, number],  
@@ -1697,7 +1694,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["chateau-de-brissac"],  
   },
 
-&nbsp; {  
+ {  
     name: "Sanatorium du Basil",  
     category: "haunted" as const,  
     coordinates: [5.7833, 50.6167] as [number, number],  
@@ -1719,7 +1716,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["chateau-miranda"],  
   },
 
-&nbsp; {  
+ {  
     name: "Borovsko Bridge",  
     category: "abandoned" as const,  
     coordinates: [14.0167, 49.7833] as [number, number],  
@@ -1737,7 +1734,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The bridge hums at a frequency the ears cannot hear but the bones can. I have felt it in my teeth.",  
   },
 
-&nbsp; {  
+ {  
     name: "Skellig Michael",  
     category: "abandoned" as const,  
     coordinates: [-10.4506, 51.7713] as [number, number],  
@@ -1755,7 +1752,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The monks left no explanation. The gannets return anyway. I think they are waiting for something.",  
   },
 
-&nbsp; {  
+ {  
     name: "Luková Church of Ghosts",  
     category: "haunted" as const,  
     coordinates: [13.0167, 49.5167] as [number, number],  
@@ -1777,7 +1774,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["sedlec-ossuary"],  
   },
 
-&nbsp; {  
+ {  
     name: "Villers Abbey Ruins",  
     category: "abandoned" as const,  
     coordinates: [4.5333, 50.5833] as [number, number],  
@@ -1794,7 +1791,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["sanatorium-du-basil"],  
   },
 
-&nbsp; {  
+ {  
     name: "Kola Superdeep Borehole",  
     category: "abandoned" as const,  
     coordinates: [30.6, 69.4] as [number, number],  
@@ -1814,7 +1811,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The borehole is 12,262 meters deep. I have calculated that sound would take 3.5 seconds to travel from the bottom to the top. The vibrations arrive faster than that.",  
   },
 
-&nbsp; {  
+ {  
     name: "Tskaltubo Sanatoriums",  
     category: "abandoned" as const,  
     coordinates: [42.6, 42.3] as [number, number],  
@@ -1831,7 +1828,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["kola-superdeep-borehole"],  
   },
 
-&nbsp; {  
+ {  
     name: "Łódź Ghetto Industrial Ruins",  
     category: "abandoned" as const,  
     coordinates: [19.46, 51.78] as [number, number],  
@@ -1848,7 +1845,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["oradour-sur-glane", "belchite"],  
   },
 
-&nbsp; {  
+ {  
     name: "Monte Pellegrino Abandoned Shrine",  
     category: "haunted" as const,  
     coordinates: [13.35, 38.17] as [number, number],  
@@ -1872,7 +1869,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["catacombs-of-paris"],  
   },
 
-&nbsp; {  
+ {  
     name: "Poveglia Subterranean Ward",  
     category: "haunted" as const,  
     coordinates: [12.3315, 45.3815] as [number, number],  
@@ -1897,7 +1894,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "I have the 1968 orderlies' records. They all drew the same thing: a ward of beds, all facing the wall. None of them could explain why this frightened them.",  
   },
 
-&nbsp; {  
+ {  
     name: "Beelitz Surgery Basement",  
     category: "haunted" as const,  
     coordinates: [12.9118, 52.2592] as [number, number],  
@@ -1922,7 +1919,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The drain is 1.2 meters across. I have checked the architectural records. It was not in the original plans. It was added in 1942.",  
   },
 
-&nbsp; {  
+ {  
     name: "DUGA Control Room",  
     category: "both" as const,  
     coordinates: [30.0675, 51.3065] as [number, number],  
@@ -1947,7 +1944,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The pulse was directed upward. I have calculated the angle. It was not listening for missiles. It was listening for something above the atmosphere.",  
   },
 
-&nbsp; {  
+ {  
     name: "Brest Fortress Casemates",  
     category: "both" as const,  
     coordinates: [23.6547, 52.0833] as [number, number],  
@@ -1971,7 +1968,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["oradour-sur-glane", "belchite"],  
   },
 
-&nbsp; {  
+ {  
     name: "Oradour Church Crypt",  
     category: "haunted" as const,  
     coordinates: [1.0335, 45.9335] as [number, number],  
@@ -1993,7 +1990,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["oradour-sur-glane"],  
   },
 
-&nbsp; {  
+ {  
     name: "Teufelsberg Echo Dome",  
     category: "haunted" as const,  
     coordinates: [13.2415, 52.4975] as [number, number],  
@@ -2018,11 +2015,11 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",  
   },
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
+ // ═══════════════════════════════════════════════════════════════  
   // ASIA & PACIFIC  
   // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Battambang Killing Caves",  
     category: "both" as const,  
     coordinates: [103.1, 13.1] as [number, number],  
@@ -2044,7 +2041,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["tuol-sleng", "choeung-ek"],  
   },
 
-&nbsp; {  
+ {  
     name: "Fengdu Ghost City",  
     category: "haunted" as const,  
     coordinates: [107.72, 29.88] as [number, number],  
@@ -2066,7 +2063,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["aokigahara-forest"],  
   },
 
-&nbsp; {  
+ {  
     name: "Hachijo Royal Hotel",  
     category: "abandoned" as const,  
     coordinates: [139.78, 33.12] as [number, number],  
@@ -2083,7 +2080,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["hashima-island", "nara-dreamland"],  
   },
 
-&nbsp; {  
+ {  
     name: "Kepulauan Seribu Dutch Fort",  
     category: "abandoned" as const,  
     coordinates: [106.5, -5.6] as [number, number],  
@@ -2100,7 +2097,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["lawang-sewu"],  
   },
 
-&nbsp; {  
+ {  
     name: "Mururoa Atoll Bunker 810",  
     category: "abandoned" as const,  
     coordinates: [-138.67, -21.83] as [number, number],  
@@ -2119,7 +2116,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["vieques-island"],  
   },
 
-&nbsp; {  
+ {  
     name: "Wewak Japanese Tunnels",  
     category: "abandoned" as const,  
     coordinates: [143.63, -3.55] as [number, number],  
@@ -2136,7 +2133,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["port-arthur-penal-settlement"],  
   },
 
-&nbsp; {  
+ {  
     name: "Aokigahara Sea of Trees Station",  
     category: "haunted" as const,  
     coordinates: [138.658, 35.476] as [number, number],  
@@ -2159,7 +2156,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The station closed in 1983. The tickets keep arriving. I think the forest is still buying them.",  
   },
 
-&nbsp; {  
+ {  
     name: "Tuol Sleng Security Prison 21",  
     category: "both" as const,  
     coordinates: [104.917, 11.549] as [number, number],  
@@ -2181,7 +2178,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["battambang-killing-caves", "choeung-ek"],  
   },
 
-&nbsp; {  
+ {  
     name: "Choeung Ek Killing Fields",  
     category: "both" as const,  
     coordinates: [104.9, 11.484] as [number, number],  
@@ -2203,7 +2200,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["tuol-sleng", "battambang-killing-caves"],  
   },
 
-&nbsp; {  
+ {  
     name: "Kowloon Walled City Park",  
     category: "abandoned" as const,  
     coordinates: [114.19, 22.331] as [number, number],  
@@ -2221,7 +2218,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The well is capped with 3 meters of concrete. The park gardeners do not know why. The old residents do not answer questions about it.",  
   },
 
-&nbsp; {  
+ {  
     name: "Jatinga Bird Suicide Point",  
     category: "haunted" as const,  
     coordinates: [92.72, 25.17] as [number, number],  
@@ -2243,11 +2240,11 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["kuldhara"],  
   },
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
+ // ═══════════════════════════════════════════════════════════════  
   // AMERICAS — NORTH, CENTRAL, SOUTH  
   // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Gila River Relocation Center",  
     category: "abandoned" as const,  
     coordinates: [-111.88, 33.07] as [number, number],  
@@ -2264,7 +2261,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["manzanar"],  
   },
 
-&nbsp; {  
+ {  
     name: "Manzanar",  
     category: "abandoned" as const,  
     coordinates: [-118.072, 36.728] as [number, number],  
@@ -2281,7 +2278,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["gila-river-relocation-center"],  
   },
 
-&nbsp; {  
+ {  
     name: "Rhyolite",  
     category: "abandoned" as const,  
     coordinates: [-116.828, 36.903] as [number, number],  
@@ -2298,7 +2295,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["bodie-ghost-town"],  
   },
 
-&nbsp; {  
+ {  
     name: "Garnet Ghost Town",  
     category: "abandoned" as const,  
     coordinates: [-113.338, 46.826] as [number, number],  
@@ -2320,7 +2317,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["bodie-ghost-town", "rhyolite"],  
   },
 
-&nbsp; {  
+ {  
     name: "Eloise Psychiatric Hospital",  
     category: "haunted" as const,  
     coordinates: [-83.336, 42.33] as [number, number],  
@@ -2342,7 +2339,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],  
   },
 
-&nbsp; {  
+ {  
     name: "Danvers State Hospital",  
     category: "haunted" as const,  
     coordinates: [-70.967, 42.585] as [number, number],  
@@ -2364,7 +2361,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],  
   },
 
-&nbsp; {  
+ {  
     name: "Rolling Hills Asylum",  
     category: "haunted" as const,  
     coordinates: [-78.136, 42.995] as [number, number],  
@@ -2386,7 +2383,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["eloise-psychiatric-hospital", "danvers-state-hospital"],  
   },
 
-&nbsp; {  
+ {  
     name: "Pennhurst State School",  
     category: "haunted" as const,  
     coordinates: [-75.649, 40.197] as [number, number],  
@@ -2408,7 +2405,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["manteno-state-hospital", "waverly-hills-sanatorium"],  
   },
 
-&nbsp; {  
+ {  
     name: "Gonjiam Psychiatric Hospital",  
     category: "haunted" as const,  
     coordinates: [127.295, 37.362] as [number, number],  
@@ -2430,7 +2427,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["lawang-sewu"],  
   },
 
-&nbsp; {  
+ {  
     name: "La Noria Cemetery",  
     category: "haunted" as const,  
     coordinates: [-70.28, -20.28] as [number, number],  
@@ -2452,7 +2449,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["humberstone-saltpeter-works"],  
   },
 
-&nbsp; {  
+ {  
     name: "Humberstone Saltpeter Morgue",  
     category: "haunted" as const,  
     coordinates: [-69.7945, -20.2085] as [number, number],  
@@ -2474,7 +2471,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["humberstone-saltpeter-works", "la-noria-cemetery"],  
   },
 
-&nbsp; {  
+ {  
     name: "St. Thomas Ghost Town",  
     category: "abandoned" as const,  
     coordinates: [-114.373, 36.475] as [number, number],  
@@ -2491,7 +2488,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["bodie-ghost-town", "rhyolite"],  
   },
 
-&nbsp; {  
+ {  
     name: "Cahawba",  
     category: "abandoned" as const,  
     coordinates: [-87.1, 32.32] as [number, number],  
@@ -2508,7 +2505,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["jemison-center"],  
   },
 
-&nbsp; {  
+ {  
     name: "Copemish Masonic Temple",  
     category: "haunted" as const,  
     coordinates: [-85.92, 44.48] as [number, number],  
@@ -2530,7 +2527,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["sayer-house"],  
   },
 
-&nbsp; {  
+ {  
     name: "Sedan Crater",  
     category: "abandoned" as const,  
     coordinates: [-116.043, 37.177] as [number, number],  
@@ -2547,7 +2544,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["mururoa-atoll-bunker-810"],  
   },
 
-&nbsp; {  
+ {  
     name: "Mount Weather Emergency Operations Center",  
     category: "abandoned" as const,  
     coordinates: [-77.89, 39.06] as [number, number],  
@@ -2567,7 +2564,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The three facilities vibrate in synchronization. I have mapped the triangle they form. The center of the triangle is 40 kilometers from nowhere in Kansas.",  
   },
 
-&nbsp; {  
+ {  
     name: "Centralia Municipal Building",  
     category: "haunted" as const,  
     coordinates: [-76.341, 40.804] as [number, number],  
@@ -2589,11 +2586,11 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["centralia"],  
   },
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
+ // ═══════════════════════════════════════════════════════════════  
   // AFRICA & MIDDLE EAST  
   // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Kolmanskop Hospital Wing",  
     category: "haunted" as const,  
     coordinates: [14.8558, -26.7045] as [number, number],  
@@ -2615,7 +2612,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["kolmanskop"],  
   },
 
-&nbsp; {  
+ {  
     name: "Great Zimbabwe Hill Complex",  
     category: "abandoned" as const,  
     coordinates: [30.93, -20.27] as [number, number],  
@@ -2632,7 +2629,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["mada-in-saleh"],  
   },
 
-&nbsp; {  
+ {  
     name: "Leptis Magna",  
     category: "abandoned" as const,  
     coordinates: [14.29, 32.64] as [number, number],  
@@ -2649,7 +2646,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["mada-in-saleh"],  
   },
 
-&nbsp; {  
+ {  
     name: "Babylon Reconstruction",  
     category: "abandoned" as const,  
     coordinates: [44.42, 32.54] as [number, number],  
@@ -2666,7 +2663,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["mada-in-saleh", "leptis-magna"],  
   },
 
-&nbsp; {  
+ {  
     name: "Dallol Sulfur Cathedral",  
     category: "abandoned" as const,  
     coordinates: [40.305, 14.245] as [number, number],  
@@ -2683,7 +2680,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["dallol"],  
   },
 
-&nbsp; {  
+ {  
     name: "Gedi National Monument",  
     category: "abandoned" as const,  
     coordinates: [40.02, -3.3] as [number, number],  
@@ -2705,7 +2702,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["great-zimbabwe-hill-complex"],  
   },
 
-&nbsp; {  
+ {  
     name: "Kolmanskop Casino Vault",  
     category: "haunted" as const,  
     coordinates: [14.856, -26.705] as [number, number],  
@@ -2727,11 +2724,11 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["kolmanskop", "kolmanskop-hospital-wing"],  
   },
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
+ // ═══════════════════════════════════════════════════════════════  
   // OCEANIA & POLAR  
   // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Port Arthur Separate Prison",  
     category: "haunted" as const,  
     coordinates: [147.851, -43.151] as [number, number],  
@@ -2753,7 +2750,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["port-arthur-penal-settlement"],  
   },
 
-&nbsp; {  
+ {  
     name: "Macquarie Island Station",  
     category: "abandoned" as const,  
     coordinates: [158.95, -54.62] as [number, number],  
@@ -2770,7 +2767,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["grytviken"],  
   },
 
-&nbsp; {  
+ {  
     name: "Deception Island Whalers Bay Cemeteries",  
     category: "haunted" as const,  
     coordinates: [-60.57, -62.98] as [number, number],  
@@ -2792,7 +2789,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["deception-island"],  
   },
 
-&nbsp; {  
+ {  
     name: "Cape Denison Hut",  
     category: "abandoned" as const,  
     coordinates: [142.67, -67.0] as [number, number],  
@@ -2809,11 +2806,11 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["grytviken", "macquarie-island-station"],  
   },
 
-&nbsp; // ═══════════════════════════════════════════════════════════════  
+ // ═══════════════════════════════════════════════════════════════  
   // THE INVESTIGATION WEB — FALSE COORDINATES & MIRRORS  
   // ═══════════════════════════════════════════════════════════════
 
-&nbsp; {  
+ {  
     name: "Coordinates 40.89°N 29.15°E",  
     category: "abandoned" as const,  
     coordinates: [29.15, 40.89] as [number, number],  
@@ -2833,7 +2830,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "Structure 9 appeared after the earthquake. It is 80 by 40 meters. It is 50 meters underwater. It was not built. It was revealed.",  
   },
 
-&nbsp; {  
+ {  
     name: "BUNKER_3 Relay",  
     category: "both" as const,  
     coordinates: [13.405, 52.52] as [number, number],  
@@ -2858,7 +2855,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The room has no door. The room has no entrance. The room is dry. I do not know how the survey team knew what was inside.",  
   },
 
-&nbsp; {  
+ {  
     name: "The Grid Null Point",  
     category: "haunted" as const,  
     coordinates: [-97.0, 38.0] as [number, number],  
@@ -2883,7 +2880,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The ash is 12,000 years old. The spiral rotates. I have calculated that the rotation will align with the summer solstice in 2047. I do not know what happens then.",  
   },
 
-&nbsp; {  
+ {  
     name: "The Vanishing Hospital",  
     category: "haunted" as const,  
     coordinates: [139.692, 35.69] as [number, number],  
@@ -2908,7 +2905,7 @@ const SEED_DATA_80: SeedPlace[] = [
         resonanceNote: "I have not composed the message. But I recognize my voice. I am frightened of what I will say.",  
   },
 
-&nbsp; {  
+ {  
     name: "Pripyat Jupiter Factory",  
     category: "both" as const,  
     coordinates: [30.055, 51.405] as [number, number],  
@@ -2933,7 +2930,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The windows are painted black from the inside. The scratches are on the outside. I do not know which side the paint was meant to protect.",  
   },
 
-&nbsp; {  
+ {  
     name: "Montserrat Buried St. Patrick's",  
     category: "both" as const,  
     coordinates: [-62.22, 16.71] as [number, number],  
@@ -2956,7 +2953,7 @@ const SEED_DATA_80: SeedPlace[] = [
     resonanceNote: "The church is buried. The door is locked from the inside. The heat signature is human. I have no explanation.",  
   },
 
-&nbsp; {  
+ {  
     name: "Stull Cemetery",  
     category: "haunted" as const,  
     coordinates: [-95.456, 38.971] as [number, number],  
@@ -2980,7 +2977,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["the-grid-null-point"],  
   },
 
-&nbsp; {  
+ {  
     name: "Shanghai Tunnels",  
     category: "haunted" as const,  
     coordinates: [-122.672, 45.523] as [number, number],  
@@ -3002,7 +2999,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["sayer-house"],  
   },
 
-&nbsp; {  
+ {  
     name: "Willard Asylum Suitcases",  
     category: "haunted" as const,  
     coordinates: [-76.878, 42.679] as [number, number],  
@@ -3024,7 +3021,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["danvers-state-hospital", "rolling-hills-asylum"],  
   },
 
-&nbsp; {  
+ {  
     name: "Letchworth Village",  
     category: "haunted" as const,  
     coordinates: [-74.05, 41.22] as [number, number],  
@@ -3046,7 +3043,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["willard-asylum-suitcases", "pennhurst-state-school"],  
   },
 
-&nbsp; {  
+ {  
     name: "Byberry State Hospital",  
     category: "haunted" as const,  
     coordinates: [-74.98, 40.08] as [number, number],  
@@ -3070,7 +3067,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["eastern-state-penitentiary", "pennhurst-state-school"],  
   },
 
-&nbsp; {  
+ {  
     name: "Nocton Hall RAF Hospital",  
     category: "haunted" as const,  
     coordinates: [-0.42, 53.17] as [number, number],  
@@ -3092,7 +3089,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["beelitz-surgery-basement", "sanatorium-du-basil"],  
   },
 
-&nbsp; {  
+ {  
     name: "The Leap Castle Bloody Chapel",  
     category: "haunted" as const,  
     coordinates: [-8.05, 53.03] as [number, number],  
@@ -3114,7 +3111,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["skellig-michael"],  
   },
 
-&nbsp; {  
+ {  
     name: "Edinburgh Vaults",  
     category: "haunted" as const,  
     coordinates: [-3.188, 55.95] as [number, number],  
@@ -3136,7 +3133,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["mary-kings-close"],  
   },
 
-&nbsp; {  
+ {  
     name: "Mary King's Close",  
     category: "haunted" as const,  
     coordinates: [-3.19, 55.95] as [number, number],  
@@ -3158,7 +3155,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["edinburgh-vaults"],  
   },
 
-&nbsp; {  
+ {  
     name: "Houska Castle",  
     category: "haunted" as const,  
     coordinates: [14.62, 50.49] as [number, number],  
@@ -3182,7 +3179,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["sedlec-ossuary", "lukova-church-of-ghosts"],  
   },
 
-&nbsp; {  
+ {  
     name: "The Door to Hell",  
     category: "abandoned" as const,  
     coordinates: [58.59, 40.25] as [number, number],  
@@ -3199,7 +3196,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["dallol-sulfur-cathedral"],  
   },
 
-&nbsp; {  
+ {  
     name: "Salton Sea Naval Station",  
     category: "abandoned" as const,  
     coordinates: [-115.83, 33.28] as [number, number],  
@@ -3221,7 +3218,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["bombay-beach"],  
   },
 
-&nbsp; {  
+ {  
     name: "Flannan Isles Lighthouse",  
     category: "haunted" as const,  
     coordinates: [-7.59, 58.29] as [number, number],  
@@ -3243,7 +3240,7 @@ const SEED_DATA_80: SeedPlace[] = [
     connectedTo: ["st-kilda", "cape-denison-hut"],  
   },
 
-&nbsp; {  
+ {  
     name: "Roanoke Colony",  
     category: "haunted" as const,  
     coordinates: [-75.71, 35.94] as [number, number],  
@@ -3273,24 +3270,24 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);  
   const key = searchParams.get("key");
 
-&nbsp; if (key !== process.env.ADMIN_PASSWORD) {  
+ if (key !== process.env.ADMIN_PASSWORD) {  
     return NextResponse.json(  
       { error: "Unauthorized. Provide ?key=ADMIN_PASSWORD" },  
       { status: 401 }  
     );  
   }
 
-&nbsp; try {  
+ try {  
     await dbConnect();
 
-&nbsp;   // Get existing slugs so we never overwrite  
+   // Get existing slugs so we never overwrite  
     const existingSlugs = new Set(  
       (await PlaceModel.find({}, "slug")).map((p) => p.slug)  
     );
 
-&nbsp;       const allData = [...SEED_DATA, ...SEED_DATA_80];
+       const allData = [...SEED_DATA, ...SEED_DATA_80];
 
-&nbsp;   const docs = allData  
+   const docs = allData  
       .filter((data) => !existingSlugs.has(slugify(data.name)))  
       .map((data) => ({  
         ...data,  
@@ -3306,11 +3303,11 @@ export async function GET(request: NextRequest) {
         verifiedBy: data.verifiedBy || "system",  
       }));
 
-&nbsp;   if (docs.length > 0) {  
+   if (docs.length > 0) {  
       await PlaceModel.insertMany(docs);  
     }
 
-&nbsp;   return NextResponse.json({  
+   return NextResponse.json({  
       message: `Added ${docs.length} new archives. Existing records preserved.`,  
       added: docs.length,  
       total: await PlaceModel.countDocuments(),  

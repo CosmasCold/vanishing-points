@@ -1106,193 +1106,7 @@ input::placeholder {
   50% { opacity: 0.7; }
 }
 
-/* ============================================================
-   ARCHIVIST'S DESK — TERMINAL REDESIGN
-   ============================================================ */
 
-.vp-desk {
-  min-height: 100vh;
-  background: #0f0e0c;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vp-desk-texture {
-  position: fixed;
-  inset: 0;
-  background: 
-    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(60, 40, 20, 0.03) 2px, rgba(60, 40, 20, 0.03) 4px),
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(40, 30, 15, 0.05) 2px, rgba(40, 30, 15, 0.05) 4px),
-    linear-gradient(180deg, #1a1612 0%, #0f0e0c 100%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.vp-crt-frame {
-  position: relative;
-  width: 96vw;
-  max-width: 1400px;
-  height: 92vh;
-  background: #2a2520;
-  border-radius: 8px;
-  padding: 14px;
-  box-shadow: 
-    0 0 0 1px #3a3530,
-    0 0 0 5px #1a1612,
-    0 0 0 6px rgba(122, 107, 82, 0.1),
-    0 24px 80px rgba(0, 0, 0, 0.9),
-    inset 0 0 30px rgba(0, 0, 0, 0.5);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-}
-
-.vp-crt-screen {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: #0a0a08;
-  border-radius: 40% 40% 40% 40% / 3% 3% 3% 3%;
-  overflow: hidden;
-  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9);
-}
-
-.vp-crt-scanline {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.12) 2px,
-    rgba(0, 0, 0, 0.12) 4px
-  );
-  pointer-events: none;
-  z-index: 50;
-  animation: vp-scanline-drift 10s linear infinite;
-}
-
-.vp-crt-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(200, 180, 140, 0.03) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 45;
-}
-
-@keyframes vp-scanline-drift {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-/* ─── DESK ARTIFACTS ─── */
-.vp-artifacts {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 140px;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.vp-artifact {
-  position: absolute;
-  pointer-events: auto;
-  cursor: help;
-  transition: transform 0.3s ease;
-}
-
-.vp-artifact:hover {
-  transform: translateY(-4px);
-}
-
-.vp-artifact--photo {
-  bottom: 24px;
-  left: 6%;
-  width: 64px;
-  height: 80px;
-  background: #3a3530;
-  border: 3px solid #e8e0d4;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  transform: rotate(-10deg);
-}
-
-.vp-artifact--coffee {
-  bottom: 18px;
-  left: 16%;
-  width: 56px;
-  height: 44px;
-  background: #4a3a2a;
-  border-radius: 50% 50% 45% 45%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-.vp-artifact--coffee::after {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 10px;
-  background: #2a2018;
-  border-radius: 50%;
-}
-
-.vp-artifact--pen {
-  bottom: 28px;
-  right: 10%;
-  width: 90px;
-  height: 7px;
-  background: linear-gradient(90deg, #5a4a3a, #3a2e22);
-  border-radius: 4px;
-  transform: rotate(14deg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.vp-artifact--paper {
-  bottom: 34px;
-  right: 20%;
-  width: 80px;
-  height: 100px;
-  background: #e8e0d4;
-  opacity: 0.55;
-  transform: rotate(4deg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-}
-
-/* ─── DUST OVERLAY ─── */
-.vp-dust-overlay {
-  position: fixed;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 30% 70%, rgba(160, 140, 100, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 70% 30%, rgba(140, 120, 90, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 25;
-  transition: opacity 2s ease;
-}
-
-/* Mobile: simplify desk */
-@media (max-width: 1023px) {
-  .vp-crt-frame {
-    width: 100vw;
-    height: 100dvh;
-    border-radius: 0;
-    padding: 8px;
-  }
-  .vp-artifacts {
-    display: none;
-  }
-}
 
 /* ============================================================
    CONDITIONAL CARTOGRAPHY — PIN STATES
@@ -1304,28 +1118,288 @@ input::placeholder {
 @keyframes vp-pulse { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(1.4);opacity:0.3} }
 @keyframes vp-fade { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
 
+
 /* ============================================================
-   ARCHIVIST'S DESK — TERMINAL REDESIGN
+   ARCHIVIST'S DESK — PREMIUM REDESIGN
    ============================================================ */
-.vp-desk { min-height:100vh; background:#0f0e0c; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-.vp-desk-texture { position:fixed; inset:0; background: repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(60,40,20,0.03) 2px,rgba(60,40,20,0.03) 4px), repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(40,30,15,0.05) 2px,rgba(40,30,15,0.05) 4px), linear-gradient(180deg,#1a1612 0%,#0f0e0c 100%); pointer-events:none; z-index:0; }
-.vp-crt-frame { position:relative; width:96vw; max-width:1400px; height:92vh; background:#2a2520; border-radius:8px; padding:14px; box-shadow: 0 0 0 1px #3a3530, 0 0 0 5px #1a1612, 0 0 0 6px rgba(122,107,82,0.1), 0 24px 80px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.5); z-index:10; display:flex; flex-direction:column; }
-.vp-crt-screen { position:relative; width:100%; height:100%; background:#0a0a08; border-radius:40% 40% 40% 40% / 3% 3% 3% 3%; overflow:hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.9); }
-.vp-crt-scanline { position:absolute; inset:0; background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px); pointer-events:none; z-index:50; animation: vp-scanline-drift 10s linear infinite; }
-.vp-crt-glow { position:absolute; inset:0; background: radial-gradient(ellipse at center, rgba(200,180,140,0.03) 0%, transparent 70%); pointer-events:none; z-index:45; }
-@keyframes vp-scanline-drift { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
 
-.vp-artifacts { position:fixed; bottom:0; left:0; right:0; height:140px; pointer-events:none; z-index:5; }
-.vp-artifact { position:absolute; pointer-events:auto; cursor:help; transition:transform 0.3s ease; }
-.vp-artifact:hover { transform:translateY(-4px); }
-.vp-artifact--photo { bottom:24px; left:6%; width:64px; height:80px; background:#3a3530; border:3px solid #e8e0d4; box-shadow:0 4px 16px rgba(0,0,0,0.6); transform:rotate(-10deg); }
-.vp-artifact--coffee { bottom:18px; left:16%; width:56px; height:44px; background:#4a3a2a; border-radius:50% 50% 45% 45%; box-shadow:0 4px 16px rgba(0,0,0,0.5); }
-.vp-artifact--coffee::after { content:""; position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:40px; height:10px; background:#2a2018; border-radius:50%; }
-.vp-artifact--pen { bottom:28px; right:10%; width:90px; height:7px; background:linear-gradient(90deg,#5a4a3a,#3a2e22); border-radius:4px; transform:rotate(14deg); box-shadow:0 2px 8px rgba(0,0,0,0.4); }
-.vp-artifact--paper { bottom:34px; right:20%; width:80px; height:100px; background:#e8e0d4; opacity:0.55; transform:rotate(4deg); box-shadow:0 2px 10px rgba(0,0,0,0.25); }
-.vp-dust-overlay { position:fixed; inset:0; background: radial-gradient(circle at 30% 70%, rgba(160,140,100,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(140,120,90,0.06) 0%, transparent 50%); pointer-events:none; z-index:25; transition:opacity 2s ease; }
+.vp-archivist-room {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #0a0908;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Courier New", Courier, monospace;
+}
 
-@media (max-width: 1023px) {
-  .vp-crt-frame { width:100vw; height:100dvh; border-radius:0; padding:8px; }
-  .vp-artifacts { display:none; }
+/* Single warm light source from top-left, rest falls to black */
+.vp-room-ambient {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%, rgba(200, 175, 130, 0.035) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 85% 95%, rgba(50, 35, 20, 0.2) 0%, transparent 50%),
+    linear-gradient(180deg, #0f0e0c 0%, #0a0908 50%, #080706 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vp-room-ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(5, 4, 3, 0.85) 100%);
+  pointer-events: none;
+}
+
+/* Dust motes — very subtle, slow drift */
+.vp-dust-motes {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(180, 160, 120, 0.12) 0%, transparent 1.5px),
+    radial-gradient(circle at 65% 15%, rgba(180, 160, 120, 0.08) 0%, transparent 2px),
+    radial-gradient(circle at 45% 65%, rgba(180, 160, 120, 0.1) 0%, transparent 1px),
+    radial-gradient(circle at 85% 55%, rgba(180, 160, 120, 0.07) 0%, transparent 2.5px),
+    radial-gradient(circle at 35% 45%, rgba(180, 160, 120, 0.09) 0%, transparent 1.5px);
+  background-size: 250% 250%;
+  animation: vp-dust-float 24s ease-in-out infinite;
+  opacity: 0.5;
+}
+
+@keyframes vp-dust-float {
+  0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%; }
+  33% { background-position: 100% 50%, 0% 100%, 100% 0%, 50% 50%, 0% 100%; }
+  66% { background-position: 50% 100%, 100% 0%, 0% 100%, 100% 50%, 50% 0%; }
+}
+
+/* Paper stacks — low, shadowy, not cartoon objects */
+.vp-paper-stack {
+  position: fixed;
+  bottom: 0;
+  height: 50px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.vp-paper-stack--left {
+  left: -30px;
+  width: 220px;
+  background: linear-gradient(180deg, transparent 0%, rgba(55, 45, 35, 0.25) 60%, rgba(40, 32, 25, 0.35) 100%);
+  transform: skewX(10deg);
+  box-shadow: inset -15px 0 30px rgba(0,0,0,0.6);
+}
+
+.vp-paper-stack--right {
+  right: -40px;
+  width: 260px;
+  background: linear-gradient(180deg, transparent 0%, rgba(55, 45, 35, 0.2) 60%, rgba(40, 32, 25, 0.3) 100%);
+  transform: skewX(-6deg);
+  box-shadow: inset 15px 0 30px rgba(0,0,0,0.6);
+}
+
+/* Coffee ring — faint, oxidized, off-center */
+.vp-coffee-stain {
+  position: fixed;
+  bottom: 10%;
+  right: 10%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(80, 60, 40, 0.06);
+  pointer-events: none;
+  z-index: 2;
+  box-shadow:
+    inset 0 0 30px rgba(80, 60, 40, 0.04),
+    0 0 0 6px rgba(80, 60, 40, 0.02),
+    0 0 0 14px rgba(80, 60, 40, 0.015);
+  transform: rotate(20deg) scaleY(0.85);
+  opacity: 0.6;
+}
+
+/* Phosphor glow — soft, behind the text only */
+.vp-phosphor-glow {
+  position: fixed;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 1100px;
+  height: 60vh;
+  background: radial-gradient(ellipse at center, rgba(200, 180, 140, 0.025) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Scanlines — finer, softer */
+.vp-crt-scanline {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.06) 4px,
+    rgba(0, 0, 0, 0.06) 8px
+  );
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Desk edge — a thin horizon line */
+.vp-desk-edge {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(90, 74, 58, 0.25) 15%, rgba(90, 74, 58, 0.25) 85%, transparent 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Dust contamination overlay — warm, subtle */
+.vp-dust-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 70%, rgba(160, 140, 100, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(140, 120, 90, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 3s ease;
+}
+
+/* ─── TERMINAL CONTENT ─── */
+.vp-output {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+
+.vp-output::-webkit-scrollbar {
+  width: 3px;
+}
+
+.vp-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vp-output::-webkit-scrollbar-thumb {
+  background: rgba(90, 74, 58, 0.25);
+  border-radius: 2px;
+}
+
+.vp-line {
+  margin: 0.2rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.65;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+.vp-line--header {
+  color: #8b7355;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.vp-line--bunker {
+  color: #d4c4a8;
+  font-style: italic;
+  opacity: 0.95;
+}
+
+.vp-line--input {
+  color: #6a5a4a;
+  opacity: 0.6;
+}
+
+/* Corruption — more subtle, like a failing tube */
+.vp-output--corruption-2 .vp-line:nth-child(odd) {
+  animation: vp-flicker-subtle 6s infinite;
+}
+
+.vp-output--corruption-3 .vp-line {
+  animation: vp-flicker-subtle 3.5s infinite;
+}
+
+.vp-output--corruption-4 .vp-line {
+  animation: vp-flicker-subtle 1.8s infinite;
+  color: #b89878;
+  text-shadow: 0 0 10px rgba(180, 130, 90, 0.15);
+}
+
+@keyframes vp-flicker-subtle {
+  0%, 100% { opacity: 1; }
+  94% { opacity: 1; }
+  95% { opacity: 0.6; }
+  96% { opacity: 1; }
+  98% { opacity: 0.4; }
+  99% { opacity: 1; }
+}
+
+/* ─── INPUT ─── */
+.vp-input-form {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(90, 74, 58, 0.15);
+  padding-top: 1rem;
+  margin-top: auto;
+  position: relative;
+}
+
+.vp-prompt {
+  color: #5a4a3a;
+  font-weight: bold;
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+.vp-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #c4b896;
+  font-family: inherit;
+  font-size: 0.9rem;
+  caret-color: #c4b896;
+  text-shadow: 0 0 8px rgba(196, 184, 150, 0.15);
+  padding: 0.25rem 0;
+}
+
+.vp-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: #c4b896;
+  animation: vp-cursor-blink 1.1s step-end infinite;
+  box-shadow: 0 0 8px rgba(196, 184, 150, 0.35);
+  margin-left: 2px;
+}
+
+@keyframes vp-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Mobile — strip the ambient clutter, keep the darkness */
+@media (max-width: 768px) {
+  .vp-paper-stack,
+  .vp-coffee-stain {
+    display: none;
+  }
+  .vp-terminal-main {
+    padding: 2rem 1.5rem 4rem;
+  }
 }

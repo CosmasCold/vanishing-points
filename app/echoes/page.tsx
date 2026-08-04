@@ -1026,18 +1026,18 @@ export default function EchoesPage() {
 
   /* ─── RENDER ─── */
     return (
-    <div className="vp-desk">
-      <div className="vp-desk-texture" />
-      
-      <div className="vp-crt-frame">
-        <div className="vp-crt-screen">
-          <div className="vp-crt-scanline" />
-          <div className="vp-crt-glow" />
-          
-          <main
-            className="min-h-screen font-mono relative overflow-hidden selection:bg-[#9a8a72]/20"
-            style={{ backgroundColor: "transparent", color: t.primary }}
-          >
+    <div className="vp-archivist-room">
+      <div className="vp-room-ambient" />
+      <div className="vp-dust-motes" />
+      <div className="vp-paper-stack vp-paper-stack--left" />
+      <div className="vp-paper-stack vp-paper-stack--right" />
+      <div className="vp-coffee-stain" />
+      <div className="vp-phosphor-glow" />
+      <div className="vp-crt-scanline" />
+      <main
+        className="min-h-screen w-full max-w-[900px] mx-auto font-mono relative overflow-hidden selection:bg-[#9a8a72]/20 flex flex-col px-6 py-16 md:px-12 md:py-20"
+        style={{ backgroundColor: "transparent", color: t.primary }}
+      >
       {/* ─── CRT LAYER ─── */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
@@ -1553,19 +1553,8 @@ export default function EchoesPage() {
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />
       <AssetGallery isOpen={galleryOpen} onClose={() => setGalleryOpen(false)} themeColor={t.primary} />
               </main>
-        </div>
-      </div>
-      
-      {/* Desk Artifacts */}
-      <div className="vp-artifacts">
-        <div className="vp-artifact vp-artifact--photo" title="Face down. You don't look." />
-        <div className="vp-artifact vp-artifact--coffee" title="Cold. Not yours." />
-        <div className="vp-artifact vp-artifact--pen" title="Out of ink." />
-        <div className="vp-artifact vp-artifact--paper" title="Coordinates. Crossed out." />
-      </div>
-      
-      {/* Dust overlay scales with contamination */}
-      <div className="vp-dust-overlay" style={{ opacity: dust / 200 }} />
+      <div className="vp-desk-edge" />
+      <div className="vp-dust-overlay" style={{ opacity: Math.min(dust / 300, 0.4) }} />
     </div>
   );
 }

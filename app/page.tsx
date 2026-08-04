@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   List,
@@ -38,6 +38,8 @@ import AtlasInversion from "@/components/AtlasInversion";
 import { showToast } from "@/lib/toast";
 import LiveSignalOverlay from "@/components/LiveSignalOverlay";
 import AudioEngine from "@/components/AudioEngine";
+import { evaluateUnlock, type WitnessState } from "@/lib/unlock-engine";
+
 
 
 function MapLoadingFallback() {
@@ -86,9 +88,38 @@ export default function Home() {
     distance: number;
   } | null>(null);
   const [dust, setDust] = useState(0);
-  const tod = useTimeOfDay();
+   const tod = useTimeOfDay();
   const { isAnniversary } = useSeasonalHauntings();
   const { count: visitedCount, visitGhost } = useVisitedPlaces();
+
+    // ── Conditional Cartography ──
+  const [now, setNow] = useState<Date>(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const witnessState: WitnessState = useMemo(() => {
+    if (typeof window === "undefined")
+      return { dust: 0, encounters: 0, inventory: [], visitedSlugs: [], unlockedCodes: [], readingsComplete: false, now };
+    const logs = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+    return {
+      dust,
+      encounters: parseInt(localStorage.getItem("vp-other-encounters") || "0", 10),
+      inventory: JSON.parse(localStorage.getItem("vp-bunker-inventory") || "[]"),
+      visitedSlugs: logs.map((l: any) => l.slug).filter(Boolean),
+      unlockedCodes: JSON.parse(localStorage.getItem("vp-found-codes") || "[]"),
+      readingsComplete: false,
+      now,
+    };
+  }, [dust, now]);
+
+  const visiblePlaces = useMemo(() => {
+    return places
+      .map((place) => ({ ...place, eval: evaluateUnlock(place, witnessState) }))
+      .filter((p) => p.eval.visible);
+  }, [places, witnessState]);
+
 
   // ── Load places ──
   useEffect(() => {
@@ -156,12 +187,18 @@ export default function Home() {
     );
   }, [places]);
 
-  const openPlace = useCallback((place: Place) => {
+      const openPlace = useCallback((place: Place) => {
     accumulateDust(3);
     const newDust = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
     setDust(newDust);
     setSelectedPlace(place);
-     window.dispatchEvent(new CustomEvent("placeaudiochange", {
+    // Track visit for conditional cartography
+    const logs = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+    if (!logs.find((l: any) => l.slug === place.slug)) {
+      logs.push({ slug: place.slug, name: place.name, addedAt: new Date().toISOString() });
+      localStorage.setItem("vp-expedition-log", JSON.stringify(logs));
+    }
+    window.dispatchEvent(new CustomEvent("placeaudiochange", {
       detail: { category: place.category, atmosphere: place.dangerLevel }
     }));
   }, []);
@@ -359,7 +396,7 @@ export default function Home() {
               boxShadow: "inset 0 1px 0 rgba(122,107,82,0.08)",
             }}
           >
-            <StatItem icon={<Eye size={11} />} value={`${places.length} documented`} />
+                        <StatItem icon={<Eye size={11} />} value={`${visiblePlaces.length} / ${places.length} documented`} />
             <span className="w-px h-3 bg-[#9a8a72]/20" />
             <span className="hidden sm:inline">{places.filter((p) => p.category === "haunted").length} spectral</span>
             <span className="w-px h-3 bg-[#9a8a72]/20 hidden sm:inline" />
@@ -508,8 +545,8 @@ export default function Home() {
 
         {/* ─── MAP ─── */}
         <div className="absolute inset-0 z-0">
-                  <MapContainer
-            places={places}
+                            <MapContainer
+            places={visiblePlaces}
             onSelectPlace={openPlace}
             loading={loading}
             center={mapCenter}

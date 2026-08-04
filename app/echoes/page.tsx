@@ -48,6 +48,8 @@ import TheGrid from "@/components/TheGrid";
 import {
   getDossierProgress, getClaimedDossierList,
 } from "@/lib/dossiers";
+import { evaluateUnlock } from "@/lib/unlock-engine";
+import type { Place } from "@/types";
 
 /* ─── THEMES ─── */
 const THEMES = {
@@ -921,6 +923,77 @@ export default function EchoesPage() {
 
       case "purge": { const inv = getInventory(); if (inv.length === 0) { pushLines(["PURGE FAILED.", "You have nothing to sacrifice.", "The dust requires a trade."], "error"); break; } const sacrificed = inv[Math.floor(Math.random() * inv.length)]; const item = INVENTORY_ITEMS.find((i) => i.id === sacrificed); const newInv = inv.filter((id) => id !== sacrificed); localStorage.setItem("vp-bunker-inventory", JSON.stringify(newInv)); setInventory(newInv); purgeDust(); const consequences: string[] = []; const deleteLogRoll = Math.random(); const deleteAssetRoll = Math.random(); if (deleteLogRoll < 0.2 && unlocked > 3) { const nextUnlocked = Math.max(3, unlocked - 1); setUnlocked(nextUnlocked); localStorage.setItem("vp-logs-unlocked", nextUnlocked.toString()); consequences.push("A log entry has been erased. You will not read it again."); } if (deleteAssetRoll < 0.15 && assets.length > 0) { const lostAsset = assets[Math.floor(Math.random() * assets.length)]; const nextAssets = assets.filter((a) => a !== lostAsset); localStorage.setItem("vp-assets", JSON.stringify(nextAssets)); setAssets(nextAssets); consequences.push(`An asset has been corrupted: ${lostAsset}. It is gone.`); } pushLines(["╔══════════════════════════════════════╗","║  PURGE COMPLETE                      ║","╠══════════════════════════════════════╣",`║  Sacrificed: ${(item?.name || sacrificed).padEnd(24)}║`,"║  Dust:        0%                     ║","║  Corruption:  0                      ║",...(consequences.length > 0 ? ["╠══════════════════════════════════════╣"] : []),...consequences.map((c) => `║  ${c.slice(0, 34).padEnd(34)}║`),"╠══════════════════════════════════════╣","║  You feel lighter.                     ║","║  The places remember anyway.         ║","╚══════════════════════════════════════╝",], "success"); break; }
 
+            case "archives": {
+        fetch("/api/places")
+          .then(r => r.json())
+          .then(data => {
+            const all: Place[] = data.places || [];
+            const dustLvl = parseInt(localStorage.getItem("vp-dust-accumulation") || "0", 10);
+            const logs = JSON.parse(localStorage.getItem("vp-expedition-log") || "[]");
+            const encounters = getOtherEncounters();
+            const state = {
+              dust: dustLvl,
+              encounters,
+              inventory: JSON.parse(localStorage.getItem("vp-bunker-inventory") || "[]"),
+              visitedSlugs: logs.map((l: any) => l.slug).filter(Boolean),
+              unlockedCodes: JSON.parse(localStorage.getItem("vp-found-codes") || "[]"),
+              readingsComplete: false,
+              now: new Date(),
+            };
+            const out = ["┌─ ATLAS CONDITIONAL CARTOGRAPHY ────┐"];
+            all.forEach((p) => {
+              const ev = evaluateUnlock(p, state);
+              const icon = p.status === "verified" ? "◈" : ev.visible ? "○" : "·";
+              const label = p.status === "verified" ? "" : ` [${p.status}]`;
+              if (ev.visible) {
+                out.push(`│  ${icon} ${p.name.slice(0, 30).padEnd(30)}${label.padEnd(8)}│`);
+              } else if (p.status === "sealed" && dustLvl >= ((p.unlockCondition?.value as number) || 100) * 0.5) {
+                out.push(`│  ~ ${p.name.slice(0, 28).padEnd(28)}  INTERFERENCE │`);
+              }
+            });
+            out.push("└──────────────────────────────────────┘");
+            out.push(`${all.filter(p => evaluateUnlock(p, state).visible).length} / ${all.length} archives resolved.`);
+            pushLines(out, "system");
+          });
+        break;
+      }
+
+      case "resonance": {
+        const slug = args[1];
+        if (!slug) {
+          pushLines(["Usage: resonance [archive-slug]", "Shows connected archives and grid commentary."], "error");
+          break;
+        }
+        fetch("/api/places")
+          .then(r => r.json())
+          .then(data => {
+            const all: Place[] = data.places || [];
+            const place = all.find(p => p.slug === slug);
+            if (!place) {
+              pushLines([`Archive '${slug}' not found.`], "error");
+              return;
+            }
+            const out = [
+              `╔══════════════════════════════════════╗`,
+              `║  RESONANCE: ${place.name.toUpperCase().slice(0, 24).padEnd(24)}║`,
+              `╠══════════════════════════════════════╣`,
+            ];
+            if (place.resonanceNote) out.push(`║  ${place.resonanceNote.slice(0, 34).padEnd(34)}║`);
+            if (place.connectedTo?.length) {
+              out.push(`║  CONNECTED TO:                       ║`);
+              place.connectedTo.forEach(s => {
+                const target = all.find(p => p.slug === s);
+                out.push(`║    → ${(target?.name || s).slice(0, 30).padEnd(30)}║`);
+              });
+            } else {
+              out.push(`║  No resonances detected.             ║`);
+            }
+            out.push(`╚══════════════════════════════════════╝`);
+            pushLines(out, "system");
+          });
+        break;
+      }
+      
       default:
         if (chatMode) {
           await talkToBunker(cmd);
@@ -952,11 +1025,19 @@ export default function EchoesPage() {
   });
 
   /* ─── RENDER ─── */
-  return (
-    <main
-      className="min-h-screen font-mono relative overflow-hidden selection:bg-[#9a8a72]/20"
-      style={{ backgroundColor: t.bg, color: t.primary }}
-    >
+    return (
+    <div className="vp-desk">
+      <div className="vp-desk-texture" />
+      
+      <div className="vp-crt-frame">
+        <div className="vp-crt-screen">
+          <div className="vp-crt-scanline" />
+          <div className="vp-crt-glow" />
+          
+          <main
+            className="min-h-screen font-mono relative overflow-hidden selection:bg-[#9a8a72]/20"
+            style={{ backgroundColor: "transparent", color: t.primary }}
+          >
       {/* ─── CRT LAYER ─── */}
       <div className="pointer-events-none fixed inset-0 z-[60]"
         style={{
@@ -1471,6 +1552,20 @@ export default function EchoesPage() {
 
       <VideoModal src={activeVideo?.src || ""} label={activeVideo?.label || ""} isOpen={!!activeVideo} onClose={() => setActiveVideo(null)} />
       <AssetGallery isOpen={galleryOpen} onClose={() => setGalleryOpen(false)} themeColor={t.primary} />
-    </main>
+              </main>
+        </div>
+      </div>
+      
+      {/* Desk Artifacts */}
+      <div className="vp-artifacts">
+        <div className="vp-artifact vp-artifact--photo" title="Face down. You don't look." />
+        <div className="vp-artifact vp-artifact--coffee" title="Cold. Not yours." />
+        <div className="vp-artifact vp-artifact--pen" title="Out of ink." />
+        <div className="vp-artifact vp-artifact--paper" title="Coordinates. Crossed out." />
+      </div>
+      
+      {/* Dust overlay scales with contamination */}
+      <div className="vp-dust-overlay" style={{ opacity: dust / 200 }} />
+    </div>
   );
 }

@@ -1068,3 +1068,264 @@ input::placeholder {
   font-size: 10px;
   color: rgba(122, 107, 82, 0.4);
 }
+
+/* ============================================================
+   CONDITIONAL CARTOGRAPHY — PIN STATES
+   ============================================================ */
+
+.vp-pin--sealed .map-pin-marker,
+.vp-pin--whispered .map-pin-marker,
+.vp-pin--mirage .map-pin-marker {
+  transition: all 0.4s ease;
+}
+
+.vp-pin--sealed .map-pin-marker {
+  background: #5a4a3a !important;
+  box-shadow: 0 0 10px rgba(90, 74, 58, 0.6) !important;
+}
+
+.vp-pin--whispered .map-pin-marker {
+  background: #7a6a5a !important;
+  opacity: 0.7;
+  animation: vp-pulse 3s infinite;
+}
+
+.vp-pin--mirage .map-pin-marker {
+  background: #9a8a7a !important;
+  opacity: 0.5;
+  animation: vp-fade 4s infinite;
+}
+
+@keyframes vp-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 0.3; }
+}
+
+@keyframes vp-fade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================================
+   ARCHIVIST'S DESK — TERMINAL REDESIGN
+   ============================================================ */
+
+.vp-desk {
+  min-height: 100vh;
+  background: #0f0e0c;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vp-desk-texture {
+  position: fixed;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(60, 40, 20, 0.03) 2px, rgba(60, 40, 20, 0.03) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(40, 30, 15, 0.05) 2px, rgba(40, 30, 15, 0.05) 4px),
+    linear-gradient(180deg, #1a1612 0%, #0f0e0c 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vp-crt-frame {
+  position: relative;
+  width: 96vw;
+  max-width: 1400px;
+  height: 92vh;
+  background: #2a2520;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 
+    0 0 0 1px #3a3530,
+    0 0 0 5px #1a1612,
+    0 0 0 6px rgba(122, 107, 82, 0.1),
+    0 24px 80px rgba(0, 0, 0, 0.9),
+    inset 0 0 30px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.vp-crt-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0a0a08;
+  border-radius: 40% 40% 40% 40% / 3% 3% 3% 3%;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9);
+}
+
+.vp-crt-scanline {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  pointer-events: none;
+  z-index: 50;
+  animation: vp-scanline-drift 10s linear infinite;
+}
+
+.vp-crt-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(200, 180, 140, 0.03) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 45;
+}
+
+@keyframes vp-scanline-drift {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ─── DESK ARTIFACTS ─── */
+.vp-artifacts {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.vp-artifact {
+  position: absolute;
+  pointer-events: auto;
+  cursor: help;
+  transition: transform 0.3s ease;
+}
+
+.vp-artifact:hover {
+  transform: translateY(-4px);
+}
+
+.vp-artifact--photo {
+  bottom: 24px;
+  left: 6%;
+  width: 64px;
+  height: 80px;
+  background: #3a3530;
+  border: 3px solid #e8e0d4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  transform: rotate(-10deg);
+}
+
+.vp-artifact--coffee {
+  bottom: 18px;
+  left: 16%;
+  width: 56px;
+  height: 44px;
+  background: #4a3a2a;
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.vp-artifact--coffee::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 10px;
+  background: #2a2018;
+  border-radius: 50%;
+}
+
+.vp-artifact--pen {
+  bottom: 28px;
+  right: 10%;
+  width: 90px;
+  height: 7px;
+  background: linear-gradient(90deg, #5a4a3a, #3a2e22);
+  border-radius: 4px;
+  transform: rotate(14deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.vp-artifact--paper {
+  bottom: 34px;
+  right: 20%;
+  width: 80px;
+  height: 100px;
+  background: #e8e0d4;
+  opacity: 0.55;
+  transform: rotate(4deg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── DUST OVERLAY ─── */
+.vp-dust-overlay {
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 30% 70%, rgba(160, 140, 100, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(140, 120, 90, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 25;
+  transition: opacity 2s ease;
+}
+
+/* Mobile: simplify desk */
+@media (max-width: 1023px) {
+  .vp-crt-frame {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    padding: 8px;
+  }
+  .vp-artifacts {
+    display: none;
+  }
+}
+
+/* ============================================================
+   CONDITIONAL CARTOGRAPHY — PIN STATES
+   ============================================================ */
+.vp-pin--sealed .map-pin-marker { background: #5a4a3a !important; box-shadow: 0 0 10px rgba(90,74,58,0.6) !important; }
+.vp-pin--whispered .map-pin-marker { background: #7a6a5a !important; opacity: 0.7; animation: vp-pulse 3s infinite; }
+.vp-pin--mirage .map-pin-marker { background: #9a8a7a !important; opacity: 0.5; animation: vp-fade 4s infinite; }
+
+@keyframes vp-pulse { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(1.4);opacity:0.3} }
+@keyframes vp-fade { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+/* ============================================================
+   ARCHIVIST'S DESK — TERMINAL REDESIGN
+   ============================================================ */
+.vp-desk { min-height:100vh; background:#0f0e0c; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.vp-desk-texture { position:fixed; inset:0; background: repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(60,40,20,0.03) 2px,rgba(60,40,20,0.03) 4px), repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(40,30,15,0.05) 2px,rgba(40,30,15,0.05) 4px), linear-gradient(180deg,#1a1612 0%,#0f0e0c 100%); pointer-events:none; z-index:0; }
+.vp-crt-frame { position:relative; width:96vw; max-width:1400px; height:92vh; background:#2a2520; border-radius:8px; padding:14px; box-shadow: 0 0 0 1px #3a3530, 0 0 0 5px #1a1612, 0 0 0 6px rgba(122,107,82,0.1), 0 24px 80px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.5); z-index:10; display:flex; flex-direction:column; }
+.vp-crt-screen { position:relative; width:100%; height:100%; background:#0a0a08; border-radius:40% 40% 40% 40% / 3% 3% 3% 3%; overflow:hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.9); }
+.vp-crt-scanline { position:absolute; inset:0; background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px); pointer-events:none; z-index:50; animation: vp-scanline-drift 10s linear infinite; }
+.vp-crt-glow { position:absolute; inset:0; background: radial-gradient(ellipse at center, rgba(200,180,140,0.03) 0%, transparent 70%); pointer-events:none; z-index:45; }
+@keyframes vp-scanline-drift { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+
+.vp-artifacts { position:fixed; bottom:0; left:0; right:0; height:140px; pointer-events:none; z-index:5; }
+.vp-artifact { position:absolute; pointer-events:auto; cursor:help; transition:transform 0.3s ease; }
+.vp-artifact:hover { transform:translateY(-4px); }
+.vp-artifact--photo { bottom:24px; left:6%; width:64px; height:80px; background:#3a3530; border:3px solid #e8e0d4; box-shadow:0 4px 16px rgba(0,0,0,0.6); transform:rotate(-10deg); }
+.vp-artifact--coffee { bottom:18px; left:16%; width:56px; height:44px; background:#4a3a2a; border-radius:50% 50% 45% 45%; box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.vp-artifact--coffee::after { content:""; position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:40px; height:10px; background:#2a2018; border-radius:50%; }
+.vp-artifact--pen { bottom:28px; right:10%; width:90px; height:7px; background:linear-gradient(90deg,#5a4a3a,#3a2e22); border-radius:4px; transform:rotate(14deg); box-shadow:0 2px 8px rgba(0,0,0,0.4); }
+.vp-artifact--paper { bottom:34px; right:20%; width:80px; height:100px; background:#e8e0d4; opacity:0.55; transform:rotate(4deg); box-shadow:0 2px 10px rgba(0,0,0,0.25); }
+.vp-dust-overlay { position:fixed; inset:0; background: radial-gradient(circle at 30% 70%, rgba(160,140,100,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(140,120,90,0.06) 0%, transparent 50%); pointer-events:none; z-index:25; transition:opacity 2s ease; }
+
+@media (max-width: 1023px) {
+  .vp-crt-frame { width:100vw; height:100dvh; border-radius:0; padding:8px; }
+  .vp-artifacts { display:none; }
+}

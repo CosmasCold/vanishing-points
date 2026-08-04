@@ -550,9 +550,9 @@ export function syncMemoryFromState(state: WitnessState) {
   if (typeof window === "undefined") return;
   const mem = getMemory();
   // Merge visited slugs
-  if (state.visitedSlugs && state.visitedSlugs.length > 0) {
-    mem.visitedSlugs = [...new Set([...mem.visitedSlugs, ...state.visitedSlugs])];
-  }
+if (state.visitedSlugs && state.visitedSlugs.length > 0) {
+  mem.visitedSlugs = Array.from(new Set([...mem.visitedSlugs, ...state.visitedSlugs]));
+}
   mem.dustAtLastVisit = state.dust;
   saveMemory(mem);
 }

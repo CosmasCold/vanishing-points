@@ -1,510 +1,343 @@
 'use client';
 
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useGLTF, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 // ─── PALETTE ───
-const WALNUT_DARK = new THREE.Color('#1e1610');
-const WALNUT_MID = new THREE.Color('#2a2018');
-const GUNMETAL = new THREE.Color('#2e2e32');
-const GUNMETAL_DARK = new THREE.Color('#1e1e22');
-const PHOSPHOR_AMBER = new THREE.Color('#ffb000');
-const TUNGSTEN = new THREE.Color('#ffecd2');
+const PHOSPHOR = '#ffb000';
+const PHOSPHOR_DIM = '#8a6000';
+const GREEN_OK = '#5a8a4a';
+const AMBER_WARN = '#b8943a';
+const IVORY = '#e8e0d0';
+
+// ─── ASSET PATHS ───
+const ASSETS = {
+  crt: '/assets/models/crt/television_02_4k.glb',
+  desk: '/assets/models/desk/metal_office_desk_4k.glb',
+  lamp: '/assets/models/lamp/industrial_pipe_lamp_4k.glb',
+  chair: '/assets/models/chair/GreenChair_01_4k.glb',
+  notebook: '/assets/models/notebook/binder_notebook_4k.glb',
+  cassette: '/assets/models/cassette-player/cassette_player_4k.glb',
+  shelf: '/assets/models/bookshelf/Shelf_01_4k.glb',
+  books: '/assets/models/books/book_encyclopedia_set_01_4k.glb',
+  camera: '/assets/models/camera/Camera_01_4k.glb',
+  hdri: '/assets/hdri/rainy-night/vignaioli_night_4k.exr',
+};
+
+// ─── PRELOAD ALL ASSETS ───
+if (typeof window !== 'undefined') {
+  useGLTF.preload(ASSETS.crt);
+  useGLTF.preload(ASSETS.desk);
+  useGLTF.preload(ASSETS.lamp);
+  useGLTF.preload(ASSETS.chair);
+  useGLTF.preload(ASSETS.notebook);
+  useGLTF.preload(ASSETS.cassette);
+  useGLTF.preload(ASSETS.shelf);
+  useGLTF.preload(ASSETS.books);
+  useGLTF.preload(ASSETS.camera);
+}
 
 // ─── DUST PARTICLES ───
-function DustParticles({ count = 150 }: { count?: number }) {
-  const meshRef = useRef<THREE.Points>(null);
-  const { viewport } = useThree();
-
-  const [positions, velocities, lifetimes] = useMemo(() => {
+function DustParticles({ count = 120 }) {
+  const ref = useRef<THREE.Points>(null);
+  const particles = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const vel = new Float32Array(count * 3);
-    const life = new Float32Array(count * 2); // [current, max]
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 20;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 10 + 2;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 15;
-      vel[i * 3] = (Math.random() - 0.5) * 0.003;
-      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.001 + 0.0005;
-      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.002;
-      life[i * 2] = Math.random() * 1000;
-      life[i * 2 + 1] = 500 + Math.random() * 1000;
+      pos[i * 3] = (Math.random() - 0.5) * 12;
+      pos[i * 3 + 1] = Math.random() * 6;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      vel[i * 3] = (Math.random() - 0.5) * 0.0008;
+      vel[i * 3 + 1] = Math.random() * 0.0003;
+      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.0005;
     }
-    return [pos, vel, life];
+    return { pos, vel };
   }, [count]);
 
   useFrame(() => {
-    if (!meshRef.current) return;
-    const posArray = meshRef.current.geometry.attributes.position.array as Float32Array;
+    if (!ref.current) return;
+    const arr = ref.current.geometry.attributes.position.array as Float32Array;
     for (let i = 0; i < count; i++) {
-      lifetimes[i * 2]++;
-      if (lifetimes[i * 2] > lifetimes[i * 2 + 1]) {
-        lifetimes[i * 2] = 0;
-        posArray[i * 3] = (Math.random() - 0.5) * 20;
-        posArray[i * 3 + 1] = -3 + Math.random() * 2;
-        posArray[i * 3 + 2] = (Math.random() - 0.5) * 15;
-      }
-      posArray[i * 3] += velocities[i * 3];
-      posArray[i * 3 + 1] += velocities[i * 3 + 1];
-      posArray[i * 3 + 2] += velocities[i * 3 + 2];
+      arr[i * 3] += particles.vel[i * 3];
+      arr[i * 3 + 1] += particles.vel[i * 3 + 1];
+      arr[i * 3 + 2] += particles.vel[i * 3 + 2];
+      if (arr[i * 3 + 1] > 6) arr[i * 3 + 1] = 0;
     }
-    meshRef.current.geometry.attributes.position.needsUpdate = true;
+    ref.current.geometry.attributes.position.needsUpdate = true;
   });
 
   return (
-    <points ref={meshRef}>
+    <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
+        <bufferAttribute attach="attributes-position" count={count} array={particles.pos} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial
-        size={0.025}
-        color="#c4b8a0"
-        transparent
-        opacity={0.4}
-        sizeAttenuation
-        depthWrite={false}
-      />
+      <pointsMaterial size={0.02} color="#c4b8a0" transparent opacity={0.35} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
 
-// ─── WALNUT DESK ───
-function Desk() {
-  const texture = useMemo(() => {
+// ─── CRT SCREEN WITH CANVAS TEXT ───
+function CRTScreen({ visibleCount, showPrompt, cursorOn }: { visibleCount: number; showPrompt: boolean; cursorOn: boolean }) {
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const LINES = useMemo(() => [
+    { text: 'POWER RESTORED', type: 'system' },
+    { text: '', type: 'spacer' },
+    { text: 'Loading Archive Kernel...', type: 'info' },
+    { text: '  [OK]  Kernel v4.2.1-stable', type: 'ok' },
+    { text: '  [OK]  Memory banks 1–16', type: 'ok' },
+    { text: '  [OK]  Magnetic drum array', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Initializing Atlas...', type: 'info' },
+    { text: '  [OK]  Geodetic reference frame loaded', type: 'ok' },
+    { text: '  [OK]  159 locations indexed', type: 'ok' },
+    { text: '  [WARN]  Coordinate drift in sector 7-B', type: 'warn' },
+    { text: '', type: 'spacer' },
+    { text: 'Checking Integrity...', type: 'info' },
+    { text: '  [OK]  Document repository', type: 'ok' },
+    { text: '  [OK]  Evidence chain verified', type: 'ok' },
+    { text: '  [OK]  BUNKER_7 relay stable', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Loading Investigations...', type: 'info' },
+    { text: '  [OK]  3 active cases', type: 'ok' },
+    { text: '  [OK]  1 pending review', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Synchronizing Evidence...', type: 'info' },
+    { text: '  [OK]  Cross-reference matrix built', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Loading Local Cache...', type: 'info' },
+    { text: '  [OK]  847 artifacts recovered', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Dust Index: STABLE', type: 'ok' },
+    { text: '', type: 'spacer' },
+    { text: 'Good evening, Investigator.', type: 'final' },
+  ], []);
+
+  useEffect(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d')!;
-
-    // Base walnut
-    ctx.fillStyle = '#2a2018';
-    ctx.fillRect(0, 0, 1024, 1024);
-
-    // Wood grain
-    for (let i = 0; i < 200; i++) {
-      ctx.strokeStyle = `rgba(${30 + Math.random() * 20}, ${20 + Math.random() * 15}, ${10 + Math.random() * 10}, ${0.1 + Math.random() * 0.15})`;
-      ctx.lineWidth = 1 + Math.random() * 3;
-      ctx.beginPath();
-      const y = Math.random() * 1024;
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(300, y + (Math.random() - 0.5) * 50, 700, y + (Math.random() - 0.5) * 50, 1024, y + (Math.random() - 0.5) * 30);
-      ctx.stroke();
-    }
-
-    // Scratches
-    for (let i = 0; i < 30; i++) {
-      ctx.strokeStyle = `rgba(60, 45, 30, ${0.1 + Math.random() * 0.2})`;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      const x = 200 + Math.random() * 600;
-      const y = 200 + Math.random() * 600;
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 20);
-      ctx.stroke();
-    }
-
-    // Coffee ring
-    ctx.strokeStyle = 'rgba(80, 55, 30, 0.08)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(700, 300, 35, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(80, 55, 30, 0.04)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(700, 300, 38, 0, Math.PI * 2);
-    ctx.stroke();
-
+    canvas.height = 768;
+    canvasRef.current = canvas;
     const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    return tex;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    setTexture(tex);
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const tex = texture;
+    if (!canvas || !tex) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = '#0a0a06';
+    ctx.fillRect(0, 0, 1024, 768);
+
+    const grad = ctx.createRadialGradient(512, 384, 0, 512, 384, 500);
+    grad.addColorStop(0, 'rgba(255, 176, 0, 0.04)');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 768);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let y = 0; y < 768; y += 4) {
+      ctx.fillRect(0, y, 1024, 2);
+    }
+
+    ctx.font = '22px "Courier New", monospace';
+    ctx.textBaseline = 'top';
+    const lineHeight = 32;
+    const startY = 60;
+
+    for (let i = 0; i < visibleCount && i < LINES.length; i++) {
+      const line = LINES[i];
+      const isLast = i === visibleCount - 1;
+      let color = PHOSPHOR;
+      if (line.type === 'ok') color = GREEN_OK;
+      if (line.type === 'warn') color = AMBER_WARN;
+      if (line.type === 'final') color = IVORY;
+
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = line.type === 'final' ? 12 : 6;
+      ctx.fillText(line.text, 60, startY + i * lineHeight);
+      ctx.shadowBlur = 0;
+
+      if (isLast && !showPrompt && cursorOn) {
+        ctx.fillStyle = color;
+        ctx.fillRect(60 + ctx.measureText(line.text).width + 4, startY + i * lineHeight + 2, 12, 22);
+      }
+    }
+
+    if (showPrompt) {
+      const promptY = startY + LINES.length * lineHeight + 20;
+      ctx.fillStyle = PHOSPHOR_DIM;
+      ctx.fillText('Press ENTER to access the Archive', 60, promptY);
+      if (cursorOn) {
+        ctx.fillRect(60 + ctx.measureText('Press ENTER to access the Archive').width + 4, promptY + 2, 12, 22);
+      }
+    }
+
+    tex.needsUpdate = true;
+  }, [visibleCount, showPrompt, cursorOn, texture, LINES]);
+
+  if (!texture) return null;
+
   return (
-    <mesh position={[0, -1.2, 0]} receiveShadow>
-      <boxGeometry args={[8, 0.15, 4]} />
-      <meshStandardMaterial map={texture} roughness={0.7} metalness={0.05} />
+    <mesh position={[0, 0.38, 0.18]}>
+      <planeGeometry args={[1.1, 0.82]} />
+      <meshStandardMaterial
+        map={texture}
+        emissive={new THREE.Color(PHOSPHOR)}
+        emissiveMap={texture}
+        emissiveIntensity={0.4}
+        roughness={0.2}
+        metalness={0.1}
+        transparent
+      />
     </mesh>
   );
 }
 
-// ─── MONITOR ───
-function Monitor() {
-  const groupRef = useRef<THREE.Group>(null);
+// ─── LOADED MODELS ───
+function DeskModel() {
+  const { scene } = useGLTF(ASSETS.desk);
+  return <primitive object={scene.clone()} position={[0, -1.1, 0]} scale={1.2} />;
+}
 
-  // CRT screen glow
-  const screenGlow = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 384;
-    const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#080805';
-    ctx.fillRect(0, 0, 512, 384);
-    // Subtle phosphor glow center
-    const grad = ctx.createRadialGradient(256, 192, 0, 256, 192, 300);
-    grad.addColorStop(0, 'rgba(255, 176, 0, 0.08)');
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 384);
-    // Scanlines
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    for (let y = 0; y < 384; y += 3) {
-      ctx.fillRect(0, y, 512, 1);
-    }
-    return new THREE.CanvasTexture(canvas);
-  }, []);
-
+function CRTModel({ visibleCount, showPrompt, cursorOn }: { visibleCount: number; showPrompt: boolean; cursorOn: boolean }) {
+  const { scene } = useGLTF(ASSETS.crt);
   return (
-    <group ref={groupRef} position={[0.8, -0.4, -0.3]} rotation={[0, -0.15, 0]}>
-      {/* Monitor stand */}
-      <mesh position={[0, -0.35, 0]} castShadow>
-        <boxGeometry args={[0.8, 0.5, 0.6]} />
-        <meshStandardMaterial color={GUNMETAL_DARK} roughness={0.5} metalness={0.3} />
+    <group position={[0.6, -0.15, -0.2]} rotation={[0, -0.12, 0]} scale={0.9}>
+      <primitive object={scene.clone()} />
+      <CRTScreen visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+      <pointLight position={[0, 0.4, 0.3]} color={new THREE.Color(PHOSPHOR)} intensity={0.8} distance={3} decay={2} />
+    </group>
+  );
+}
+
+function LampModel() {
+  const { scene } = useGLTF(ASSETS.lamp);
+  return (
+    <group position={[-1.0, -0.9, 0.4]} rotation={[0, 0.3, 0]} scale={0.7}>
+      <primitive object={scene.clone()} />
+      <pointLight position={[0.2, 0.6, 0]} color={new THREE.Color('#ffecd2')} intensity={5} distance={5} decay={2} castShadow />
+    </group>
+  );
+}
+
+function ChairModel() {
+  const { scene } = useGLTF(ASSETS.chair);
+  return <primitive object={scene.clone()} position={[-0.3, -1.1, 1.2]} rotation={[0, -0.4, 0]} scale={0.9} />;
+}
+
+function NotebookModel() {
+  const { scene } = useGLTF(ASSETS.notebook);
+  return <primitive object={scene.clone()} position={[-0.6, -1.05, 0.5]} rotation={[0, 0.5, 0]} scale={0.4} />;
+}
+
+function CassetteModel() {
+  const { scene } = useGLTF(ASSETS.cassette);
+  return <primitive object={scene.clone()} position={[1.2, -1.02, 0.3]} rotation={[0, -0.3, 0]} scale={0.3} />;
+}
+
+function ShelfModel() {
+  const { scene } = useGLTF(ASSETS.shelf);
+  return <primitive object={scene.clone()} position={[3.5, 0, -3]} rotation={[0, -0.2, 0]} scale={1.5} />;
+}
+
+function BooksModel() {
+  const { scene } = useGLTF(ASSETS.books);
+  return <primitive object={scene.clone()} position={[3.2, 0.85, -2.8]} rotation={[0, 0.1, 0]} scale={0.6} />;
+}
+
+function CameraModel() {
+  const { scene } = useGLTF(ASSETS.camera);
+  return <primitive object={scene.clone()} position={[-0.3, -1.02, 0.1]} rotation={[0, 0.8, 0]} scale={0.25} />;
+}
+
+// ─── ROOM SHELL ───
+function Room() {
+  return (
+    <group>
+      <mesh position={[0, 1.5, -4.5]} receiveShadow>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#1a1815" roughness={0.95} />
       </mesh>
-
-      {/* Monitor body */}
-      <mesh position={[0, 0.1, 0]} castShadow>
-        <boxGeometry args={[2.2, 1.6, 1.2]} />
-        <meshStandardMaterial color={GUNMETAL} roughness={0.4} metalness={0.2} />
+      <mesh position={[-5, 1.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#1a1815" roughness={0.95} />
       </mesh>
-
-      {/* Bezel */}
-      <mesh position={[0, 0.1, 0.61]}>
-        <boxGeometry args={[2.0, 1.4, 0.05]} />
-        <meshStandardMaterial color={GUNMETAL_DARK} roughness={0.3} metalness={0.4} />
+      <mesh position={[5, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#1a1815" roughness={0.95} />
       </mesh>
-
-      {/* Screen */}
-      <mesh position={[0, 0.1, 0.64]}>
-        <planeGeometry args={[1.8, 1.2]} />
-        <meshBasicMaterial map={screenGlow} />
-      </mesh>
-
-      {/* Screen glass curvature overlay */}
-      <mesh position={[0, 0.1, 0.66]}>
-        <planeGeometry args={[1.8, 1.2, 16, 16]} />
-        <meshStandardMaterial
-          color="#000000"
-          transparent
-          opacity={0.15}
-          roughness={0.1}
-          metalness={0.1}
-        />
-      </mesh>
-
-      {/* Vents */}
-      {[-0.6, -0.3, 0, 0.3, 0.6].map((x, i) => (
-        <mesh key={i} position={[x, -0.6, 0.4]}>
-          <boxGeometry args={[0.15, 0.03, 0.4]} />
-          <meshStandardMaterial color="#151518" />
-        </mesh>
-      ))}
-
-      {/* Manufacturer plate */}
-      <mesh position={[0, -0.55, 0.61]}>
-        <planeGeometry args={[0.6, 0.1]} />
-        <meshBasicMaterial color="#1a1a1e" />
+      <mesh position={[0, -1.3, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial color="#151210" roughness={0.95} />
       </mesh>
     </group>
   );
 }
 
-// ─── DESK LAMP ───
-function DeskLamp() {
-  return (
-    <group position={[-1.2, -0.5, 0.5]}>
-      {/* Base */}
-      <mesh position={[0, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.18, 0.08, 16]} />
-        <meshStandardMaterial color="#8a7a5a" roughness={0.3} metalness={0.6} />
-      </mesh>
-      {/* Arm */}
-      <mesh position={[0.1, 0.25, 0]} rotation={[0, 0, -0.3]}>
-        <cylinderGeometry args={[0.02, 0.025, 0.5, 8]} />
-        <meshStandardMaterial color="#7a6a4a" roughness={0.3} metalness={0.6} />
-      </mesh>
-      {/* Shade */}
-      <mesh position={[0.25, 0.45, 0]} rotation={[0, 0, 0.5]} castShadow>
-        <coneGeometry args={[0.12, 0.2, 16, 1, true]} />
-        <meshStandardMaterial color="#6a5a3a" roughness={0.4} metalness={0.5} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Light bulb glow */}
-      <pointLight
-        position={[0.25, 0.4, 0]}
-        color={TUNGSTEN}
-        intensity={3}
-        distance={6}
-        decay={2}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-    </group>
-  );
+// ─── CAMERA ANIMATION ───
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-// ─── KEYBOARD ───
-function Keyboard() {
-  return (
-    <group position={[0.8, -1.12, 0.8]} rotation={[0.1, -0.15, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[1.0, 0.04, 0.4]} />
-        <meshStandardMaterial color="#3a3a3e" roughness={0.6} metalness={0.1} />
-      </mesh>
-      {/* Keys */}
-      {Array.from({ length: 40 }).map((_, i) => {
-        const row = Math.floor(i / 10);
-        const col = i % 10;
-        return (
-          <mesh key={i} position={[(col - 4.5) * 0.09, 0.03, (row - 1.5) * 0.09]}>
-            <boxGeometry args={[0.06, 0.03, 0.06]} />
-            <meshStandardMaterial color="#2a2a2e" roughness={0.8} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-// ─── NOTEBOOK ───
-function Notebook() {
-  return (
-    <group position={[-0.5, -1.1, 0.6]} rotation={[0, 0.3, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[0.4, 0.03, 0.55]} />
-        <meshStandardMaterial color="#4a3a2a" roughness={0.9} />
-      </mesh>
-      {/* Pages */}
-      <mesh position={[0, 0.02, 0]}>
-        <boxGeometry args={[0.38, 0.01, 0.53]} />
-        <meshStandardMaterial color="#e8e0d0" roughness={0.95} />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── COFFEE MUG ───
-function CoffeeMug() {
-  return (
-    <group position={[-1.8, -1.05, 0.3]}>
-      <mesh castShadow>
-        <cylinderGeometry args={[0.08, 0.07, 0.18, 16]} />
-        <meshStandardMaterial color="#6a5a4a" roughness={0.7} />
-      </mesh>
-      {/* Handle */}
-      <mesh position={[0.1, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.04, 0.012, 8, 16, Math.PI]} />
-        <meshStandardMaterial color="#6a5a4a" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── EVIDENCE ENVELOPE ───
-function EvidenceEnvelope() {
-  return (
-    <group position={[1.8, -1.08, 0.4]} rotation={[0, -0.2, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[0.35, 0.015, 0.25]} />
-        <meshStandardMaterial color="#c4b090" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── ARCHIVAL CABINETS (background) ───
-function ArchivalCabinets() {
-  return (
-    <group position={[-3.5, 0, -3]}>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <group key={i} position={[i * 1.2, 0, 0]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[1.0, 3.5, 0.8]} />
-            <meshStandardMaterial color="#2a2520" roughness={0.8} />
-          </mesh>
-          {/* Drawers */}
-          {[0.8, 0.2, -0.4, -1.0].map((y, j) => (
-            <mesh key={j} position={[0, y, 0.41]}>
-              <boxGeometry args={[0.85, 0.35, 0.02]} />
-              <meshStandardMaterial color="#3a3530" roughness={0.7} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-    </group>
-  );
-}
-
-// ─── BOOKSHELF (background) ───
-function Bookshelf() {
-  return (
-    <group position={[3, 0.5, -3.5]}>
-      <mesh castShadow>
-        <boxGeometry args={[2.5, 3.5, 0.6]} />
-        <meshStandardMaterial color="#3a3028" roughness={0.85} />
-      </mesh>
-      {/* Books */}
-      {Array.from({ length: 20 }).map((_, i) => {
-        const row = Math.floor(i / 7);
-        const col = i % 7;
-        const colors = ['#4a3a2a', '#5a4a3a', '#3a2e20', '#6a5a4a', '#4a4030'];
-        return (
-          <mesh key={i} position={[(col - 3) * 0.3, 1.2 - row * 0.9, 0.35]}>
-            <boxGeometry args={[0.08 + Math.random() * 0.04, 0.7, 0.5]} />
-            <meshStandardMaterial color={colors[i % colors.length]} roughness={0.9} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-// ─── WALL MAP ───
-function WallMap() {
-  return (
-    <group position={[0, 1.5, -4.2]}>
-      <mesh>
-        <planeGeometry args={[3, 2]} />
-        <meshStandardMaterial color="#d4c8a8" roughness={0.9} />
-      </mesh>
-      {/* Frame */}
-      <mesh position={[0, 0, -0.02]}>
-        <boxGeometry args={[3.1, 2.1, 0.04]} />
-        <meshStandardMaterial color="#3a3028" roughness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── WINDOW WITH RAIN ───
-function Window() {
-  return (
-    <group position={[4, 1, -2]} rotation={[0, -0.5, 0]}>
-      {/* Window frame */}
-      <mesh>
-        <boxGeometry args={[1.5, 2, 0.1]} />
-        <meshStandardMaterial color="#2a2520" roughness={0.8} />
-      </mesh>
-      {/* Glass */}
-      <mesh position={[0, 0, 0.06]}>
-        <planeGeometry args={[1.3, 1.8]} />
-        <meshStandardMaterial
-          color="#1a2030"
-          roughness={0.1}
-          metalness={0.1}
-          transparent
-          opacity={0.6}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── CAMERA CONTROLLER ───
-function CameraController({ mousePos }: { mousePos: { x: number; y: number } }) {
+function CameraRig() {
   const { camera } = useThree();
-  const targetRotation = useRef({ x: 0, y: 0 });
-  const currentRotation = useRef({ x: 0, y: 0 });
+  const targetPos = useRef(new THREE.Vector3(0.5, 0.3, 2.8));
+  const startPos = useRef(new THREE.Vector3(0, 2.5, 6));
+  const progress = useRef(0);
 
-  useFrame(() => {
-    targetRotation.current.x = (mousePos.y - 0.5) * 0.08;
-    targetRotation.current.y = (mousePos.x - 0.5) * 0.06;
-
-    currentRotation.current.x += (targetRotation.current.x - currentRotation.current.x) * 0.03;
-    currentRotation.current.y += (targetRotation.current.y - currentRotation.current.y) * 0.03;
-
-    camera.rotation.x = currentRotation.current.x;
-    camera.rotation.y = currentRotation.current.y;
+  useFrame((state, delta) => {
+    progress.current = Math.min(progress.current + delta * 0.15, 1);
+    const t = easeInOutCubic(progress.current);
+    camera.position.lerpVectors(startPos.current, targetPos.current, t);
+    camera.lookAt(0.5, 0, 0);
   });
 
   return null;
 }
 
 // ─── MAIN SCENE ───
-export function BootScene({ mousePos }: { mousePos: { x: number; y: number } }) {
+export function BootScene({ visibleCount, showPrompt, cursorOn }: { visibleCount: number; showPrompt: boolean; cursorOn: boolean }) {
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 0.5, 3.5], fov: 50, near: 0.1, far: 50 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.8 }}
+      camera={{ position: [0, 2.5, 6], fov: 45, near: 0.1, far: 50 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.85 }}
       style={{ position: 'absolute', inset: 0, background: '#0a0806' }}
     >
-      <CameraController mousePos={mousePos} />
+      <CameraRig />
 
-      {/* Ambient — very dim, just enough to see shapes */}
+      <Environment files={ASSETS.hdri} background={false} />
+
       <ambientLight intensity={0.08} color="#4a4a5a" />
+      <directionalLight position={[3, 4, 2]} intensity={0.15} color="#8a9aaa" castShadow />
 
-      {/* CRT screen glow — cool amber on the desk/wall behind */}
-      <pointLight
-        position={[0.8, 0.2, -0.5]}
-        color={PHOSPHOR_AMBER}
-        intensity={0.8}
-        distance={4}
-        decay={2}
-      />
+      <DeskModel />
+      <CRTModel visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+      <LampModel />
+      <ChairModel />
+      <NotebookModel />
+      <CassetteModel />
+      <ShelfModel />
+      <BooksModel />
+      <CameraModel />
+      <Room />
+      <DustParticles />
 
-      {/* Very soft fill from above — moonlight/ambient building */}
-      <directionalLight
-        position={[2, 5, 2]}
-        intensity={0.15}
-        color="#8a9aaa"
-        castShadow
-      />
-
-      <Desk />
-      <Monitor />
-      <DeskLamp />
-      <Keyboard />
-      <Notebook />
-      <CoffeeMug />
-      <EvidenceEnvelope />
-      <ArchivalCabinets />
-      <Bookshelf />
-      <WallMap />
-      <Window />
-      <DustParticles count={120} />
-
-      {/* Room walls — barely visible */}
-      <mesh position={[0, 1, -4.5]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#1a1815" roughness={0.95} />
-      </mesh>
-      <mesh position={[-5, 1, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#1a1815" roughness={0.95} />
-      </mesh>
-      <mesh position={[5, 1, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#1a1815" roughness={0.95} />
-      </mesh>
-      {/* Floor */}
-      <mesh position={[0, -1.3, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#151210" roughness={0.95} />
-      </mesh>
-
-      {/* Post-processing */}
       <EffectComposer>
-        <Bloom
-          intensity={0.3}
-          luminanceThreshold={0.2}
-          luminanceSmoothing={0.9}
-        />
-        <Vignette
-          offset={0.3}
-          darkness={0.7}
-          eskil={false}
-        />
-        <Noise
-          opacity={0.08}
-        />
+        <Bloom intensity={0.35} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
+        <Vignette offset={0.3} darkness={0.7} eskil={false} />
+        <Noise opacity={0.06} />
       </EffectComposer>
     </Canvas>
   );

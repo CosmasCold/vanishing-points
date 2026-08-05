@@ -1,146 +1,225 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Howl } from 'howler';
 import { useBootStore } from '@/state/bootStore';
 import { useUIStore } from '@/state/uiStore';
-import { BootScene } from './BootScene';
-import { useBootAudio } from '@/hooks/useBootAudio';
+import BootScene from './BootScene';
 
-// ─── BOOT LINES ───
-const LINES = [
-  { text: 'POWER RESTORED', type: 'system', delay: 800, audio: 'power' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Loading Archive Kernel...', type: 'info', delay: 1000, audio: 'relay' },
-  { text: '  [OK]  Kernel v4.2.1-stable', type: 'ok', delay: 280, audio: 'relay' },
-  { text: '  [OK]  Memory banks 1–16', type: 'ok', delay: 220, audio: 'relay' },
-  { text: '  [OK]  Magnetic drum array', type: 'ok', delay: 380, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Initializing Atlas...', type: 'info', delay: 1100, audio: 'relay' },
-  { text: '  [OK]  Geodetic reference frame loaded', type: 'ok', delay: 280, audio: 'relay' },
-  { text: '  [OK]  159 locations indexed', type: 'ok', delay: 220, audio: 'relay' },
-  { text: '  [WARN]  Coordinate drift in sector 7-B', type: 'warn', delay: 600, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Checking Integrity...', type: 'info', delay: 900, audio: 'relay' },
-  { text: '  [OK]  Document repository', type: 'ok', delay: 250, audio: 'relay' },
-  { text: '  [OK]  Evidence chain verified', type: 'ok', delay: 250, audio: 'relay' },
-  { text: '  [OK]  BUNKER_7 relay stable', type: 'ok', delay: 400, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Loading Investigations...', type: 'info', delay: 800, audio: 'relay' },
-  { text: '  [OK]  3 active cases', type: 'ok', delay: 250, audio: 'relay' },
-  { text: '  [OK]  1 pending review', type: 'ok', delay: 250, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Synchronizing Evidence...', type: 'info', delay: 900, audio: 'relay' },
-  { text: '  [OK]  Cross-reference matrix built', type: 'ok', delay: 350, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 400 },
-  { text: 'Loading Local Cache...', type: 'info', delay: 700, audio: 'relay' },
-  { text: '  [OK]  847 artifacts recovered', type: 'ok', delay: 250, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 500 },
-  { text: 'Dust Index: STABLE', type: 'ok', delay: 800, audio: 'relay' },
-  { text: '', type: 'spacer', delay: 800 },
-  { text: 'Good evening, Investigator.', type: 'final', delay: 2500 },
-];
+/* ───────────────────────────────────────────
+   AUDIO CONFIGURATION
+   ─────────────────────────────────────────── */
+const AUDIO_PATHS = {
+  powerClick: '/audio/boot/power_click.mp3',
+  crtWarmup: '/audio/boot/crt_warmup.wav',
+  relayClick: '/audio/boot/relay_click.wav',
+  roomTone: '/audio/boot/room_tone.mp3',
+  rain: '/audio/boot/rain.mp3',
+};
 
-export const BootSequence: React.FC = () => {
-  const { isComplete, markComplete } = useBootStore();
-  const { setBooted } = useUIStore();
-  const { playPowerClick, startCrtWarmup, playRelayClick, fadeOutAll } = useBootAudio();
+/* ───────────────────────────────────────────
+   BOOT SEQUENCE COMPONENT
+   ─────────────────────────────────────────── */
+export function BootSequence() {
+  const markComplete = useBootStore((s) => s.markComplete);
+  const setBooted = useUIStore((s) => s.setBooted);
 
   const [visibleCount, setVisibleCount] = useState(0);
-  const [cursorOn, setCursorOn] = useState(true);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [cursorOn, setCursorOn] = useState(true);
+  const [cameraActive, setCameraActive] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [skipReady, setSkipReady] = useState(false);
 
-  const timeoutsRef = useRef<number[]>([]);
+  const audioRef = useRef<{
+    roomTone?: Howl;
+    rain?: Howl;
+    crtWarmup?: Howl;
+    powerClick?: Howl;
+    relayClick?: Howl;
+  }>({});
+  const timersRef = useRef<number[]>([]);
+  const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── AUTO-START SEQUENCE ──
+  const BOOT_LINES = 9;
+
+  /* ── Audio Setup ── */
   useEffect(() => {
-    if (isComplete || started) return;
-    setStarted(true);
+    const a = audioRef.current;
 
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-
-    const push = (fn: () => void, ms: number) => {
-      timeoutsRef.current.push(window.setTimeout(fn, ms));
-    };
-
-    let accumulated = 500;
-
-    // Start CRT warmup at 1.5s
-    push(() => startCrtWarmup(), 1500);
-
-    LINES.forEach((line, i) => {
-      accumulated += line.delay;
-      push(() => {
-        setVisibleCount(i + 1);
-        if (line.audio === 'power') playPowerClick();
-        if (line.audio === 'relay') playRelayClick();
-      }, accumulated);
+    a.roomTone = new Howl({
+      src: [AUDIO_PATHS.roomTone],
+      loop: true,
+      volume: 0.15,
+      autoplay: false,
     });
 
-    accumulated += 2000;
-    push(() => setShowPrompt(true), accumulated);
+    a.rain = new Howl({
+      src: [AUDIO_PATHS.rain],
+      loop: true,
+      volume: 0.2,
+      autoplay: false,
+    });
+
+    a.crtWarmup = new Howl({
+      src: [AUDIO_PATHS.crtWarmup],
+      loop: true,
+      volume: 0,
+      autoplay: false,
+    });
+
+    a.powerClick = new Howl({
+      src: [AUDIO_PATHS.powerClick],
+      volume: 0.6,
+    });
+
+    a.relayClick = new Howl({
+      src: [AUDIO_PATHS.relayClick],
+      volume: 0.35,
+    });
+
+    // Start ambient immediately
+    a.roomTone?.play();
+    a.rain?.play();
 
     return () => {
-      timeoutsRef.current.forEach(clearTimeout);
+      Object.values(a).forEach((sound) => sound?.unload());
+      timersRef.current.forEach((id) => clearTimeout(id));
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
     };
-  }, [isComplete, started, playPowerClick, startCrtWarmup, playRelayClick]);
-
-  // cursor blink
-  useEffect(() => {
-    const id = setInterval(() => setCursorOn((v) => !v), 530);
-    return () => clearInterval(id);
   }, []);
 
-  // skip key
+  /* ── Cursor blink ── */
   useEffect(() => {
-    const onKey = () => {
-      if (showPrompt || exiting || isComplete) return;
-      timeoutsRef.current.forEach(clearTimeout);
-      setVisibleCount(LINES.length);
-      setShowPrompt(true);
+    cursorIntervalRef.current = setInterval(() => {
+      setCursorOn((p) => !p);
+    }, 530);
+    return () => {
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showPrompt, exiting, isComplete]);
+  }, []);
 
-  const handleEnter = useCallback(() => {
-    if (exiting || isComplete) return;
-    setExiting(true);
-    timeoutsRef.current.forEach(clearTimeout);
-    fadeOutAll();
-    setTimeout(() => {
-      markComplete();
-      setBooted(true);
-    }, 2500);
-  }, [exiting, isComplete, markComplete, setBooted, fadeOutAll]);
+  /* ── Boot Timing Sequence ── */
+  useEffect(() => {
+    const a = audioRef.current;
+    const t = timersRef.current;
 
-  if (isComplete) return null;
+    // 0.8s — Power relay click + first line
+    t.push(window.setTimeout(() => {
+      a.powerClick?.play();
+      setVisibleCount(1);
+      setCameraActive(true);
+    }, 800));
+
+    // 1.5s — CRT warmup fades in
+    t.push(window.setTimeout(() => {
+      a.crtWarmup?.fade(0, 0.4, 3000);
+      a.crtWarmup?.play();
+    }, 1500));
+
+    // 2.5s–14s — Boot lines type out
+    const lineTimes = [2500, 3500, 4700, 5900, 7100, 8300, 9500, 11200, 14000];
+    lineTimes.forEach((time, idx) => {
+      if (idx === 0) return; // Already handled at 800ms
+      t.push(window.setTimeout(() => {
+        a.relayClick?.rate(0.95 + Math.random() * 0.1);
+        a.relayClick?.play();
+        setVisibleCount(idx + 1);
+      }, time));
+    });
+
+    // 16s — Show prompt
+    t.push(window.setTimeout(() => {
+      setShowPrompt(true);
+      setSkipReady(true);
+    }, 16000));
+
+    return () => {
+      t.forEach((id) => clearTimeout(id));
+    };
+  }, []);
+
+  /* ── Keyboard Handler ── */
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (exiting) return;
+
+      if (e.key === 'Enter' && showPrompt) {
+        setExiting(true);
+        // Fade audio
+        const a = audioRef.current;
+        a.roomTone?.fade(a.roomTone?.volume() ?? 0, 0, 2500);
+        a.rain?.fade(a.rain?.volume() ?? 0, 0, 2500);
+        a.crtWarmup?.fade(a.crtWarmup?.volume() ?? 0, 0, 2500);
+
+        window.setTimeout(() => {
+          markComplete();
+          setBooted(true);
+        }, 2500);
+        return;
+      }
+
+      // Skip to prompt on any key after 2s
+      if (!showPrompt && skipReady && e.key !== 'Enter') {
+        timersRef.current.forEach((id) => clearTimeout(id));
+        timersRef.current = [];
+        setVisibleCount(BOOT_LINES);
+        setShowPrompt(true);
+        setCameraActive(true);
+      }
+    },
+    [exiting, showPrompt, skipReady, markComplete, setBooted]
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  /* ── Enable skip after 2s ── */
+  useEffect(() => {
+    const id = window.setTimeout(() => setSkipReady(true), 2000);
+    return () => clearTimeout(id);
+  }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 2.5, ease: 'easeInOut' }}
-      className="fixed inset-0 z-50 overflow-hidden"
-      style={{ background: '#0a0806' }}
-    >
-      <BootScene
-        visibleCount={visibleCount}
-        showPrompt={showPrompt}
-        cursorOn={cursorOn}
-      />
+    <AnimatePresence>
+      {!exiting && (
+        <motion.div
+          key="boot"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 2.5, ease: 'easeInOut' }}
+          className="fixed inset-0 z-50"
+          style={{ background: '#0a0908' }}
+        >
+          {/* 3D Scene */}
+          <BootScene
+            visibleCount={visibleCount}
+            showPrompt={showPrompt}
+            cursorOn={cursorOn}
+            cameraActive={cameraActive}
+          />
 
-      {showPrompt && (
-        <button
-          onClick={handleEnter}
-          className="absolute inset-0 z-40 cursor-pointer"
-          style={{ background: 'transparent', border: 'none' }}
-          aria-label="Enter Archive"
-        />
+          {/* CRT overlay scanlines (subtle CSS) */}
+          <div
+            className="pointer-events-none fixed inset-0 z-10"
+            style={{
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+              mixBlendMode: 'multiply',
+            }}
+          />
+
+          {/* Vignette overlay */}
+          <div
+            className="pointer-events-none fixed inset-0 z-20"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, transparent 50%, rgba(10,9,8,0.6) 100%)',
+            }}
+          />
+        </motion.div>
       )}
-    </motion.div>
+    </AnimatePresence>
   );
-};
+}

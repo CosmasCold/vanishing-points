@@ -15,6 +15,9 @@ import { AtlasPanel } from './atlas/AtlasPanel';
 import { InvestigationView } from './investigation/InvestigationView';
 import { EvidenceBoard } from './evidenceBoard/EvidenceBoard';
 import { BoardPanel } from './evidenceBoard/BoardPanel';
+import { DocumentViewer } from './documents/DocumentViewer';
+import { DocumentPanel } from './documents/DocumentPanel';
+import { DocumentAudio } from './documents/DocumentAudio';
 import { colors, typography, spacing } from '@/styles/theme';
 
 const InboxContent: React.FC = () => (
@@ -84,7 +87,7 @@ export const DashboardShell: React.FC = () => {
       className="fixed inset-0"
       style={{ backgroundColor: colors.archive.black }}
     >
-      {/* Main workspace area */}
+      {/* ── Main Workspace ── */}
       <div
         className="absolute inset-0"
         style={{
@@ -117,19 +120,26 @@ export const DashboardShell: React.FC = () => {
           </div>
         )}
 
-        {/* Atlas fills the workspace when active and no investigation is open */}
+        {/* Atlas */}
         {activeModule === 'atlas' && !activeInvestigationId && <AtlasMap />}
 
-        {/* Evidence Board fills the workspace when active and no investigation is open */}
+        {/* Evidence Board */}
         {activeModule === 'evidence' && !activeInvestigationId && <EvidenceBoard />}
 
-        {/* Investigation View overlays everything when a case is active */}
+        {/* Document Archive */}
+        {activeModule === 'documents' && !activeInvestigationId && (
+          <div className="w-full h-full" style={{ backgroundColor: colors.archive.black }}>
+            <DocumentViewer />
+          </div>
+        )}
+
+        {/* Investigation View — overlays everything when active */}
         {activeInvestigationId && selectedPlace && (
           <InvestigationView place={selectedPlace} />
         )}
       </div>
 
-      {/* Module panels (sidebar drawers) */}
+      {/* ── Module Panels (Sidebar Drawers) ── */}
       <ModulePanel moduleId="inbox" title="INBOX">
         <InboxContent />
       </ModulePanel>
@@ -146,12 +156,12 @@ export const DashboardShell: React.FC = () => {
         <BoardPanel />
       </ModulePanel>
 
-      <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
-        <div style={{ color: colors.archive.gray }}>Signal processor offline...</div>
+      <ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
+        <DocumentPanel />
       </ModulePanel>
 
-      <ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
-        <div style={{ color: colors.archive.gray }}>Document viewer not loaded...</div>
+      <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
+        <div style={{ color: colors.archive.gray }}>Signal processor offline...</div>
       </ModulePanel>
 
       <ModulePanel moduleId="research" title="RESEARCH LOG">
@@ -170,7 +180,8 @@ export const DashboardShell: React.FC = () => {
         <div style={{ color: colors.archive.gray }}>System diagnostics nominal...</div>
       </ModulePanel>
 
-      {/* Global UI layers */}
+      {/* ── Global UI Layers ── */}
+      <DocumentAudio />
       <NavigationRail />
       <StatusBar />
       <Terminal />

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useDocumentStore } from '@/state/documentStore';
-import { useAudioStore } from '@/state/audioStore';
 
 const documentSounds: Record<string, string> = {
   field_report: '/audio/paper-rustle.mp3',

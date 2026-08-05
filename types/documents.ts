@@ -24,34 +24,22 @@ export interface DocumentArtifact {
   condition: DocumentCondition;
   tier: number;
   placeSlug: string;
-  
-  // Content
-  content: string;           // The "official" version
-  corruptedContent?: string;  // The hidden version (Tier 2+)
-  
-  // Physical metadata
+  content: string;
+  corruptedContent?: string;
   pages: number;
   paperType: 'bond' | 'thermal' | 'newsprint' | 'photographic' | 'handmade';
   inkType: 'typewriter' | 'ballpoint' | 'fountain' | 'carbon' | 'print' | 'marker';
-  
-  // Visual treatment
-  corruptionLevel: number;     // 0.0 = clean, 1.0 = fully corrupted
-  foldMarks?: number;          // How many fold lines
+  corruptionLevel: number;
+  foldMarks?: number;
   coffeeStain?: boolean;
   burnMarks?: boolean;
   waterDamage?: boolean;
-  
-  // Media attachments
   mediaUrl?: string;
   audioUrl?: string;
-  
-  // Archive metadata
   recoveredAt: string;
   recoveredBy: string;
   verificationStatus: 'verified' | 'pending' | 'disputed';
   relatedDocuments: string[];
-  
-  // Gameplay
   dustReward: number;
   readCount: number;
   lastReadAt?: string;

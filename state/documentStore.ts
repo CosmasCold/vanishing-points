@@ -4,10 +4,9 @@ import { DocumentArtifact, DocumentAnnotation, DocumentFilter } from '@/types/do
 interface DocumentStore {
   documents: DocumentArtifact[];
   openDocumentId: string | null;
-  corruptionIntensity: number;  // Global corruption state (0-1)
-  readingProgress: Record<string, number>;  // docId -> scroll percentage
+  corruptionIntensity: number;
+  readingProgress: Record<string, number>;
   
-  // Actions
   setDocuments: (docs: DocumentArtifact[]) => void;
   openDocument: (id: string) => void;
   closeDocument: () => void;
@@ -17,7 +16,6 @@ interface DocumentStore {
   setReadingProgress: (docId: string, progress: number) => void;
   increaseCorruption: (amount: number) => void;
   
-  // Selectors
   getDocumentById: (id: string) => DocumentArtifact | undefined;
   getFilteredDocuments: (filter: DocumentFilter) => DocumentArtifact[];
   getDocumentsByPlace: (placeSlug: string) => DocumentArtifact[];

@@ -6,7 +6,7 @@ import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
 import { DocumentArtifact, DocumentFilter } from '@/types/documents';
 import { colors, typography } from '@/styles/theme';
-import { FileText, Image, Mic, BookOpen, AlertTriangle, Lock } from 'lucide-react';
+import { FileText, Image, Mic, BookOpen, AlertTriangle } from 'lucide-react';
 
 const typeIcons: Record<string, React.ElementType> = {
   field_report: FileText,

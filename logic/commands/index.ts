@@ -4,6 +4,8 @@ import { registerNavigationCommands } from './navigation';
 import { registerInvestigationCommands } from './investigation';
 import { registerAtlasCommands } from './atlas';
 import { registerEvidenceBoardCommands } from './evidenceBoard';
+import { registerDocumentCommands } from './documents';
+
 
 export function initializeCommands() {
   registerSystemCommands(registry);
@@ -11,4 +13,5 @@ export function initializeCommands() {
   registerInvestigationCommands(registry);
   registerAtlasCommands(registry);
   registerEvidenceBoardCommands(registry);
+  registerDocumentCommands(registry);
 }

@@ -23,7 +23,6 @@ const ASSETS = {
   cassette: '/assets/models/cassette-player/cassette_player_4k.glb',
   shelf: '/assets/models/bookshelf/Shelf_01_4k.glb',
   books: '/assets/models/books/book_encyclopedia_set_01_4k.glb',
-  camera: '/assets/models/camera/Camera_01_4k.glb',
   hdri: '/assets/hdri/rainy-night/vignaioli_night_4k.exr',
 };
 
@@ -37,7 +36,6 @@ if (typeof window !== 'undefined') {
   useGLTF.preload(ASSETS.cassette);
   useGLTF.preload(ASSETS.shelf);
   useGLTF.preload(ASSETS.books);
-  useGLTF.preload(ASSETS.camera);
 }
 
 // ─── DUST PARTICLES ───
@@ -256,11 +254,6 @@ function BooksModel() {
   return <primitive object={scene.clone()} position={[3.2, 0.85, -2.8]} rotation={[0, 0.1, 0]} scale={0.6} />;
 }
 
-function CameraModel() {
-  const { scene } = useGLTF(ASSETS.camera);
-  return <primitive object={scene.clone()} position={[-0.3, -1.02, 0.1]} rotation={[0, 0.8, 0]} scale={0.25} />;
-}
-
 // ─── ROOM SHELL ───
 function Room() {
   return (
@@ -330,7 +323,6 @@ export function BootScene({ visibleCount, showPrompt, cursorOn }: { visibleCount
       <CassetteModel />
       <ShelfModel />
       <BooksModel />
-      <CameraModel />
       <Room />
       <DustParticles />
 

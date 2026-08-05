@@ -1,0 +1,37 @@
+{
+  "_comment": "Vanishing Points — Place Mapping Configuration. Tune these values to match your corpus density and desired difficulty curve.",
+  "tiers": {
+    "0": { "maxDanger": 2, "statuses": ["verified"], "requiresHauntingReports": false, "requiresResonanceNote": false },
+    "1": { "maxDanger": 3, "statuses": ["verified", "pending"], "requiresHauntingReports": true, "requiresResonanceNote": false },
+    "2": { "maxDanger": 5, "statuses": ["sealed", "whispered", "verified"], "requiresHauntingReports": true, "requiresResonanceNote": true },
+    "3": { "statuses": ["mirage", "whispered"], "requiresHauntingReports": true, "requiresResonanceNote": true }
+  },
+  "dustGates": {
+    "tier1": { "min": 10, "max": 25 },
+    "tier2": { "min": 35, "max": 65 },
+    "tier3": { "min": 80, "max": 120 }
+  },
+  "connections": {
+    "maxConnectionsPerPlace": 5,
+    "minConnectionsPerPlace": 1,
+    "proximityRadiusKm": 800,
+    "crossTierProbability": 0.35,
+    "backlinkProbability": 0.15,
+    "criticalPathAnchors": [
+      "pripyat-amusement-park",
+      "pripyat-hospital-126",
+      "duga-radar-array",
+      "duga-control-room",
+      "chernobyl-reactor-4-control-room",
+      "eastern-state-penitentiary",
+      "aokigahara-forest",
+      "the-grid-null-point"
+    ]
+  },
+  "roles": {
+    "baselineRatio": 0.25,
+    "patternRatio": 0.28,
+    "impossibleRatio": 0.27,
+    "framebreakRatio": 0.20
+  }
+}

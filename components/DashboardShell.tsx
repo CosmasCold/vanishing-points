@@ -4,12 +4,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useUIStore } from '@/state/uiStore';
 import { useBootStore } from '@/state/bootStore';
+import { useAtlasStore } from '@/state/atlasStore';
+import { useInvestigationStore } from '@/state/investigationStore';
 import { NavigationRail } from './NavigationRail';
 import { StatusBar } from './StatusBar';
 import { Terminal } from './Terminal';
 import { ModulePanel } from './ModulePanel';
 import { AtlasMap } from './atlas/AtlasMap';
 import { AtlasPanel } from './atlas/AtlasPanel';
+import { InvestigationView } from './investigation/InvestigationView';
+import { EvidenceBoard } from './evidenceBoard/EvidenceBoard';
+import { BoardPanel } from './evidenceBoard/BoardPanel';
 import { colors, typography, spacing } from '@/styles/theme';
 
 const InboxContent: React.FC = () => (
@@ -64,8 +69,12 @@ const InvestigationsContent: React.FC = () => (
 export const DashboardShell: React.FC = () => {
   const { booted, activeModule, terminalOpen } = useUIStore();
   const { isComplete } = useBootStore();
+  const { selectedPlaceId, places } = useAtlasStore();
+  const { activeInvestigationId } = useInvestigationStore();
 
   if (!booted || !isComplete) return null;
+
+  const selectedPlace = places.find((p) => p.slug === selectedPlaceId);
 
   return (
     <motion.div
@@ -85,7 +94,8 @@ export const DashboardShell: React.FC = () => {
             : spacing.statusBar,
         }}
       >
-        {!activeModule && (
+        {/* Empty state */}
+        {!activeModule && !activeInvestigationId && (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="text-center space-y-4" style={{ fontFamily: typography.mono }}>
               <h2
@@ -107,10 +117,19 @@ export const DashboardShell: React.FC = () => {
           </div>
         )}
 
-        {activeModule === 'atlas' && <AtlasMap />}
+        {/* Atlas fills the workspace when active and no investigation is open */}
+        {activeModule === 'atlas' && !activeInvestigationId && <AtlasMap />}
+
+        {/* Evidence Board fills the workspace when active and no investigation is open */}
+        {activeModule === 'evidence' && !activeInvestigationId && <EvidenceBoard />}
+
+        {/* Investigation View overlays everything when a case is active */}
+        {activeInvestigationId && selectedPlace && (
+          <InvestigationView place={selectedPlace} />
+        )}
       </div>
 
-      {/* Module panels */}
+      {/* Module panels (sidebar drawers) */}
       <ModulePanel moduleId="inbox" title="INBOX">
         <InboxContent />
       </ModulePanel>
@@ -124,7 +143,7 @@ export const DashboardShell: React.FC = () => {
       </ModulePanel>
 
       <ModulePanel moduleId="evidence" title="EVIDENCE BOARD">
-        <div style={{ color: colors.archive.gray }}>Evidence board initialization pending...</div>
+        <BoardPanel />
       </ModulePanel>
 
       <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
@@ -151,7 +170,7 @@ export const DashboardShell: React.FC = () => {
         <div style={{ color: colors.archive.gray }}>System diagnostics nominal...</div>
       </ModulePanel>
 
-      {/* Global UI */}
+      {/* Global UI layers */}
       <NavigationRail />
       <StatusBar />
       <Terminal />

@@ -4,6 +4,8 @@ import React from 'react';
 import { Place } from '@/types/places';
 import { useAtlasStore } from '@/state/atlasStore';
 import { colors, typography } from '@/styles/theme';
+import { useInvestigationStore } from '@/state/investigationStore';
+import { useUIStore } from '@/state/uiStore';
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const color =
@@ -133,6 +135,24 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
           </p>
         </div>
       )}
+            {/* Open Investigation */}
+      <button
+        onClick={() => {
+          useUIStore.getState().setActiveModule('investigations');
+          useInvestigationStore.getState().openInvestigation(place.slug, place.name);
+        }}
+        className="w-full py-3 border transition-colors hover:border-amber-700"
+        style={{
+          borderColor: colors.archive.amber,
+          backgroundColor: 'rgba(184, 149, 106, 0.08)',
+          color: colors.archive.amber,
+          fontFamily: typography.mono,
+          fontSize: typography.sizes.sm,
+          letterSpacing: '0.05em',
+        }}
+      >
+        OPEN INVESTIGATION →
+      </button>
     </div>
   );
 };

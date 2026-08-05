@@ -1,355 +1,10 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DocumentArtifact } from '@/types/documents';
 import { useDocumentStore } from '@/state/documentStore';
 import { colors } from '@/styles/theme';
-
-// ─── PAPER MESH ───
-
-interface PaperMeshProps {
-  doc: DocumentArtifact;
-  corruptionIntensity: number;
-  onClose: () => void;
-}
-
-const PaperMesh: React.FC<PaperMeshProps> = ({ doc, corruptionIntensity, onClose }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
-  const { viewport, pointer } = useThree();
-
-  // Procedural paper normal map via canvas
-  const paperTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d')!;
-    
-    // Base paper color
-    ctx.fillStyle = '#f5f0e8';
-    ctx.fillRect(0, 0, 512, 512);
-    
-    // Add grain
-    for (let i = 0; i < 50000; i++) {
-      ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.03})`;
-      ctx.fillRect(Math.random() * 512, Math.random() * 512, 1, 1);
-    }
-    
-    // Fold marks
-    if (doc.foldMarks) {
-      for (let i = 0; i < doc.foldMarks; i++) {
-        const y = (512 / (doc.foldMarks + 1)) * (i + 1);
-        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(512, y);
-        ctx.stroke();
-      }
-    }
-    
-    // Coffee stain
-    if (doc.coffeeStain) {
-      ctx.fillStyle = 'rgba(101, 67, 33, 0.06)';
-      ctx.beginPath();
-      ctx.arc(400, 100, 40, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(101, 67, 33, 0.1)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(400, 100, 38, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    
-    // Burn marks for corrupted docs
-    if (doc.corruptionLevel > 0.3) {
-      const burnCount = Math.floor(doc.corruptionLevel * 5);
-      for (let i = 0; i < burnCount; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const r = 10 + Math.random() * 30;
-        ctx.fillStyle = 'rgba(30, 20, 10, 0.15)';
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.anisotropy = 16;
-    return texture;
-  }, [doc.foldMarks, doc.coffeeStain, doc.corruptionLevel]);
-
-  // Custom shader material for corruption effects
-  const shaderMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uTexture: { value: paperTexture },
-        uCorruption: { value: doc.corruptionLevel + corruptionIntensity * 0.3 },
-        uTime: { value: 0 },
-        uResolution: { value: new THREE.Vector2(512, 512) },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vPosition;
-        uniform float uCorruption;
-        uniform float uTime;
-        
-        void main() {
-          vUv = uv;
-          vec3 pos = position;
-          
-          // Paper refuses to lie flat when corrupted
-          float warp = sin(pos.x * 3.0 + uTime * 0.5) * uCorruption * 0.02;
-          warp += sin(pos.y * 2.0 + uTime * 0.3) * uCorruption * 0.015;
-          pos.z += warp;
-          
-          vPosition = pos;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D uTexture;
-        uniform float uCorruption;
-        uniform float uTime;
-        uniform vec2 uResolution;
-        varying vec2 vUv;
-        
-        // Pseudo-random
-        float random(vec2 st) {
-          return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-        }
-        
-        // Noise
-        float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          float a = random(i);
-          float b = random(i + vec2(1.0, 0.0));
-          float c = random(i + vec2(0.0, 1.0));
-          float d = random(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
-        
-        void main() {
-          vec2 uv = vUv;
-          
-          // Chromatic aberration for corrupted docs
-          float aberration = uCorruption * 0.003;
-          float r = texture2D(uTexture, uv + vec2(aberration, 0.0)).r;
-          float g = texture2D(uTexture, uv).g;
-          float b = texture2D(uTexture, uv - vec2(aberration, 0.0)).b;
-          vec4 color = vec4(r, g, b, 1.0);
-          
-          // Edge erosion
-          float edgeDist = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-          float erosion = noise(uv * 8.0 + uTime * 0.1) * uCorruption;
-          if (edgeDist < 0.05 + erosion * 0.1) {
-            float alpha = smoothstep(0.0, 0.05 + erosion * 0.1, edgeDist);
-            color.a *= alpha;
-          }
-          
-          // Text flicker (subtle)
-          float flicker = step(0.97, random(vec2(uv.y * 100.0, floor(uTime * 10.0))));
-          if (flicker > 0.0 && uCorruption > 0.5) {
-            color.rgb = mix(color.rgb, vec3(0.9, 0.1, 0.1), 0.3);
-          }
-          
-          gl_FragColor = color;
-        }
-      `,
-      transparent: true,
-      side: THREE.DoubleSide,
-    });
-  }, [paperTexture, doc.corruptionLevel, corruptionIntensity]);
-
-  // Mouse-following light
-  useFrame((state) => {
-    if (lightRef.current) {
-      lightRef.current.position.x = pointer.x * viewport.width * 0.5;
-      lightRef.current.position.y = pointer.y * viewport.height * 0.5;
-      lightRef.current.position.z = 2;
-    }
-    if (shaderMaterial) {
-      shaderMaterial.uniforms.uTime.value = state.clock.elapsedTime;
-    }
-    // Gentle hover animation
-    if (meshRef.current) {
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
-      meshRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.2) * 0.005 * doc.corruptionLevel;
-    }
-  });
-
-  const aspect = 1.414; // A4 ratio
-  const width = 3.5;
-  const height = width * aspect;
-
-  return (
-    <group>
-      {/* Ambient light */}
-      <ambientLight intensity={0.3} color={colors.archive.white} />
-      
-      {/* Mouse-following desk lamp */}
-      <pointLight
-        ref={lightRef}
-        intensity={2}
-        distance={8}
-        color="#fff5e6"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      
-      {/* The paper */}
-      <mesh
-        ref={meshRef}
-        material={shaderMaterial}
-        castShadow
-        receiveShadow
-        position={[0, 0, 0]}
-      >
-        <planeGeometry args={[width, height, 32, 32]} />
-      </mesh>
-      
-      {/* Shadow plane (the desk) */}
-      <mesh position={[0, 0, -0.1]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color={colors.archive.black} roughness={0.9} />
-      </mesh>
-
-      {/* HTML overlay for actual text content */}
-      <Html
-        transform
-        occlude
-        position={[0, 0, 0.01]}
-        style={{
-          width: `${width * 100}px`,
-          height: `${height * 100}px`,
-          pointerEvents: 'none',
-          overflow: 'hidden',
-        }}
-      >
-        <DocumentContent doc={doc} onClose={onClose} />
-      </Html>
-    </group>
-  );
-};
-
-// ─── DOCUMENT CONTENT (HTML OVERLAY) ───
-
-const DocumentContent: React.FC<{ doc: DocumentArtifact; onClose: () => void }> = ({
-  doc,
-  onClose,
-}) => {
-  const [showCorrupted, setShowCorrupted] = React.useState(false);
-  const content = showCorrupted && doc.corruptedContent ? doc.corruptedContent : doc.content;
-  
-  const typewriterFonts: Record<string, string> = {
-    typewriter: '"Courier New", Courier, monospace',
-    ballpoint: '"Georgia", serif',
-    fountain: '"Palatino Linotype", "Book Antiqua", Palatino, serif',
-    carbon: '"Courier New", monospace',
-    print: '"Times New Roman", Times, serif',
-    marker: '"Arial", sans-serif',
-  };
-
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        padding: '40px 50px',
-        fontFamily: typewriterFonts[doc.inkType] || typewriterFonts.typewriter,
-        fontSize: '11px',
-        lineHeight: 1.6,
-        color: '#2a2520',
-        position: 'relative',
-      }}
-    >
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid #c4b8a0', paddingBottom: '12px', marginBottom: '20px' }}>
-        <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: '#8b7355', textTransform: 'uppercase' }}>
-          {doc.source.replace('_', ' ')} — {doc.type.replace('_', ' ')}
-        </div>
-        <div style={{ fontSize: '14px', fontWeight: 'bold', marginTop: '4px', color: '#1a1510' }}>
-          {doc.title}
-        </div>
-        <div style={{ fontSize: '9px', color: '#8b7355', marginTop: '4px' }}>
-          {doc.date} | {doc.condition.toUpperCase()} | {doc.pages} PAGE{doc.pages > 1 ? 'S' : ''}
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ textAlign: 'justify', hyphens: 'auto' }}>
-        {content.split('\n\n').map((paragraph, i) => (
-          <p key={i} style={{ marginBottom: '12px', textIndent: '24px' }}>
-            {paragraph}
-          </p>
-        ))}
-      </div>
-
-      {/* Corruption toggle (Tier 2+) */}
-      {doc.corruptedContent && (
-        <button
-          onClick={() => setShowCorrupted(!showCorrupted)}
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            background: 'transparent',
-            border: '1px solid #8b0000',
-            color: '#8b0000',
-            padding: '4px 8px',
-            fontSize: '8px',
-            fontFamily: 'monospace',
-            cursor: 'pointer',
-            letterSpacing: '0.1em',
-          }}
-        >
-          {showCorrupted ? 'SHOW OFFICIAL VERSION' : 'SHOW CORRUPTED VERSION'}
-        </button>
-      )}
-
-      {/* Footer */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '50px',
-          fontSize: '8px',
-          color: '#8b7355',
-          letterSpacing: '0.05em',
-        }}
-      >
-        RECOVERED: {doc.recoveredAt} | VERIFICATION: {doc.verificationStatus}
-      </div>
-
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          background: 'transparent',
-          border: 'none',
-          color: '#8b7355',
-          fontSize: '16px',
-          cursor: 'pointer',
-          fontFamily: 'monospace',
-        }}
-      >
-        ×
-      </button>
-    </div>
-  );
-};
-
-// ─── MAIN CANVAS ───
 
 interface DocumentCanvasProps {
   doc: DocumentArtifact;
@@ -357,17 +12,307 @@ interface DocumentCanvasProps {
 }
 
 export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({ doc, onClose }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [showCorrupted, setShowCorrupted] = useState(false);
   const { corruptionIntensity } = useDocumentStore();
 
+  const effectiveCorruption = Math.min(1, doc.corruptionLevel + corruptionIntensity * 0.3);
+  const content = showCorrupted && doc.corruptedContent ? doc.corruptedContent : doc.content;
+
+  // Mouse-following tilt
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: y * 8, y: -x * 8 }); // Subtle rotation
+  };
+
+  const handleMouseLeave = () => setTilt({ x: 0, y: 0 });
+
+  const typewriterFonts: Record<string, string> = {
+    typewriter: '"Courier New", Courier, monospace',
+    ballpoint: '"Georgia", "Times New Roman", serif',
+    fountain: '"Palatino Linotype", "Book Antiqua", Palatino, serif',
+    carbon: '"Courier New", monospace',
+    print: '"Times New Roman", Times, serif',
+    marker: '"Arial", sans-serif',
+  };
+
+  const paperColors: Record<string, string> = {
+    bond: '#f5f0e8',
+    thermal: '#f0ece0',
+    newsprint: '#e8e0d0',
+    photographic: '#f8f8f8',
+    handmade: '#ede8d8',
+  };
+
   return (
-    <div style={{ width: '100%', height: '100%', backgroundColor: colors.archive.black }}>
-      <Canvas
-        shadows
-        camera={{ position: [0, 0, 5], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-30 flex items-center justify-center overflow-hidden"
+      style={{
+        backgroundColor: '#0a0a08',
+        backgroundImage: `
+          radial-gradient(ellipse at 30% 20%, rgba(40, 30, 20, 0.4) 0%, transparent 50%),
+          radial-gradient(ellipse at 70% 80%, rgba(20, 30, 40, 0.3) 0%, transparent 50%)
+        `,
+        perspective: '1200px',
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Ambient desk light following mouse */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background: `radial-gradient(circle at ${50 + tilt.y * 3}% ${50 - tilt.x * 3}%, rgba(255, 245, 230, 0.03) 0%, transparent 60%)`,
+        }}
+      />
+
+      {/* The Paper */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, rotateX: 15 }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          rotateX: tilt.x,
+          rotateY: tilt.y,
+          y: Math.sin(Date.now() / 2000) * 2, // Subtle hover
+        }}
+        exit={{ opacity: 0, scale: 0.9, rotateX: 15 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="relative z-10 shadow-2xl"
+        style={{
+          width: 'min(700px, 90vw)',
+          maxHeight: '85vh',
+          backgroundColor: paperColors[doc.paperType] || paperColors.bond,
+          transformStyle: 'preserve-3d',
+          boxShadow: `
+            0 20px 60px rgba(0,0,0,0.8),
+            0 2px 8px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.3)
+          `,
+        }}
       >
-        <PaperMesh doc={doc} corruptionIntensity={corruptionIntensity} onClose={onClose} />
-      </Canvas>
+        {/* Paper grain texture overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 z-20 opacity-40"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+            backgroundSize: '200px 200px',
+            mixBlendMode: 'multiply',
+          }}
+        />
+
+        {/* Fold marks */}
+        {doc.foldMarks && (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            {Array.from({ length: doc.foldMarks }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute left-0 right-0"
+                style={{
+                  top: `${((i + 1) / (doc.foldMarks! + 1)) * 100}%`,
+                  height: '1px',
+                  background: 'linear-gradient(90deg, transparent 5%, rgba(0,0,0,0.06) 20%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.06) 80%, transparent 95%)',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Coffee stain */}
+        {doc.coffeeStain && (
+          <div
+            className="pointer-events-none absolute z-10"
+            style={{
+              top: '8%',
+              right: '10%',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(101,67,33,0.08) 0%, rgba(101,67,33,0.04) 40%, transparent 70%)',
+              border: '1px solid rgba(101,67,33,0.1)',
+              filter: 'blur(0.5px)',
+            }}
+          />
+        )}
+
+        {/* Burn marks */}
+        {doc.burnMarks && (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            {Array.from({ length: Math.floor(effectiveCorruption * 5) }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute"
+                style={{
+                  top: `${20 + Math.random() * 60}%`,
+                  left: `${10 + Math.random() * 80}%`,
+                  width: `${20 + Math.random() * 40}px`,
+                  height: `${20 + Math.random() * 40}px`,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(30,20,10,0.15) 0%, transparent 70%)',
+                  filter: 'blur(2px)',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Edge erosion (corruption) */}
+        {effectiveCorruption > 0.2 && (
+          <div
+            className="pointer-events-none absolute inset-0 z-10"
+            style={{
+              boxShadow: 'inset 0 0 40px rgba(0,0,0,0.1)',
+              maskImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='rough'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${0.01 + effectiveCorruption * 0.02}' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${effectiveCorruption * 8}'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black' filter='url(%23rough)'/%3E%3C/svg%3E")`,
+              WebkitMaskImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='rough'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${0.01 + effectiveCorruption * 0.02}' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${effectiveCorruption * 8}'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='black' filter='url(%23rough)'/%3E%3C/svg%3E")`,
+            }}
+          />
+        )}
+
+        {/* Chromatic aberration on corruption */}
+        <div
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            opacity: effectiveCorruption * 0.3,
+            background: 'linear-gradient(90deg, rgba(255,0,0,0.03) 0%, transparent 33%, transparent 66%, rgba(0,0,255,0.03) 100%)',
+            mixBlendMode: 'multiply',
+          }}
+        />
+
+        {/* Content */}
+        <div
+          className="relative z-30 h-full overflow-y-auto"
+          style={{
+            padding: 'clamp(24px, 5vw, 48px) clamp(28px, 6vw, 56px)',
+            fontFamily: typewriterFonts[doc.inkType] || typewriterFonts.typewriter,
+            fontSize: 'clamp(11px, 1.2vw, 14px)',
+            lineHeight: 1.7,
+            color: '#2a2520',
+          }}
+        >
+          {/* Header */}
+          <div
+            className="mb-6 pb-3"
+            style={{ borderBottom: '1px solid rgba(139, 115, 85, 0.3)' }}
+          >
+            <div
+              className="uppercase tracking-widest mb-1"
+              style={{ fontSize: '0.65rem', color: '#8b7355', letterSpacing: '0.15em' }}
+            >
+              {doc.source.replace('_', ' ')} — {doc.type.replace('_', ' ')}
+            </div>
+            <h1
+              className="font-bold mb-1"
+              style={{ fontSize: 'clamp(14px, 1.8vw, 18px)', color: '#1a1510', lineHeight: 1.3 }}
+            >
+              {doc.title}
+            </h1>
+            <div className="flex flex-wrap gap-3" style={{ fontSize: '0.65rem', color: '#8b7355' }}>
+              <span>{doc.date}</span>
+              <span>|</span>
+              <span style={{ color: effectiveCorruption > 0.5 ? '#8b0000' : '#8b7355' }}>
+                {doc.condition.toUpperCase()}
+              </span>
+              <span>|</span>
+              <span>{doc.pages} PAGE{doc.pages > 1 ? 'S' : ''}</span>
+              {doc.author && (
+                <>
+                  <span>|</span>
+                  <span>{doc.author}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Body */}
+          <div
+            className="space-y-4"
+            style={{ textAlign: 'justify', hyphens: 'auto' }}
+          >
+            {content.split('\n\n').map((paragraph, i) => (
+              <p
+                key={i}
+                className="first-letter:text-lg first-letter:font-bold"
+                style={{ textIndent: '1.5em' }}
+              >
+                {paragraph}
+              </p>
+            ))}
+          </div>
+
+          {/* Corruption flicker effect */}
+          {effectiveCorruption > 0.5 && (
+            <div
+              className="pointer-events-none absolute inset-0 z-40 animate-pulse"
+              style={{
+                background: 'linear-gradient(180deg, transparent 0%, rgba(139,0,0,0.02) 50%, transparent 100%)',
+                backgroundSize: '100% 200%',
+                animation: 'corruptionFlicker 4s ease-in-out infinite',
+              }}
+            />
+          )}
+
+          {/* Footer */}
+          <div
+            className="mt-8 pt-3 flex justify-between items-end"
+            style={{ borderTop: '1px solid rgba(139, 115, 85, 0.2)', fontSize: '0.6rem', color: '#8b7355' }}
+          >
+            <div>
+              <div>RECOVERED: {doc.recoveredAt.split('T')[0]}</div>
+              <div>VERIFICATION: {doc.verificationStatus.toUpperCase()}</div>
+            </div>
+            <div style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+              ARCHIVE ID: {doc.id}
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {doc.corruptedContent && (
+            <button
+              onClick={() => setShowCorrupted(!showCorrupted)}
+              className="px-3 py-1.5 text-xs border transition-all hover:scale-105"
+              style={{
+                borderColor: showCorrupted ? '#8b0000' : 'rgba(139, 115, 85, 0.4)',
+                color: showCorrupted ? '#8b0000' : '#8b7355',
+                backgroundColor: showCorrupted ? 'rgba(139, 0, 0, 0.05)' : 'rgba(245, 240, 232, 0.8)',
+                fontFamily: 'monospace',
+                letterSpacing: '0.1em',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {showCorrupted ? 'SHOW OFFICIAL' : 'SHOW CORRUPTED'}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center border transition-all hover:scale-110"
+            style={{
+              borderColor: 'rgba(139, 115, 85, 0.4)',
+              color: '#8b7355',
+              backgroundColor: 'rgba(245, 240, 232, 0.8)',
+              fontSize: '18px',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Global corruption flicker keyframes */}
+      <style jsx global>{`
+        @keyframes corruptionFlicker {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+          75% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 };

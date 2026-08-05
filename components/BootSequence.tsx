@@ -5,278 +5,249 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useBootStore } from '@/state/bootStore';
 import { useUIStore } from '@/state/uiStore';
 
-// ─── CONFIG ───
-
-const PHOSPHOR_AMBER = '#ffb000';
+// ─── PALETTE ───
+const PHOSPHOR = '#ffb000';
 const PHOSPHOR_DIM = '#8a6000';
-const PHOSPHOR_GHOST = '#4a3500';
-const WALNUT_DARK = '#1e1610';
-const WALNUT_MID = '#2a2018';
-const WALNUT_LIGHT = '#3a2e22';
-const GUNMETAL = '#1a1a1e';
-const TUNGSTEN_WARM = '#ffecd2';
-const IVORY_AGED = '#e8e0d0';
+const PHOSPHOR_GHOST = 'rgba(255, 176, 0, 0.06)';
+const GREEN_OK = '#5a8a4a';
+const AMBER_WARN = '#b8943a';
+const IVORY = '#e8e0d0';
+const WALNUT = '#2a2018';
+const WALNUT_DEEP = '#1a1410';
+const GUNMETAL = '#2e2e32';
+const GUNMETAL_DARK = '#1e1e22';
+const BEZEL_HIGHLIGHT = '#3e3e42';
 
-interface BootLine {
-  text: string;
-  delay: number;
-  type: 'info' | 'ok' | 'warn' | 'system' | 'final';
-}
-
-const BOOT_SEQUENCE: BootLine[] = [
-  { text: '', delay: 800, type: 'system' }, // Initial pause — room darkness
-  { text: 'POWER RESTORED', delay: 600, type: 'system' },
-  { text: 'Loading Archive Kernel...', delay: 900, type: 'info' },
-  { text: '  [OK]  Kernel v4.2.1-stable', delay: 400, type: 'ok' },
-  { text: '  [OK]  Memory banks 1–16', delay: 300, type: 'ok' },
-  { text: '  [OK]  Magnetic drum array', delay: 500, type: 'ok' },
-  { text: '', delay: 400, type: 'system' },
-  { text: 'Initializing Atlas...', delay: 1200, type: 'info' },
-  { text: '  [OK]  Geodetic reference frame loaded', delay: 400, type: 'ok' },
-  { text: '  [OK]  159 locations indexed', delay: 300, type: 'ok' },
-  { text: '  [WARN]  Coordinate drift detected in sector 7-B', delay: 600, type: 'warn' },
-  { text: '', delay: 400, type: 'system' },
-  { text: 'Checking Integrity...', delay: 1000, type: 'info' },
-  { text: '  [OK]  Document repository', delay: 300, type: 'ok' },
-  { text: '  [OK]  Evidence chain verified', delay: 300, type: 'ok' },
-  { text: '  [OK]  BUNKER_7 relay stable', delay: 500, type: 'ok' },
-  { text: '', delay: 400, type: 'system' },
-  { text: 'Loading Investigations...', delay: 800, type: 'info' },
-  { text: '  [OK]  3 active cases', delay: 300, type: 'ok' },
-  { text: '  [OK]  1 pending review', delay: 300, type: 'ok' },
-  { text: '', delay: 400, type: 'system' },
-  { text: 'Synchronizing Evidence...', delay: 900, type: 'info' },
-  { text: '  [OK]  Cross-reference matrix built', delay: 400, type: 'ok' },
-  { text: '', delay: 400, type: 'system' },
-  { text: 'Loading Local Cache...', delay: 700, type: 'info' },
-  { text: '  [OK]  847 artifacts recovered', delay: 300, type: 'ok' },
-  { text: '', delay: 600, type: 'system' },
-  { text: 'Dust Index: STABLE', delay: 800, type: 'ok' },
-  { text: '', delay: 1000, type: 'system' },
-  { text: 'Good evening, Investigator.', delay: 1500, type: 'final' },
+// ─── BOOT LINES ───
+const LINES = [
+  { text: 'POWER RESTORED', type: 'system', delay: 400 },
+  { text: '', type: 'spacer', delay: 200 },
+  { text: 'Loading Archive Kernel...', type: 'info', delay: 800 },
+  { text: '  [OK]  Kernel v4.2.1-stable', type: 'ok', delay: 250 },
+  { text: '  [OK]  Memory banks 1–16', type: 'ok', delay: 200 },
+  { text: '  [OK]  Magnetic drum array', type: 'ok', delay: 350 },
+  { text: '', type: 'spacer', delay: 300 },
+  { text: 'Initializing Atlas...', type: 'info', delay: 900 },
+  { text: '  [OK]  Geodetic reference frame loaded', type: 'ok', delay: 250 },
+  { text: '  [OK]  159 locations indexed', type: 'ok', delay: 200 },
+  { text: '  [WARN]  Coordinate drift in sector 7-B', type: 'warn', delay: 500 },
+  { text: '', type: 'spacer', delay: 300 },
+  { text: 'Checking Integrity...', type: 'info', delay: 700 },
+  { text: '  [OK]  Document repository', type: 'ok', delay: 200 },
+  { text: '  [OK]  Evidence chain verified', type: 'ok', delay: 200 },
+  { text: '  [OK]  BUNKER_7 relay stable', type: 'ok', delay: 300 },
+  { text: '', type: 'spacer', delay: 300 },
+  { text: 'Loading Investigations...', type: 'info', delay: 600 },
+  { text: '  [OK]  3 active cases', type: 'ok', delay: 200 },
+  { text: '  [OK]  1 pending review', type: 'ok', delay: 200 },
+  { text: '', type: 'spacer', delay: 300 },
+  { text: 'Synchronizing Evidence...', type: 'info', delay: 700 },
+  { text: '  [OK]  Cross-reference matrix built', type: 'ok', delay: 300 },
+  { text: '', type: 'spacer', delay: 300 },
+  { text: 'Loading Local Cache...', type: 'info', delay: 500 },
+  { text: '  [OK]  847 artifacts recovered', type: 'ok', delay: 200 },
+  { text: '', type: 'spacer', delay: 400 },
+  { text: 'Dust Index: STABLE', type: 'ok', delay: 600 },
+  { text: '', type: 'spacer', delay: 600 },
+  { text: 'Good evening, Investigator.', type: 'final', delay: 2000 },
 ];
 
-// ─── DUST PARTICLE SYSTEM ───
-
+// ─── PARTICLES ───
 interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
+  x: number; y: number;
+  vx: number; vy: number;
   size: number;
   alpha: number;
-  type: 'fiber' | 'dust' | 'ash';
-  life: number;
-  maxLife: number;
+  life: number; maxLife: number;
+  kind: 'dust' | 'fiber';
 }
 
-function initParticles(width: number, height: number, count: number): Particle[] {
-  const particles: Particle[] = [];
-  for (let i = 0; i < count; i++) {
-    const typeRoll = Math.random();
-    const type: Particle['type'] = typeRoll < 0.5 ? 'dust' : typeRoll < 0.8 ? 'fiber' : 'ash';
-    particles.push({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.15,
-      vy: (Math.random() - 0.5) * 0.08 - 0.02,
-      size: type === 'fiber' ? 0.5 + Math.random() * 1.5 : type === 'ash' ? 0.3 + Math.random() * 0.8 : 0.8 + Math.random() * 2,
-      alpha: 0.1 + Math.random() * 0.25,
-      type,
-      life: 0,
-      maxLife: 300 + Math.random() * 600,
+function createParticles(w: number, h: number): Particle[] {
+  const out: Particle[] = [];
+  for (let i = 0; i < 80; i++) {
+    out.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: -(0.01 + Math.random() * 0.03),
+      size: 0.5 + Math.random() * 2,
+      alpha: 0.08 + Math.random() * 0.2,
+      life: Math.random() * 500,
+      maxLife: 400 + Math.random() * 600,
+      kind: Math.random() > 0.6 ? 'fiber' : 'dust',
     });
   }
-  return particles;
+  return out;
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[], width: number, height: number, lampX: number, lampY: number) {
-  ctx.clearRect(0, 0, width, height);
-
+function drawParticles(
+  ctx: CanvasRenderingContext2D,
+  particles: Particle[],
+  w: number,
+  h: number,
+  lampX: number,
+  lampY: number
+) {
+  ctx.clearRect(0, 0, w, h);
   for (const p of particles) {
     p.life++;
     if (p.life > p.maxLife) {
-      p.x = Math.random() * width;
-      p.y = height + 5;
+      p.x = Math.random() * w;
+      p.y = h + 2;
       p.life = 0;
-      p.vx = (Math.random() - 0.5) * 0.15;
-      p.vy = -(0.01 + Math.random() * 0.04);
+      p.vx = (Math.random() - 0.5) * 0.12;
+      p.vy = -(0.01 + Math.random() * 0.03);
     }
-
-    // Gentle air current toward lamp warmth
+    // drift toward lamp warmth
     const dx = lampX - p.x;
     const dy = lampY - p.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 300) {
-      p.vx += (dx / dist) * 0.0003;
-      p.vy += (dy / dist) * 0.0002;
+    if (dist < 350 && dist > 0) {
+      p.vx += (dx / dist) * 0.0002;
+      p.vy += (dy / dist) * 0.0001;
     }
-
     p.x += p.vx;
     p.y += p.vy;
-
-    // Wrap horizontal
-    if (p.x < -10) p.x = width + 10;
-    if (p.x > width + 10) p.x = -10;
+    if (p.x < -5) p.x = w + 5;
+    if (p.x > w + 5) p.x = -5;
 
     const lifeRatio = p.life / p.maxLife;
-    const fade = lifeRatio < 0.1 ? lifeRatio / 0.1 : lifeRatio > 0.9 ? (1 - lifeRatio) / 0.1 : 1;
-    const alpha = p.alpha * fade;
+    const fade = lifeRatio < 0.08 ? lifeRatio / 0.08 : lifeRatio > 0.92 ? (1 - lifeRatio) / 0.08 : 1;
+    const illum = Math.max(0.25, 1 - dist / 400);
+    const a = p.alpha * fade * illum;
 
-    // Illumination by lamp
-    const lampDist = Math.sqrt((p.x - lampX) ** 2 + (p.y - lampY) ** 2);
-    const illumination = Math.max(0.3, 1 - lampDist / 400);
-
-    ctx.beginPath();
-    if (p.type === 'fiber') {
-      // Elongated paper fiber
-      const angle = Math.atan2(p.vy, p.vx);
-      ctx.moveTo(p.x - Math.cos(angle) * p.size * 2, p.y - Math.sin(angle) * p.size * 2);
-      ctx.lineTo(p.x + Math.cos(angle) * p.size * 2, p.y + Math.sin(angle) * p.size * 2);
-      ctx.strokeStyle = `rgba(200, 185, 160, ${alpha * illumination})`;
-      ctx.lineWidth = 0.5;
+    if (p.kind === 'fiber') {
+      const ang = Math.atan2(p.vy, p.vx);
+      ctx.beginPath();
+      ctx.moveTo(p.x - Math.cos(ang) * p.size * 2.5, p.y - Math.sin(ang) * p.size * 2.5);
+      ctx.lineTo(p.x + Math.cos(ang) * p.size * 2.5, p.y + Math.sin(ang) * p.size * 2.5);
+      ctx.strokeStyle = `rgba(200, 185, 155, ${a})`;
+      ctx.lineWidth = 0.4;
       ctx.stroke();
-    } else if (p.type === 'ash') {
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(120, 110, 100, ${alpha * illumination})`;
-      ctx.fill();
     } else {
+      ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(180, 165, 140, ${alpha * illumination})`;
+      ctx.fillStyle = `rgba(180, 165, 135, ${a})`;
       ctx.fill();
     }
   }
 }
 
 // ─── COMPONENT ───
-
 export const BootSequence: React.FC = () => {
-  const { booted } = useUIStore();
   const { isComplete, markComplete } = useBootStore();
-  const [visibleLines, setVisibleLines] = useState<number>(0);
-  const [cursorVisible, setCursorVisible] = useState(true);
+  const { booted } = useUIStore();
+
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [cursorOn, setCursorOn] = useState(true);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
-  const [phase, setPhase] = useState<'darkness' | 'power' | 'warmup' | 'ready' | 'done'>('darkness');
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const animRef = useRef<number>(0);
+  const rafRef = useRef<number>(0);
+  const timeoutsRef = useRef<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Mouse parallax for seated perspective
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setMousePos({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-    });
+  // mouse parallax
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const r = containerRef.current.getBoundingClientRect();
+      setMousePos({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
+  // particles
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [handleMouseMove]);
-
-  // Dust particle animation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const c = canvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
     if (!ctx) return;
-
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      particlesRef.current = initParticles(canvas.offsetWidth, canvas.offsetHeight, 120);
+      c.width = c.offsetWidth * window.devicePixelRatio;
+      c.height = c.offsetHeight * window.devicePixelRatio;
+      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+      particlesRef.current = createParticles(c.offsetWidth, c.offsetHeight);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const animate = () => {
-      const lampX = canvas.offsetWidth * (0.3 + mousePos.x * 0.1);
-      const lampY = canvas.offsetHeight * (0.2 + mousePos.y * 0.05);
-      drawParticles(ctx, particlesRef.current, canvas.offsetWidth, canvas.offsetHeight, lampX, lampY);
-      animRef.current = requestAnimationFrame(animate);
+    const loop = () => {
+      const lampX = c.offsetWidth * (0.25 + mousePos.x * 0.08);
+      const lampY = c.offsetHeight * (0.15 + mousePos.y * 0.05);
+      drawParticles(ctx, particlesRef.current, c.offsetWidth, c.offsetHeight, lampX, lampY);
+      rafRef.current = requestAnimationFrame(loop);
     };
-    animate();
-
+    loop();
     return () => {
       window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animRef.current);
+      cancelAnimationFrame(rafRef.current);
     };
   }, [mousePos]);
 
-  // Boot sequence timing
+  // boot sequence timing
   useEffect(() => {
-    if (!booted || isComplete) return;
+    if (!booted || isComplete || exiting) return;
 
-    let cancelled = false;
-    let lineIndex = 0;
+    // clear any old timeouts
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
 
-    const runSequence = async () => {
-      setPhase('darkness');
-      await sleep(BOOT_SEQUENCE[0].delay);
-      if (cancelled) return;
-
-      setPhase('power');
-      await sleep(400);
-      if (cancelled) return;
-
-      setPhase('warmup');
-
-      for (let i = 1; i < BOOT_SEQUENCE.length; i++) {
-        if (cancelled) return;
-        await sleep(BOOT_SEQUENCE[i].delay);
-        if (cancelled) return;
-        setVisibleLines(i + 1);
-        lineIndex = i;
-      }
-
-      setPhase('ready');
-      await sleep(2000);
-      if (cancelled) return;
-
-      setPhase('done');
-      await sleep(800);
-      if (cancelled) return;
-
-      markComplete();
-      useUIStore.getState().setBooted(true);
+    const push = (fn: () => void, ms: number) => {
+      timeoutsRef.current.push(window.setTimeout(fn, ms));
     };
 
-    runSequence();
+    let accumulated = 300; // small initial pause
 
-    return () => { cancelled = true; };
-  }, [booted, isComplete, markComplete]);
+    LINES.forEach((line, i) => {
+      accumulated += line.delay;
+      push(() => setVisibleCount(i + 1), accumulated);
+    });
 
-  // Cursor blink
+    accumulated += 1800;
+    push(() => setShowPrompt(true), accumulated);
+
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  }, [booted, isComplete, exiting]);
+
+  // cursor blink
   useEffect(() => {
-    const interval = setInterval(() => setCursorVisible((v) => !v), 530);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setCursorOn((v) => !v), 520);
+    return () => clearInterval(id);
   }, []);
 
-  // Skip on keypress
+  // skip key
   useEffect(() => {
-    const handleKey = () => {
-      if (phase !== 'done' && phase !== 'darkness') {
-        setVisibleLines(BOOT_SEQUENCE.length);
-        setPhase('ready');
-        setTimeout(() => {
-          markComplete();
-          useUIStore.getState().setBooted(true);
-        }, 600);
-      }
+    const onKey = () => {
+      if (showPrompt || exiting || isComplete) return;
+      timeoutsRef.current.forEach(clearTimeout);
+      setVisibleCount(LINES.length);
+      setShowPrompt(true);
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, markComplete]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showPrompt, exiting, isComplete]);
+
+  const handleEnter = useCallback(() => {
+    if (exiting || isComplete) return;
+    setExiting(true);
+    timeoutsRef.current.forEach(clearTimeout);
+    setTimeout(() => {
+      markComplete();
+      useUIStore.getState().setBooted(true);
+    }, 2200);
+  }, [exiting, isComplete, markComplete]);
 
   if (!booted) return null;
 
-  const parallaxX = (mousePos.x - 0.5) * 12;
-  const parallaxY = (mousePos.y - 0.5) * 8;
+  const px = (mousePos.x - 0.5) * 14;
+  const py = (mousePos.y - 0.5) * 10;
 
   return (
     <AnimatePresence>
@@ -285,236 +256,264 @@ export const BootSequence: React.FC = () => {
           ref={containerRef}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 2.5, ease: 'easeInOut' }}
-          className="fixed inset-0 z-50 overflow-hidden"
-          style={{ backgroundColor: WALNUT_DARK }}
+          transition={{ duration: 2.2, ease: 'easeInOut' }}
+          className="fixed inset-0 z-50 overflow-hidden select-none"
+          style={{ backgroundColor: WALNUT_DEEP }}
         >
-          {/* ─── ROOM ENVIRONMENT ─── */}
-
-          {/* Walnut desk surface */}
+          {/* ── ROOM ── */}
           <div
             className="absolute inset-0"
             style={{
               background: `
-                radial-gradient(ellipse 80% 60% at 50% 100%, ${WALNUT_MID} 0%, ${WALNUT_DARK} 70%),
-                linear-gradient(180deg, ${WALNUT_DARK} 0%, ${WALNUT_MID} 100%)
+                radial-gradient(ellipse 70% 55% at 50% 100%, ${WALNUT} 0%, ${WALNUT_DEEP} 65%),
+                linear-gradient(180deg, ${WALNUT_DEEP} 0%, ${WALNUT} 100%)
               `,
-              transform: `translate(${parallaxX * 0.3}px, ${parallaxY * 0.3}px)`,
+              transform: `translate(${px * 0.25}px, ${py * 0.25}px)`,
             }}
           />
 
-          {/* Desk grain texture */}
+          {/* wood grain */}
           <div
-            className="absolute inset-0 opacity-20 pointer-events-none"
+            className="absolute inset-0 opacity-30 pointer-events-none"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.008' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.3'/%3E%3C/svg%3E")`,
-              backgroundSize: '400px 400px',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.006' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.25'/%3E%3C/svg%3E")`,
+              backgroundSize: '500px 500px',
               mixBlendMode: 'overlay',
             }}
           />
 
-          {/* Tungsten desk lamp glow (warm, directional) */}
+          {/* desk lamp glow */}
           <div
             className="absolute pointer-events-none"
             style={{
-              top: '-10%',
-              left: '20%',
-              width: '60%',
-              height: '80%',
-              background: `radial-gradient(ellipse at 30% 20%, rgba(255, 220, 160, 0.08) 0%, transparent 55%)`,
-              transform: `translate(${parallaxX * 0.5}px, ${parallaxY * 0.5}px)`,
+              top: '-5%',
+              left: '15%',
+              width: '55%',
+              height: '70%',
+              background: `radial-gradient(ellipse at 25% 15%, rgba(255, 230, 180, 0.07) 0%, transparent 50%)`,
+              transform: `translate(${px * 0.4}px, ${py * 0.4}px)`,
             }}
           />
 
-          {/* ─── MONITOR BEZEL ─── */}
-
+          {/* ── MONITOR ASSEMBLY ── */}
           <div
             className="absolute"
             style={{
               top: '50%',
               left: '50%',
-              width: 'min(900px, 85vw)',
-              height: 'min(680px, 75vh)',
-              transform: `translate(-50%, -50%) translate(${parallaxX}px, ${parallaxY}px)`,
+              width: 'min(860px, 88vw)',
+              height: 'min(640px, 72vh)',
+              transform: `translate(-50%, -50%) translate(${px}px, ${py}px)`,
             }}
           >
-            {/* Outer gunmetal bezel */}
+            {/* ambient shadow on desk */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                inset: '-4%',
+                boxShadow: `
+                  0 60px 140px rgba(0,0,0,0.95),
+                  0 25px 50px rgba(0,0,0,0.7),
+                  inset 0 0 0 1px rgba(255,255,255,0.03)
+                `,
+                borderRadius: '6px',
+              }}
+            />
+
+            {/* outer bezel */}
             <div
               className="absolute inset-0 rounded-sm"
               style={{
                 background: `
-                  linear-gradient(145deg, #2a2a2e 0%, ${GUNMETAL} 40%, #151518 100%)
+                  linear-gradient(165deg, ${BEZEL_HIGHLIGHT} 0%, ${GUNMETAL} 30%, ${GUNMETAL_DARK} 70%, #151518 100%)
                 `,
+                padding: 'clamp(10px, 1.8vw, 20px)',
                 boxShadow: `
-                  0 40px 120px rgba(0,0,0,0.9),
-                  0 8px 24px rgba(0,0,0,0.6),
-                  inset 0 1px 0 rgba(255,255,255,0.04),
-                  inset 0 -1px 0 rgba(0,0,0,0.5)
+                  inset 0 1px 0 rgba(255,255,255,0.06),
+                  inset 0 -1px 0 rgba(0,0,0,0.6),
+                  0 4px 12px rgba(0,0,0,0.5)
                 `,
-                padding: 'clamp(12px, 2vw, 24px)',
               }}
             >
-              {/* Inner bezel — slightly recessed */}
+              {/* inner recess */}
               <div
                 className="w-full h-full relative overflow-hidden"
                 style={{
-                  background: '#0a0a08',
-                  boxShadow: `
-                    inset 0 2px 8px rgba(0,0,0,0.8),
-                    inset 0 0 40px rgba(0,0,0,0.6)
-                  `,
-                  borderRadius: '2px',
+                  background: '#080805',
+                  boxShadow: 'inset 0 3px 12px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.7)',
+                  borderRadius: '3px',
                 }}
               >
-                {/* CRT glass curvature simulation */}
+                {/* CRT glass curvature */}
                 <div
                   className="absolute inset-0 pointer-events-none z-20"
                   style={{
-                    background: `
-                      radial-gradient(ellipse 90% 80% at 50% 50%, transparent 50%, rgba(0,0,0,0.25) 100%)
-                    `,
-                    boxShadow: 'inset 0 0 60px rgba(0,0,0,0.4)',
+                    background: `radial-gradient(ellipse 92% 85% at 50% 50%, transparent 40%, rgba(0,0,0,0.35) 100%)`,
+                    boxShadow: 'inset 0 0 80px rgba(0,0,0,0.5)',
                   }}
                 />
 
-                {/* Glass reflection — subtle lamp bounce */}
+                {/* glass reflection */}
                 <div
                   className="absolute pointer-events-none z-20"
                   style={{
-                    top: '5%',
-                    left: '15%',
-                    width: '30%',
-                    height: '25%',
-                    background: 'linear-gradient(135deg, rgba(255,245,220,0.03) 0%, transparent 60%)',
+                    top: '4%',
+                    left: '10%',
+                    width: '35%',
+                    height: '28%',
+                    background: 'linear-gradient(145deg, rgba(255,245,220,0.035) 0%, transparent 55%)',
                     borderRadius: '50%',
-                    filter: 'blur(20px)',
+                    filter: 'blur(24px)',
                   }}
                 />
 
-                {/* Scanlines */}
+                {/* scanlines */}
                 <div
-                  className="absolute inset-0 pointer-events-none z-10 opacity-[0.07]"
+                  className="absolute inset-0 pointer-events-none z-10 opacity-[0.06]"
                   style={{
-                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)',
-                    backgroundSize: '100% 4px',
+                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.2) 3px, rgba(0,0,0,0.2) 6px)',
+                    backgroundSize: '100% 6px',
                   }}
                 />
 
-                {/* Subtle chromatic aberration at edges */}
+                {/* chromatic edge */}
                 <div
                   className="absolute inset-0 pointer-events-none z-10"
                   style={{
-                    boxShadow: 'inset 0 0 30px rgba(255, 60, 0, 0.02), inset 0 0 50px rgba(0, 40, 255, 0.02)',
+                    boxShadow: 'inset 0 0 40px rgba(255, 40, 0, 0.015), inset 0 0 60px rgba(0, 30, 255, 0.015)',
                   }}
                 />
 
-                {/* ─── PHOSPHOR SCREEN CONTENT ─── */}
+                {/* ── SCREEN CONTENT ── */}
                 <div
-                  className="absolute inset-0 z-0 flex flex-col justify-center px-8 py-10"
+                  className="absolute inset-0 z-0 flex flex-col justify-center px-6 py-8 sm:px-10 sm:py-12"
                   style={{
-                    fontFamily: '"Courier New", "Courier", monospace',
-                    fontSize: 'clamp(11px, 1.4vw, 14px)',
-                    lineHeight: 1.7,
-                    letterSpacing: '0.04em',
-                    color: PHOSPHOR_AMBER,
-                    textShadow: `
-                      0 0 8px ${PHOSPHOR_AMBER}40,
-                      0 0 20px ${PHOSPHOR_AMBER}20
-                    `,
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: 'clamp(10px, 1.3vw, 13px)',
+                    lineHeight: 1.65,
+                    letterSpacing: '0.035em',
+                    color: PHOSPHOR,
                   }}
                 >
-                  {/* Screen glow bloom */}
+                  {/* ambient phosphor glow behind text */}
                   <div
-                    className="absolute inset-0 pointer-events-none"
+                    className="absolute pointer-events-none"
                     style={{
-                      background: `radial-gradient(ellipse 60% 50% at 50% 45%, ${PHOSPHOR_AMBER}08 0%, transparent 70%)`,
+                      top: '15%',
+                      left: '10%',
+                      width: '80%',
+                      height: '70%',
+                      background: `radial-gradient(ellipse 55% 45% at 50% 50%, ${PHOSPHOR_GHOST} 0%, transparent 70%)`,
                     }}
                   />
 
-                  {BOOT_SEQUENCE.slice(0, visibleLines).map((line, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.08, ease: 'linear' }}
-                      className="whitespace-pre-wrap"
-                      style={{
-                        color:
-                          line.type === 'ok'
-                            ? '#6a9a5a'
-                            : line.type === 'warn'
-                            ? '#b8943a'
-                            : line.type === 'final'
-                            ? IVORY_AGED
-                            : line.type === 'system'
-                            ? PHOSPHOR_DIM
-                            : PHOSPHOR_AMBER,
-                        textShadow:
-                          line.type === 'final'
-                            ? `0 0 12px ${IVORY_AGED}60, 0 0 30px ${IVORY_AGED}30`
-                            : undefined,
-                        fontWeight: line.type === 'final' ? 400 : 400,
-                        letterSpacing: line.type === 'final' ? '0.08em' : '0.04em',
-                      }}
-                    >
-                      {line.text}
-                      {i === visibleLines - 1 && cursorVisible && phase !== 'done' && (
-                        <span
-                          className="inline-block ml-0.5"
-                          style={{
-                            width: '8px',
-                            height: '1.1em',
-                            backgroundColor:
-                              line.type === 'final' ? IVORY_AGED : PHOSPHOR_AMBER,
-                            opacity: 0.8,
-                            verticalAlign: 'text-bottom',
-                          }}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
+                  {LINES.slice(0, visibleCount).map((line, i) => {
+                    const isLast = i === visibleCount - 1;
+                    const color =
+                      line.type === 'ok' ? GREEN_OK :
+                      line.type === 'warn' ? AMBER_WARN :
+                      line.type === 'final' ? IVORY :
+                      line.type === 'spacer' ? 'transparent' :
+                      PHOSPHOR;
+                    const isFinal = line.type === 'final';
 
-                  {phase === 'ready' && (
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -3 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.06 }}
+                        className="whitespace-pre-wrap"
+                        style={{
+                          color,
+                          textShadow: isFinal
+                            ? `0 0 14px ${IVORY}50, 0 0 32px ${IVORY}25`
+                            : line.type === 'ok'
+                            ? `0 0 6px ${GREEN_OK}30`
+                            : `0 0 8px ${PHOSPHOR}25, 0 0 18px ${PHOSPHOR}12`,
+                          fontWeight: isFinal ? 400 : 400,
+                          letterSpacing: isFinal ? '0.07em' : '0.035em',
+                          minHeight: line.type === 'spacer' ? '0.6em' : '1.65em',
+                        }}
+                      >
+                        {line.text}
+                        {isLast && !showPrompt && cursorOn && (
+                          <span
+                            className="inline-block ml-0.5"
+                            style={{
+                              width: '7px',
+                              height: '1.15em',
+                              backgroundColor: isFinal ? IVORY : PHOSPHOR,
+                              opacity: 0.75,
+                              verticalAlign: 'text-bottom',
+                            }}
+                          />
+                        )}
+                      </motion.div>
+                    );
+                  })}
+
+                  {showPrompt && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5, duration: 1 }}
-                      className="mt-6"
-                      style={{ color: PHOSPHOR_DIM, fontSize: '0.85em' }}
+                      transition={{ delay: 0.4, duration: 0.8 }}
+                      className="mt-5"
                     >
-                      Press any key to enter the Archive...
+                      <button
+                        onClick={handleEnter}
+                        className="text-left bg-transparent border-0 p-0 cursor-pointer"
+                        style={{
+                          fontFamily: 'inherit',
+                          fontSize: 'inherit',
+                          color: PHOSPHOR_DIM,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        Press ENTER to access the Archive
+                        {cursorOn && (
+                          <span
+                            className="inline-block ml-0.5"
+                            style={{
+                              width: '7px',
+                              height: '1.15em',
+                              backgroundColor: PHOSPHOR_DIM,
+                              opacity: 0.6,
+                              verticalAlign: 'text-bottom',
+                            }}
+                          />
+                        )}
+                      </button>
                     </motion.div>
                   )}
                 </div>
 
-                {/* ─── DUST PARTICLE LAYER ─── */}
+                {/* dust canvas */}
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 z-30 pointer-events-none"
                   style={{ width: '100%', height: '100%' }}
                 />
 
-                {/* ─── VIGNETTE ─── */}
+                {/* heavy vignette */}
                 <div
                   className="absolute inset-0 pointer-events-none z-20"
-                  style={{
-                    boxShadow: 'inset 0 0 120px rgba(0,0,0,0.6)',
-                  }}
+                  style={{ boxShadow: 'inset 0 0 100px rgba(0,0,0,0.55)' }}
                 />
               </div>
             </div>
 
-            {/* Monitor brand plate */}
+            {/* model plate */}
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '-28px',
+                bottom: '-26px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 color: '#3a3a3e',
                 fontFamily: 'monospace',
-                fontSize: '9px',
-                letterSpacing: '0.2em',
+                fontSize: '8px',
+                letterSpacing: '0.22em',
                 textTransform: 'uppercase',
               }}
             >
@@ -522,27 +521,11 @@ export const BootSequence: React.FC = () => {
             </div>
           </div>
 
-          {/* ─── ROOM FOREGROUND ─── */}
-
-          {/* Desk edge shadow */}
+          {/* foreground desk edge */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
             style={{
-              background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
-            }}
-          />
-
-          {/* Ambient occlusion — monitor casts shadow on desk */}
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              top: '50%',
-              left: '50%',
-              width: 'min(920px, 88vw)',
-              height: 'min(700px, 78vh)',
-              transform: `translate(-50%, -45%) translate(${parallaxX * 1.2}px, ${parallaxY * 1.2}px)`,
-              boxShadow: '0 80px 160px rgba(0,0,0,0.95), 0 30px 60px rgba(0,0,0,0.7)',
-              borderRadius: '4px',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)',
             }}
           />
         </motion.div>
@@ -550,7 +533,3 @@ export const BootSequence: React.FC = () => {
     </AnimatePresence>
   );
 };
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

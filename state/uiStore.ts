@@ -46,6 +46,7 @@ interface UIState {
   setBooted: (booted: boolean) => void;
   setActiveModule: (module: string | null) => void;
   setTerminalOpen: (open: boolean) => void;
+  toggleTerminal: () => void;
   updateStatus: (partial: Partial<SystemStatus>) => void;
 
   // Dust mechanics
@@ -76,7 +77,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setBooted: (booted) => set({ booted }),
   setActiveModule: (activeModule) => set({ activeModule }),
   setTerminalOpen: (terminalOpen) => set({ terminalOpen }),
-
+  toggleTerminal: () => set((s) => ({ terminalOpen: !s.terminalOpen })),
   updateStatus: (partial) =>
     set((s) => ({ status: { ...s.status, ...partial } })),
 

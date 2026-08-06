@@ -1,223 +1,383 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useUIStore } from '@/state/uiStore';
-import { useTerminalStore } from '@/state/terminalStore';
-import { useAudioStore } from '@/state/audioStore';
-import { registry } from '@/logic/commandRegistry';
-import { colors, typography, spacing, timing } from '@/styles/theme';
-import { TerminalCommand, CommandOutputType } from '@/types';
+import { useRef, useEffect, useCallback, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTerminalStore } from "@/state/terminalStore";
+import { useTerminalAudio } from "@/hooks/useTerminalAudio";
 
-const getOutputColor = (type: CommandOutputType): string => {
-  switch (type) {
-    case 'error': return colors.archive.redBright;
-    case 'warning': return colors.archive.amber;
-    case 'success': return colors.archive.greenBright;
-    case 'system': return colors.archive.blue;
-    default: return colors.archive.white;
-  }
+/* ═══════════════════════════════════════════════════════════════
+   COMMAND REGISTRY — Wire these to your existing systems
+   ═══════════════════════════════════════════════════════════════ */
+const COMMANDS: Record<string, { desc: string; handler: () => string[] }> = {
+  help: {
+    desc: "List available commands",
+    handler: () => [
+      "AVAILABLE COMMANDS:",
+      "  atlas        — Open the Atlas",
+      "  investigate  — List active investigations",
+      "  evidence     — View collected evidence",
+      "  documents    — Open document archive",
+      "  signals      — Access signal recordings",
+      "  dust         — Check Dust exposure level",
+      "  status       — Archive system status",
+      "  bunker7      — Contact BUNKER_7",
+      "  clear        — Clear terminal buffer",
+      "  help         — This message",
+      "",
+      "Type a command and press ENTER.",
+    ],
+  },
+  atlas: {
+    desc: "Open the Atlas",
+    handler: () => [
+      "[OK] Opening Atlas...",
+      "  159 locations indexed.",
+      "  23 coordinates unstable.",
+      "  7 locations require immediate review.",
+    ],
+  },
+  status: {
+    desc: "Archive system status",
+    handler: () => [
+      "ARCHIVE SYSTEM STATUS:",
+      "  Uptime:        14,392 hours",
+      "  Dust Index:    0.34 μg/m³",
+      "  Observer:      STABLE",
+      "  Atlas Sync:    PARTIAL (23 drift events)",
+      "  BUNKER_7:      ONLINE",
+      "  Last Backup:   1987-11-04 02:17 UTC",
+    ],
+  },
+  dust: {
+    desc: "Check Dust exposure",
+    handler: () => [
+      "DUST EXPOSURE REPORT:",
+      "  Current Level: LOW",
+      "  Accumulation:  12.4 units",
+      "  Perception:    Normal parameters",
+      "  Stability:     94%",
+      "",
+      "No anomalous readings detected.",
+    ],
+  },
+  clear: {
+    desc: "Clear terminal buffer",
+    handler: () => [],
+  },
 };
 
-export const Terminal: React.FC = () => {
-  const { terminalOpen, setTerminalOpen } = useUIStore();
-  const { commands, addCommand, clearCommands, history, addHistory, historyIndex, setHistoryIndex } = useTerminalStore();
-  const { click } = useAudioStore();
-  const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+const COMMAND_NAMES = Object.keys(COMMANDS);
+
+/* ═══════════════════════════════════════════════════════════════
+   TERMINAL COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
+export function Terminal() {
+  const {
+    isOpen,
+    lines,
+    inputBuffer,
+    cursorPosition,
+    isPrinting,
+    setOpen,
+    addLine,
+    setInput,
+    moveCursor,
+    submitInput,
+    historyPrev,
+    historyNext,
+    clear,
+    setPrinting,
+  } = useTerminalStore();
+
+  const { playKey, playEnter, playBell, playScroll } = useTerminalAudio();
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+  const [autocomplete, setAutocomplete] = useState<string | null>(null);
+
+  /* ── Auto-scroll to bottom ── */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [commands]);
-  
+  }, [lines]);
+
+  /* ── Focus input when open ── */
   useEffect(() => {
-    if (terminalOpen && inputRef.current) {
+    if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [terminalOpen]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    
-    click();
-    addHistory(input.trim());
-    setHistoryIndex(-1);
-    setSuggestions([]);
-    
-    const result = await registry.execute(input.trim());
-    
-    if (result.clear) {
-      clearCommands();
-      setInput('');
+  }, [isOpen]);
+
+  /* ── Toggle with ~ key ── */
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "`" || e.key === "~") {
+        e.preventDefault();
+        setOpen(!isOpen);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isOpen, setOpen]);
+
+  /* ── Process command ── */
+  const processCommand = useCallback(
+    (cmd: string) => {
+      const trimmed = cmd.trim().toLowerCase();
+      if (!trimmed) return;
+
+      setPrinting(true);
+
+      if (trimmed === "clear") {
+        clear();
+        setPrinting(false);
+        return;
+      }
+
+      const command = COMMANDS[trimmed];
+      if (!command) {
+        const out = [
+          `Unknown command: "${trimmed}"`,
+          'Type "help" for available commands.',
+        ];
+        printLines(out, "error");
+        playBell();
+        return;
+      }
+
+      const out = command.handler();
+      printLines(out, "output");
+    },
+    [setPrinting, clear, playBell]
+  );
+
+  const printLines = useCallback(
+    (texts: string[], type: TerminalLine["type"]) => {
+      let delay = 0;
+      texts.forEach((text, i) => {
+        delay += 40 + Math.random() * 60;
+        setTimeout(() => {
+          addLine({ text, type });
+          if (i === texts.length - 1) {
+            setPrinting(false);
+          } else {
+            playScroll();
+          }
+        }, delay);
+      });
+    },
+    [addLine, setPrinting, playScroll]
+  );
+
+  /* ── Input handling ── */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    playKey();
+    setAutocomplete(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isPrinting) {
+      e.preventDefault();
       return;
     }
-    
-    const cmd: TerminalCommand = {
-      id: Date.now().toString(),
-      input: input.trim(),
-      output: result.output,
-      timestamp: Date.now(),
-      type: result.type,
-    };
-    
-    addCommand(cmd);
-    setInput('');
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const newIndex = historyIndex + 1;
-      if (newIndex < history.length) {
-        setHistoryIndex(newIndex);
-        setInput(history[history.length - 1 - newIndex] || '');
-      }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const newIndex = historyIndex - 1;
-      if (newIndex >= -1) {
-        setHistoryIndex(newIndex);
-        setInput(newIndex >= 0 ? history[history.length - 1 - newIndex] : '');
-      }
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      const tokens = input.split(/\s+/);
-      const partial = tokens[tokens.length - 1] || '';
-      const matches = registry.complete(partial);
-      if (matches.length === 1) {
-        tokens[tokens.length - 1] = matches[0];
-        setInput(tokens.join(' ') + ' ');
-        setSuggestions([]);
-      } else if (matches.length > 1) {
-        setSuggestions(matches);
-      }
-    } else if (e.key === 'Escape') {
-      setTerminalOpen(false);
+
+    switch (e.key) {
+      case "Enter":
+        e.preventDefault();
+        playEnter();
+        submitInput();
+        setTimeout(() => processCommand(inputBuffer), 50);
+        setAutocomplete(null);
+        break;
+
+      case "ArrowUp":
+        e.preventDefault();
+        historyPrev();
+        break;
+
+      case "ArrowDown":
+        e.preventDefault();
+        historyNext();
+        break;
+
+      case "Tab":
+        e.preventDefault();
+        if (autocomplete) {
+          setInput(autocomplete);
+          setAutocomplete(null);
+        } else {
+          const match = COMMAND_NAMES.find((c) =>
+            c.startsWith(inputBuffer.toLowerCase())
+          );
+          if (match && match !== inputBuffer.toLowerCase()) {
+            setAutocomplete(match);
+          }
+        }
+        break;
+
+      case "Escape":
+        setOpen(false);
+        break;
+
+      case "ArrowLeft":
+        moveCursor(-1);
+        break;
+
+      case "ArrowRight":
+        moveCursor(1);
+        break;
+
+      case "Home":
+        moveCursor(-9999);
+        break;
+
+      case "End":
+        moveCursor(9999);
+        break;
+
+      default:
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          playKey();
+        }
+        break;
     }
   };
-  
+
+  /* ── Render ── */
   return (
     <AnimatePresence>
-      {terminalOpen && (
+      {isOpen && (
         <motion.div
-          initial={{ y: 192 }}
-          animate={{ y: 0 }}
-          exit={{ y: 192 }}
-          transition={{ duration: timing.terminalSlide, ease: 'easeInOut' }}
-          className="fixed bottom-0 left-0 right-0 z-30 border-t"
-          style={{ 
-            height: spacing.terminalHeight,
-            backgroundColor: colors.archive.black,
-            borderColor: colors.archive.gray,
-            fontFamily: typography.mono,
+          className="fixed bottom-0 left-0 right-0 z-40 flex flex-col"
+          style={{
+            height: "45vh",
+            background: "#0d0c0a",
+            borderTop: "1px solid rgba(255, 176, 0, 0.2)",
+            boxShadow: "0 -20px 60px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,176,0,0.05)",
           }}
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 220 }}
         >
-          <div 
-            className="flex items-center justify-between px-3 h-6 border-b"
-            style={{ 
-              borderColor: colors.archive.gray,
-              backgroundColor: colors.archive.surface,
+          {/* Subtle LCD texture */}
+          <div
+            className="pointer-events-none absolute inset-0 z-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='4' height='2' fill='%23ffb000'/%3E%3C/svg%3E")`,
+            }}
+          />
+
+          {/* Header bar */}
+          <div
+            className="relative z-10 flex items-center justify-between px-4 py-1.5"
+            style={{
+              background: "rgba(255,176,0,0.04)",
+              borderBottom: "1px solid rgba(255,176,0,0.08)",
             }}
           >
-            <span style={{ 
-              color: colors.archive.green, 
-              fontSize: typography.sizes.xs 
-            }}>
-              TERMINAL
+            <span
+              className="font-mono text-[10px] tracking-[2px]"
+              style={{ color: "rgba(255,176,0,0.35)" }}
+            >
+              ARCHIVE TERMINAL — v7.2
             </span>
             <button
-              onClick={() => setTerminalOpen(false)}
-              className="hover:opacity-70 transition-opacity"
-              style={{ color: colors.archive.gray, fontSize: typography.sizes.xs }}
+              onClick={() => setOpen(false)}
+              className="font-mono text-[10px] hover:opacity-100"
+              style={{ color: "rgba(255,176,0,0.4)" }}
             >
-              [ESC]
+              [ CLOSE ]
             </button>
           </div>
-          
-          <div 
+
+          {/* Output scroll area */}
+          <div
             ref={scrollRef}
-            className="overflow-y-auto p-3 space-y-2"
-            style={{ height: 'calc(100% - 3rem)' }}
+            className="relative z-10 flex-1 overflow-y-auto px-4 py-3 font-mono text-[12px] leading-[1.7]"
+            style={{ color: "#ffb000" }}
           >
-            {commands.length === 0 && (
-              <div style={{ color: colors.archive.gray, fontSize: typography.sizes.sm }}>
-                Vanishing Points Archive Terminal v2.4.1
-                <br />
-                Type 'help' for available commands.
-              </div>
-            )}
-            
-            {commands.map((cmd) => (
-              <div key={cmd.id} className="space-y-1">
-                <div style={{ color: colors.archive.green, fontSize: typography.sizes.sm }}>
-                  <span style={{ color: colors.archive.amber }}>&gt;</span> {cmd.input}
-                </div>
-                {cmd.output && (
-                  <div style={{ 
-                    color: getOutputColor(cmd.type), 
-                    fontSize: typography.sizes.sm,
-                    opacity: 0.9,
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: '1.4',
-                  }}>
-                    {cmd.output}
-                  </div>
-                )}
+            {lines.map((line) => (
+              <div
+                key={line.id}
+                className="mb-0.5 whitespace-pre-wrap"
+                style={{
+                  color:
+                    line.type === "error"
+                      ? "#c45a5a"
+                      : line.type === "system"
+                      ? "#8a6000"
+                      : line.type === "input"
+                      ? "#ffb000"
+                      : "#d4a030",
+                  opacity: line.type === "system" ? 0.7 : 1,
+                }}
+              >
+                {line.text}
               </div>
             ))}
+            {isPrinting && (
+              <div className="animate-pulse" style={{ color: "#8a6000" }}>
+                ...
+              </div>
+            )}
           </div>
-          
-          {suggestions.length > 0 && (
-            <div 
-              className="absolute left-0 right-0 bottom-8 px-3 py-1 border-t"
-              style={{ 
-                backgroundColor: colors.archive.surface,
-                borderColor: colors.archive.gray,
-              }}
-            >
-              <span style={{ color: colors.archive.gray, fontSize: typography.sizes.xs }}>
-                {suggestions.join('  ')}
-              </span>
-            </div>
-          )}
-          
-          <form 
-            onSubmit={handleSubmit}
-            className="absolute bottom-0 left-0 right-0 flex items-center px-3 h-8 border-t"
-            style={{ 
-              borderColor: colors.archive.gray,
-              backgroundColor: colors.archive.surface,
+
+          {/* Input line */}
+          <div
+            className="relative z-10 flex items-center px-4 py-2.5"
+            style={{
+              borderTop: "1px solid rgba(255,176,0,0.1)",
+              background: "rgba(0,0,0,0.3)",
             }}
           >
-            <span style={{ color: colors.archive.amber, marginRight: '0.5rem' }}>
+            <span className="mr-2 font-mono text-sm" style={{ color: "#8a6000" }}>
               &gt;
             </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                if (suggestions.length) setSuggestions([]);
-              }}
-              onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent outline-none"
-              style={{ 
-                color: colors.archive.white,
-                fontFamily: typography.mono,
-                fontSize: typography.sizes.sm,
-              }}
-              spellCheck={false}
-              autoComplete="off"
-            />
-          </form>
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputBuffer}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-transparent font-mono text-sm outline-none"
+                style={{
+                  color: "#ffb000",
+                  caretColor: "transparent",
+                }}
+                spellCheck={false}
+                autoComplete="off"
+                autoCapitalize="off"
+              />
+              {/* Block cursor */}
+              <div
+                className="pointer-events-none absolute top-0 h-[1.3em] w-[8px]"
+                style={{
+                  left: `${cursorPosition * 7.2 + 2}px`,
+                  background: "#ffb000",
+                  opacity: 0.7,
+                  marginTop: "2px",
+                }}
+              />
+              {/* Autocomplete ghost */}
+              {autocomplete && (
+                <div
+                  className="pointer-events-none absolute top-0 font-mono text-sm"
+                  style={{
+                    left: `${inputBuffer.length * 7.2 + 2}px`,
+                    color: "rgba(255,176,0,0.25)",
+                    marginTop: "2px",
+                  }}
+                >
+                  {autocomplete.slice(inputBuffer.length)}
+                </div>
+              )}
+            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
-};
+}

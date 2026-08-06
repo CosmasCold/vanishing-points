@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDocumentStore } from '@/state/documentStore';
 import { useAudioStore } from '@/state/audioStore';
-import { colors, typography } from '@/styles/theme';
+import { colors, typography, spacing } from '@/styles/theme';
 import { DocumentArtifact, DocumentType } from '@/types/documents';
 
 const TYPE_META: Record<DocumentType, { label: string; font: string; size: string }> = {

@@ -1,37 +1,42 @@
-export type DocumentType = 
-  | 'typed_report'      // Institutional, monospaced, clean or carbon-copied
-  | 'handwritten'       // Cursive or print, ink bleed, personal
-  | 'blueprint'         // Technical drawings, grid lines, annotations
-  | 'telegram'          // All-caps, faded tape, urgent
-  | 'form'              // Boxes, stamps, bureaucracy
-  | 'newspaper'         // Columns, ink transfer, age spots
-  | 'photograph'        // Glossy or matte, borders, developer marks
-  | 'journal';          // Bound pages, margin notes, bookmarks
+export type DocumentType =
+  | 'typed_report'
+  | 'handwritten'
+  | 'blueprint'
+  | 'telegram'
+  | 'form'
+  | 'newspaper'
+  | 'photograph'
+  | 'journal'
+  | 'field_report'
+  | 'witness_statement'
+  | 'bunker7_transmission';
 
 export interface DocumentArtifact {
   id: string;
-  type: DocumentType;
+  slug: string;
   title: string;
-  content: string;              // The text
+  type: DocumentType;
   date: string;
+  source: string;
   author: string;
-  source: string;               // Where it was found
-  condition: 'pristine' | 'worn' | 'damaged' | 'fragment';
-  
-  // Physical properties
-  paperAge: number;             // 0-100, affects yellowing
-  hasFoldMarks: boolean;
-  hasCoffeeRing: boolean;
-  hasTornCorner: boolean;
-  hasAnnotation: boolean;
-  annotationText?: string;
-  
-  // Provenance
-  collectedBy: string;
-  collectedDate: string;
-  verificationStatus: 'verified' | 'suspected' | 'forged';
-  
-  // Related
-  relatedEvidenceIds: string[];
-  relatedPlaceSlugs: string[];
+  condition: 'pristine' | 'aged' | 'damaged' | 'corrupted' | 'fragment';
+  tier: number;
+  placeSlug: string;
+  content: string;
+  corruptedContent?: string;
+  pages: number;
+  paperType: string;
+  inkType: string;
+  corruptionLevel: number;
+  foldMarks?: number;
+  coffeeStain?: boolean;
+  waterDamage?: boolean;
+  burnMarks?: boolean;
+  recoveredAt: string;
+  recoveredBy: string;
+  verificationStatus: 'verified' | 'disputed' | 'forged';
+  relatedDocuments: string[];
+  dustReward: number;
+  readCount: number;
+  annotations: string[];
 }

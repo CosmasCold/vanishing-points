@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDocumentStore } from '@/state/documentStore';
 import { useAudioStore } from '@/state/audioStore';
@@ -16,12 +16,16 @@ const TYPE_META: Record<DocumentType, { label: string; font: string; size: strin
   newspaper: { label: 'PRESS CLIPPING', font: typography.serif, size: '0.875rem' },
   photograph: { label: 'PHOTOGRAPH', font: typography.mono, size: '0.8125rem' },
   journal: { label: 'FIELD JOURNAL', font: typography.serif, size: '0.9375rem' },
+  field_report: { label: 'FIELD REPORT', font: typography.mono, size: '0.8125rem' },
+  witness_statement: { label: 'WITNESS STATEMENT', font: typography.serif, size: '0.9375rem' },
+  bunker7_transmission: { label: 'BUNKER_7 TRANSMISSION', font: typography.mono, size: '0.8125rem' },
 };
 
 const CONDITION_OPACITY: Record<string, number> = {
   pristine: 1,
-  worn: 0.92,
+  aged: 0.92,
   damaged: 0.78,
+  corrupted: 0.7,
   fragment: 0.65,
 };
 
@@ -40,6 +44,7 @@ export const DocumentViewer: React.FC = () => {
   } = useDocumentStore();
   const { click } = useAudioStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showCorrupted, setShowCorrupted] = useState(false);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -58,6 +63,14 @@ export const DocumentViewer: React.FC = () => {
 
   const meta = TYPE_META[activeDocument.type];
   const conditionOpacity = CONDITION_OPACITY[activeDocument.condition] || 1;
+
+  // Determine displayed content
+  const displayContent = showCorrupted && activeDocument.corruptedContent
+    ? activeDocument.corruptedContent
+    : activeDocument.content;
+
+  const hasAnnotation = activeDocument.annotations.length > 0;
+  const annotationText = activeDocument.annotations.join('\n\n');
 
   return (
     <motion.div
@@ -126,7 +139,7 @@ export const DocumentViewer: React.FC = () => {
             UV
           </button>
 
-          {activeDocument.hasAnnotation && (
+          {hasAnnotation && (
             <button
               onClick={(e) => { e.stopPropagation(); click(); toggleAnnotation(); }}
               className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
@@ -137,6 +150,20 @@ export const DocumentViewer: React.FC = () => {
               }}
             >
               NOTE
+            </button>
+          )}
+
+          {activeDocument.corruptedContent && (
+            <button
+              onClick={(e) => { e.stopPropagation(); click(); setShowCorrupted(!showCorrupted); }}
+              className="px-2 py-0.5 border text-xs hover:border-red-700 transition-colors"
+              style={{
+                borderColor: showCorrupted ? colors.archive.red : colors.archive.gray,
+                color: showCorrupted ? colors.archive.red : colors.archive.white,
+                fontFamily: typography.mono,
+              }}
+            >
+              {showCorrupted ? 'ORIGINAL' : 'CORRUPTED'}
             </button>
           )}
 
@@ -192,32 +219,45 @@ export const DocumentViewer: React.FC = () => {
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: `radial-gradient(ellipse at center, transparent 40%, rgba(160, 140, 100, ${activeDocument.paperAge / 300}) 100%)`,
+                  background: `radial-gradient(ellipse at center, transparent 40%, rgba(160, 140, 100, ${activeDocument.corruptionLevel * 50 + 10}) 100%)`,
                   mixBlendMode: 'multiply',
                 }}
               />
             )}
 
             {/* Fold marks */}
-            {activeDocument.hasFoldMarks && !showUV && (
+            {(activeDocument.foldMarks && activeDocument.foldMarks > 0) && !showUV && (
               <>
                 <div className="absolute top-1/2 left-0 right-0 h-px pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }} />
-                <div className="absolute top-0 bottom-0 left-1/2 w-px pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }} />
+                {activeDocument.foldMarks > 1 && (
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }} />
+                )}
               </>
             )}
 
-            {/* Torn corner */}
-            {activeDocument.hasTornCorner && !showUV && (
+            {/* Water damage */}
+            {activeDocument.waterDamage && !showUV && (
               <div
-                className="absolute top-0 right-0 w-16 h-16 pointer-events-none"
+                className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
                 style={{
-                  background: 'linear-gradient(225deg, transparent 45%, rgba(26,26,24,0.4) 50%)',
+                  background: 'linear-gradient(to top, rgba(100, 90, 70, 0.15), transparent)',
                 }}
               />
             )}
 
-            {/* Coffee ring */}
-            {activeDocument.hasCoffeeRing && !showUV && (
+            {/* Burn marks */}
+            {activeDocument.burnMarks && !showUV && (
+              <div
+                className="absolute top-4 right-8 w-12 h-12 rounded-full pointer-events-none"
+                style={{
+                  border: '1px solid rgba(80, 60, 40, 0.2)',
+                  boxShadow: 'inset 0 0 12px rgba(80, 60, 40, 0.15)',
+                }}
+              />
+            )}
+
+            {/* Coffee stain */}
+            {activeDocument.coffeeStain && !showUV && (
               <div
                 className="absolute bottom-8 right-12 w-24 h-24 rounded-full pointer-events-none"
                 style={{
@@ -235,7 +275,7 @@ export const DocumentViewer: React.FC = () => {
                     TELEGRAM
                   </div>
                   <div style={{ fontWeight: 'bold', letterSpacing: '0.05em' }}>
-                    {activeDocument.content}
+                    {displayContent}
                   </div>
                 </div>
               ) : activeDocument.type === 'blueprint' ? (
@@ -244,17 +284,17 @@ export const DocumentViewer: React.FC = () => {
                     [TECHNICAL DRAWING — NOT TO SCALE]
                   </div>
                   <div style={{ fontFamily: typography.mono, lineHeight: '1.4' }}>
-                    {activeDocument.content}
+                    {displayContent}
                   </div>
                 </div>
               ) : (
-                activeDocument.content
+                displayContent
               )}
             </div>
 
             {/* Annotation (margin note) */}
             <AnimatePresence>
-              {showAnnotation && activeDocument.annotationText && (
+              {showAnnotation && hasAnnotation && (
                 <motion.div
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -273,7 +313,7 @@ export const DocumentViewer: React.FC = () => {
                   <div style={{ color: colors.archive.amber, fontSize: '0.625rem', fontFamily: typography.mono, marginBottom: '0.25rem' }}>
                     MARGINALIA
                   </div>
-                  {activeDocument.annotationText}
+                  {annotationText}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -288,11 +328,11 @@ export const DocumentViewer: React.FC = () => {
       >
         <div className="flex gap-4" style={{ fontFamily: typography.mono, fontSize: '0.625rem', color: colors.archive.gray }}>
           <span>COND: {activeDocument.condition.toUpperCase()}</span>
-          <span>AGE: {activeDocument.paperAge}%</span>
+          <span>TIER: {activeDocument.tier}</span>
           <span>VERIFIED: {activeDocument.verificationStatus.toUpperCase()}</span>
         </div>
         <div style={{ fontFamily: typography.mono, fontSize: '0.625rem', color: colors.archive.gray }}>
-          COLLECTED: {activeDocument.collectedBy} / {activeDocument.collectedDate}
+          RECOVERED: {activeDocument.recoveredBy} / {activeDocument.recoveredAt.split('T')[0]}
         </div>
       </div>
     </motion.div>

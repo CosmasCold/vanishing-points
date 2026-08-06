@@ -39,7 +39,7 @@ const TYPE_COLORS: Record<string, string> = {
   artifact: colors.archive.red,
 };
 
-export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence }) => {
+export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence, investigationId }) => {
   const { openMedia } = useMediaStore();
   const { openDocument } = useDocumentStore();
   const { openArtifact } = useArtifactStore();
@@ -88,24 +88,27 @@ export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence }) => {
     if (item.type === 'document' || item.type === 'witness' || item.type === 'signal') {
       const doc: DocumentArtifact = {
         id: item.id,
-        type: item.type === 'signal' ? 'telegram' : item.type === 'witness' ? 'handwritten' : 'typed_report',
+        slug: item.id,
         title: item.title,
+        type: item.type === 'signal' ? 'telegram' : item.type === 'witness' ? 'handwritten' : 'typed_report',
         content: item.description,
         date: new Date().toISOString().split('T')[0],
         author: item.source || 'Unknown',
         source: item.source || 'Archive',
-        condition: 'worn',
-        paperAge: item.type === 'witness' ? 45 : 30,
-        hasFoldMarks: true,
-        hasCoffeeRing: item.type === 'witness' ? true : Math.random() > 0.7,
-        hasTornCorner: item.type === 'signal',
-        hasAnnotation: item.type === 'witness',
-        annotationText: item.type === 'witness' ? 'Witness statement requires corroboration.' : undefined,
-        collectedBy: 'Field Team',
-        collectedDate: 'Unknown',
+        condition: 'aged',
+        tier: 0,
+        placeSlug: investigationId,
+        pages: 1,
+        paperType: 'bond',
+        inkType: 'typewriter',
+        corruptionLevel: 0,
+        recoveredAt: new Date().toISOString(),
+        recoveredBy: 'Field Team',
         verificationStatus: 'verified',
-        relatedEvidenceIds: [],
-        relatedPlaceSlugs: item.relatedTo,
+        relatedDocuments: [],
+        dustReward: 1,
+        readCount: 0,
+        annotations: [],
       };
       openDocument(doc);
       return;

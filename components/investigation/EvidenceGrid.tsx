@@ -1,88 +1,231 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { EvidenceItem } from '@/types/investigation';
+import { DocumentArtifact } from '@/types/documents';
+import { PhysicalArtifact } from '@/types/artifacts';
+import { useMediaStore } from '@/state/mediaStore';
+import { useDocumentStore } from '@/state/documentStore';
+import { useArtifactStore } from '@/state/artifactStore';
+import { useAudioStore } from '@/state/audioStore';
+import { useUIStore } from '@/state/uiStore';
 import { colors, typography } from '@/styles/theme';
-import { FileText, Image, Mic, Video, Box, User, Radio } from 'lucide-react';
-
-const typeIcons = {
-  photo: Image,
-  document: FileText,
-  audio: Mic,
-  video: Video,
-  physical: Box,
-  witness: User,
-  signal: Radio,
-};
-
-const statusColors: Record<string, string> = {
-  locked: colors.archive.gray,
-  available: colors.archive.amber,
-  collected: colors.archive.green,
-  analyzing: colors.archive.blue,
-  analyzed: colors.archive.white,
-};
 
 interface EvidenceGridProps {
   evidence: EvidenceItem[];
   investigationId: string;
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  document: 'DOC',
+  witness: 'WIT',
+  signal: 'SIG',
+  photo: 'IMG',
+  audio: 'AUD',
+  video: 'VID',
+  personal: 'ARC',
+  artifact: 'ART',
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  document: colors.archive.white,
+  witness: colors.archive.amber,
+  signal: colors.archive.blue,
+  photo: colors.archive.green,
+  audio: colors.archive.amber,
+  video: colors.archive.redBright,
+  personal: colors.archive.blueBright,
+  artifact: colors.archive.red,
+};
+
 export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence }) => {
-  if (evidence.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64" style={{ fontFamily: typography.mono }}>
-        <div style={{ color: colors.archive.gray }}>NO EVIDENCE COLLECTED</div>
-      </div>
-    );
-  }
+  const { openMedia } = useMediaStore();
+  const { openDocument } = useDocumentStore();
+  const { openArtifact } = useArtifactStore();
+  const { click } = useAudioStore();
+  const status = useUIStore((s) => s.status);
+  const examineEvidence = useUIStore((s) => s.examineEvidence);
+  const dustIndex = status?.dustIndex || 0;
+
+  const handleItemClick = (item: EvidenceItem) => {
+    if (item.unlockDust && dustIndex < item.unlockDust) return;
+
+    click();
+
+    // Award Dust for first examination only
+    const awarded = examineEvidence(item.id, item.type);
+    if (awarded > 0) {
+      console.log(`[DUST] +${awarded} from ${item.id}`);
+    }
+
+    // ── ARTIFACT: Physical object examination ──
+    if (item.type === 'artifact') {
+      const artifact: PhysicalArtifact = {
+        id: item.id,
+        name: item.title,
+        description: item.description,
+        material: 'unknown',
+        condition: 'weathered',
+        weight: 'Unknown',
+        dimensions: 'Unknown',
+        origin: item.source || 'Unknown',
+        dateRecovered: 'Unknown',
+        recoveredBy: 'Unknown',
+        quarantineStatus: 'pending',
+        markings: [],
+        relatedPlaceSlugs: item.relatedTo,
+        relatedEvidenceIds: [],
+        hasBeenWeighed: false,
+        hasBeenPhotographed: false,
+        hasBeenScanned: false,
+      };
+      openArtifact(artifact);
+      return;
+    }
+
+    // ── DOCUMENT: Typed, handwritten, telegram, etc. ──
+    if (item.type === 'document' || item.type === 'witness' || item.type === 'signal') {
+      const doc: DocumentArtifact = {
+        id: item.id,
+        type: item.type === 'signal' ? 'telegram' : item.type === 'witness' ? 'handwritten' : 'typed_report',
+        title: item.title,
+        content: item.description,
+        date: new Date().toISOString().split('T')[0],
+        author: item.source || 'Unknown',
+        source: item.source || 'Archive',
+        condition: 'worn',
+        paperAge: item.type === 'witness' ? 45 : 30,
+        hasFoldMarks: true,
+        hasCoffeeRing: item.type === 'witness' ? true : Math.random() > 0.7,
+        hasTornCorner: item.type === 'signal',
+        hasAnnotation: item.type === 'witness',
+        annotationText: item.type === 'witness' ? 'Witness statement requires corroboration.' : undefined,
+        collectedBy: 'Field Team',
+        collectedDate: 'Unknown',
+        verificationStatus: 'verified',
+        relatedEvidenceIds: [],
+        relatedPlaceSlugs: item.relatedTo,
+      };
+      openDocument(doc);
+      return;
+    }
+
+    // ── MEDIA: Audio, video, personal cache ──
+    if (
+      (item.type === 'audio' || item.type === 'video' || item.type === 'personal') &&
+      item.mediaUrl
+    ) {
+      openMedia(item.id, item.mediaUrl, item.type, item.title);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {evidence.map((item) => {
-        const Icon = typeIcons[item.type];
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      {evidence.map((item, index) => {
+        const isLocked = item.unlockDust ? dustIndex < item.unlockDust : false;
+        const color = TYPE_COLORS[item.type] || colors.archive.gray;
+
         return (
-          <div
+          <motion.div
             key={item.id}
-            className="p-3 border transition-colors hover:border-amber-700"
-            style={{ 
-              borderColor: colors.archive.gray, 
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.04, duration: 0.25 }}
+            onClick={() => !isLocked && handleItemClick(item)}
+            className={`relative p-3 border transition-colors ${
+              isLocked ? 'cursor-not-allowed' : 'cursor-pointer hover:border-amber-700'
+            }`}
+            style={{
+              borderColor: isLocked ? colors.archive.gray : color,
               backgroundColor: colors.archive.surface,
-              opacity: item.status === 'locked' ? 0.5 : 1,
+              opacity: isLocked ? 0.55 : 1,
             }}
           >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Icon size={14} style={{ color: statusColors[item.status] || colors.archive.gray }} />
-                <span style={{ color: colors.archive.white, fontSize: typography.sizes.sm, fontFamily: typography.mono }}>
-                  {item.title}
-                </span>
-              </div>
-              <span 
-                className="px-1.5 py-0.5 text-xs border"
-                style={{ 
-                  color: statusColors[item.status] || colors.archive.gray, 
-                  borderColor: statusColors[item.status] || colors.archive.gray,
+            {/* Header */}
+            <div className="flex justify-between items-start mb-2">
+              <span
+                className="px-1.5 py-0.5 border text-xs"
+                style={{
+                  borderColor: isLocked ? colors.archive.gray : color,
+                  color: isLocked ? colors.archive.gray : color,
                   fontFamily: typography.mono,
+                  fontSize: '0.625rem',
                 }}
               >
-                {item.status.toUpperCase()}
+                {isLocked ? 'LOCK' : TYPE_LABELS[item.type] || 'UNK'}
               </span>
+
+              {item.status === 'analyzing' && !isLocked && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ backgroundColor: colors.archive.amber }}
+                />
+              )}
             </div>
-            <p style={{ color: colors.archive.grayLight, fontSize: typography.sizes.xs, lineHeight: '1.4' }}>
-              {item.description}
-            </p>
-            {item.unlockCondition && item.status === 'locked' && (
-              <p style={{ color: colors.archive.amber, fontSize: typography.sizes.xs, marginTop: '0.5rem', fontFamily: typography.mono }}>
-                LOCKED: {item.unlockCondition.message}
-              </p>
-            )}
-            {item.mediaUrl && item.status !== 'locked' && (
-              <div className="mt-2 px-2 py-1 border inline-block" style={{ borderColor: colors.archive.blue, color: colors.archive.blue, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
-                [MEDIA ATTACHED]
-              </div>
-            )}
-          </div>
+
+            {/* Title */}
+            <div
+              className="mb-1"
+              style={{
+                color: isLocked ? colors.archive.gray : colors.archive.white,
+                fontFamily: typography.mono,
+                fontSize: typography.sizes.sm,
+              }}
+            >
+              {item.title}
+            </div>
+
+            {/* Description */}
+            <div
+              style={{
+                color: colors.archive.gray,
+                fontFamily: typography.serif,
+                fontSize: typography.sizes.xs,
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {isLocked
+                ? 'Insufficient Dust clearance for playback stabilization.'
+                : item.description}
+            </div>
+
+            {/* Footer */}
+            <div
+              className="mt-2 pt-2 border-t flex justify-between items-center"
+              style={{ borderColor: colors.archive.gray }}
+            >
+              {item.source && !isLocked ? (
+                <span
+                  style={{
+                    color: colors.archive.gray,
+                    fontSize: '0.625rem',
+                    fontFamily: typography.mono,
+                  }}
+                >
+                  SRC: {item.source}
+                </span>
+              ) : (
+                <span />
+              )}
+
+              {isLocked && (
+                <span
+                  style={{
+                    color: colors.archive.red,
+                    fontSize: '0.625rem',
+                    fontFamily: typography.mono,
+                  }}
+                >
+                  DUST {item.unlockDust}
+                </span>
+              )}
+            </div>
+          </motion.div>
         );
       })}
     </div>

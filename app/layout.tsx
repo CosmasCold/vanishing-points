@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ArchiveInitializer } from '@/components/ArchiveInitializer';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="bg-[#1a1a18] text-[#e8e6e1] antialiased overflow-hidden">
+        <ArchiveInitializer />
+        {children}
+      </body>
     </html>
   );
 }

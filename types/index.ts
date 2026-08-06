@@ -46,7 +46,8 @@ export type CommandOutputType =
   | 'error' 
   | 'warning' 
   | 'success' 
-  | 'info';
+  | 'info'
+  | 'signal';
 
 export interface TerminalCommand {
   id: string;

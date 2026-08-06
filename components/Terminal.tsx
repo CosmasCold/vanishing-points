@@ -15,6 +15,7 @@ const getOutputColor = (type: CommandOutputType): string => {
     case 'warning': return colors.archive.amber;
     case 'success': return colors.archive.greenBright;
     case 'system': return colors.archive.blue;
+    case 'signal': return colors.archive.blueBright; // BUNKER_7
     default: return colors.archive.white;
   }
 };
@@ -164,6 +165,7 @@ export const Terminal: React.FC = () => {
                     opacity: 0.9,
                     whiteSpace: 'pre-wrap',
                     lineHeight: '1.4',
+                    wordBreak: 'break-word',
                   }}>
                     {cmd.output}
                   </div>

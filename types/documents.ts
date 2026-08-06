@@ -1,65 +1,37 @@
 export type DocumentType = 
-  | 'field_report' 
-  | 'witness_statement' 
-  | 'internal_memo' 
-  | 'photograph' 
-  | 'audio_transcript' 
-  | 'blueprint' 
-  | 'telegram' 
-  | 'journal_entry'
-  | 'bunker7_transmission';
-
-export type DocumentCondition = 'pristine' | 'aged' | 'damaged' | 'corrupted' | 'unreadable';
-
-export type DocumentSource = 'BUNKER_7' | 'field_agent' | 'contributor' | 'archive_recovery' | 'unknown';
+  | 'typed_report'      // Institutional, monospaced, clean or carbon-copied
+  | 'handwritten'       // Cursive or print, ink bleed, personal
+  | 'blueprint'         // Technical drawings, grid lines, annotations
+  | 'telegram'          // All-caps, faded tape, urgent
+  | 'form'              // Boxes, stamps, bureaucracy
+  | 'newspaper'         // Columns, ink transfer, age spots
+  | 'photograph'        // Glossy or matte, borders, developer marks
+  | 'journal';          // Bound pages, margin notes, bookmarks
 
 export interface DocumentArtifact {
   id: string;
-  slug: string;
-  title: string;
   type: DocumentType;
+  title: string;
+  content: string;              // The text
   date: string;
-  source: DocumentSource;
-  author?: string;
-  condition: DocumentCondition;
-  tier: number;
-  placeSlug: string;
-  content: string;
-  corruptedContent?: string;
-  pages: number;
-  paperType: 'bond' | 'thermal' | 'newsprint' | 'photographic' | 'handmade';
-  inkType: 'typewriter' | 'ballpoint' | 'fountain' | 'carbon' | 'print' | 'marker';
-  corruptionLevel: number;
-  foldMarks?: number;
-  coffeeStain?: boolean;
-  burnMarks?: boolean;
-  waterDamage?: boolean;
-  mediaUrl?: string;
-  audioUrl?: string;
-  recoveredAt: string;
-  recoveredBy: string;
-  verificationStatus: 'verified' | 'pending' | 'disputed';
-  relatedDocuments: string[];
-  dustReward: number;
-  readCount: number;
-  lastReadAt?: string;
-  annotations: DocumentAnnotation[];
-}
-
-export interface DocumentAnnotation {
-  id: string;
-  text: string;
-  highlightStart: number;
-  highlightEnd: number;
-  note: string;
-  createdAt: string;
-}
-
-export interface DocumentFilter {
-  type?: DocumentType;
-  condition?: DocumentCondition;
-  tier?: number;
-  placeSlug?: string;
-  source?: DocumentSource;
-  search?: string;
+  author: string;
+  source: string;               // Where it was found
+  condition: 'pristine' | 'worn' | 'damaged' | 'fragment';
+  
+  // Physical properties
+  paperAge: number;             // 0-100, affects yellowing
+  hasFoldMarks: boolean;
+  hasCoffeeRing: boolean;
+  hasTornCorner: boolean;
+  hasAnnotation: boolean;
+  annotationText?: string;
+  
+  // Provenance
+  collectedBy: string;
+  collectedDate: string;
+  verificationStatus: 'verified' | 'suspected' | 'forged';
+  
+  // Related
+  relatedEvidenceIds: string[];
+  relatedPlaceSlugs: string[];
 }

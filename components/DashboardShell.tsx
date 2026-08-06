@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useUIStore } from '@/state/uiStore';
 import { useBootStore } from '@/state/bootStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
+import { useMediaStore } from '@/state/mediaStore';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { ArchiveErrorBoundary } from './ArchiveErrorBoundary';
+import { SkeletonLoader } from './loading/SkeletonLoader';
 import { NavigationRail } from './NavigationRail';
 import { StatusBar } from './StatusBar';
 import { Terminal } from './Terminal';
@@ -13,42 +17,14 @@ import { ModulePanel } from './ModulePanel';
 import { AtlasMap } from './atlas/AtlasMap';
 import { AtlasPanel } from './atlas/AtlasPanel';
 import { InvestigationView } from './investigation/InvestigationView';
+import { EvidenceBoard } from './evidence/EvidenceBoard';
+import { MediaViewer } from './media/MediaViewer';
+import { DocumentViewer } from './documents/DocumentViewer';
+import { ArtifactViewer } from './artifacts/ArtifactViewer';
+import { DailyRitual } from './DailyRitual';
+import { InboxPanel } from './inbox/InboxPanel';
+import { ImpossibleChangeToast } from './ImpossibleChangeToast';
 import { colors, typography, spacing } from '@/styles/theme';
-
-// ─── DEMO MODULE CONTENTS ─────────────────────────────────────
-
-const InboxContent: React.FC = () => (
-  <div className="space-y-3">
-    <div
-      className="p-3 border cursor-pointer hover:border-amber-700 transition-colors"
-      style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
-    >
-      <div className="flex justify-between items-baseline mb-1">
-        <span style={{ color: colors.archive.amber, fontSize: typography.sizes.sm }}>
-          URGENT: Coordinate Drift
-        </span>
-        <span style={{ color: colors.archive.gray, fontSize: typography.sizes.xs }}>14:01</span>
-      </div>
-      <p style={{ color: colors.archive.white, fontSize: typography.sizes.sm, opacity: 0.8 }}>
-        Atlas sector 7-B has shifted 0.3km from last known position. Recommend immediate verification.
-      </p>
-    </div>
-    <div
-      className="p-3 border cursor-pointer hover:border-amber-700 transition-colors"
-      style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
-    >
-      <div className="flex justify-between items-baseline mb-1">
-        <span style={{ color: colors.archive.green, fontSize: typography.sizes.sm }}>
-          Evidence Sync Complete
-        </span>
-        <span style={{ color: colors.archive.gray, fontSize: typography.sizes.xs }}>13:45</span>
-      </div>
-      <p style={{ color: colors.archive.white, fontSize: typography.sizes.sm, opacity: 0.8 }}>
-        3 new documents recovered from Case #2847. Awaiting review.
-      </p>
-    </div>
-  </div>
-);
 
 const InvestigationsContent: React.FC = () => (
   <div className="space-y-2">
@@ -66,13 +42,14 @@ const InvestigationsContent: React.FC = () => (
   </div>
 );
 
-// ─── DASHBOARD SHELL ──────────────────────────────────────────
-
 export const DashboardShell: React.FC = () => {
+  useKeyboardShortcuts();
+
   const { booted, activeModule, terminalOpen } = useUIStore();
   const { isComplete } = useBootStore();
   const { activeInvestigationId } = useInvestigationStore();
   const { places } = useAtlasStore();
+  const { activeMedia, closeMedia } = useMediaStore();
 
   if (!booted || !isComplete) return null;
 
@@ -122,24 +99,51 @@ export const DashboardShell: React.FC = () => {
         )}
 
         {/* Atlas workspace */}
-        {activeModule === 'atlas' && !activeInvestigationId && <AtlasMap />}
+        {activeModule === 'atlas' && !activeInvestigationId && (
+          <ArchiveErrorBoundary moduleName="Atlas">
+            <Suspense fallback={<SkeletonLoader type="map" />}>
+              <AtlasMap />
+            </Suspense>
+          </ArchiveErrorBoundary>
+        )}
+
+        {/* Evidence Board workspace */}
+        {activeModule === 'evidence' && !activeInvestigationId && (
+          <ArchiveErrorBoundary moduleName="Evidence Board">
+            <Suspense fallback={<SkeletonLoader type="grid" />}>
+              <EvidenceBoard />
+            </Suspense>
+          </ArchiveErrorBoundary>
+        )}
 
         {/* Investigation workspace overlay */}
-        {activePlace && <InvestigationView place={activePlace} />}
+        {activePlace && (
+          <ArchiveErrorBoundary moduleName={`Investigation: ${activePlace.name}`}>
+            <Suspense fallback={<SkeletonLoader type="document" lines={6} />}>
+              <InvestigationView place={activePlace} />
+            </Suspense>
+          </ArchiveErrorBoundary>
+        )}
       </div>
 
       {/* Module panels (slide-in sidebars) */}
-      <ModulePanel moduleId="inbox" title="INBOX">
-        <InboxContent />
-      </ModulePanel>
+      <ArchiveErrorBoundary moduleName="Inbox">
+        <ModulePanel moduleId="inbox" title="INBOX">
+          <InboxPanel />
+        </ModulePanel>
+      </ArchiveErrorBoundary>
 
-      <ModulePanel moduleId="atlas" title="ATLAS">
-        <AtlasPanel />
-      </ModulePanel>
+      <ArchiveErrorBoundary moduleName="Atlas Panel">
+        <ModulePanel moduleId="atlas" title="ATLAS">
+          <AtlasPanel />
+        </ModulePanel>
+      </ArchiveErrorBoundary>
 
-      <ModulePanel moduleId="investigations" title="INVESTIGATIONS">
-        <InvestigationsContent />
-      </ModulePanel>
+      <ArchiveErrorBoundary moduleName="Investigations">
+        <ModulePanel moduleId="investigations" title="INVESTIGATIONS">
+          <InvestigationsContent />
+        </ModulePanel>
+      </ArchiveErrorBoundary>
 
       <ModulePanel moduleId="evidence" title="EVIDENCE BOARD">
         <div style={{ color: colors.archive.gray }}>Evidence board initialization pending...</div>
@@ -168,6 +172,22 @@ export const DashboardShell: React.FC = () => {
       <ModulePanel moduleId="system" title="SYSTEM">
         <div style={{ color: colors.archive.gray }}>System diagnostics nominal...</div>
       </ModulePanel>
+
+      {/* Overlays */}
+      <DailyRitual />
+      <ImpossibleChangeToast />
+
+      {/* Global Viewers */}
+      {activeMedia && (
+        <MediaViewer
+          url={activeMedia.url}
+          type={activeMedia.type}
+          title={activeMedia.title}
+          onClose={closeMedia}
+        />
+      )}
+      <DocumentViewer />
+      <ArtifactViewer />
 
       {/* Global UI */}
       <NavigationRail />

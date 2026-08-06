@@ -113,7 +113,7 @@ const COMMANDS: Record<string, CommandDef> = {
   },
 };
 
-// ─── Screw Head Component ──────────────────────────────────────────
+// ─── Screw Head ────────────────────────────────────────────────────
 function Screw({ className = "" }: { className?: string }) {
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
@@ -311,16 +311,14 @@ export function Terminal() {
           className="fixed bottom-0 left-0 right-0 z-50"
           style={{ height: "45vh" }}
         >
-          {/* Outer chassis — brushed metal feel */}
+          {/* Outer chassis */}
           <div className="flex h-full flex-col border-t-2 border-[#3a3530] bg-[#141210]">
-
-            {/* Top bezel — equipment header */}
+            
+            {/* Top bezel */}
             <div className="relative flex items-center justify-between border-b border-[#2a2520] bg-[#1c1916] px-5 py-2.5">
-              {/* Screw heads */}
               <Screw className="absolute left-2 top-2" />
               <Screw className="absolute right-2 top-2" />
-
-              {/* Left: model label */}
+              
               <div className="flex items-center gap-3">
                 <div className="h-2 w-2 rounded-full bg-[#ffb000] shadow-[0_0_6px_#ffb000]" />
                 <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#8a7560]">
@@ -331,7 +329,6 @@ export function Terminal() {
                 </span>
               </div>
 
-              {/* Right: status LEDs */}
               <div className="flex items-center gap-4">
                 <StatusLED color="#4a9a4a" label="PWR" />
                 <StatusLED color="#ffb000" label="LINK" />
@@ -345,12 +342,10 @@ export function Terminal() {
               </div>
             </div>
 
-            {/* Panel seam line */}
             <div className="h-px bg-[#2a2520]" />
 
-            {/* Output area — the paper */}
+            {/* Output area */}
             <div className="relative flex-1 overflow-hidden bg-[#0f0e0c]">
-              {/* Subtle panel texture overlay */}
               <div 
                 className="pointer-events-none absolute inset-0 opacity-[0.03]"
                 style={{
@@ -363,7 +358,7 @@ export function Terminal() {
                   )`,
                 }}
               />
-
+              
               <div className="h-full overflow-y-auto px-5 py-4 font-mono text-[13px] leading-[1.7]">
                 {lines.map((line) => (
                   <motion.div
@@ -380,25 +375,21 @@ export function Terminal() {
               </div>
             </div>
 
-            {/* Bottom panel seam */}
             <div className="h-px bg-[#2a2520]" />
 
-            {/* Input bar — unmistakably visible */}
+            {/* Input bar */}
             <div className="relative border-t border-[#2a2520] bg-[#1a1815] px-5 py-3">
               <Screw className="absolute left-2 top-1/2 -translate-y-1/2" />
               <Screw className="absolute right-2 top-1/2 -translate-y-1/2" />
-
+              
               <div className="flex items-center gap-3">
-                {/* Prompt */}
                 <span className="shrink-0 font-mono text-sm font-bold text-[#ffb000]">
                   &gt;
                 </span>
-
-                {/* Input container */}
+                
                 <div className="relative flex-1">
-                  {/* Visible input background */}
                   <div className="absolute inset-0 -mx-2 rounded bg-[#ffb000]/5" />
-
+                  
                   <input
                     ref={inputRef}
                     type="text"
@@ -410,23 +401,20 @@ export function Terminal() {
                     spellCheck={false}
                     autoComplete="off"
                   />
-
-                  {/* Ghost autocomplete */}
+                  
                   {ghostText && (
                     <span className="pointer-events-none absolute left-2 top-1 font-mono text-sm text-[#ffb000]/20">
                       {input}{ghostText}
                     </span>
                   )}
                 </div>
-
-                {/* Block cursor */}
+                
                 <motion.div
                   animate={{ opacity: [1, 0.2, 1] }}
                   transition={{ duration: 1.1, repeat: Infinity }}
                   className="shrink-0 h-5 w-2.5 rounded-sm bg-[#ffb000]"
                 />
-
-                {/* Enter hint */}
+                
                 <span className="shrink-0 font-mono text-[9px] tracking-wider text-[#3a3530]">
                   ENTER
                 </span>

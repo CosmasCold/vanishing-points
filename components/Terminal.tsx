@@ -21,42 +21,33 @@ interface CommandDef {
 
 // ─── Audio ─────────────────────────────────────────────────────────
 const keySounds = [
-  new Howl({ src: ["/audio/terminal/key_01.mp3"], volume: 0.15 }),
-  new Howl({ src: ["/audio/terminal/key_02.mp3"], volume: 0.15 }),
-  new Howl({ src: ["/audio/terminal/key_03.mp3"], volume: 0.15 }),
+  new Howl({ src: ["/audio/terminal/key_01.mp3"], volume: 0.12 }),
+  new Howl({ src: ["/audio/terminal/key_02.mp3"], volume: 0.12 }),
+  new Howl({ src: ["/audio/terminal/key_03.mp3"], volume: 0.12 }),
 ];
 
 const enterSound = new Howl({
   src: ["/audio/terminal/enter_thud.mp3"],
-  volume: 0.25,
+  volume: 0.2,
 });
 
 const bellSound = new Howl({
   src: ["/audio/terminal/bell_soft.mp3"],
-  volume: 0.2,
+  volume: 0.15,
 });
 
 const scrollSound = new Howl({
   src: ["/audio/terminal/scroll_rustle.mp3"],
-  volume: 0.1,
+  volume: 0.08,
 });
 
 function playKey() {
   const s = keySounds[Math.floor(Math.random() * keySounds.length)];
   s?.play();
 }
-
-function playEnter() {
-  enterSound.play();
-}
-
-function playBell() {
-  bellSound.play();
-}
-
-function playScroll() {
-  scrollSound.play();
-}
+function playEnter() { enterSound.play(); }
+function playBell() { bellSound.play(); }
+function playScroll() { scrollSound.play(); }
 
 // ─── Command Registry ──────────────────────────────────────────────
 const COMMANDS: Record<string, CommandDef> = {
@@ -122,21 +113,45 @@ const COMMANDS: Record<string, CommandDef> = {
   },
 };
 
+// ─── Screw Head Component ──────────────────────────────────────────
+function Screw({ className = "" }: { className?: string }) {
+  return (
+    <div className={`relative flex items-center justify-center ${className}`}>
+      <div className="h-2.5 w-2.5 rounded-full bg-[#2a2826] shadow-inner" />
+      <div className="absolute h-px w-1.5 bg-[#1a1918]" />
+    </div>
+  );
+}
+
+// ─── Status LED ────────────────────────────────────────────────────
+function StatusLED({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div
+        className="h-1.5 w-1.5 rounded-full shadow-[0_0_4px]"
+        style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }}
+      />
+      <span className="font-mono text-[9px] tracking-wider text-[#5a5045]">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────
 export function Terminal() {
-  const { isOpen, lines, addLine, clearLines, toggle, setOpen } =
-    useTerminalStore();
+  const { isOpen, lines, addLine, clearLines, setOpen } = useTerminalStore();
 
   const [input, setInput] = useState("");
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [ghostText, setGhostText] = useState("");
+  const [hasBooted, setHasBooted] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const outputEndRef = useRef<HTMLDivElement>(null);
 
-  // Global keyboard listener — NO stale closure
+  // Global keyboard listener
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "~" || e.key === "`") {
@@ -151,24 +166,22 @@ export function Terminal() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Auto-focus input when opened
+  // Auto-focus
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
+    if (isOpen) setTimeout(() => inputRef.current?.focus(), 150);
   }, [isOpen]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll
   useEffect(() => {
     outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
   // Print lines with mechanical delay
   const printLines = useCallback(
-    (texts: string[], type: LineType = "output", delay = 60) => {
+    (texts: string[], type: LineType = "output", delay = 55) => {
       texts.forEach((text, i) => {
         setTimeout(() => {
-          addLine({ id: `${Date.now()}-${i}`, type, text });
+          addLine({ id: `${Date.now()}-${i}-${Math.random()}`, type, text });
           if (i > 0) playScroll();
         }, i * delay);
       });
@@ -192,14 +205,12 @@ export function Terminal() {
 
       if (def) {
         const result = def.handler(args);
-        if (result.length > 0) {
-          printLines(result, "output", 50);
-        }
+        if (result.length > 0) printLines(result, "output", 45);
       } else {
         printLines(
           [`[ERROR] Unknown command: "${cmd}"`, '  Type "help" for available commands.'],
           "error",
-          40
+          35
         );
         playBell();
       }
@@ -210,12 +221,10 @@ export function Terminal() {
     [addLine, printLines]
   );
 
-  // Input handling
+  // Input handlers
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
-
-    // Autocomplete ghost
     if (val.length > 0) {
       const match = Object.keys(COMMANDS).find((c) =>
         c.startsWith(val.toLowerCase())
@@ -231,7 +240,6 @@ export function Terminal() {
       execute(input);
       return;
     }
-
     if (e.key === "Tab") {
       e.preventDefault();
       if (ghostText) {
@@ -241,19 +249,14 @@ export function Terminal() {
       }
       return;
     }
-
     if (e.key === "ArrowUp") {
       e.preventDefault();
       if (commandHistory.length === 0) return;
-      const newIndex =
-        historyIndex === -1
-          ? commandHistory.length - 1
-          : Math.max(0, historyIndex - 1);
+      const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
       setHistoryIndex(newIndex);
       setInput(commandHistory[newIndex]);
       return;
     }
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (historyIndex === -1) return;
@@ -267,15 +270,13 @@ export function Terminal() {
       }
       return;
     }
-
-    if (e.key.length === 1) {
-      playKey();
-    }
+    if (e.key.length === 1) playKey();
   };
 
   // Boot message on first open
   useEffect(() => {
-    if (isOpen && lines.length === 0) {
+    if (isOpen && !hasBooted) {
+      setHasBooted(true);
       printLines(
         [
           "[OK] Archive Terminal v7.2",
@@ -285,21 +286,17 @@ export function Terminal() {
           'Type "help" for available commands.',
         ],
         "system",
-        80
+        70
       );
     }
-  }, [isOpen, lines.length, printLines]);
+  }, [isOpen, hasBooted, printLines]);
 
   const lineColor = (type: LineType) => {
     switch (type) {
-      case "input":
-        return "text-[#ffb000]";
-      case "system":
-        return "text-[#8a6000]";
-      case "error":
-        return "text-[#8b3a3a]";
-      default:
-        return "text-[#c4a060]";
+      case "input": return "text-[#ffb000]";
+      case "system": return "text-[#6a5a3a]";
+      case "error": return "text-[#8b3a3a]";
+      default: return "text-[#c4a060]";
     }
   };
 
@@ -310,74 +307,129 @@ export function Terminal() {
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 28, stiffness: 280 }}
-          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
+          transition={{ type: "spring", damping: 26, stiffness: 260 }}
+          className="fixed bottom-0 left-0 right-0 z-50"
           style={{ height: "45vh" }}
         >
-          {/* Panel */}
-          <div className="flex flex-1 flex-col border-t border-[#ffb000]/20 bg-[#0d0c0b]/95 backdrop-blur-md">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#ffb000]/10 px-4 py-2">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-[#ffb000]" />
-                <span className="font-mono text-xs tracking-widest text-[#ffb000]/70">
-                  ARCHIVE TERMINAL — v7.2
+          {/* Outer chassis — brushed metal feel */}
+          <div className="flex h-full flex-col border-t-2 border-[#3a3530] bg-[#141210]">
+
+            {/* Top bezel — equipment header */}
+            <div className="relative flex items-center justify-between border-b border-[#2a2520] bg-[#1c1916] px-5 py-2.5">
+              {/* Screw heads */}
+              <Screw className="absolute left-2 top-2" />
+              <Screw className="absolute right-2 top-2" />
+
+              {/* Left: model label */}
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-[#ffb000] shadow-[0_0_6px_#ffb000]" />
+                <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#8a7560]">
+                  ARCHIVE TERMINAL
+                </span>
+                <span className="font-mono text-[9px] tracking-wider text-[#4a4035]">
+                  MODEL 7-B / REV 2.1
                 </span>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="font-mono text-xs text-[#ffb000]/40 transition-colors hover:text-[#ffb000]"
-              >
-                [ CLOSE ]
-              </button>
-            </div>
 
-            {/* Output */}
-            <div
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-3 font-mono text-sm"
-            >
-              {lines.map((line) => (
-                <div
-                  key={line.id}
-                  className={`whitespace-pre-wrap leading-relaxed ${lineColor(line.type)}`}
+              {/* Right: status LEDs */}
+              <div className="flex items-center gap-4">
+                <StatusLED color="#4a9a4a" label="PWR" />
+                <StatusLED color="#ffb000" label="LINK" />
+                <StatusLED color="#3a7a9a" label="DISK" />
+                <button
+                  onClick={() => setOpen(false)}
+                  className="ml-3 font-mono text-[10px] tracking-wider text-[#5a5045] transition-colors hover:text-[#ffb000]"
                 >
-                  {line.text}
-                </div>
-              ))}
-              <div ref={outputEndRef} />
+                  [CLOSE]
+                </button>
+              </div>
             </div>
 
-            {/* Input */}
-            <div className="border-t border-[#ffb000]/10 px-4 py-3">
-              <div className="flex items-center gap-2 font-mono text-sm">
-                <span className="text-[#ffb000]">&gt;</span>
+            {/* Panel seam line */}
+            <div className="h-px bg-[#2a2520]" />
+
+            {/* Output area — the paper */}
+            <div className="relative flex-1 overflow-hidden bg-[#0f0e0c]">
+              {/* Subtle panel texture overlay */}
+              <div 
+                className="pointer-events-none absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    #ffb000 2px,
+                    #ffb000 3px
+                  )`,
+                }}
+              />
+
+              <div className="h-full overflow-y-auto px-5 py-4 font-mono text-[13px] leading-[1.7]">
+                {lines.map((line) => (
+                  <motion.div
+                    key={line.id}
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className={`whitespace-pre-wrap ${lineColor(line.type)}`}
+                  >
+                    {line.text}
+                  </motion.div>
+                ))}
+                <div ref={outputEndRef} />
+              </div>
+            </div>
+
+            {/* Bottom panel seam */}
+            <div className="h-px bg-[#2a2520]" />
+
+            {/* Input bar — unmistakably visible */}
+            <div className="relative border-t border-[#2a2520] bg-[#1a1815] px-5 py-3">
+              <Screw className="absolute left-2 top-1/2 -translate-y-1/2" />
+              <Screw className="absolute right-2 top-1/2 -translate-y-1/2" />
+
+              <div className="flex items-center gap-3">
+                {/* Prompt */}
+                <span className="shrink-0 font-mono text-sm font-bold text-[#ffb000]">
+                  &gt;
+                </span>
+
+                {/* Input container */}
                 <div className="relative flex-1">
+                  {/* Visible input background */}
+                  <div className="absolute inset-0 -mx-2 rounded bg-[#ffb000]/5" />
+
                   <input
                     ref={inputRef}
                     type="text"
                     value={input}
                     onChange={onInputChange}
                     onKeyDown={onKeyDown}
-                    className="w-full bg-transparent font-mono text-sm text-[#ffb000] outline-none"
-                    placeholder=""
+                    className="relative w-full bg-transparent px-2 py-1 font-mono text-sm text-[#ffb000] outline-none placeholder:text-[#3a3530]"
+                    placeholder="enter command..."
                     spellCheck={false}
                     autoComplete="off"
                   />
-                  {/* Ghost text for autocomplete */}
+
+                  {/* Ghost autocomplete */}
                   {ghostText && (
-                    <span className="pointer-events-none absolute left-0 top-0 font-mono text-sm text-[#ffb000]/30">
-                      {input}
-                      {ghostText}
+                    <span className="pointer-events-none absolute left-2 top-1 font-mono text-sm text-[#ffb000]/20">
+                      {input}{ghostText}
                     </span>
                   )}
                 </div>
+
                 {/* Block cursor */}
                 <motion.div
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  className="h-5 w-2.5 bg-[#ffb000]"
+                  animate={{ opacity: [1, 0.2, 1] }}
+                  transition={{ duration: 1.1, repeat: Infinity }}
+                  className="shrink-0 h-5 w-2.5 rounded-sm bg-[#ffb000]"
                 />
+
+                {/* Enter hint */}
+                <span className="shrink-0 font-mono text-[9px] tracking-wider text-[#3a3530]">
+                  ENTER
+                </span>
               </div>
             </div>
           </div>

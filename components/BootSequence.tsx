@@ -12,19 +12,8 @@ import { useUIStore } from "@/state/uiStore";
 const AUDIO_PATHS = {
   powerClick: "/audio/boot/power_click.mp3",
   crtWarmup: "/audio/boot/crt_warmup.wav",
-  relayClick: "/audio/boot/relay_click.wav",
   roomTone: "/audio/boot/room_tone.mp3",
   rain: "/audio/boot/rain.mp3",
-};
-
-/* ═══════════════════════════════════════════════════════════════
-   MONITOR SCREEN POSITION — Tweak these if text is misaligned
-   ═══════════════════════════════════════════════════════════════ */
-const MONITOR_SCREEN = {
-  left: "56%",
-  top: "42%",
-  width: "340px",
-  height: "260px",
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -164,9 +153,9 @@ function LoadingScreen({ progress }: { progress: number }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CRT TEXT OVERLAY
+   CRT TERMINAL OVERLAY (Centered, readable, atmospheric)
    ═══════════════════════════════════════════════════════════════ */
-function CRTTextOverlay({
+function CRTTerminal({
   visibleCount,
   showPrompt,
   cursorOn,
@@ -176,58 +165,84 @@ function CRTTextOverlay({
   cursorOn: boolean;
 }) {
   return (
-    <div
-      className="pointer-events-none absolute z-20 font-mono text-[11px] leading-relaxed"
-      style={{
-        left: MONITOR_SCREEN.left,
-        top: MONITOR_SCREEN.top,
-        width: MONITOR_SCREEN.width,
-        height: MONITOR_SCREEN.height,
-        color: "#ffb000",
-        textShadow: "0 0 6px rgba(255,176,0,0.5), 0 0 14px rgba(255,176,0,0.15)",
-        transform: "translate(-50%, -50%)",
-      }}
-    >
+    <div className="absolute inset-0 z-20 flex items-center justify-center">
       <div
-        className="h-full w-full p-5"
+        className="relative font-mono"
         style={{
-          background: "rgba(8,6,3,0.82)",
-          boxShadow: "inset 0 0 40px rgba(0,0,0,0.85)",
+          width: "520px",
+          padding: "36px 40px",
+          background: "rgba(8, 6, 3, 0.78)",
+          border: "1px solid rgba(255, 176, 0, 0.25)",
+          borderRadius: "3px",
+          boxShadow: `
+            0 0 0 1px rgba(0,0,0,0.8),
+            0 0 40px rgba(255, 176, 0, 0.08),
+            inset 0 0 60px rgba(0,0,0,0.6)
+          `,
+          backdropFilter: "blur(2px)",
         }}
       >
-        {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 3 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.07 }}
-            className="mb-1"
-            style={{ color: line.color }}
-          >
-            {line.text}
-            {i === visibleCount - 1 && cursorOn && (
-              <span
-                className="ml-1 inline-block"
-                style={{
-                  width: "7px",
-                  height: "13px",
-                  background: line.color,
-                  verticalAlign: "middle",
-                }}
-              />
-            )}
-          </motion.div>
-        ))}
+        {/* Corner accents */}
+        <div className="absolute left-0 top-0 h-3 w-3 border-l border-t" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
+        <div className="absolute right-0 top-0 h-3 w-3 border-r border-t" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
+        <div className="absolute bottom-0 left-0 h-3 w-3 border-b border-l" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
+        <div className="absolute bottom-0 right-0 h-3 w-3 border-b border-r" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
+
+        {/* Header */}
+        <div
+          className="mb-5 text-center text-[10px] tracking-[4px]"
+          style={{ color: "rgba(255,176,0,0.35)" }}
+        >
+          ARCHIVE TERMINAL — MODEL 7-B
+        </div>
+
+        {/* Boot lines */}
+        <div className="text-[13px] leading-[1.8]" style={{ color: "#ffb000", textShadow: "0 0 8px rgba(255,176,0,0.4)" }}>
+          {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.08 }}
+              className="mb-1"
+              style={{ color: line.color }}
+            >
+              {line.text}
+              {i === visibleCount - 1 && cursorOn && (
+                <span
+                  className="ml-1 inline-block"
+                  style={{
+                    width: "8px",
+                    height: "14px",
+                    background: line.color,
+                    verticalAlign: "middle",
+                    boxShadow: `0 0 6px ${line.color}`,
+                  }}
+                />
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Prompt */}
         {showPrompt && (
           <motion.div
-            className="mt-5 text-center text-[10px] tracking-[2.5px]"
+            className="mt-6 text-center text-[11px] tracking-[2.5px]"
             style={{ color: "#ffb000" }}
-            animate={{ opacity: [0.35, 1, 0.35] }}
+            animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           >
             [ PRESS ENTER ]
           </motion.div>
         )}
+
+        {/* Footer */}
+        <div
+          className="mt-5 text-center text-[9px] tracking-[2px]"
+          style={{ color: "rgba(138,96,0,0.4)" }}
+        >
+          VANISHING POINTS ARCHIVE
+        </div>
       </div>
     </div>
   );
@@ -253,7 +268,6 @@ export function BootSequence() {
     rain?: Howl;
     crtWarmup?: Howl;
     powerClick?: Howl;
-    relayClick?: Howl;
   }>({});
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -266,7 +280,6 @@ export function BootSequence() {
     a.rain = new Howl({ src: [AUDIO_PATHS.rain], loop: true, volume: 0.18 });
     a.crtWarmup = new Howl({ src: [AUDIO_PATHS.crtWarmup], loop: true, volume: 0 });
     a.powerClick = new Howl({ src: [AUDIO_PATHS.powerClick], volume: 0.55 });
-    a.relayClick = new Howl({ src: [AUDIO_PATHS.relayClick], volume: 0.3 });
 
     return () => {
       Object.values(a).forEach((s) => s?.unload());
@@ -290,7 +303,6 @@ export function BootSequence() {
     a.rain?.play();
     setPhase("loading");
 
-    // Fake loading progress (5-12 seconds)
     const duration = 7000 + Math.random() * 5000;
     const startTime = Date.now();
     loadIntervalRef.current = setInterval(() => {
@@ -304,23 +316,23 @@ export function BootSequence() {
     }, 80);
   }, [phase]);
 
-  /* ── Boot timing ── */
+  /* ── Boot timing (NO relay clicks) ── */
   useEffect(() => {
     if (phase !== "booting") return;
     const a = audioRef.current;
     const t = timersRef.current;
 
+    // Single power click at start
     t.push(setTimeout(() => { a.powerClick?.play(); setVisibleCount(1); }, 600));
+
+    // CRT hum fades in
     t.push(setTimeout(() => { a.crtWarmup?.fade(0, 0.35, 3500); a.crtWarmup?.play(); }, 1200));
 
+    // Lines appear silently — no relay clicks
     const lineTimes = [2000, 3100, 4300, 5500, 6700, 7900, 9100, 10800, 13500];
     lineTimes.forEach((time, idx) => {
       if (idx === 0) return;
-      t.push(setTimeout(() => {
-        a.relayClick?.rate(0.94 + Math.random() * 0.12);
-        a.relayClick?.play();
-        setVisibleCount(idx + 1);
-      }, time));
+      t.push(setTimeout(() => setVisibleCount(idx + 1), time));
     });
 
     t.push(setTimeout(() => setShowPrompt(true), 15500));
@@ -356,7 +368,6 @@ export function BootSequence() {
      RENDER
      ═══════════════════════════════════════════════════════════════ */
 
-  /* ── IDLE: Click gate ── */
   if (phase === "idle") {
     return (
       <motion.div
@@ -379,7 +390,6 @@ export function BootSequence() {
     );
   }
 
-  /* ── LOADING ── */
   if (phase === "loading") {
     return (
       <motion.div
@@ -395,7 +405,6 @@ export function BootSequence() {
     );
   }
 
-  /* ── BOOTING / EXITING ── */
   return (
     <AnimatePresence>
       {phase !== "exiting" && (
@@ -414,8 +423,8 @@ export function BootSequence() {
             style={{ backgroundImage: "url(/images/boot-room-render.png)" }}
           />
 
-          {/* CRT text on monitor */}
-          <CRTTextOverlay visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+          {/* CRT Terminal (centered, readable) */}
+          <CRTTerminal visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
 
           {/* Dust particles */}
           <DustCanvas />

@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAtlasStore } from '@/state/atlasStore';
-import { useUIStore } from '@/state/uiStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, spacing } from '@/styles/theme';
 
@@ -15,7 +14,6 @@ export const AtlasMap: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
-  const { terminalOpen } = useUIStore();
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -28,13 +26,12 @@ export const AtlasMap: React.FC = () => {
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [10, 50],
       zoom: 3,
-      projection: { name: 'mercator' }, // FLAT MAP, not globe
+      projection: { name: 'mercator' },
       attributionControl: false,
     });
 
     map.current.on('load', () => {
       setMapLoaded(true);
-      // Remove labels for cleaner look
       const style = map.current?.getStyle();
       if (style?.layers) {
         style.layers.forEach((layer) => {
@@ -55,36 +52,57 @@ export const AtlasMap: React.FC = () => {
   useEffect(() => {
     if (!mapLoaded || !map.current) return;
 
-    // Clear existing markers
+    // Clear existing
     const existing = document.querySelectorAll('.archive-marker');
     existing.forEach((el) => el.remove());
 
     places.forEach((place) => {
       const el = document.createElement('div');
       el.className = 'archive-marker';
-      el.style.width = '10px';
-      el.style.height = '10px';
-      el.style.borderRadius = '50%';
-      el.style.border = `2px solid ${colors.archive.amber}`;
-      el.style.backgroundColor = place.status === 'sealed' ? colors.archive.red :
+      
+      // Outer container — NO TRANSFORM here. Mapbox owns this.
+      el.style.width = '12px';
+      el.style.height = '12px';
+      el.style.position = 'relative';
+      el.style.cursor = 'pointer';
+
+      // Inner dot — this is what we style
+      const dot = document.createElement('div');
+      dot.style.width = '100%';
+      dot.style.height = '100%';
+      dot.style.borderRadius = '50%';
+      dot.style.border = `1.5px solid ${colors.archive.amber}`;
+      dot.style.backgroundColor = 
+        place.status === 'sealed' ? colors.archive.red :
         place.status === 'whispered' ? colors.archive.blue :
         colors.archive.green;
-      el.style.cursor = 'pointer';
-      el.style.boxShadow = `0 0 8px ${colors.archive.amber}`;
-      el.style.transition = 'transform 0.2s ease';
+      dot.style.boxShadow = `0 0 6px ${colors.archive.amber}40`; // reduced glow (25% opacity)
+      dot.style.transition = 'all 0.2s ease';
+      
+      el.appendChild(dot);
 
+      // Hover effect on the INNER dot only, no transform on parent
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.5)';
+        dot.style.width = '16px';
+        dot.style.height = '16px';
+        dot.style.marginLeft = '-2px';
+        dot.style.marginTop = '-2px';
+        dot.style.boxShadow = `0 0 10px ${colors.archive.amber}60`;
       });
       el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
+        dot.style.width = '100%';
+        dot.style.height = '100%';
+        dot.style.marginLeft = '0';
+        dot.style.marginTop = '0';
+        dot.style.boxShadow = `0 0 6px ${colors.archive.amber}40`;
       });
+      
       el.addEventListener('click', () => {
         click();
         selectPlace(place.slug);
       });
 
-      new mapboxgl.Marker({ element: el })
+      new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat(place.coordinates)
         .addTo(map.current!);
     });
@@ -104,19 +122,14 @@ export const AtlasMap: React.FC = () => {
   }, [selectedPlaceSlug, places]);
 
   return (
-    <div
-      className="absolute inset-0"
-      style={{
-        marginBottom: terminalOpen ? spacing.terminalHeight : 0,
-      }}
-    >
+    <div className="absolute inset-0">
       <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Scanline overlay for CRT feel */}
+      {/* Scanline overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)',
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px)',
           backgroundSize: '100% 4px',
         }}
       />
@@ -124,16 +137,14 @@ export const AtlasMap: React.FC = () => {
       {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          boxShadow: 'inset 0 0 120px rgba(0,0,0,0.6)',
-        }}
+        style={{ boxShadow: 'inset 0 0 120px rgba(0,0,0,0.6)' }}
       />
 
       {/* Corner brackets */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
-      <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
-      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
-      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
+      <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
+      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
 
       {/* Coordinate readout */}
       <div

@@ -4,6 +4,22 @@ import { useInvestigationStore } from '@/state/investigationStore';
 import { useSessionStore } from '@/state/sessionStore';
 
 export function registerSystemCommands(registry: CommandRegistry) {
+
+  registry.register({
+    name: 'guide',
+    description: 'Open operator briefing',
+    usage: 'guide',
+    aliases: ['tutorial', 'help-start'],
+    handler: () => {
+      // Force show guide by clearing localStorage
+      localStorage.removeItem('vp-guide-seen');
+      return {
+        output: 'Operator briefing queued. Reload the interface to view, or type "help" for command reference.',
+        type: 'info' as const,
+      };
+    },
+  });
+
   registry.register({
     name: 'help',
     description: 'Display available commands',

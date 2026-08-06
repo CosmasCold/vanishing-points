@@ -1,379 +1,384 @@
 "use client";
 
-import { useRef, useEffect, useCallback, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Howl } from "howler";
 import { useTerminalStore } from "@/state/terminalStore";
-import { useTerminalAudio } from "@/hooks/useTerminalAudio";
 
-/* ═══════════════════════════════════════════════════════════════
-   COMMAND REGISTRY — Wire these to your existing systems
-   ═══════════════════════════════════════════════════════════════ */
-const COMMANDS: Record<string, { desc: string; handler: () => string[] }> = {
+// ─── Types ─────────────────────────────────────────────────────────
+type LineType = "input" | "output" | "system" | "error";
+
+interface TerminalLine {
+  id: string;
+  type: LineType;
+  text: string;
+}
+
+interface CommandDef {
+  desc: string;
+  handler: (args: string[]) => string[];
+}
+
+// ─── Audio ─────────────────────────────────────────────────────────
+const keySounds = [
+  new Howl({ src: ["/audio/terminal/key_01.mp3"], volume: 0.15 }),
+  new Howl({ src: ["/audio/terminal/key_02.mp3"], volume: 0.15 }),
+  new Howl({ src: ["/audio/terminal/key_03.mp3"], volume: 0.15 }),
+];
+
+const enterSound = new Howl({
+  src: ["/audio/terminal/enter_thud.mp3"],
+  volume: 0.25,
+});
+
+const bellSound = new Howl({
+  src: ["/audio/terminal/bell_soft.mp3"],
+  volume: 0.2,
+});
+
+const scrollSound = new Howl({
+  src: ["/audio/terminal/scroll_rustle.mp3"],
+  volume: 0.1,
+});
+
+function playKey() {
+  const s = keySounds[Math.floor(Math.random() * keySounds.length)];
+  s?.play();
+}
+
+function playEnter() {
+  enterSound.play();
+}
+
+function playBell() {
+  bellSound.play();
+}
+
+function playScroll() {
+  scrollSound.play();
+}
+
+// ─── Command Registry ──────────────────────────────────────────────
+const COMMANDS: Record<string, CommandDef> = {
   help: {
     desc: "List available commands",
-    handler: () => [
-      "AVAILABLE COMMANDS:",
-      "  atlas        — Open the Atlas",
-      "  investigate  — List active investigations",
-      "  evidence     — View collected evidence",
-      "  documents    — Open document archive",
-      "  signals      — Access signal recordings",
-      "  dust         — Check Dust exposure level",
-      "  status       — Archive system status",
-      "  bunker7      — Contact BUNKER_7",
-      "  clear        — Clear terminal buffer",
-      "  help         — This message",
-      "",
-      "Type a command and press ENTER.",
-    ],
+    handler: () => {
+      const lines = ["[SYSTEM] Available commands:"];
+      Object.entries(COMMANDS).forEach(([name, def]) => {
+        lines.push(`  ${name.padEnd(14)} — ${def.desc}`);
+      });
+      return lines;
+    },
+  },
+  clear: {
+    desc: "Clear terminal output",
+    handler: () => {
+      useTerminalStore.getState().clearLines();
+      return [];
+    },
   },
   atlas: {
     desc: "Open the Atlas",
-    handler: () => [
-      "[OK] Opening Atlas...",
-      "  159 locations indexed.",
-      "  23 coordinates unstable.",
-      "  7 locations require immediate review.",
-    ],
+    handler: () => {
+      return [
+        "[OK] Atlas synchronized.",
+        "  159 locations indexed.",
+        "  Use the map interface to browse.",
+      ];
+    },
+  },
+  investigate: {
+    desc: "List active investigations",
+    handler: () => {
+      return [
+        "[OK] Investigation ledger:",
+        "  [ACTIVE]   VP-2024-001: The Dust Corridor",
+        "  [COLD]     VP-2023-089: Meridian Signal",
+        "  [SEALED]   VP-2022-044: Operation Blackwater",
+      ];
+    },
   },
   status: {
-    desc: "Archive system status",
-    handler: () => [
-      "ARCHIVE SYSTEM STATUS:",
-      "  Uptime:        14,392 hours",
-      "  Dust Index:    0.34 μg/m³",
-      "  Observer:      STABLE",
-      "  Atlas Sync:    PARTIAL (23 drift events)",
-      "  BUNKER_7:      ONLINE",
-      "  Last Backup:   1987-11-04 02:17 UTC",
-    ],
+    desc: "System status report",
+    handler: () => {
+      return [
+        "[OK] Archive Terminal v7.2",
+        "  Uptime: 14d 07h 33m",
+        "  Dust Level: 0.12 μg/m³ (nominal)",
+        "  Connection: STABLE",
+        "  Encryption: AES-256-GCM",
+      ];
+    },
   },
-  dust: {
-    desc: "Check Dust exposure",
-    handler: () => [
-      "DUST EXPOSURE REPORT:",
-      "  Current Level: LOW",
-      "  Accumulation:  12.4 units",
-      "  Perception:    Normal parameters",
-      "  Stability:     94%",
-      "",
-      "No anomalous readings detected.",
-    ],
-  },
-  clear: {
-    desc: "Clear terminal buffer",
-    handler: () => [],
+  bunker7: {
+    desc: "Contact BUNKER_7",
+    handler: () => {
+      return [
+        "[CONNECTING] BUNKER_7...",
+        "  Channel open.",
+        "  Awaiting input.",
+      ];
+    },
   },
 };
 
-const COMMAND_NAMES = Object.keys(COMMANDS);
-
-/* ═══════════════════════════════════════════════════════════════
-   TERMINAL COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
+// ─── Component ─────────────────────────────────────────────────────
 export function Terminal() {
-  const {
-    isOpen,
-    lines,
-    inputBuffer,
-    cursorPosition,
-    isPrinting,
-    setOpen,
-    addLine,
-    setInput,
-    moveCursor,
-    submitInput,
-    historyPrev,
-    historyNext,
-    clear,
-    setPrinting,
-  } = useTerminalStore();
+  const { isOpen, lines, addLine, clearLines, toggle, setOpen } =
+    useTerminalStore();
 
-  const { playKey, playEnter, playBell, playScroll } = useTerminalAudio();
+  const [input, setInput] = useState("");
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [ghostText, setGhostText] = useState("");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [autocomplete, setAutocomplete] = useState<string | null>(null);
+  const outputEndRef = useRef<HTMLDivElement>(null);
 
-  /* ── Auto-scroll to bottom ── */
+  // Global keyboard listener — NO stale closure
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [lines]);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "~" || e.key === "`") {
+        e.preventDefault();
+        useTerminalStore.getState().toggle();
+      }
+      if (e.key === "Escape" && useTerminalStore.getState().isOpen) {
+        useTerminalStore.getState().setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
-  /* ── Focus input when open ── */
+  // Auto-focus input when opened
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
-  /* ── Toggle with ~ key ── */
+  // Auto-scroll to bottom
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "`" || e.key === "~") {
-        e.preventDefault();
-        setOpen(!isOpen);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, setOpen]);
+    outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [lines]);
 
-  /* ── Process command ── */
-  const processCommand = useCallback(
-    (cmd: string) => {
-      const trimmed = cmd.trim().toLowerCase();
-      if (!trimmed) return;
-
-      setPrinting(true);
-
-      if (trimmed === "clear") {
-        clear();
-        setPrinting(false);
-        return;
-      }
-
-      const command = COMMANDS[trimmed];
-      if (!command) {
-        const out = [
-          `Unknown command: "${trimmed}"`,
-          'Type "help" for available commands.',
-        ];
-        printLines(out, "error");
-        playBell();
-        return;
-      }
-
-      const out = command.handler();
-      printLines(out, "output");
-    },
-    [setPrinting, clear, playBell]
-  );
-
+  // Print lines with mechanical delay
   const printLines = useCallback(
-    (texts: string[], type: TerminalLine["type"]) => {
-      let delay = 0;
+    (texts: string[], type: LineType = "output", delay = 60) => {
       texts.forEach((text, i) => {
-        delay += 40 + Math.random() * 60;
         setTimeout(() => {
-          addLine({ text, type });
-          if (i === texts.length - 1) {
-            setPrinting(false);
-          } else {
-            playScroll();
-          }
-        }, delay);
+          addLine({ id: `${Date.now()}-${i}`, type, text });
+          if (i > 0) playScroll();
+        }, i * delay);
       });
     },
-    [addLine, setPrinting, playScroll]
+    [addLine]
   );
 
-  /* ── Input handling ── */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    playKey();
-    setAutocomplete(null);
+  // Execute command
+  const execute = useCallback(
+    (raw: string) => {
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+
+      playEnter();
+      addLine({ id: `in-${Date.now()}`, type: "input", text: `> ${trimmed}` });
+      setCommandHistory((prev) => [...prev, trimmed]);
+      setHistoryIndex(-1);
+
+      const [cmd, ...args] = trimmed.split(/\s+/);
+      const def = COMMANDS[cmd.toLowerCase()];
+
+      if (def) {
+        const result = def.handler(args);
+        if (result.length > 0) {
+          printLines(result, "output", 50);
+        }
+      } else {
+        printLines(
+          [`[ERROR] Unknown command: "${cmd}"`, '  Type "help" for available commands.'],
+          "error",
+          40
+        );
+        playBell();
+      }
+
+      setInput("");
+      setGhostText("");
+    },
+    [addLine, printLines]
+  );
+
+  // Input handling
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInput(val);
+
+    // Autocomplete ghost
+    if (val.length > 0) {
+      const match = Object.keys(COMMANDS).find((c) =>
+        c.startsWith(val.toLowerCase())
+      );
+      setGhostText(match ? match.slice(val.length) : "");
+    } else {
+      setGhostText("");
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isPrinting) {
-      e.preventDefault();
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      execute(input);
       return;
     }
 
-    switch (e.key) {
-      case "Enter":
-        e.preventDefault();
-        playEnter();
-        submitInput();
-        setTimeout(() => processCommand(inputBuffer), 50);
-        setAutocomplete(null);
-        break;
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (ghostText) {
+        setInput((prev) => prev + ghostText);
+        setGhostText("");
+        playKey();
+      }
+      return;
+    }
 
-      case "ArrowUp":
-        e.preventDefault();
-        historyPrev();
-        break;
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (commandHistory.length === 0) return;
+      const newIndex =
+        historyIndex === -1
+          ? commandHistory.length - 1
+          : Math.max(0, historyIndex - 1);
+      setHistoryIndex(newIndex);
+      setInput(commandHistory[newIndex]);
+      return;
+    }
 
-      case "ArrowDown":
-        e.preventDefault();
-        historyNext();
-        break;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (historyIndex === -1) return;
+      const newIndex = historyIndex + 1;
+      if (newIndex >= commandHistory.length) {
+        setHistoryIndex(-1);
+        setInput("");
+      } else {
+        setHistoryIndex(newIndex);
+        setInput(commandHistory[newIndex]);
+      }
+      return;
+    }
 
-      case "Tab":
-        e.preventDefault();
-        if (autocomplete) {
-          setInput(autocomplete);
-          setAutocomplete(null);
-        } else {
-          const match = COMMAND_NAMES.find((c) =>
-            c.startsWith(inputBuffer.toLowerCase())
-          );
-          if (match && match !== inputBuffer.toLowerCase()) {
-            setAutocomplete(match);
-          }
-        }
-        break;
-
-      case "Escape":
-        setOpen(false);
-        break;
-
-      case "ArrowLeft":
-        moveCursor(-1);
-        break;
-
-      case "ArrowRight":
-        moveCursor(1);
-        break;
-
-      case "Home":
-        moveCursor(-9999);
-        break;
-
-      case "End":
-        moveCursor(9999);
-        break;
-
-      default:
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          playKey();
-        }
-        break;
+    if (e.key.length === 1) {
+      playKey();
     }
   };
 
-  /* ── Render ── */
+  // Boot message on first open
+  useEffect(() => {
+    if (isOpen && lines.length === 0) {
+      printLines(
+        [
+          "[OK] Archive Terminal v7.2",
+          "[OK] Connection established",
+          "[OK] 159 locations indexed",
+          "",
+          'Type "help" for available commands.',
+        ],
+        "system",
+        80
+      );
+    }
+  }, [isOpen, lines.length, printLines]);
+
+  const lineColor = (type: LineType) => {
+    switch (type) {
+      case "input":
+        return "text-[#ffb000]";
+      case "system":
+        return "text-[#8a6000]";
+      case "error":
+        return "text-[#8b3a3a]";
+      default:
+        return "text-[#c4a060]";
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed bottom-0 left-0 right-0 z-40 flex flex-col"
-          style={{
-            height: "45vh",
-            background: "#0d0c0a",
-            borderTop: "1px solid rgba(255, 176, 0, 0.2)",
-            boxShadow: "0 -20px 60px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,176,0,0.05)",
-          }}
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 28, stiffness: 220 }}
+          transition={{ type: "spring", damping: 28, stiffness: 280 }}
+          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
+          style={{ height: "45vh" }}
         >
-          {/* Subtle LCD texture */}
-          <div
-            className="pointer-events-none absolute inset-0 z-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='4' height='2' fill='%23ffb000'/%3E%3C/svg%3E")`,
-            }}
-          />
-
-          {/* Header bar */}
-          <div
-            className="relative z-10 flex items-center justify-between px-4 py-1.5"
-            style={{
-              background: "rgba(255,176,0,0.04)",
-              borderBottom: "1px solid rgba(255,176,0,0.08)",
-            }}
-          >
-            <span
-              className="font-mono text-[10px] tracking-[2px]"
-              style={{ color: "rgba(255,176,0,0.35)" }}
-            >
-              ARCHIVE TERMINAL — v7.2
-            </span>
-            <button
-              onClick={() => setOpen(false)}
-              className="font-mono text-[10px] hover:opacity-100"
-              style={{ color: "rgba(255,176,0,0.4)" }}
-            >
-              [ CLOSE ]
-            </button>
-          </div>
-
-          {/* Output scroll area */}
-          <div
-            ref={scrollRef}
-            className="relative z-10 flex-1 overflow-y-auto px-4 py-3 font-mono text-[12px] leading-[1.7]"
-            style={{ color: "#ffb000" }}
-          >
-            {lines.map((line) => (
-              <div
-                key={line.id}
-                className="mb-0.5 whitespace-pre-wrap"
-                style={{
-                  color:
-                    line.type === "error"
-                      ? "#c45a5a"
-                      : line.type === "system"
-                      ? "#8a6000"
-                      : line.type === "input"
-                      ? "#ffb000"
-                      : "#d4a030",
-                  opacity: line.type === "system" ? 0.7 : 1,
-                }}
+          {/* Panel */}
+          <div className="flex flex-1 flex-col border-t border-[#ffb000]/20 bg-[#0d0c0b]/95 backdrop-blur-md">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#ffb000]/10 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-[#ffb000]" />
+                <span className="font-mono text-xs tracking-widest text-[#ffb000]/70">
+                  ARCHIVE TERMINAL — v7.2
+                </span>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="font-mono text-xs text-[#ffb000]/40 transition-colors hover:text-[#ffb000]"
               >
-                {line.text}
-              </div>
-            ))}
-            {isPrinting && (
-              <div className="animate-pulse" style={{ color: "#8a6000" }}>
-                ...
-              </div>
-            )}
-          </div>
+                [ CLOSE ]
+              </button>
+            </div>
 
-          {/* Input line */}
-          <div
-            className="relative z-10 flex items-center px-4 py-2.5"
-            style={{
-              borderTop: "1px solid rgba(255,176,0,0.1)",
-              background: "rgba(0,0,0,0.3)",
-            }}
-          >
-            <span className="mr-2 font-mono text-sm" style={{ color: "#8a6000" }}>
-              &gt;
-            </span>
-            <div className="relative flex-1">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputBuffer}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                className="w-full bg-transparent font-mono text-sm outline-none"
-                style={{
-                  color: "#ffb000",
-                  caretColor: "transparent",
-                }}
-                spellCheck={false}
-                autoComplete="off"
-                autoCapitalize="off"
-              />
-              {/* Block cursor */}
-              <div
-                className="pointer-events-none absolute top-0 h-[1.3em] w-[8px]"
-                style={{
-                  left: `${cursorPosition * 7.2 + 2}px`,
-                  background: "#ffb000",
-                  opacity: 0.7,
-                  marginTop: "2px",
-                }}
-              />
-              {/* Autocomplete ghost */}
-              {autocomplete && (
+            {/* Output */}
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto px-4 py-3 font-mono text-sm"
+            >
+              {lines.map((line) => (
                 <div
-                  className="pointer-events-none absolute top-0 font-mono text-sm"
-                  style={{
-                    left: `${inputBuffer.length * 7.2 + 2}px`,
-                    color: "rgba(255,176,0,0.25)",
-                    marginTop: "2px",
-                  }}
+                  key={line.id}
+                  className={`whitespace-pre-wrap leading-relaxed ${lineColor(line.type)}`}
                 >
-                  {autocomplete.slice(inputBuffer.length)}
+                  {line.text}
                 </div>
-              )}
+              ))}
+              <div ref={outputEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-[#ffb000]/10 px-4 py-3">
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <span className="text-[#ffb000]">&gt;</span>
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={onInputChange}
+                    onKeyDown={onKeyDown}
+                    className="w-full bg-transparent font-mono text-sm text-[#ffb000] outline-none"
+                    placeholder=""
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  {/* Ghost text for autocomplete */}
+                  {ghostText && (
+                    <span className="pointer-events-none absolute left-0 top-0 font-mono text-sm text-[#ffb000]/30">
+                      {input}
+                      {ghostText}
+                    </span>
+                  )}
+                </div>
+                {/* Block cursor */}
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                  className="h-5 w-2.5 bg-[#ffb000]"
+                />
+              </div>
             </div>
           </div>
         </motion.div>

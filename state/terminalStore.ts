@@ -1,27 +1,27 @@
 import { create } from 'zustand';
-import { TerminalCommand } from '@/types';
+import { CommandOutputType } from '@/types';
+
+export interface CommandEntry {
+  id: string;
+  input: string;
+  output: string;
+  timestamp: number;
+  type: CommandOutputType;
+}
 
 interface TerminalState {
-  commands: TerminalCommand[];
-  history: string[];
-  historyIndex: number;
-
-  addCommand: (cmd: TerminalCommand) => void;
-  clearCommands: () => void;
-  addHistory: (input: string) => void;
-  setHistoryIndex: (index: number) => void;
+  history: CommandEntry[];
+  addCommand: (entry: CommandEntry) => void;
+  clearHistory: () => void;
 }
 
 export const useTerminalStore = create<TerminalState>((set) => ({
-  commands: [],
   history: [],
-  historyIndex: -1,
 
-  addCommand: (cmd) => set((s) => ({ commands: [...s.commands, cmd] })),
-  clearCommands: () => set({ commands: [], historyIndex: -1 }),
-  addHistory: (input) => set((s) => ({
-    history: [...s.history, input],
-    historyIndex: -1,
-  })),
-  setHistoryIndex: (index) => set({ historyIndex: index }),
+  addCommand: (entry) =>
+    set((s) => ({
+      history: [...s.history, entry],
+    })),
+
+  clearHistory: () => set({ history: [] }),
 }));

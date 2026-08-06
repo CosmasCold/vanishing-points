@@ -1,42 +1,38 @@
 import { create } from 'zustand';
-import { Place, PlaceCategory, PlaceStatus } from '@/types/places';
-
-interface Viewport {
-  lng: number;
-  lat: number;
-  zoom: number;
-}
+import { Place } from '@/types/places';
 
 interface AtlasState {
   places: Place[];
+  selectedPlaceSlug: string | null;
   isLoading: boolean;
-  viewport: Viewport;
-  selectedPlaceId: string | null;
-  filterCategory: PlaceCategory | null;
-  filterStatus: PlaceStatus | null;
-  
+  error: string | null;
+  filterCategory: string | null;
+  filterStatus: string | null;
+
   setPlaces: (places: Place[]) => void;
-  setLoading: (loading: boolean) => void;
-  setViewport: (viewport: Partial<Viewport>) => void;
   selectPlace: (slug: string | null) => void;
-  setFilterCategory: (category: PlaceCategory | null) => void;
-  setFilterStatus: (status: PlaceStatus | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setFilterCategory: (cat: string | null) => void;
+  setFilterStatus: (status: string | null) => void;
   clearFilters: () => void;
+  clearError: () => void;
 }
 
 export const useAtlasStore = create<AtlasState>((set) => ({
   places: [],
+  selectedPlaceSlug: null,
   isLoading: false,
-  viewport: { lng: 20, lat: 30, zoom: 1.5 },
-  selectedPlaceId: null,
+  error: null,
   filterCategory: null,
   filterStatus: null,
-  
+
   setPlaces: (places) => set({ places }),
-  setLoading: (loading) => set({ isLoading: loading }),
-  setViewport: (v) => set((s) => ({ viewport: { ...s.viewport, ...v } })),
-  selectPlace: (slug) => set({ selectedPlaceId: slug }),
-  setFilterCategory: (c) => set({ filterCategory: c }),
-  setFilterStatus: (s) => set({ filterStatus: s }),
+  selectPlace: (slug) => set({ selectedPlaceSlug: slug }),
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
+  setFilterCategory: (filterCategory) => set({ filterCategory }),
+  setFilterStatus: (filterStatus) => set({ filterStatus }),
   clearFilters: () => set({ filterCategory: null, filterStatus: null }),
+  clearError: () => set({ error: null }),
 }));

@@ -10,9 +10,9 @@ export function registerAtlasCommands(registry: CommandRegistry) {
     usage: 'atlas',
     handler: () => {
       useUIStore.getState().setActiveModule('atlas');
-      const { viewport, places } = useAtlasStore.getState();
+      const { places } = useAtlasStore.getState();
       return {
-        output: `Atlas initialized.\nArchive entries: ${places.length}\nViewport: ${viewport.lat.toFixed(2)}°N, ${viewport.lng.toFixed(2)}°E`,
+        output: `Atlas initialized.\nArchive entries: ${places.length}`,
         type: 'success' as const,
       };
     },

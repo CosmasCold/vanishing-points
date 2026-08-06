@@ -16,26 +16,28 @@ export const AtlasPanel: React.FC = () => {
   const {
     places,
     isLoading,
+    selectedPlaceSlug,
+    filterCategory,
+    filterStatus,
     setPlaces,
     setLoading,
-    selectedPlaceId,
     selectPlace,
-    filterCategory,
     setFilterCategory,
-    filterStatus,
     setFilterStatus,
     clearFilters,
   } = useAtlasStore();
 
   useEffect(() => {
-    setLoading(true);
-    fetchPlaces().then((data) => {
-      setPlaces(data);
-      setLoading(false);
-    });
-  }, [setPlaces, setLoading]);
+    if (places.length === 0) {
+      setLoading(true);
+      fetchPlaces().then((data) => {
+        setPlaces(data);
+        setLoading(false);
+      });
+    }
+  }, [places.length, setPlaces, setLoading]);
 
-  const selectedPlace = places.find((p) => p.slug === selectedPlaceId);
+  const selectedPlace = places.find((p) => p.slug === selectedPlaceSlug);
 
   const filtered = places.filter((p) => {
     if (filterCategory && p.category !== filterCategory) return false;

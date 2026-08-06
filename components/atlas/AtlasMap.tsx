@@ -1,121 +1,153 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAtlasStore } from '@/state/atlasStore';
-import { colors, typography } from '@/styles/theme';
+import { useUIStore } from '@/state/uiStore';
+import { useAudioStore } from '@/state/audioStore';
+import { colors, typography, spacing } from '@/styles/theme';
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
-
-function getMarkerColor(place: { status: string; dangerLevel: number }): string {
-  if (place.status === 'sealed') return colors.archive.red;
-  if (place.status === 'whispered') return colors.archive.blue;
-  if (place.status === 'mirage') return colors.archive.white;
-  if (place.dangerLevel >= 4) return colors.archive.red;
-  if (place.dangerLevel === 3) return colors.archive.amber;
-  return colors.archive.green;
-}
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 export const AtlasMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-
-  const { places, viewport, setViewport, selectPlace, filterCategory, filterStatus } =
-    useAtlasStore();
+  const map = useRef<mapboxgl.Map | null>(null);
+  const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
+  const { click } = useAudioStore();
+  const { terminalOpen } = useUIStore();
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    if (!mapContainer.current || mapInstance.current) return;
-    if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) return;
+    if (!mapContainer.current || map.current) return;
 
-    const map = new mapboxgl.Map({
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      center: [viewport.lng, viewport.lat],
-      zoom: viewport.zoom,
+      center: [10, 50],
+      zoom: 3,
+      projection: { name: 'mercator' }, // FLAT MAP, not globe
       attributionControl: false,
-      logoPosition: 'bottom-right',
     });
 
-    map.on('load', () => {
-      map.setPaintProperty('background', 'background-color', colors.archive.black);
+    map.current.on('load', () => {
+      setMapLoaded(true);
+      // Remove labels for cleaner look
+      const style = map.current?.getStyle();
+      if (style?.layers) {
+        style.layers.forEach((layer) => {
+          if (layer.type === 'symbol' && layer.id.includes('label')) {
+            map.current?.setLayoutProperty(layer.id, 'visibility', 'none');
+          }
+        });
+      }
     });
-
-    map.on('moveend', () => {
-      const c = map.getCenter();
-      setViewport({ lng: c.lng, lat: c.lat, zoom: map.getZoom() });
-    });
-
-    map.on('click', () => selectPlace(null));
-    mapInstance.current = map;
 
     return () => {
-      map.remove();
-      mapInstance.current = null;
+      map.current?.remove();
+      map.current = null;
     };
   }, []);
 
+  // Add markers
   useEffect(() => {
-    const map = mapInstance.current;
-    if (!map) return;
+    if (!mapLoaded || !map.current) return;
 
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+    // Clear existing markers
+    const existing = document.querySelectorAll('.archive-marker');
+    existing.forEach((el) => el.remove());
 
-    const filtered = places.filter((p) => {
-      if (filterCategory && p.category !== filterCategory) return false;
-      if (filterStatus && p.status !== filterStatus) return false;
-      return true;
-    });
-
-    filtered.forEach((place) => {
+    places.forEach((place) => {
       const el = document.createElement('div');
+      el.className = 'archive-marker';
       el.style.width = '10px';
       el.style.height = '10px';
       el.style.borderRadius = '50%';
-      el.style.backgroundColor = getMarkerColor(place);
-      el.style.boxShadow = `0 0 8px 2px ${getMarkerColor(place)}40`;
+      el.style.border = `2px solid ${colors.archive.amber}`;
+      el.style.backgroundColor = place.status === 'sealed' ? colors.archive.red :
+        place.status === 'whispered' ? colors.archive.blue :
+        colors.archive.green;
       el.style.cursor = 'pointer';
+      el.style.boxShadow = `0 0 8px ${colors.archive.amber}`;
       el.style.transition = 'transform 0.2s ease';
 
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.5)'; });
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-        .setLngLat(place.coordinates)
-        .addTo(map);
-
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.5)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+      });
+      el.addEventListener('click', () => {
+        click();
         selectPlace(place.slug);
       });
 
-      markersRef.current.push(marker);
+      new mapboxgl.Marker({ element: el })
+        .setLngLat(place.coordinates)
+        .addTo(map.current!);
     });
-  }, [places, filterCategory, filterStatus]);
+  }, [mapLoaded, places, selectPlace, click]);
 
+  // Fly to selected
   useEffect(() => {
-    const map = mapInstance.current;
-    if (!map || !places.length) return;
-    const place = places.find((p) => p.slug === useAtlasStore.getState().selectedPlaceId);
+    if (!map.current || !selectedPlaceSlug) return;
+    const place = places.find((p) => p.slug === selectedPlaceSlug);
     if (place) {
-      map.flyTo({ center: place.coordinates, zoom: 12, duration: 2000, essential: true });
+      map.current.flyTo({
+        center: place.coordinates,
+        zoom: 10,
+        duration: 1500,
+      });
     }
-  }, [useAtlasStore.getState().selectedPlaceId]);
+  }, [selectedPlaceSlug, places]);
 
-  if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-    return (
-      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.archive.black }}>
-        <div className="text-center space-y-2" style={{ fontFamily: typography.mono }}>
-          <div style={{ color: colors.archive.amber }}>[ATLAS RENDERER OFFLINE]</div>
-          <div style={{ color: colors.archive.gray, fontSize: typography.sizes.sm }}>
-            Mapbox access token not configured.
-          </div>
-        </div>
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        marginBottom: terminalOpen ? spacing.terminalHeight : 0,
+      }}
+    >
+      <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Scanline overlay for CRT feel */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)',
+          backgroundSize: '100% 4px',
+        }}
+      />
+
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          boxShadow: 'inset 0 0 120px rgba(0,0,0,0.6)',
+        }}
+      />
+
+      {/* Corner brackets */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
+      <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
+      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.4 }} />
+
+      {/* Coordinate readout */}
+      <div
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 border pointer-events-none"
+        style={{
+          borderColor: colors.archive.grayDark,
+          backgroundColor: 'rgba(20, 20, 18, 0.8)',
+          color: colors.archive.gray,
+          fontFamily: typography.mono,
+          fontSize: typography.sizes.xs,
+        }}
+      >
+        ATLAS SECTOR VIEW • MERCATOR PROJECTION
       </div>
-    );
-  }
-
-  return <div ref={mapContainer} className="w-full h-full" />;
+    </div>
+  );
 };

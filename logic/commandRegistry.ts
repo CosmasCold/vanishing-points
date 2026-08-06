@@ -1,58 +1,67 @@
-import { CommandDefinition, CommandResult } from '@/types';
+import { CommandOutputType } from '@/types';
+
+export interface CommandDefinition {
+  name: string;
+  description: string;
+  usage: string;
+  aliases?: string[];
+  handler: (args: string[]) => CommandResult | Promise<CommandResult>;
+}
+
+export interface CommandResult {
+  output: string;
+  type: CommandOutputType;
+  clear?: boolean;
+}
 
 export class CommandRegistry {
   private commands = new Map<string, CommandDefinition>();
-  private aliases = new Map<string, string>();
 
-  register(cmd: CommandDefinition): void {
+  register(cmd: CommandDefinition) {
     this.commands.set(cmd.name, cmd);
     if (cmd.aliases) {
-      for (const alias of cmd.aliases) {
-        this.aliases.set(alias, cmd.name);
-      }
+      cmd.aliases.forEach((alias) => this.commands.set(alias, cmd));
     }
   }
 
   async execute(input: string): Promise<CommandResult> {
-    const trimmed = input.trim();
-    if (!trimmed) {
-      return { output: '', type: 'info' };
-    }
-
-    const tokens = trimmed.split(/\s+/);
+    const tokens = input.trim().split(/\s+/);
     const name = tokens[0].toLowerCase();
     const args = tokens.slice(1);
 
-    const canonical = this.aliases.get(name) || name;
-    const cmd = this.commands.get(canonical);
-
+    const cmd = this.commands.get(name);
     if (!cmd) {
       return {
-        output: `Command not recognized: "${name}". Type 'help' for available commands.`,
+        output: `Command not found: ${name}\nType 'help' for available commands.`,
         type: 'error',
       };
     }
 
-    try {
-      return await cmd.handler(args);
-    } catch (err: any) {
-      return { output: `System error: ${err.message}`, type: 'error' };
-    }
-  }
-
-  getCommands(): CommandDefinition[] {
-    return Array.from(this.commands.values());
-  }
-
-  getCommand(name: string): CommandDefinition | undefined {
-    const canonical = this.aliases.get(name) || name;
-    return this.commands.get(canonical);
+    return cmd.handler(args);
   }
 
   complete(partial: string): string[] {
-    const all = [...Array.from(this.commands.keys()), ...Array.from(this.aliases.keys())];
-    const unique = Array.from(new Set(all));
-    return unique.filter((n) => n.startsWith(partial.toLowerCase()));
+    const matches: string[] = [];
+    const seen = new Set<string>();
+    for (const cmd of this.commands.values()) {
+      if (!seen.has(cmd.name) && cmd.name.startsWith(partial)) {
+        seen.add(cmd.name);
+        matches.push(cmd.name);
+      }
+    }
+    return matches;
+  }
+
+  list(): CommandDefinition[] {
+    const seen = new Set<string>();
+    const result: CommandDefinition[] = [];
+    for (const cmd of this.commands.values()) {
+      if (!seen.has(cmd.name)) {
+        seen.add(cmd.name);
+        result.push(cmd);
+      }
+    }
+    return result;
   }
 }
 

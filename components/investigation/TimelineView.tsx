@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { TimelineEvent } from '@/types/investigation';
 import { colors, typography } from '@/styles/theme';
 
@@ -11,61 +12,88 @@ interface TimelineViewProps {
 export const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
   if (events.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64" style={{ fontFamily: typography.mono }}>
-        <div style={{ color: colors.archive.gray }}>NO TIMELINE EVENTS RECORDED</div>
+      <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.sm }}>
+        No timeline events recorded.
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl space-y-0">
-      {events.map((event, index) => (
-        <div key={event.id} className="flex gap-4">
-          <div className="flex flex-col items-center">
-            <div 
-              className="w-2 h-2 rounded-full"
-              style={{ 
-                backgroundColor: 
-                  event.certainty === 'confirmed' ? colors.archive.green :
-                  event.certainty === 'uncertain' ? colors.archive.amber :
-                  colors.archive.blue,
-              }}
-            />
-            {index < events.length - 1 && (
-              <div className="w-px flex-1 my-1" style={{ backgroundColor: colors.archive.gray }} />
-            )}
-          </div>
-          <div className="pb-6 flex-1">
-            <div className="flex items-baseline gap-3 mb-1">
-              <span style={{ color: colors.archive.amber, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
+      {events.map((event, index) => {
+        const certaintyColor =
+          event.certainty === 'confirmed' ? colors.archive.green :
+          event.certainty === 'suspected' ? colors.archive.amber :
+          colors.archive.blue;
+
+        return (
+          <motion.div
+            key={event.id}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.06, duration: 0.3 }}
+            className="flex gap-4 py-3 border-b"
+            style={{ borderColor: colors.archive.gray }}
+          >
+            {/* Date column */}
+            <div className="w-32 shrink-0 pt-1">
+              <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
                 {event.date}
-              </span>
-              <span 
-                className="px-1.5 py-0.5 text-xs border"
-                style={{ 
-                  color: 
-                    event.category === 'anomaly' ? colors.archive.red :
-                    event.category === 'discovery' ? colors.archive.green :
-                    colors.archive.gray,
-                  borderColor: 
-                    event.category === 'anomaly' ? colors.archive.red :
-                    event.category === 'discovery' ? colors.archive.green :
-                    colors.archive.gray,
+              </div>
+              <div
+                className="mt-1 px-1.5 py-0.5 inline-block border text-xs"
+                style={{
+                  borderColor: certaintyColor,
+                  color: certaintyColor,
                   fontFamily: typography.mono,
+                  fontSize: '0.625rem',
                 }}
               >
-                {event.category.toUpperCase()}
-              </span>
+                {event.certainty.toUpperCase()}
+              </div>
             </div>
-            <div style={{ color: colors.archive.white, fontSize: typography.sizes.sm, fontWeight: typography.weights.medium }}>
-              {event.title}
+
+            {/* Content column */}
+            <div className="flex-1">
+              <div
+                style={{
+                  color: colors.archive.white,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.sm,
+                  marginBottom: '0.25rem',
+                }}
+              >
+                {event.title}
+              </div>
+              <p
+                style={{
+                  color: colors.archive.gray,
+                  fontFamily: typography.serif,
+                  fontSize: typography.sizes.xs,
+                  lineHeight: '1.5',
+                }}
+              >
+                {event.description}
+              </p>
+              {event.evidenceIds.length > 0 && (
+                <div
+                  className="mt-2"
+                  style={{
+                    color: colors.archive.amber,
+                    fontSize: '0.625rem',
+                    fontFamily: typography.mono,
+                  }}
+                >
+                  LINKED EVIDENCE: {event.evidenceIds.length}
+                </div>
+              )}
             </div>
-            <p style={{ color: colors.archive.grayLight, fontSize: typography.sizes.sm, marginTop: '0.25rem', lineHeight: '1.5' }}>
-              {event.description}
-            </p>
-          </div>
-        </div>
-      ))}
+
+            {/* Category indicator */}
+            <div className="w-1 shrink-0" style={{ backgroundColor: certaintyColor, opacity: 0.6 }} />
+          </motion.div>
+        );
+      })}
     </div>
   );
 };

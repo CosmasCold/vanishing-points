@@ -1,77 +1,85 @@
-import { CommandRegistry } from '../commandRegistry';
+import { CommandRegistry, CommandDefinition } from '../commandRegistry';
 import { useUIStore } from '@/state/uiStore';
-import { CommandDefinition } from '@/types';
+import { useInvestigationStore } from '@/state/investigationStore';
+import { useSessionStore } from '@/state/sessionStore';
 
 export function registerSystemCommands(registry: CommandRegistry) {
   registry.register({
     name: 'help',
     description: 'Display available commands',
     usage: 'help',
+    aliases: ['?', 'commands'],
     handler: () => {
-      const cmds = registry.getCommands();
-      const maxLen = Math.max(...cmds.map((c: CommandDefinition) => c.name.length));
-      const lines = cmds.map((c: CommandDefinition) => {
-        const name = c.name.padEnd(maxLen + 2);
-        return `  ${name}${c.description}`;
+      const cmds = registry.list();
+      let output = 'AVAILABLE COMMANDS\n';
+      output += '══════════════════\n\n';
+
+      cmds.forEach((cmd: CommandDefinition) => {
+        const aliases = cmd.aliases ? ` [${cmd.aliases.join(', ')}]` : '';
+        output += `${cmd.name}${aliases}\n`;
+        output += `    ${cmd.description}\n`;
+        output += `    Usage: ${cmd.usage}\n\n`;
       });
-      return { 
-        output: 'VANISHING POINTS ARCHIVE TERMINAL\nAvailable commands:\n' + lines.join('\n'), 
-        type: 'info' 
-      };
+
+      return { output, type: 'system' as const };
     },
   });
 
   registry.register({
     name: 'clear',
-    description: 'Clear terminal scrollback',
+    description: 'Clear terminal history',
     usage: 'clear',
     aliases: ['cls'],
-    handler: () => ({ output: '__CLEAR__', type: 'info', clear: true }),
+    handler: () => {
+      return { clear: true, output: '', type: 'system' as const };
+    },
   });
 
   registry.register({
-    name: 'echo',
-    description: 'Repeat text to terminal',
-    usage: 'echo <message>',
-    handler: (args: string[]) => ({ output: args.join(' ') || '', type: 'info' }),
-  });
-
-  registry.register({
-    name: 'status',
-    description: 'Display system status',
-    usage: 'status',
+    name: 'whoami',
+    description: 'Display current investigator status',
+    usage: 'whoami',
     handler: () => {
       const { status } = useUIStore.getState();
-      const lines = [
-        `System Integrity: ${status.systemIntegrity.toUpperCase()}`,
-        `Dust Index:       ${status.dustIndex}`,
-        `Atlas Coverage:   ${status.atlasCoverage} km²`,
-        `Active Cases:     ${status.activeInvestigations}`,
-        `Unread Messages:  ${status.unreadMessages}`,
-        `Last Sync:        ${new Date(status.lastSync).toLocaleString()}`,
-      ];
-      return { output: lines.join('\n'), type: 'success' };
+      const { activeInvestigationId } = useInvestigationStore.getState();
+      const { inboxItems } = useSessionStore.getState();
+
+      let output = 'INVESTIGATOR STATUS\n';
+      output += '═══════════════════\n\n';
+      output += `Dust Index:           ${status.dustIndex}\n`;
+      output += `Observer Stability:   ${status.observerStability.toFixed(1)}%\n`;
+      output += `Atlas Coverage:       ${status.atlasCoverage} km²\n`;
+      output += `Active Alerts:        ${status.activeAlerts}\n`;
+      output += `Active Investigation: ${activeInvestigationId || 'None'}\n`;
+      output += `Unread Messages:      ${inboxItems.filter((i) => !i.read).length}\n`;
+
+      return { output, type: 'info' as const };
     },
   });
 
   registry.register({
-    name: 'exit',
-    description: 'Close terminal',
-    usage: 'exit',
-    aliases: ['quit'],
-    handler: () => {
-      useUIStore.getState().setTerminalOpen(false);
-      return { output: 'Terminal closed.', type: 'system' };
-    },
-  });
-
-  registry.register({
-    name: 'time',
-    description: 'Display current system time',
-    usage: 'time',
+    name: 'date',
+    description: 'Display current system date',
+    usage: 'date',
     handler: () => {
       const now = new Date();
-      return { output: now.toISOString(), type: 'info' };
+      return {
+        output: now.toISOString(),
+        type: 'info' as const,
+      };
+    },
+  });
+
+  registry.register({
+    name: 'uptime',
+    description: 'Display system uptime',
+    usage: 'uptime',
+    handler: () => {
+      const { sessionCount } = useSessionStore.getState();
+      return {
+        output: `Archive sessions initiated: ${sessionCount}\nTemporal sync: NOMINAL`,
+        type: 'info' as const,
+      };
     },
   });
 }

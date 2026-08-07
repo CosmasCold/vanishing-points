@@ -141,7 +141,7 @@ export const DocumentArchive: React.FC = () => {
   return (
     <div className="h-full flex">
       {/* Sidebar list */}
-      <div className="w-80 border-r overflow-y-auto" style={{ borderColor: colors.archive.grayDark }}>
+      <div className="w-64 border-r overflow-y-auto shrink-0" style={{ borderColor: colors.archive.grayDark }}>
         <div className="p-4 border-b" style={{ borderColor: colors.archive.grayDark }}>
           <div style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
             DOCUMENT ARCHIVE
@@ -191,7 +191,7 @@ export const DocumentArchive: React.FC = () => {
       </div>
 
       {/* Document viewer */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6 min-w-0">
         {selected ? (
           <motion.div
             key={selected.id}

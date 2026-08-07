@@ -33,6 +33,7 @@ import { DocumentArchive } from './documents/DocumentArchive';
 import { ResearchPanel } from './research/ResearchPanel';
 import { DiscoveryPanel } from './discoveries/DiscoveryPanel';
 import { SystemPanel } from './system/SystemPanel';
+import { InventoryPanel } from './inventory/InventoryPanel';
 
 const InvestigationsContent: React.FC = () => {
   const { places, selectPlace } = useAtlasStore();
@@ -215,8 +216,20 @@ export const DashboardShell: React.FC = () => {
         </ModulePanel>
 
         <ModulePanel moduleId="evidence" title="EVIDENCE BOARD">
-          <div style={{ color: colors.archive.gray }}>Evidence board initialization pending...</div>
-        </ModulePanel>
+  <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+    <div className="mb-4">The Evidence Board visualizes resonance connections between all indexed locations.</div>
+    <div className="mb-2" style={{ color: colors.archive.amber }}>LEGEND</div>
+    <div className="space-y-1">
+      <div><span style={{ color: colors.archive.green }}>●</span> VERIFIED</div>
+      <div><span style={{ color: colors.archive.blue }}>●</span> WHISPERED</div>
+      <div><span style={{ color: colors.archive.red }}>●</span> SEALED</div>
+      <div><span style={{ color: colors.archive.grayLight }}>●</span> MIRAGE</div>
+    </div>
+    <div className="mt-4" style={{ color: colors.archive.gray }}>
+      Click a node to select a location. Drag to pan. Scroll to zoom.
+    </div>
+  </div>
+</ModulePanel>
 
         <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
   <SignalPanel />
@@ -231,9 +244,7 @@ export const DashboardShell: React.FC = () => {
 </ModulePanel>
 
 <ModulePanel moduleId="inventory" title="INVENTORY">
-  <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono }}>
-    No items in quarantine...
-  </div>
+  <InventoryPanel />
 </ModulePanel>
 
 <ModulePanel moduleId="discoveries" title="DISCOVERIES">

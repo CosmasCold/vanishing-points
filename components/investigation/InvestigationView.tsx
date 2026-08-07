@@ -1,404 +1,496 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useInvestigationStore } from '@/state/investigationStore';
-import { useAtlasStore } from '@/state/atlasStore';
-import { useUIStore } from '@/state/uiStore';
-import { useAudioStore } from '@/state/audioStore';
-import { useMediaStore } from '@/state/mediaStore';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Place } from '@/types/places';
-import { EvidenceItem, TimelineEvent } from '@/types/investigation';
-import { CaseHeader } from './CaseHeader';
-import { EvidenceGrid } from './EvidenceGrid';
-import { TimelineView } from './TimelineView';
-import { NotesPanel } from './NotesPanel';
-import { MediaViewer } from '../media/MediaViewer';
-import { colors, typography, spacing } from '@/styles/theme';
+import { useInvestigationStore } from '@/state/investigationStore';
+import { useAudioStore } from '@/state/audioStore';
+import { colors, typography } from '@/styles/theme';
+import { PhotoViewer } from '@/components/media/PhotoViewer';
 
-type InvestigationTab = 'overview' | 'evidence' | 'timeline' | 'notes' | 'connections';
+const TABS = ['OVERVIEW', 'EVIDENCE', 'TIMELINE', 'NOTES', 'CONNECTIONS'] as const;
 
-const TAB_LABELS: Record<InvestigationTab, string> = {
-	overview: 'OVERVIEW',
-	evidence: 'EVIDENCE',
-	timeline: 'TIMELINE',
-	notes: 'NOTES',
-	connections: 'CONNECTIONS',
-};
+export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
+  const [activeTab, setActiveTab] = useState(0);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const { click } = useAudioStore();
+  const { closeInvestigation } = useInvestigationStore();
 
-interface InvestigationViewProps {
-	place: Place;
-}
+  return (
+    <div className="absolute inset-0 flex flex-col z-10" style={{ backgroundColor: colors.archive.black }}>
+      {/* Header */}
+      <div
+        className="shrink-0 border-b px-6 py-4 flex items-center justify-between"
+        style={{ borderColor: colors.archive.grayDark }}
+      >
+        <div>
+          <div
+            style={{
+              color: colors.archive.gray,
+              fontFamily: typography.mono,
+              fontSize: typography.sizes.xs,
+              letterSpacing: '0.1em',
+            }}
+          >
+            CASE FILE
+          </div>
+          <div className="flex items-center gap-3 mt-1">
+            <h1
+              style={{
+                color: colors.archive.white,
+                fontFamily: typography.mono,
+                fontSize: typography.sizes.lg,
+              }}
+            >
+              {place.name}
+            </h1>
+            <span
+              className="px-2 py-0.5 border text-xs"
+              style={{
+                borderColor: colors.archive.amber,
+                color: colors.archive.amber,
+                fontFamily: typography.mono,
+              }}
+            >
+              {(place.status || 'verified').toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            click();
+            closeInvestigation();
+          }}
+          className="px-3 py-1 border hover:border-red-700 transition-colors"
+          style={{
+            borderColor: colors.archive.grayDark,
+            color: colors.archive.gray,
+            fontFamily: typography.mono,
+            fontSize: typography.sizes.xs,
+          }}
+        >
+          CLOSE CASE
+        </button>
+      </div>
 
-function seedEvidenceFromPlace(place: Place): EvidenceItem[] {
-	const items: EvidenceItem[] = [];
+      {/* Tabs */}
+      <div className="shrink-0 flex border-b" style={{ borderColor: colors.archive.grayDark }}>
+        {TABS.map((tab, i) => (
+          <button
+            key={tab}
+            onClick={() => {
+              click();
+              setActiveTab(i);
+            }}
+            className="px-6 py-3 transition-colors relative"
+            style={{
+              color: activeTab === i ? colors.archive.amber : colors.archive.gray,
+              fontFamily: typography.mono,
+              fontSize: typography.sizes.xs,
+              letterSpacing: '0.05em',
+              borderBottom: activeTab === i ? `2px solid ${colors.archive.amber}` : '2px solid transparent',
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
-	items.push({
-		id: `${place.slug}-archive-entry`,
-		type: 'document',
-		title: 'Archive Entry',
-		description: `Primary classification: ${place.category}. Status: ${place.status}. Coordinates logged.`,
-		source: 'BUNKER_7 Archive',
-		status: 'collected',
-		relatedTo: place.connectedTo,
-	});
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <AnimatePresence mode="wait">
+          {activeTab === 0 && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="grid grid-cols-1 lg:grid-cols-5 gap-8"
+            >
+              {/* Left: narrative */}
+              <div className="lg:col-span-3 space-y-8">
+                <section>
+                  <h2
+                    style={{
+                      color: colors.archive.amber,
+                      fontFamily: typography.mono,
+                      fontSize: typography.sizes.xs,
+                      letterSpacing: '0.1em',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    CASE SUMMARY
+                  </h2>
+                  <div
+                    className="leading-relaxed space-y-4"
+                    style={{
+                      color: colors.archive.grayLight,
+                      fontFamily: typography.serif,
+                      fontSize: typography.sizes.base,
+                    }}
+                  >
+                    {place.history?.split('\n\n').map((para, i) => (
+                      <p key={i}>{para}</p>
+                    ))}
+                  </div>
+                </section>
 
-	if (place.history) {
-		items.push({
-			id: `${place.slug}-field-report`,
-			type: 'document',
-			title: 'Field Report',
-			description: place.history.substring(0, 180) + '...',
-			source: place.verifiedBy,
-			status: 'analyzed',
-			relatedTo: [],
-		});
-	}
+                {place.hauntingReports && place.hauntingReports.length > 0 && (
+                  <section>
+                    <h2
+                      style={{
+                        color: colors.archive.redBright,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        letterSpacing: '0.1em',
+                        marginBottom: '1rem',
+                      }}
+                    >
+                      WITNESS TESTIMONY
+                    </h2>
+                    <div className="space-y-3">
+                      {place.hauntingReports.map((report, i) => (
+                        <div
+                          key={i}
+                          className="p-4 border-l-2"
+                          style={{
+                            borderColor: colors.archive.red,
+                            backgroundColor: 'rgba(168, 93, 93, 0.05)',
+                          }}
+                        >
+                          <p
+                            style={{
+                              color: colors.archive.grayLight,
+                              fontFamily: typography.serif,
+                              fontSize: typography.sizes.sm,
+                            }}
+                          >
+                            "{report}"
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
-	place.hauntingReports.forEach((report, i) => {
-		items.push({
-			id: `${place.slug}-witness-${i}`,
-			type: 'witness',
-			title: `Witness Testimony #${i + 1}`,
-			description: report,
-			status: 'collected',
-			relatedTo: [],
-		});
-	});
+                {place.resonanceNote && (
+                  <section
+                    className="p-4 border"
+                    style={{
+                      borderColor: colors.archive.blue,
+                      backgroundColor: 'rgba(107, 143, 163, 0.05)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.blue,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      BUNKER_7 RESONANCE LOG
+                    </div>
+                    <p
+                      style={{
+                        color: colors.archive.blueBright,
+                        fontFamily: typography.serif,
+                        fontSize: typography.sizes.sm,
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {place.resonanceNote}
+                    </p>
+                  </section>
+                )}
+              </div>
 
-	if (place.resonanceNote) {
-		items.push({
-			id: `${place.slug}-resonance`,
-			type: 'signal',
-			title: 'Resonance Transmission',
-			description: place.resonanceNote,
-			source: 'BUNKER_7',
-			status: 'analyzing',
-			relatedTo: place.connectedTo,
-		});
-	}
+              {/* Right: metadata, photos, connections */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    className="p-4 border"
+                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.gray,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      DANGER LEVEL
+                    </div>
+                    <div
+                      style={{
+                        color:
+                          place.dangerLevel >= 4
+                            ? colors.archive.red
+                            : place.dangerLevel >= 3
+                            ? colors.archive.amber
+                            : colors.archive.green,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xl,
+                      }}
+                    >
+                      {place.dangerLevel}/5
+                    </div>
+                  </div>
 
-	if (place.photos.length > 0) {
-		items.push({
-			id: `${place.slug}-photo-1`,
-			type: 'photo',
-			title: 'Site Photography',
-			description: 'Recovered photographic evidence from initial survey.',
-			status: 'collected',
-			relatedTo: [],
-			mediaUrl: place.photos[0],
-		});
-	}
+                  <div
+                    className="p-4 border"
+                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.gray,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      STATUS
+                    </div>
+                    <div
+                      style={{
+                        color: colors.archive.white,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.lg,
+                      }}
+                    >
+                      {(place.status || 'verified').toUpperCase()}
+                    </div>
+                  </div>
 
-	// ─── MEDIA SEEDING ──────────────────────────────────────────
-	items.push({
-		id: `${place.slug}-field-audio`,
-		type: 'audio',
-		title: 'Site Ambience Recording',
-		description: 'Primary survey audio capture. Anomalous low-frequency resonance detected after 00:34. Monitor with headphones.',
-		source: 'Field Kit Mk.IV',
-		status: 'collected',
-		relatedTo: [],
-		mediaUrl: '/media/audio/site-ambience.mp3',
-	});
+                  <div
+                    className="p-4 border"
+                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.gray,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      YEAR
+                    </div>
+                    <div
+                      style={{
+                        color: colors.archive.white,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.lg,
+                      }}
+                    >
+                      {place.yearAbandoned || 'UNKNOWN'}
+                    </div>
+                  </div>
 
-	items.push({
-		id: `${place.slug}-expedition-film`,
-		type: 'video',
-		title: 'Expedition Reel A-7',
-		description: '16mm footage recovered from Remote Archive Node 3. Image stabilization incomplete. Playback requires elevated Dust clearance to prevent observer destabilization.',
-		source: 'Remote Archive Node 3',
-		status: 'analyzed',
-		relatedTo: place.connectedTo,
-		mediaUrl: '/media/video/expedition-reel.mp4',
-		unlockDust: 30,
-	});
+                  <div
+                    className="p-4 border"
+                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.gray,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      EVIDENCE
+                    </div>
+                    <div
+                      style={{
+                        color: colors.archive.green,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.lg,
+                      }}
+                    >
+                      {(place.photos?.length || 0) + (place.hauntingReports?.length || 0)}
+                    </div>
+                  </div>
+                </div>
 
-	return items;
-}
+                {/* Coordinates */}
+                <div
+                  className="p-4 border"
+                  style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+                >
+                  <div
+                    style={{
+                      color: colors.archive.gray,
+                      fontFamily: typography.mono,
+                      fontSize: typography.sizes.xs,
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    COORDINATES
+                  </div>
+                  <div
+                    style={{
+                      color: colors.archive.grayLight,
+                      fontFamily: typography.mono,
+                      fontSize: typography.sizes.sm,
+                    }}
+                  >
+                    {place.coordinates?.[1]?.toFixed(4)}°N, {place.coordinates?.[0]?.toFixed(4)}°E
+                  </div>
+                  <div
+                    className="mt-1"
+                    style={{
+                      color: colors.archive.gray,
+                      fontFamily: typography.mono,
+                      fontSize: typography.sizes.xs,
+                    }}
+                  >
+                    {place.address?.formatted}
+                  </div>
+                </div>
 
-function seedTimelineFromPlace(place: Place): TimelineEvent[] {
-	const events: TimelineEvent[] = [];
+                {/* Photos */}
+                {place.photos && place.photos.length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        color: colors.archive.amber,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        letterSpacing: '0.1em',
+                        marginBottom: '0.75rem',
+                      }}
+                    >
+                      ARCHIVE PHOTOS
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {place.photos.map((src, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            click();
+                            setViewingPhoto(src);
+                          }}
+                          className="relative aspect-video border overflow-hidden group"
+                          style={{ borderColor: colors.archive.grayDark }}
+                        >
+                          <img
+                            src={src}
+                            alt={`${place.name} ${i + 1}`}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            style={{ filter: 'sepia(0.3) contrast(1.05)' }}
+                            loading="lazy"
+                          />
+                          <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            style={{ backgroundColor: 'rgba(20, 20, 18, 0.6)' }}
+                          >
+                            <span style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+                              VIEW
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-	if (place.yearAbandoned) {
-		events.push({
-			id: `${place.slug}-abandonment`,
-			date: `${place.yearAbandoned}-01-01`,
-			title: 'Site Abandoned',
-			description: `Primary records indicate ${place.name} was abandoned in ${place.yearAbandoned}.`,
-			evidenceIds: [],
-			certainty: 'confirmed',
-			category: 'incident',
-		});
-	}
+                {/* Connected locations */}
+                {place.connectedTo && place.connectedTo.length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        color: colors.archive.blue,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        letterSpacing: '0.1em',
+                        marginBottom: '0.75rem',
+                      }}
+                    >
+                      RESONANCE LINKS
+                    </div>
+                    <div className="space-y-2">
+                      {place.connectedTo.map((slug) => (
+                        <div
+                          key={slug}
+                          className="px-3 py-2 border text-xs"
+                          style={{
+                            borderColor: colors.archive.grayDark,
+                            color: colors.archive.grayLight,
+                            fontFamily: typography.mono,
+                          }}
+                        >
+                          → {slug.replace(/-/g, ' ').toUpperCase()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-	events.push({
-		id: `${place.slug}-submitted`,
-		date: place.submittedAt,
-		title: 'Archive Submission',
-		description: 'Location entered into BUNKER_7 database.',
-		evidenceIds: [],
-		certainty: 'confirmed',
-		category: 'discovery',
-	});
+                {/* Unlock condition */}
+                {place.unlockCondition && (
+                  <div
+                    className="p-4 border"
+                    style={{
+                      borderColor: colors.archive.red,
+                      backgroundColor: 'rgba(168, 93, 93, 0.08)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.red,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      ACCESS RESTRICTED
+                    </div>
+                    <p
+                      style={{
+                        color: colors.archive.redBright,
+                        fontFamily: typography.serif,
+                        fontSize: typography.sizes.sm,
+                      }}
+                    >
+                      {place.unlockCondition.message}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-	events.push({
-		id: `${place.slug}-verified`,
-		date: place.verifiedAt,
-		title: 'Verification Complete',
-		description: `Verified by ${place.verifiedBy}. Status: ${place.status}.`,
-		evidenceIds: [],
-		certainty: 'confirmed',
-		category: 'discovery',
-	});
+          {activeTab !== 0 && (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center h-64"
+              style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.sm }}
+            >
+              <div className="text-center space-y-2">
+                <div>{TABS[activeTab]} MODULE INITIALIZING...</div>
+                <div style={{ fontSize: typography.sizes.xs, opacity: 0.6 }}>
+                  Data sync pending for {place.name}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-	return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-}
-
-export const InvestigationView: React.FC<InvestigationViewProps> = ({ place }) => {
-	const [activeTab, setActiveTab] = useState<InvestigationTab>('overview');
-	const { click } = useAudioStore();
-	const { terminalOpen } = useUIStore();
-	const { places } = useAtlasStore();
-	const { activeMedia, closeMedia } = useMediaStore();
-	const {
-		activeInvestigationId,
-		openInvestigation,
-		closeInvestigation,
-		evidence,
-		timelines,
-		notes,
-		setNotes,
-		addEvidence,
-		addTimelineEvent,
-	} = useInvestigationStore();
-
-	const invId = place.slug;
-	const placeEvidence = evidence[invId] || [];
-	const placeTimeline = timelines[invId] || [];
-	const placeNotes = notes[invId] || '';
-
-	useEffect(() => {
-		if (activeInvestigationId !== invId) {
-			openInvestigation(invId, place.name);
-			const currentEvidence = useInvestigationStore.getState().evidence[invId];
-			if (!currentEvidence || currentEvidence.length === 0) {
-				const seededEvidence = seedEvidenceFromPlace(place);
-				const seededTimeline = seedTimelineFromPlace(place);
-				seededEvidence.forEach((item) => addEvidence(invId, item));
-				seededTimeline.forEach((event) => addTimelineEvent(invId, event));
-			}
-		}
-	}, [invId, place.name, activeInvestigationId, openInvestigation, addEvidence, addTimelineEvent]);
-
-	const handleClose = () => {
-		click();
-		closeInvestigation();
-		useUIStore.getState().setActiveModule(null);
-	};
-
-	const handleTabChange = (tab: InvestigationTab) => {
-		click();
-		setActiveTab(tab);
-	};
-
-	const handleOpenConnection = (slug: string) => {
-		click();
-		const connectedPlace = places.find((p) => p.slug === slug);
-		if (connectedPlace) {
-			openInvestigation(connectedPlace.slug, connectedPlace.name);
-		}
-	};
-
-	const handleViewInAtlas = (slug: string) => {
-		click();
-		closeInvestigation();
-		useAtlasStore.getState().selectPlace(slug);
-		useUIStore.getState().setActiveModule('atlas');
-	};
-
-	return (
-		<motion.div
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			transition={{ duration: 0.4 }}
-			className="fixed inset-0 z-10 flex flex-col"
-			style={{
-				marginLeft: spacing.rail,
-				marginBottom: terminalOpen
-					? `calc(${spacing.statusBar} + ${spacing.terminalHeight})`
-					: spacing.statusBar,
-				backgroundColor: colors.archive.black,
-			}}
-		>
-			<CaseHeader place={place} onClose={handleClose} evidenceCount={placeEvidence.length} />
-
-			{/* Tab bar */}
-			<div
-				className="flex items-center px-4 h-9 border-b gap-1 shrink-0"
-				style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
-			>
-				{(Object.keys(TAB_LABELS) as InvestigationTab[]).map((tab) => (
-					<button
-						key={tab}
-						onClick={() => handleTabChange(tab)}
-						className="px-3 h-full border-b-2 transition-colors"
-						style={{
-							borderColor: activeTab === tab ? colors.archive.amber : 'transparent',
-							color: activeTab === tab ? colors.archive.amber : colors.archive.gray,
-							fontFamily: typography.mono,
-							fontSize: typography.sizes.xs,
-							letterSpacing: '0.05em',
-						}}
-					>
-						{TAB_LABELS[tab]}
-					</button>
-				))}
-			</div>
-
-			{/* Content */}
-			<div className="flex-1 overflow-y-auto p-6">
-				{activeTab === 'overview' && (
-					<div className="max-w-3xl space-y-6">
-						<div>
-							<div
-								style={{
-									color: colors.archive.amber,
-									fontSize: typography.sizes.xs,
-									fontFamily: typography.mono,
-									letterSpacing: '0.05em',
-									marginBottom: '0.5rem',
-								}}
-							>
-								CASE SUMMARY
-							</div>
-							<p
-								style={{
-									color: colors.archive.white,
-									fontSize: typography.sizes.base,
-									lineHeight: '1.7',
-									opacity: 0.9,
-									fontFamily: typography.serif,
-								}}
-							>
-								{place.history}
-							</p>
-						</div>
-
-						<div className="grid grid-cols-3 gap-3">
-							<div className="p-3 border" style={{ borderColor: colors.archive.gray }}>
-								<div style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
-									DANGER LEVEL
-								</div>
-								<div style={{ color: place.dangerLevel >= 4 ? colors.archive.red : colors.archive.amber, fontSize: typography.sizes.lg, fontFamily: typography.mono, marginTop: '0.25rem' }}>
-									{place.dangerLevel}/5
-								</div>
-							</div>
-							<div className="p-3 border" style={{ borderColor: colors.archive.gray }}>
-								<div style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
-									STATUS
-								</div>
-								<div style={{ color: colors.archive.white, fontSize: typography.sizes.lg, fontFamily: typography.mono, marginTop: '0.25rem' }}>
-									{place.status.toUpperCase()}
-								</div>
-							</div>
-							<div className="p-3 border" style={{ borderColor: colors.archive.gray }}>
-								<div style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
-									EVIDENCE
-								</div>
-								<div style={{ color: colors.archive.green, fontSize: typography.sizes.lg, fontFamily: typography.mono, marginTop: '0.25rem' }}>
-									{placeEvidence.length}
-								</div>
-							</div>
-						</div>
-
-						{place.unlockCondition && (
-							<div
-								className="p-4 border"
-								style={{ borderColor: colors.archive.red, backgroundColor: 'rgba(138, 90, 90, 0.05)' }}
-							>
-								<div style={{ color: colors.archive.red, fontSize: typography.sizes.xs, fontFamily: typography.mono, letterSpacing: '0.05em' }}>
-									CASE LOCKED
-								</div>
-								<p style={{ color: colors.archive.redBright, fontSize: typography.sizes.sm, marginTop: '0.25rem' }}>
-									{place.unlockCondition.message}
-								</p>
-							</div>
-						)}
-					</div>
-				)}
-
-				{activeTab === 'evidence' && <EvidenceGrid evidence={placeEvidence} investigationId={invId} />}
-
-				{activeTab === 'timeline' && <TimelineView events={placeTimeline} />}
-
-				{activeTab === 'notes' && (
-					<NotesPanel notes={placeNotes} onChange={(v) => setNotes(invId, v)} />
-				)}
-
-				{activeTab === 'connections' && (
-					<div className="max-w-3xl">
-						<div style={{ color: colors.archive.blue, fontSize: typography.sizes.xs, fontFamily: typography.mono, letterSpacing: '0.05em', marginBottom: '1rem' }}>
-							RESONANCE CONNECTIONS
-						</div>
-						{place.connectedTo.length === 0 ? (
-							<div style={{ color: colors.archive.gray, fontFamily: typography.mono }}>NO CONNECTIONS RECORDED</div>
-						) : (
-							<div className="space-y-2">
-								{place.connectedTo.map((slug) => {
-									const connectedPlace = places.find((p) => p.slug === slug);
-									return (
-										<div
-											key={slug}
-											className="flex items-center justify-between p-3 border"
-											style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
-										>
-											<div>
-												<div style={{ color: colors.archive.white, fontSize: typography.sizes.sm, fontFamily: typography.mono }}>
-													{connectedPlace ? connectedPlace.name : `[${slug}]`}
-												</div>
-												{connectedPlace && (
-													<div style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono, marginTop: '0.25rem' }}>
-														{connectedPlace.address.country} • {connectedPlace.status.toUpperCase()}
-													</div>
-												)}
-											</div>
-											<div className="flex gap-2">
-												{connectedPlace && (
-													<button
-														onClick={() => handleOpenConnection(slug)}
-														className="px-2 py-1 text-xs border transition-colors hover:border-amber-700"
-														style={{ borderColor: colors.archive.amber, color: colors.archive.amber, fontFamily: typography.mono }}
-													>
-														OPEN CASE
-													</button>
-												)}
-												<button
-													onClick={() => handleViewInAtlas(slug)}
-													className="px-2 py-1 text-xs border transition-colors hover:border-blue-700"
-													style={{ borderColor: colors.archive.blue, color: colors.archive.blue, fontFamily: typography.mono }}
-												>
-													VIEW IN ATLAS
-												</button>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						)}
-					</div>
-				)}
-			</div>
-
-			{/* Media Viewer Overlay */}
-			{activeMedia && (
-				<MediaViewer
-					url={activeMedia.url}
-					type={activeMedia.type}
-					title={activeMedia.title}
-					onClose={closeMedia}
-				/>
-			)}
-		</motion.div>
-	);
+      {viewingPhoto && (
+        <PhotoViewer
+          src={viewingPhoto}
+          title={place.name}
+          onClose={() => setViewingPhoto(null)}
+        />
+      )}
+    </div>
+  );
 };

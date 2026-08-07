@@ -8,13 +8,14 @@ import { useAudioStore } from '@/state/audioStore';
 import { useUIStore } from '@/state/uiStore';
 import { colors, typography } from '@/styles/theme';
 
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
+  const s = status || 'verified';
   const color =
-    status === 'sealed'
+    s === 'sealed'
       ? colors.archive.red
-      : status === 'whispered'
+      : s === 'whispered'
       ? colors.archive.blue
-      : status === 'mirage'
+      : s === 'mirage'
       ? colors.archive.white
       : colors.archive.green;
 
@@ -23,18 +24,19 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
       className="px-2 py-0.5 text-xs border"
       style={{ color, borderColor: color, fontFamily: typography.mono }}
     >
-      {status.toUpperCase()}
+      {s.toUpperCase()}
     </span>
   );
 };
 
-const DangerIndicator: React.FC<{ level: number }> = ({ level }) => {
+const DangerIndicator: React.FC<{ level?: number }> = ({ level = 0 }) => {
+  const safeLevel = Math.max(0, Math.min(5, level));
   const color =
-    level >= 4 ? colors.archive.red : level === 3 ? colors.archive.amber : colors.archive.green;
+    safeLevel >= 4 ? colors.archive.red : safeLevel === 3 ? colors.archive.amber : colors.archive.green;
   return (
     <span style={{ color, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-      {'█'.repeat(level)}
-      {'░'.repeat(5 - level)}
+      {'█'.repeat(safeLevel)}
+      {'░'.repeat(5 - safeLevel)}
     </span>
   );
 };
@@ -67,9 +69,12 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
 
   const handleOpenInvestigation = () => {
     click();
-    investigatePlace(place.slug); // +3 Dust, first time only
+    investigatePlace(place.slug);
     openInvestigation(place.slug, place.name);
   };
+
+  const lat = place.coordinates?.[1];
+  const lng = place.coordinates?.[0];
 
   return (
     <div className="space-y-4 pb-4">
@@ -82,7 +87,7 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
               fontWeight: typography.weights.medium,
             }}
           >
-            {place.name}
+            {place.name || 'Unknown Location'}
           </h2>
           <StatusBadge status={place.status} />
         </div>
@@ -94,7 +99,7 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
             fontFamily: typography.mono,
           }}
         >
-          {place.address.formatted}
+          {place.address?.formatted || 'Address unverified'}
         </div>
         <div
           style={{
@@ -103,7 +108,8 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
             fontFamily: typography.mono,
           }}
         >
-          {place.coordinates[1].toFixed(4)}°N {place.coordinates[0].toFixed(4)}°E
+          {typeof lat === 'number' ? `${lat.toFixed(4)}°N` : '--°N'}{' '}
+          {typeof lng === 'number' ? `${lng.toFixed(4)}°E` : '--°E'}
         </div>
       </div>
 
@@ -114,13 +120,13 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
         <span style={{ color: colors.archive.amber }}>
           DANGER <DangerIndicator level={place.dangerLevel} />
         </span>
-                {place.yearAbandoned && (
+        {place.yearAbandoned && (
           <span style={{ color: colors.archive.gray }}>
             ABANDONED {place.yearAbandoned}
           </span>
         )}
         <span style={{ color: colors.archive.green }}>
-          {place.category.toUpperCase()}
+          {(place.category || 'unknown').toUpperCase()}
         </span>
       </div>
 
@@ -145,11 +151,11 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
             fontFamily: typography.serif,
           }}
         >
-          {place.history}
+          {place.history || 'No historical records available.'}
         </div>
       </div>
 
-      {place.hauntingReports.length > 0 && (
+      {place.hauntingReports && place.hauntingReports.length > 0 && (
         <div>
           <div
             style={{
@@ -186,7 +192,7 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
         </div>
       )}
 
-      {place.connectedTo.length > 0 && (
+      {place.connectedTo && place.connectedTo.length > 0 && (
         <div>
           <div
             style={{
@@ -222,7 +228,7 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
               fontFamily: typography.mono,
             }}
           >
-            LOCKED — {place.unlockCondition.type.toUpperCase()}: {place.unlockCondition.value}
+            LOCKED — {(place.unlockCondition.type || 'unknown').toUpperCase()}: {place.unlockCondition.value || '?'}
           </div>
           <p
             style={{
@@ -232,7 +238,7 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
               opacity: 0.8,
             }}
           >
-            {place.unlockCondition.message}
+            {place.unlockCondition.message || 'Access denied.'}
           </p>
         </div>
       )}

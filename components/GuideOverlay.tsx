@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioStore } from '@/state/audioStore';
 import { useUIStore } from '@/state/uiStore';
@@ -38,36 +38,31 @@ const STEPS = [
 ];
 
 export const GuideOverlay: React.FC = () => {
-  const [visible, setVisible] = useState(false);
-  const [step, setStep] = useState(0);
+  const { guideOpen, setGuideOpen } = useUIStore();
+  const [step, setStep] = React.useState(0);
   const { click } = useAudioStore();
 
-  useEffect(() => {
-    const seen = localStorage.getItem('vp-guide-seen');
-    if (!seen) {
-      setVisible(true);
-    }
-  }, []);
+  React.useEffect(() => {
+    if (guideOpen) setStep(0);
+  }, [guideOpen]);
 
   const handleNext = () => {
     click();
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
-      setVisible(false);
-      localStorage.setItem('vp-guide-seen', 'true');
+      setGuideOpen(false);
     }
   };
 
-  const handleSkip = () => {
+  const handleClose = () => {
     click();
-    setVisible(false);
-    localStorage.setItem('vp-guide-seen', 'true');
+    setGuideOpen(false);
   };
 
   return (
     <AnimatePresence>
-      {visible && (
+      {guideOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -80,13 +75,21 @@ export const GuideOverlay: React.FC = () => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-lg mx-4 border p-8"
+            className="w-full max-w-lg mx-4 border p-8 relative"
             style={{
               borderColor: colors.archive.grayDark,
               backgroundColor: colors.archive.surface,
               boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
             }}
           >
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 hover:opacity-70 transition-opacity"
+              style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
+            >
+              × CLOSE
+            </button>
+
             <div
               className="mb-6"
               style={{
@@ -122,7 +125,6 @@ export const GuideOverlay: React.FC = () => {
               {STEPS[step].body}
             </p>
 
-            {/* Progress dots */}
             <div className="flex gap-2 mb-6">
               {STEPS.map((_, i) => (
                 <div
@@ -138,7 +140,7 @@ export const GuideOverlay: React.FC = () => {
 
             <div className="flex justify-between items-center">
               <button
-                onClick={handleSkip}
+                onClick={handleClose}
                 className="hover:opacity-70 transition-opacity"
                 style={{
                   color: colors.archive.gray,
@@ -146,7 +148,7 @@ export const GuideOverlay: React.FC = () => {
                   fontSize: typography.sizes.xs,
                 }}
               >
-                [SKIP BRIEFING]
+                [DISMISS]
               </button>
 
               <button
@@ -160,7 +162,7 @@ export const GuideOverlay: React.FC = () => {
                   letterSpacing: '0.05em',
                 }}
               >
-                {step < STEPS.length - 1 ? 'NEXT →' : 'ENTER ARCHIVE'}
+                {step < STEPS.length - 1 ? 'NEXT →' : 'RETURN TO ARCHIVE'}
               </button>
             </div>
           </motion.div>

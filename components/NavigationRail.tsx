@@ -19,7 +19,7 @@ const MODULES = [
 ] as const;
 
 export const NavigationRail: React.FC = () => {
-  const { activeModule, setActiveModule, setTerminalOpen } = useUIStore();
+  const { activeModule, setActiveModule, setTerminalOpen, setGuideOpen } = useUIStore();
   const { click } = useAudioStore();
 
   return (
@@ -77,6 +77,21 @@ export const NavigationRail: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Help toggle */}
+      <button
+        onClick={() => {
+          click();
+          setGuideOpen(true);
+        }}
+        className="flex flex-col items-center justify-center py-3 border-t mx-1 mb-1 rounded transition-all hover:bg-white/5"
+        style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray }}
+      >
+        <span style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>?</span>
+        <span style={{ fontFamily: typography.mono, fontSize: '0.5625rem', letterSpacing: '0.05em' }}>
+          HELP
+        </span>
+      </button>
 
       {/* Terminal toggle */}
       <button

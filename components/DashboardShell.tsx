@@ -26,6 +26,7 @@ import { InboxPanel } from './inbox/InboxPanel';
 import { ImpossibleChangeToast } from './ImpossibleChangeToast';
 import { colors, typography, spacing, shadows } from '@/styles/theme';
 import { GuideOverlay } from './GuideOverlay';
+import { PrologueOverlay } from './PrologueOverlay';
 
 const InvestigationsContent: React.FC = () => (
   <div className="space-y-2">
@@ -74,6 +75,7 @@ export const DashboardShell: React.FC = () => {
         }}
       />
 
+      <PrologueOverlay />
       <GuideOverlay />
 
       {/* Navigation Rail */}

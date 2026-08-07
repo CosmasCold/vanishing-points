@@ -5,6 +5,20 @@ import { useSessionStore } from '@/state/sessionStore';
 
 export function registerSystemCommands(registry: CommandRegistry) {
 
+    registry.register({
+    name: 'guide',
+    description: 'Open operator briefing',
+    usage: 'guide',
+    aliases: ['tutorial', 'help-start'],
+    handler: () => {
+      useUIStore.getState().setGuideOpen(true);
+      return {
+        output: 'Operator briefing loaded. Close the modal to return to the archive.',
+        type: 'info' as const,
+      };
+    },
+  });
+
   registry.register({
     name: 'guide',
     description: 'Open operator briefing',

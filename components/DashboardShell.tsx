@@ -24,7 +24,6 @@ import { ArtifactViewer } from './artifacts/ArtifactViewer';
 import { DailyRitual } from './DailyRitual';
 import { InboxPanel } from './inbox/InboxPanel';
 import { ImpossibleChangeToast } from './ImpossibleChangeToast';
-import { colors, typography, spacing, microform } from '@/styles/theme';
 import { GuideOverlay } from './GuideOverlay';
 import { PrologueOverlay } from './PrologueOverlay';
 import { useAudioStore } from '@/state/audioStore';
@@ -39,6 +38,7 @@ import { registry } from '@/logic/commandRegistry';
 import { registerSystemCommands } from '@/logic/commands/system';
 import { registerInvestigationCommands } from '@/logic/commands/investigation';
 import { registerEvidenceBoardCommands } from '@/logic/commands/evidenceBoard';
+import { colors, typography, spacing, microform } from '@/styles/theme';
 
 const InvestigationsContent: React.FC = () => {
   const { places, selectPlace } = useAtlasStore();
@@ -191,7 +191,7 @@ export const DashboardShell: React.FC = () => {
     marginLeft: activeModule ? `calc(${spacing.rail} + 24rem)` : spacing.rail,
     marginBottom: spacing.statusBar,
     zIndex: 2,
-    transitionDuration: `${timing.panelSlide}s`,
+    transitionDuration: '0.35s',
     transitionProperty: 'margin-left',
   }}
 >

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAtlasStore } from '@/state/atlasStore';
 import { fetchPlaces } from '@/data/places';
 import { PlaceDetail } from './PlaceDetail';
-import { colors, typography } from '@/styles/theme';
+import { colors, typography, microform } from '@/styles/theme';
 
 function getDangerColor(level: number): string {
   if (level >= 4) return colors.archive.red;
@@ -38,7 +39,6 @@ export const AtlasPanel: React.FC = () => {
   }, [places.length, setPlaces, setLoading]);
 
   const selectedPlace = places.find((p) => p.slug === selectedPlaceSlug);
-
   const filtered = places.filter((p) => {
     if (filterCategory && p.category !== filterCategory) return false;
     if (filterStatus && p.status !== filterStatus) return false;
@@ -47,8 +47,16 @@ export const AtlasPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center" style={{ fontFamily: typography.mono }}>
-        <div style={{ color: colors.archive.amber }} className="animate-pulse">
+      <div className="h-full flex items-center justify-center">
+        <div
+          style={{
+            color: microform.halogen,
+            fontFamily: typography.mono,
+            fontSize: typography.sizes.sm,
+            textShadow: microform.halogenText,
+          }}
+          className="animate-pulse"
+        >
           SYNCHRONIZING ARCHIVE...
         </div>
       </div>
@@ -60,8 +68,15 @@ export const AtlasPanel: React.FC = () => {
       <div className="h-full flex flex-col">
         <button
           onClick={() => selectPlace(null)}
-          className="mb-3 text-left hover:opacity-70 transition-opacity"
-          style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}
+          className="mb-3 text-left transition-all hover:opacity-70 px-2 py-1"
+          style={{
+            color: colors.archive.gray,
+            fontSize: typography.sizes.xs,
+            fontFamily: typography.mono,
+            border: `1px solid ${microform.iron}`,
+            background: microform.mahogany,
+            width: 'fit-content',
+          }}
         >
           ← RETURN TO ATLAS
         </button>
@@ -74,13 +89,24 @@ export const AtlasPanel: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4 space-y-3">
-        <div style={{ color: colors.archive.amber, fontSize: typography.sizes.xs, fontFamily: typography.mono, letterSpacing: '0.05em' }}>
+      {/* Stamped header */}
+      <div
+        className="mb-4 pb-3"
+        style={{ borderBottom: `1px solid ${microform.mahoganyLight}` }}
+      >
+        <div
+          className="text-[10px] tracking-[0.15em] mb-3"
+          style={{ color: microform.halogen, fontFamily: typography.mono, textShadow: microform.halogenText }}
+        >
           ATLAS FILTERS
         </div>
 
-        <div className="space-y-2">
-          <div style={{ color: colors.archive.grayLight, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
+        {/* Category toggles */}
+        <div className="mb-3">
+          <div
+            className="mb-1.5"
+            style={{ color: colors.archive.gray, fontSize: '0.5625rem', fontFamily: typography.mono, letterSpacing: '0.06em' }}
+          >
             CATEGORY
           </div>
           <div className="flex gap-1">
@@ -88,12 +114,14 @@ export const AtlasPanel: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
-                className="px-2 py-1 text-xs border transition-colors"
+                className="px-2 py-1 text-[10px] transition-all duration-150"
                 style={{
-                  borderColor: filterCategory === cat ? colors.archive.amber : colors.archive.gray,
-                  color: filterCategory === cat ? colors.archive.amber : colors.archive.grayLight,
-                  backgroundColor: filterCategory === cat ? 'rgba(184, 149, 106, 0.1)' : 'transparent',
+                  border: `1px solid ${filterCategory === cat ? colors.archive.amber : microform.iron}`,
+                  color: filterCategory === cat ? colors.archive.amber : colors.archive.gray,
+                  background: filterCategory === cat ? `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)` : microform.iron,
                   fontFamily: typography.mono,
+                  letterSpacing: '0.04em',
+                  boxShadow: filterCategory === cat ? `inset 0 0 8px ${microform.halogenDim}` : 'none',
                 }}
               >
                 {cat.toUpperCase()}
@@ -102,8 +130,12 @@ export const AtlasPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div style={{ color: colors.archive.grayLight, fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
+        {/* Status toggles */}
+        <div className="mb-3">
+          <div
+            className="mb-1.5"
+            style={{ color: colors.archive.gray, fontSize: '0.5625rem', fontFamily: typography.mono, letterSpacing: '0.06em' }}
+          >
             STATUS
           </div>
           <div className="flex flex-wrap gap-1">
@@ -111,12 +143,14 @@ export const AtlasPanel: React.FC = () => {
               <button
                 key={st}
                 onClick={() => setFilterStatus(filterStatus === st ? null : st)}
-                className="px-2 py-1 text-xs border transition-colors"
+                className="px-2 py-1 text-[10px] transition-all duration-150"
                 style={{
-                  borderColor: filterStatus === st ? colors.archive.blue : colors.archive.gray,
-                  color: filterStatus === st ? colors.archive.blue : colors.archive.grayLight,
-                  backgroundColor: filterStatus === st ? 'rgba(106, 122, 138, 0.1)' : 'transparent',
+                  border: `1px solid ${filterStatus === st ? colors.archive.blue : microform.iron}`,
+                  color: filterStatus === st ? colors.archive.blue : colors.archive.gray,
+                  background: filterStatus === st ? `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)` : microform.iron,
                   fontFamily: typography.mono,
+                  letterSpacing: '0.04em',
+                  boxShadow: filterStatus === st ? 'inset 0 0 8px rgba(107, 143, 163, 0.15)' : 'none',
                 }}
               >
                 {st.toUpperCase()}
@@ -128,7 +162,7 @@ export const AtlasPanel: React.FC = () => {
         {(filterCategory || filterStatus) && (
           <button
             onClick={clearFilters}
-            className="hover:opacity-70 transition-opacity"
+            className="transition-opacity hover:opacity-70"
             style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}
           >
             [CLEAR FILTERS]
@@ -136,34 +170,76 @@ export const AtlasPanel: React.FC = () => {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1">
-        <div className="flex justify-between items-baseline mb-2" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-          <span style={{ color: colors.archive.gray }}>LOCATIONS</span>
-          <span style={{ color: colors.archive.amber }}>{filtered.length}</span>
+      {/* Location index cards */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        <div
+          className="flex justify-between items-baseline mb-2 pb-1"
+          style={{ borderBottom: `1px solid ${microform.iron}` }}
+        >
+          <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: '0.5625rem', letterSpacing: '0.06em' }}>
+            LOCATIONS
+          </span>
+          <span style={{ color: microform.halogen, fontFamily: typography.mono, fontSize: '0.5625rem' }}>
+            {filtered.length}
+          </span>
         </div>
 
-        {filtered.map((place) => (
-          <button
+        {filtered.map((place, i) => (
+          <motion.button
             key={place.slug}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.02, duration: 0.2 }}
             onClick={() => selectPlace(place.slug)}
-            className="w-full text-left p-2 border transition-colors hover:border-amber-700"
-            style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
+            className="w-full text-left transition-all duration-200"
+            style={{
+              padding: '0.625rem',
+              background: `linear-gradient(180deg, ${colors.archive.surfaceRaised} 0%, ${colors.archive.surface} 100%)`,
+              border: `1px solid ${microform.iron}`,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+            whileHover={{
+              borderColor: microform.mahoganyLight,
+              boxShadow: `0 2px 8px rgba(0,0,0,0.4), inset 0 0 8px ${microform.halogenDim}`,
+            }}
           >
             <div className="flex justify-between items-start">
-              <span style={{ color: colors.archive.white, fontSize: typography.sizes.sm }}>
+              <span
+                style={{
+                  color: colors.archive.white,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.sm,
+                }}
+              >
                 {place.name}
               </span>
-              <span style={{ color: getDangerColor(place.dangerLevel), fontSize: typography.sizes.xs, fontFamily: typography.mono }}>
+              <span
+                className="px-1.5 py-0.5 text-[10px] border shrink-0 ml-2"
+                style={{
+                  borderColor: getDangerColor(place.dangerLevel),
+                  color: getDangerColor(place.dangerLevel),
+                  fontFamily: typography.mono,
+                  backgroundColor: 'rgba(20,20,18,0.6)',
+                }}
+              >
                 D{place.dangerLevel}
               </span>
             </div>
-            <div className="flex justify-between mt-1" style={{ fontSize: typography.sizes.xs, color: colors.archive.gray, fontFamily: typography.mono }}>
-              <span>{place.address.country}</span>
+            <div
+              className="flex justify-between mt-1.5"
+              style={{
+                fontSize: '0.5625rem',
+                color: colors.archive.gray,
+                fontFamily: typography.mono,
+                letterSpacing: '0.04em',
+              }}
+            >
+              <span>{place.address?.country || 'UNKNOWN'}</span>
               <span style={{ color: place.status !== 'verified' ? colors.archive.blue : colors.archive.gray }}>
                 {place.status.toUpperCase()}
               </span>
             </div>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>

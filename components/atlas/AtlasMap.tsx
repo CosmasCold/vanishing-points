@@ -5,7 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
-import { colors, typography } from '@/styles/theme';
+import { colors, typography, microform } from '@/styles/theme';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -51,7 +51,6 @@ export const AtlasMap: React.FC = () => {
     };
   }, []);
 
-  // Fit bounds to all places on initial load
   useEffect(() => {
     if (!mapLoaded || !map.current || places.length === 0) return;
 
@@ -73,7 +72,6 @@ export const AtlasMap: React.FC = () => {
     }
   }, [mapLoaded, places]);
 
-  // Add markers
   useEffect(() => {
     if (!mapLoaded || !map.current) return;
 
@@ -85,28 +83,28 @@ export const AtlasMap: React.FC = () => {
 
       const el = document.createElement('div');
       el.className = 'archive-marker';
-      el.style.width = '12px';
-      el.style.height = '12px';
+      el.style.width = '10px';
+      el.style.height = '10px';
       el.style.borderRadius = '50%';
-      el.style.border = `2px solid ${colors.archive.amber}`;
+      el.style.border = `1.5px solid ${microform.halogen}`;
       el.style.backgroundColor =
         place.status === 'sealed' ? colors.archive.red :
         place.status === 'whispered' ? colors.archive.blue :
         place.status === 'mirage' ? colors.archive.grayLight :
         colors.archive.green;
       el.style.cursor = 'pointer';
-      el.style.boxShadow = `0 0 6px ${colors.archive.amber}40`;
-      el.style.transition = 'all 0.15s ease';
+      el.style.boxShadow = `0 0 8px ${microform.halogenGlow}`;
+      el.style.transition = 'all 0.2s ease';
 
       el.addEventListener('mouseenter', () => {
-        el.style.width = '16px';
-        el.style.height = '16px';
-        el.style.boxShadow = `0 0 10px ${colors.archive.amber}70`;
+        el.style.width = '14px';
+        el.style.height = '14px';
+        el.style.boxShadow = `0 0 14px ${microform.halogen}, 0 0 4px ${microform.halogen}`;
       });
       el.addEventListener('mouseleave', () => {
-        el.style.width = '12px';
-        el.style.height = '12px';
-        el.style.boxShadow = `0 0 6px ${colors.archive.amber}40`;
+        el.style.width = '10px';
+        el.style.height = '10px';
+        el.style.boxShadow = `0 0 8px ${microform.halogenGlow}`;
       });
 
       el.addEventListener('click', (e) => {
@@ -123,7 +121,6 @@ export const AtlasMap: React.FC = () => {
     });
   }, [mapLoaded, places, selectPlace, click]);
 
-  // Fly to selected
   useEffect(() => {
     if (!map.current || !selectedPlaceSlug) return;
     const place = places.find((p) => p.slug === selectedPlaceSlug);
@@ -140,39 +137,64 @@ export const AtlasMap: React.FC = () => {
     <div className="absolute inset-0">
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Scanline overlay */}
+      {/* Optical glass overlay — replaces scanlines */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px)',
-          backgroundSize: '100% 4px',
+          background: `
+            radial-gradient(ellipse at 50% 30%, transparent 40%, rgba(10, 8, 6, 0.4) 100%),
+            linear-gradient(180deg, rgba(255, 170, 85, 0.015) 0%, transparent 50%)
+          `,
+          mixBlendMode: 'multiply',
         }}
       />
 
-      {/* Vignette */}
+      {/* Subtle dust grain */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ boxShadow: 'inset 0 0 150px rgba(0,0,0,0.7)' }}
+        className="absolute inset-0 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: '128px 128px',
+        }}
       />
 
-      {/* Corner brackets */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
-      <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
-      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
-      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 pointer-events-none" style={{ borderColor: colors.archive.amber, opacity: 0.3 }} />
+      {/* Corner brackets — iron survey marks */}
+      {[
+        { pos: 'top-4 left-4', borders: 'border-t border-l' },
+        { pos: 'top-4 right-4', borders: 'border-t border-r' },
+        { pos: 'bottom-4 left-4', borders: 'border-b border-l' },
+        { pos: 'bottom-4 right-4', borders: 'border-b border-r' },
+      ].map((corner) => (
+        <div
+          key={corner.pos}
+          className={`absolute ${corner.pos} w-6 h-6 pointer-events-none ${corner.borders}`}
+          style={{
+            borderColor: 'rgba(255, 170, 85, 0.2)',
+            boxShadow: '0 0 8px rgba(255, 170, 85, 0.05)',
+          }}
+        />
+      ))}
 
-      {/* Readout */}
+      {/* Readout — iron bezel */}
       <div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 border pointer-events-none"
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 pointer-events-none"
         style={{
-          borderColor: colors.archive.grayDark,
-          backgroundColor: 'rgba(20, 20, 18, 0.85)',
-          color: colors.archive.gray,
-          fontFamily: typography.mono,
-          fontSize: typography.sizes.xs,
+          border: `1px solid ${microform.iron}`,
+          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
         }}
       >
-        ATLAS SECTOR VIEW • {places.length} ARCHIVES INDEXED
+        <span
+          style={{
+            color: microform.halogen,
+            fontFamily: typography.mono,
+            fontSize: typography.sizes.xs,
+            letterSpacing: '0.08em',
+            textShadow: microform.halogenText,
+          }}
+        >
+          ATLAS SECTOR VIEW • {places.length} ARCHIVES INDEXED
+        </span>
       </div>
     </div>
   );

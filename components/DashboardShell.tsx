@@ -186,13 +186,15 @@ export const DashboardShell: React.FC = () => {
 
       {/* Main workspace */}
       <div
-        className="flex-1 flex flex-col relative"
-        style={{
-          marginLeft: spacing.rail,
-          marginBottom: spacing.statusBar,
-          zIndex: 2,
-        }}
-      >
+  className="flex-1 flex flex-col relative transition-all"
+  style={{
+    marginLeft: activeModule ? `calc(${spacing.rail} + 24rem)` : spacing.rail,
+    marginBottom: spacing.statusBar,
+    zIndex: 2,
+    transitionDuration: `${timing.panelSlide}s`,
+    transitionProperty: 'margin-left',
+  }}
+>
         {/* Workspace content */}
         <div className="flex-1 relative overflow-hidden">
           {/* Empty state */}

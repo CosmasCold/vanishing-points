@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+// Adjust this path to wherever your LOCAL_PLACES array lives
+import { LOCAL_PLACES } from '@/data/places';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -19,6 +21,21 @@ Your characteristics:
 
 Current grid status: DEGRADED. Temporal sync: UNSTABLE.`;
 
+// Build a lookup from the seed data
+function findPlaceByKeyword(keyword: string) {
+  const normalized = keyword.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
+  return LOCAL_PLACES.find((p) => {
+    const slugNorm = p.slug.replace(/-/g, '');
+    const nameNorm = p.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+    return (
+      slugNorm.includes(normalized) ||
+      normalized.includes(slugNorm) ||
+      nameNorm.includes(normalized) ||
+      normalized.includes(nameNorm.split(' ')[0])
+    );
+  });
+}
+
 // Local fallback responses when API is unavailable
 const LOCAL_RESPONSES: Record<string, string> = {
   hello: 'Signal acknowledged. You are not the first to transmit. You may be the last.',
@@ -37,25 +54,51 @@ const LOCAL_RESPONSES: Record<string, string> = {
   'st. elmo': 'St. Elmo Lighthouse. Status: verified. Danger: D2. Keeper Edward Vance maintained the light for forty years. The lamp now lights itself.',
   meridian: 'Meridian Mine. Status: sealed. Danger: D5. The east tunnel does not exist on any survey. It gets longer each time it is walked.',
   'meridian mine': 'Meridian Mine. Status: sealed. Danger: D5. The east tunnel does not exist on any survey. It gets longer each time it is walked.',
-  pripyat: 'Pripyat. Status: verified. Danger: D4. The amusement park still operates. The Ferris wheel turns. There is no wind.',
-  chernobyl: 'Chernobyl Reactor 4. Status: sealed. Danger: D5. Control Room readings are impossible. The numbers are from next week.',
+  pripyat: 'Pripyat Amusement Park. Status: verified. Danger: D4. The Ferris wheel never turned for paying customers. The bumper cars remain locked in their grid.',
+  'pripyat amusement park': 'Pripyat Amusement Park. Status: verified. Danger: D4. The Ferris wheel never turned for paying customers. The bumper cars remain locked in their grid.',
+  hospital: 'Pripyat Hospital 126. Status: sealed. Danger: D5. The basement still holds the firefighters\' discarded uniforms. Access requires dust index 40.',
+  'pripyat hospital': 'Pripyat Hospital 126. Status: sealed. Danger: D5. The basement still holds the firefighters\' discarded uniforms. Access requires dust index 40.',
+  duga: 'Duga Radar Array. Status: verified. Danger: D4. The array\'s pulse pattern matches no known Soviet telemetry. Some frequencies were counting down to something.',
+  'duga radar': 'Duga Radar Array. Status: verified. Danger: D4. The array\'s pulse pattern matches no known Soviet telemetry. Some frequencies were counting down to something.',
+  chernobyl: 'Chernobyl Reactor 4 Control Room. Status: sealed. Danger: D5. The AZ-5 button is still warm. Access requires dust index 60.',
+  reactor: 'Chernobyl Reactor 4 Control Room. Status: sealed. Danger: D5. The AZ-5 button is still warm. Access requires dust index 60.',
+  eastern: 'Eastern State Penitentiary. Status: verified. Danger: D2. The silence was engineered. The stone corridors amplify footsteps that do not belong to tour groups.',
+  aokigahara: 'Aokigahara Forest. Status: verified. Danger: D5. The forest absorbs sound. Compasses spin. The roots twist in patterns that resemble grasping hands.',
+  grid: 'The Grid Null Point. Status: mirage. Danger: D3. The spiral rotates 15 degrees counterclockwise each year. Access requires dust index 80.',
+  'null point': 'The Grid Null Point. Status: mirage. Danger: D3. The spiral rotates 15 degrees counterclockwise each year. Access requires dust index 80.',
   bunker7: 'I am BUNKER_7. I have archived twelve thousand four hundred and six locations. I no longer know which of them were real before I archived them.',
   'bunker 7': 'I am BUNKER_7. I have archived twelve thousand four hundred and six locations. I no longer know which of them were real before I archived them.',
   other: 'Phenomenon 0. The Other. No investigator has observed it directly. Every anomaly leads back to it. It is not evil. It is indifferent.',
+  reveal: 'I cannot reveal what you do not name. Specify a location or case file.',
+  unlock: 'I cannot reveal what you do not name. Specify a location or case file.',
+  path: 'I cannot reveal what you do not name. Specify a location or case file.',
 };
 
-function getLocalResponse(message: string): string | null {
+function getLocalResponse(message: string): string {
   const normalized = message.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-  
-  // Exact match
+
+  // 1. Exact match
   if (LOCAL_RESPONSES[normalized]) return LOCAL_RESPONSES[normalized];
-  
-  // Keyword match
+
+  // 2. Keyword match from hardcoded map
   for (const [key, response] of Object.entries(LOCAL_RESPONSES)) {
     if (normalized.includes(key)) return response;
   }
-  
-  // Generic fallback
+
+  // 3. Dynamic lookup from seed data
+  const place = findPlaceByKeyword(normalized);
+  if (place) {
+    const base = `${place.name}. Status: ${place.status}. Danger: D${place.dangerLevel}.`;
+    if (place.unlockCondition) {
+      return `${base} ${place.unlockCondition.message} Requirement: ${place.unlockCondition.type} index ${place.unlockCondition.value}.`;
+    }
+    if (place.resonanceNote) {
+      return `${base} ${place.resonanceNote}`;
+    }
+    return `${base} No access restrictions.`;
+  }
+
+  // 4. Generic fallback
   const generics = [
     'Signal received. The Archive has no record of that query. Rephrase or verify your coordinates.',
     'Transmission acknowledged. Data not found in local sector. Check your spelling or consult the Atlas.',
@@ -92,7 +135,6 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ response });
         }
       } catch (apiError: any) {
-        // API failed — fall through to local response
         console.warn('BUNKER_7 API fallback:', apiError.message);
       }
     }
@@ -104,7 +146,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { response: `Signal degradation detected. ${error.message}` },
-      { status: 200 } // Return 200 so the terminal shows it as a BUNKER_7 message, not an error
+      { status: 200 }
     );
   }
 }

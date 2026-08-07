@@ -5,7 +5,12 @@ export const DUST_THRESHOLDS = {
   MODERATE: 25,
   HIGH: 50,
   EXTREME: 75,
-};
+} as const;
+
+export const BUNKER7_THRESHOLDS = {
+  STABLE: 40,   // clinical persona
+  UNSTABLE: 60, // full erosion
+} as const;
 
 export const STABILITY_THRESHOLDS = {
   NOMINAL: 90,
@@ -13,13 +18,14 @@ export const STABILITY_THRESHOLDS = {
   DEGRADED: 60,
   CRITICAL: 40,
   UNSTABLE: 20,
-};
+} as const;
 
 interface Status {
   dustIndex: number;
   observerStability: number;
   atlasCoverage: number;
   activeAlerts: number;
+  investigatedSlugs: string[]; // anti-farming: track once-per-place
 }
 
 interface UIState {
@@ -43,6 +49,7 @@ interface UIState {
   restoreStability: () => void;
   examineEvidence: (evidenceId: string) => void;
   catalogue: () => string;
+  profile: () => string;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -56,6 +63,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     observerStability: 100,
     atlasCoverage: 0,
     activeAlerts: 0,
+    investigatedSlugs: [],
   },
 
   setBooted: (booted) => set({ booted }),
@@ -67,12 +75,18 @@ export const useUIStore = create<UIState>((set, get) => ({
     set((s) => ({ status: { ...s.status, ...status } })),
 
   investigatePlace: (slug) =>
-    set((s) => ({
-      status: {
-        ...s.status,
-        dustIndex: s.status.dustIndex + 3,
-      },
-    })),
+    set((s) => {
+      if (s.status.investigatedSlugs.includes(slug)) {
+        return s; // No double-dipping. The Archive remembers.
+      }
+      return {
+        status: {
+          ...s.status,
+          dustIndex: s.status.dustIndex + 3,
+          investigatedSlugs: [...s.status.investigatedSlugs, slug],
+        },
+      };
+    }),
 
   ground: () => {
     set((s) => ({
@@ -119,5 +133,10 @@ export const useUIStore = create<UIState>((set, get) => ({
       status.observerStability >= STABILITY_THRESHOLDS.CRITICAL ? 'CRITICAL' : 'UNSTABLE';
 
     return `DUST INDEX: ${status.dustIndex} [${dustLevel}]\nSTABILITY: ${status.observerStability.toFixed(1)}% [${stabilityLevel}]\nCOVERAGE: ${status.atlasCoverage} km²\nALERTS: ${status.activeAlerts}`;
+  },
+
+  profile: () => {
+    // Anonymity is lore. The Witness is never a user.
+    return 'INV_RED-7';
   },
 }));

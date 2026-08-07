@@ -1,115 +1,142 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useUIStore } from '@/state/uiStore';
-import { useAudioStore } from '@/state/audioStore';
-import { useMediaStore } from '@/state/mediaStore';
+import React from 'react';
+import { EvidenceItem } from '@/types/investigation';
 import { colors, typography } from '@/styles/theme';
+import { FileText, Image, Mic, Video, Box, User, Radio, Lock } from 'lucide-react';
+import { useAudioStore } from '@/state/audioStore';
 
-interface EvidenceItem {
-  id: string;
-  type: 'document' | 'photo' | 'audio' | 'video' | 'personal';
-  title: string;
-  description?: string;
-  mediaUrl?: string;
-  dustCost?: number;
-}
+const typeIcons: Record<EvidenceItem['type'], React.ComponentType<any>> = {
+  photo: Image,
+  document: FileText,
+  audio: Mic,
+  video: Video,
+  witness: User,
+  signal: Radio,
+  personal: User,
+  artifact: Box,
+};
+
+const statusColors: Record<EvidenceItem['status'], string> = {
+  locked: colors.archive.gray,
+  available: colors.archive.amber,
+  collected: colors.archive.green,
+  analyzing: colors.archive.blue,
+  analyzed: colors.archive.white,
+  viewed: colors.archive.white,
+};
 
 interface EvidenceGridProps {
-  items: EvidenceItem[];
+  evidence: EvidenceItem[];
+  onSelect: (item: EvidenceItem) => void;
 }
 
-export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ items }) => {
-  const [examinedIds, setExaminedIds] = useState<Set<string>>(new Set());
-  const { examineEvidence } = useUIStore();
+export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence, onSelect }) => {
   const { click } = useAudioStore();
-  const { openMedia } = useMediaStore();
 
-  const handleExamine = (item: EvidenceItem) => {
-    if (examinedIds.has(item.id)) return;
-
-    click();
-    examineEvidence(item.id);
-    setExaminedIds((prev) => new Set(prev).add(item.id));
-
-    if (
-      (item.type === 'audio' || item.type === 'video' || item.type === 'personal') &&
-      item.mediaUrl
-    ) {
-      const mediaType = item.type === 'personal' ? 'audio' : item.type;
-      openMedia(item.id, item.mediaUrl, mediaType, item.title);
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'document': return colors.archive.amber;
-      case 'photo': return colors.archive.green;
-      case 'audio': return colors.archive.blue;
-      case 'video': return colors.archive.redBright;
-      case 'personal': return colors.archive.grayLight;
-      default: return colors.archive.gray;
-    }
-  };
+  if (evidence.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64" style={{ fontFamily: typography.mono }}>
+        <div style={{ color: colors.archive.gray }}>NO EVIDENCE COLLECTED</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {items.map((item) => {
-        const examined = examinedIds.has(item.id);
+    <div className="grid grid-cols-2 gap-3">
+      {evidence.map((item) => {
+        const Icon = typeIcons[item.type] || FileText;
+        const isLocked = item.status === 'locked';
+        const isViewed = item.status === 'analyzed' || item.status === 'viewed';
+        const unlockCondition = item.unlockCondition;
+
         return (
           <button
             key={item.id}
-            onClick={() => handleExamine(item)}
-            className="text-left p-4 border transition-all hover:border-amber-700"
-            style={{
-              borderColor: examined ? colors.archive.amber : colors.archive.grayDark,
-              backgroundColor: examined ? 'rgba(201, 169, 110, 0.05)' : colors.archive.surface,
-              opacity: examined ? 0.8 : 1,
+            onClick={() => {
+              click();
+              onSelect(item);
             }}
+            className="text-left p-3 border transition-colors hover:border-amber-700 relative"
+            style={{
+              borderColor: isViewed ? colors.archive.amber : colors.archive.gray,
+              backgroundColor: colors.archive.surface,
+              opacity: isLocked ? 0.5 : 1,
+              cursor: isLocked ? 'not-allowed' : 'pointer',
+            }}
+            disabled={isLocked}
           >
-            <div className="flex justify-between items-start mb-2">
-              <span
-                style={{
-                  color: getTypeColor(item.type),
-                  fontFamily: typography.mono,
-                  fontSize: typography.sizes.xs,
-                  letterSpacing: '0.05em',
-                }}
-              >
-                {item.type.toUpperCase()}
-              </span>
-              {examined && (
-                <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-                  VIEWED
-                </span>
-              )}
-            </div>
-            <div
-              style={{
-                color: colors.archive.white,
-                fontFamily: typography.mono,
-                fontSize: typography.sizes.sm,
-                marginBottom: '0.5rem',
-              }}
-            >
-              {item.title}
-            </div>
-            {item.description && (
-              <p style={{ color: colors.archive.gray, fontSize: typography.sizes.xs }}>
-                {item.description}
-              </p>
-            )}
-            {!examined && item.dustCost && (
+            {isViewed && (
               <div
-                className="mt-2"
+                className="absolute top-2 right-2 px-1.5 py-0.5 border"
                 style={{
+                  borderColor: colors.archive.amber,
                   color: colors.archive.amber,
                   fontFamily: typography.mono,
-                  fontSize: typography.sizes.xs,
+                  fontSize: '0.625rem',
                 }}
               >
-                COST: {item.dustCost} DUST
+                VIEWED
               </div>
+            )}
+
+            <div className="flex items-start justify-between mb-2 pr-16">
+              <div className="flex items-center gap-2">
+                {isLocked ? (
+                  <Lock size={14} style={{ color: colors.archive.gray }} />
+                ) : (
+                  <Icon size={14} style={{ color: statusColors[item.status] || colors.archive.gray }} />
+                )}
+                <span
+                  style={{
+                    color: isLocked ? colors.archive.gray : colors.archive.white,
+                    fontSize: typography.sizes.sm,
+                    fontFamily: typography.mono,
+                  }}
+                >
+                  {item.title}
+                </span>
+              </div>
+            </div>
+
+            <p
+              style={{
+                color: colors.archive.grayLight,
+                fontSize: typography.sizes.xs,
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {item.description}
+            </p>
+
+            {unlockCondition && isLocked && (
+              <p
+                style={{
+                  color: colors.archive.amber,
+                  fontSize: typography.sizes.xs,
+                  marginTop: '0.5rem',
+                  fontFamily: typography.mono,
+                }}
+              >
+                LOCKED: {unlockCondition.message}
+              </p>
+            )}
+
+            {!isLocked && !isViewed && (
+              <p
+                style={{
+                  color: colors.archive.amber,
+                  fontSize: typography.sizes.xs,
+                  marginTop: '0.5rem',
+                  fontFamily: typography.mono,
+                }}
+              >
+                COST: {unlockCondition?.value ?? item.dustCost ?? 1} DUST
+              </p>
             )}
           </button>
         );

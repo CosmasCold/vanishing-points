@@ -5,7 +5,7 @@ import { useSessionStore } from '@/state/sessionStore';
 
 export function registerSystemCommands(registry: CommandRegistry) {
 
-    registry.register({
+  registry.register({
     name: 'guide',
     description: 'Open operator briefing',
     usage: 'guide',
@@ -14,21 +14,6 @@ export function registerSystemCommands(registry: CommandRegistry) {
       useUIStore.getState().setGuideOpen(true);
       return {
         output: 'Operator briefing loaded. Close the modal to return to the archive.',
-        type: 'info' as const,
-      };
-    },
-  });
-
-  registry.register({
-    name: 'guide',
-    description: 'Open operator briefing',
-    usage: 'guide',
-    aliases: ['tutorial', 'help-start'],
-    handler: () => {
-      // Force show guide by clearing localStorage
-      localStorage.removeItem('vp-guide-seen');
-      return {
-        output: 'Operator briefing queued. Reload the interface to view, or type "help" for command reference.',
         type: 'info' as const,
       };
     },

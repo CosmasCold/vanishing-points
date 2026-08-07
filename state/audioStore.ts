@@ -15,6 +15,7 @@ interface AudioState {
   return: () => void;
   startAmbient: () => void;
   stopAmbient: () => void;
+  playCalibrationDrone: () => void;
 }
 
 let audioCtx: AudioContext | null = null;
@@ -133,6 +134,21 @@ function stopAmbientHum() {
   }
 }
 
+function playCalibrationDrone() {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(58.5, ctx.currentTime);
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 4);
+}
+
 export const useAudioStore = create<AudioState>((set, get) => ({
   muted: false,
   ambientPlaying: false,
@@ -178,5 +194,10 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   stopAmbient: () => {
     set({ ambientPlaying: false });
     stopAmbientHum();
+  },
+
+  playCalibrationDrone: () => {
+    if (get().muted) return;
+    playCalibrationDrone();
   },
 }));

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
+import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { colors, typography } from '@/styles/theme';
 
@@ -14,148 +15,56 @@ interface BoardNode {
   dangerLevel: number;
   x: number;
   y: number;
-  vx: number;
-  vy: number;
   width: number;
   height: number;
 }
 
-interface BoardEdge {
-  source: string;
-  target: string;
-}
-
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 56;
-const REPULSION = 8000;
-const SPRING_LENGTH = 220;
-const SPRING_STRENGTH = 0.03;
-const DAMPING = 0.88;
-const CENTER_FORCE = 0.008;
 
 export const EvidenceBoard: React.FC = () => {
   const { places, selectPlace } = useAtlasStore();
   const { click } = useAudioStore();
   const { activeInvestigationId } = useInvestigationStore();
+  const {
+    nodePositions,
+    selectedNodeId,
+    discoveredEdges,
+    playerEdges,
+    zoom,
+    pan,
+    setNodePosition,
+    selectNode,
+    addPlayerEdge,
+    setViewport,
+  } = useEvidenceBoardStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 1200, height: 800 });
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const animRef = useRef<number>(0);
+  const [mouseWorld, setMouseWorld] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [dragNodeId, setDragNodeId] = useState<string | null>(null);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragStartClientRef = useRef({ x: 0, y: 0 });
+  const initializedRef = useRef<Set<string>>(new Set());
 
-  // Build nodes and edges
-  const { nodes, edges } = useMemo(() => {
-    const nodeMap = new Map<string, BoardNode>();
-    const edgeList: BoardEdge[] = [];
-
+  // Initialize positions for new places once
+  useEffect(() => {
+    const { nodePositions: existing, setNodePosition: setPos } = useEvidenceBoardStore.getState();
     places.forEach((place, i) => {
-      const angle = (i / places.length) * Math.PI * 2;
-      const radius = Math.min(dims.width, dims.height) * 0.35;
-      nodeMap.set(place.slug, {
-        id: place.slug,
-        name: place.name,
-        status: place.status || 'verified',
-        dangerLevel: place.dangerLevel || 0,
-        x: dims.width / 2 + Math.cos(angle) * radius,
-        y: dims.height / 2 + Math.sin(angle) * radius,
-        vx: 0,
-        vy: 0,
-        width: NODE_WIDTH,
-        height: NODE_HEIGHT,
-      });
-
-      place.connectedTo?.forEach((targetSlug) => {
-        if (places.find((p) => p.slug === targetSlug)) {
-          edgeList.push({ source: place.slug, target: targetSlug });
-        }
-      });
+      if (!initializedRef.current.has(place.slug) && !existing[place.slug]) {
+        initializedRef.current.add(place.slug);
+        const angle = (i / Math.max(places.length, 1)) * Math.PI * 2 + (Math.random() - 0.5);
+        const radius = 80 + Math.random() * 120;
+        setPos(place.slug, {
+          x: dims.width / 2 + Math.cos(angle) * radius,
+          y: dims.height / 2 + Math.sin(angle) * radius,
+        });
+      }
     });
-
-    return { nodes: Array.from(nodeMap.values()), edges: edgeList };
   }, [places, dims.width, dims.height]);
-
-  const [simNodes, setSimNodes] = useState<BoardNode[]>(nodes);
-
-  // Sync nodes when places change
-  useEffect(() => {
-    setSimNodes((prev) => {
-      const map = new Map(prev.map((n) => [n.id, n]));
-      return nodes.map((n) => map.get(n.id) || n);
-    });
-  }, [nodes]);
-
-  // Force simulation
-  useEffect(() => {
-    let running = true;
-
-    const step = () => {
-      if (!running) return;
-
-      setSimNodes((prev) => {
-        const next = prev.map((n) => ({ ...n }));
-
-        // Repulsion
-        for (let i = 0; i < next.length; i++) {
-          for (let j = i + 1; j < next.length; j++) {
-            const a = next[i];
-            const b = next[j];
-            const dx = a.x - b.x;
-            const dy = a.y - b.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const force = REPULSION / (dist * dist);
-            const fx = (dx / dist) * force;
-            const fy = (dy / dist) * force;
-            a.vx += fx;
-            a.vy += fy;
-            b.vx -= fx;
-            b.vy -= fy;
-          }
-        }
-
-        // Spring attraction along edges
-        edges.forEach((edge) => {
-          const a = next.find((n) => n.id === edge.source);
-          const b = next.find((n) => n.id === edge.target);
-          if (!a || !b) return;
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = (dist - SPRING_LENGTH) * SPRING_STRENGTH;
-          const fx = (dx / dist) * force;
-          const fy = (dy / dist) * force;
-          a.vx += fx;
-          a.vy += fy;
-          b.vx -= fx;
-          b.vy -= fy;
-        });
-
-        // Center gravity
-        next.forEach((n) => {
-          n.vx += (dims.width / 2 - n.x) * CENTER_FORCE;
-          n.vy += (dims.height / 2 - n.y) * CENTER_FORCE;
-          n.vx *= DAMPING;
-          n.vy *= DAMPING;
-          n.x += n.vx;
-          n.y += n.vy;
-        });
-
-        return next;
-      });
-
-      animRef.current = requestAnimationFrame(step);
-    };
-
-    animRef.current = requestAnimationFrame(step);
-    return () => {
-      running = false;
-      cancelAnimationFrame(animRef.current);
-    };
-  }, [edges, dims.width, dims.height]);
 
   // Resize observer
   useEffect(() => {
@@ -170,58 +79,122 @@ export const EvidenceBoard: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  // Pan handlers
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
+  // Build renderable nodes from places + persisted positions
+  const renderNodes = useMemo(() => {
+    const nodes: BoardNode[] = [];
+    places.forEach((place) => {
+      const pos = nodePositions[place.slug];
+      if (!pos) return;
+      nodes.push({
+        id: place.slug,
+        name: place.name,
+        status: place.status || 'verified',
+        dangerLevel: place.dangerLevel || 0,
+        x: pos.x,
+        y: pos.y,
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+      });
+    });
+    return nodes;
+  }, [places, nodePositions]);
+
+  // Search filter
+  const filteredSlugs = useMemo(() => {
+    if (!search.trim()) return new Set(renderNodes.map((n) => n.id));
+    const q = search.toLowerCase();
+    return new Set(renderNodes.filter((n) => n.name.toLowerCase().includes(q)).map((n) => n.id));
+  }, [renderNodes, search]);
+
+  // All edges (discovered + player-drawn)
+  const allEdges = useMemo(() => [...discoveredEdges, ...playerEdges], [discoveredEdges, playerEdges]);
+
+  // Event handlers
+  const onContainerMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.board-node')) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  }, [pan]);
+    const { pan: currentPan } = useEvidenceBoardStore.getState();
+    setIsPanning(true);
+    setPanStart({ x: e.clientX - currentPan.x, y: e.clientY - currentPan.y });
+  }, []);
 
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  }, [isDragging, dragStart]);
+  const onNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
+    e.stopPropagation();
+    const { zoom: z, pan: p, nodePositions: positions } = useEvidenceBoardStore.getState();
+    const world = { x: (e.clientX - p.x) / z, y: (e.clientY - p.y) / z };
+    const pos = positions[nodeId] || { x: 0, y: 0 };
+    dragOffsetRef.current = { x: world.x - pos.x, y: world.y - pos.y };
+    dragStartClientRef.current = { x: e.clientX, y: e.clientY };
+    setDragNodeId(nodeId);
+  }, []);
 
-  const onMouseUp = useCallback(() => setIsDragging(false), []);
+  const onContainerMouseMove = useCallback((e: React.MouseEvent) => {
+    const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
+    const world = { x: (e.clientX - p.x) / z, y: (e.clientY - p.y) / z };
+    setMouseWorld(world);
+
+    if (dragNodeId) {
+      setNodePosition(dragNodeId, {
+        x: world.x - dragOffsetRef.current.x,
+        y: world.y - dragOffsetRef.current.y,
+      });
+    } else if (isPanning) {
+      setViewport(z, { x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+    }
+  }, [dragNodeId, isPanning, panStart, setNodePosition, setViewport]);
+
+  const onContainerMouseUp = useCallback((e: React.MouseEvent) => {
+    if (dragNodeId) {
+      const dx = e.clientX - dragStartClientRef.current.x;
+      const dy = e.clientY - dragStartClientRef.current.y;
+      const isClick = Math.abs(dx) < 5 && Math.abs(dy) < 5;
+
+      if (isClick) {
+        const currentSelected = useEvidenceBoardStore.getState().selectedNodeId;
+        if (currentSelected === null) {
+          selectNode(dragNodeId);
+        } else if (currentSelected === dragNodeId) {
+          selectNode(null);
+        } else {
+          addPlayerEdge({
+            id: `player-${currentSelected}-${dragNodeId}`,
+            source: currentSelected,
+            target: dragNodeId,
+            type: 'suspected',
+            label: 'SUSPECTED',
+          });
+          selectNode(null);
+        }
+        click();
+      }
+      setDragNodeId(null);
+    }
+    setIsPanning(false);
+  }, [dragNodeId, selectNode, addPlayerEdge, click]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((z) => Math.max(0.3, Math.min(3, z * delta)));
-  }, []);
+    const nextZoom = Math.max(0.3, Math.min(3, z * delta));
+    setViewport(nextZoom, p);
+  }, [setViewport]);
 
-  const filteredNodes = useMemo(() => {
-    if (!search.trim()) return simNodes;
-    const q = search.toLowerCase();
-    return simNodes.filter((n) => n.name.toLowerCase().includes(q));
-  }, [simNodes, search]);
-
-  const filteredIds = new Set(filteredNodes.map((n) => n.id));
-
-  const handleNodeClick = (id: string) => {
-    click();
-    setSelectedId(id);
-    selectPlace(id);
-  };
-
-  // Minimap
+  // Minimap bounds
   const bounds = useMemo(() => {
-    if (simNodes.length === 0) return { minX: 0, minY: 0, maxX: dims.width, maxY: dims.height };
-    const xs = simNodes.map((n) => n.x);
-    const ys = simNodes.map((n) => n.y);
+    if (renderNodes.length === 0) return { minX: 0, minY: 0, maxX: dims.width, maxY: dims.height };
+    const xs = renderNodes.map((n) => n.x);
+    const ys = renderNodes.map((n) => n.y);
     return {
       minX: Math.min(...xs) - 100,
       minY: Math.min(...ys) - 100,
       maxX: Math.max(...xs) + 100,
       maxY: Math.max(...ys) + 100,
     };
-  }, [simNodes, dims]);
+  }, [renderNodes, dims]);
 
   const mapWidth = bounds.maxX - bounds.minX;
   const mapHeight = bounds.maxY - bounds.minY;
-
   const miniScale = Math.min(120 / mapWidth, 80 / mapHeight);
-
   const viewX = (-pan.x / zoom - bounds.minX) * miniScale;
   const viewY = (-pan.y / zoom - bounds.minY) * miniScale;
   const viewW = (dims.width / zoom) * miniScale;
@@ -232,10 +205,10 @@ export const EvidenceBoard: React.FC = () => {
       ref={containerRef}
       className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing"
       style={{ backgroundColor: colors.archive.black }}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
+      onMouseDown={onContainerMouseDown}
+      onMouseMove={onContainerMouseMove}
+      onMouseUp={onContainerMouseUp}
+      onMouseLeave={onContainerMouseUp}
       onWheel={onWheel}
     >
       {/* Grid background */}
@@ -259,30 +232,52 @@ export const EvidenceBoard: React.FC = () => {
           transformOrigin: '0 0',
         }}
       >
-        {edges.map((edge, i) => {
-          const a = simNodes.find((n) => n.id === edge.source);
-          const b = simNodes.find((n) => n.id === edge.target);
+        {allEdges.map((edge, i) => {
+          const a = renderNodes.find((n) => n.id === edge.source);
+          const b = renderNodes.find((n) => n.id === edge.target);
           if (!a || !b) return null;
-          const isDimmed = !filteredIds.has(a.id) || !filteredIds.has(b.id);
+          const isDimmed = !filteredSlugs.has(a.id) || !filteredSlugs.has(b.id);
+          const edgeColor =
+            edge.type === 'confirmed' ? colors.archive.green :
+            edge.type === 'unstable' ? colors.archive.red :
+            colors.archive.amber;
           return (
             <line
-              key={i}
+              key={edge.id || i}
               x1={a.x}
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke={colors.archive.blue}
-              strokeWidth={selectedId && (a.id === selectedId || b.id === selectedId) ? 1.5 : 0.5}
-              opacity={isDimmed ? 0.05 : selectedId && (a.id === selectedId || b.id === selectedId) ? 0.6 : 0.15}
+              stroke={edgeColor}
+              strokeWidth={selectedNodeId && (a.id === selectedNodeId || b.id === selectedNodeId) ? 1.5 : 0.5}
+              opacity={isDimmed ? 0.05 : selectedNodeId && (a.id === selectedNodeId || b.id === selectedNodeId) ? 0.6 : 0.15}
             />
           );
         })}
+
+        {/* Pending connection line */}
+        {selectedNodeId && (() => {
+          const a = renderNodes.find((n) => n.id === selectedNodeId);
+          if (!a) return null;
+          return (
+            <line
+              x1={a.x}
+              y1={a.y}
+              x2={mouseWorld.x}
+              y2={mouseWorld.y}
+              stroke={colors.archive.amber}
+              strokeWidth={0.5}
+              strokeDasharray="4 4"
+              opacity={0.4}
+            />
+          );
+        })()}
       </svg>
 
       {/* Nodes */}
-      {simNodes.map((node) => {
-        const isFiltered = filteredIds.has(node.id);
-        const isSelected = selectedId === node.id;
+      {renderNodes.map((node) => {
+        const isFiltered = filteredSlugs.has(node.id);
+        const isSelected = selectedNodeId === node.id;
         const isActiveInvestigation = activeInvestigationId === node.id;
 
         return (
@@ -299,10 +294,7 @@ export const EvidenceBoard: React.FC = () => {
               opacity: isFiltered ? 1 : 0.15,
               zIndex: isSelected ? 20 : isActiveInvestigation ? 15 : 10,
             }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNodeClick(node.id);
-            }}
+            onMouseDown={(e) => onNodeMouseDown(e, node.id)}
             whileHover={{ scale: 1.05 }}
             animate={{
               borderColor: isSelected ? colors.archive.amber : statusColor(node.status),
@@ -336,7 +328,7 @@ export const EvidenceBoard: React.FC = () => {
                     letterSpacing: '0.05em',
                   }}
                 >
-                  {(node.status).toUpperCase()}
+                  {node.status.toUpperCase()}
                 </span>
                 <span
                   style={{
@@ -379,13 +371,23 @@ export const EvidenceBoard: React.FC = () => {
         )}
       </div>
 
+      {/* Hint */}
+      <div
+        className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3 py-1 border pointer-events-none"
+        style={{ borderColor: colors.archive.grayDark, backgroundColor: 'rgba(20, 20, 18, 0.9)' }}
+      >
+        <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: '0.625rem' }}>
+          CLICK TO SELECT • CLICK ANOTHER TO CONNECT • DRAG TO MOVE
+        </span>
+      </div>
+
       {/* Stats */}
       <div
         className="absolute top-4 right-4 z-30 px-3 py-2 border"
         style={{ borderColor: colors.archive.grayDark, backgroundColor: 'rgba(20, 20, 18, 0.9)' }}
       >
         <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-          {places.length} NODES • {edges.length} CONNECTIONS
+          {renderNodes.length} NODES • {allEdges.length} CONNECTIONS
         </span>
       </div>
 
@@ -395,21 +397,27 @@ export const EvidenceBoard: React.FC = () => {
         style={{ backgroundColor: 'rgba(20, 20, 18, 0.9)' }}
       >
         <button
-          onClick={() => setZoom((z) => Math.min(3, z * 1.2))}
+          onClick={() => {
+            const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
+            setViewport(Math.min(3, z * 1.2), p);
+          }}
           className="px-3 py-1 border hover:border-amber-700 transition-colors"
           style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono }}
         >
           +
         </button>
         <button
-          onClick={() => setZoom((z) => Math.max(0.3, z / 1.2))}
+          onClick={() => {
+            const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
+            setViewport(Math.max(0.3, z / 1.2), p);
+          }}
           className="px-3 py-1 border hover:border-amber-700 transition-colors"
           style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono }}
         >
           −
         </button>
         <button
-          onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+          onClick={() => setViewport(1, { x: 0, y: 0 })}
           className="px-3 py-1 border hover:border-amber-700 transition-colors"
           style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
         >
@@ -428,8 +436,7 @@ export const EvidenceBoard: React.FC = () => {
         }}
       >
         <svg width={140} height={100} viewBox={`0 0 ${mapWidth * miniScale} ${mapHeight * miniScale}`}>
-          {/* Nodes as tiny rects */}
-          {simNodes.map((n) => (
+          {renderNodes.map((n) => (
             <rect
               key={n.id}
               x={(n.x - bounds.minX - n.width / 2) * miniScale}
@@ -440,7 +447,6 @@ export const EvidenceBoard: React.FC = () => {
               opacity={0.6}
             />
           ))}
-          {/* Viewport rect */}
           <rect
             x={viewX}
             y={viewY}

@@ -4,10 +4,20 @@ export interface EvidenceItem {
   title: string;
   description: string;
   source?: string;
-  status: 'collected' | 'analyzing' | 'analyzed';
+  status: 'locked' | 'available' | 'collected' | 'analyzing' | 'analyzed' | 'viewed';
   relatedTo: string[];
   mediaUrl?: string;
-  unlockDust?: number;
+  /** Gated behind Dust or other conditions. */
+  unlockCondition?: {
+    message: string;
+    value?: number; // dust cost to unlock
+  };
+  /** Flat cost for generated/derived evidence (alternative to unlockCondition). */
+  dustCost?: number;
+  timestamp?: string;
+  metadata?: Record<string, string>;
+  /** Years since document creation. Design pillar: "Documents are physical artifacts." */
+  paperAge?: number;
   archivistCache?: number;
 }
 

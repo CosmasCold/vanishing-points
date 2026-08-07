@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useUIStore } from '@/state/uiStore';
 import { useBootStore } from '@/state/bootStore';
@@ -34,6 +34,11 @@ import { ResearchPanel } from './research/ResearchPanel';
 import { DiscoveryPanel } from './discoveries/DiscoveryPanel';
 import { SystemPanel } from './system/SystemPanel';
 import { InventoryPanel } from './inventory/InventoryPanel';
+import { DustCorruption } from '@/components/effects/DustCorruption';
+import { registry } from '@/logic/commandRegistry';
+import { registerSystemCommands } from '@/logic/commands/system';
+import { registerInvestigationCommands } from '@/logic/commands/investigation';
+import { registerEvidenceBoardCommands } from '@/logic/commands/evidenceBoard';
 
 const InvestigationsContent: React.FC = () => {
   const { places, selectPlace } = useAtlasStore();
@@ -54,6 +59,7 @@ const InvestigationsContent: React.FC = () => {
     click();
     selectPlace(place.slug);
     openInvestigation(place.slug, place.name);
+    useUIStore.getState().investigatePlace(place.slug);
     setActiveModule(null);
   };
 
@@ -107,6 +113,13 @@ function statusColor(status?: string): string {
 export const DashboardShell: React.FC = () => {
   useKeyboardShortcuts();
 
+  // Register all terminal commands once on mount
+  useEffect(() => {
+    registerSystemCommands(registry);
+    registerInvestigationCommands(registry);
+    registerEvidenceBoardCommands(registry);
+  }, []);
+
   const { booted, activeModule } = useUIStore();
   const { isComplete } = useBootStore();
   const { activeInvestigationId } = useInvestigationStore();
@@ -134,6 +147,8 @@ export const DashboardShell: React.FC = () => {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
+
+      <DustCorruption />
 
       <PrologueOverlay />
       <GuideOverlay />
@@ -216,44 +231,44 @@ export const DashboardShell: React.FC = () => {
         </ModulePanel>
 
         <ModulePanel moduleId="evidence" title="EVIDENCE BOARD">
-  <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-    <div className="mb-4">The Evidence Board visualizes resonance connections between all indexed locations.</div>
-    <div className="mb-2" style={{ color: colors.archive.amber }}>LEGEND</div>
-    <div className="space-y-1">
-      <div><span style={{ color: colors.archive.green }}>●</span> VERIFIED</div>
-      <div><span style={{ color: colors.archive.blue }}>●</span> WHISPERED</div>
-      <div><span style={{ color: colors.archive.red }}>●</span> SEALED</div>
-      <div><span style={{ color: colors.archive.grayLight }}>●</span> MIRAGE</div>
-    </div>
-    <div className="mt-4" style={{ color: colors.archive.gray }}>
-      Click a node to select a location. Drag to pan. Scroll to zoom.
-    </div>
-  </div>
-</ModulePanel>
+          <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+            <div className="mb-4">The Evidence Board visualizes resonance connections between all indexed locations.</div>
+            <div className="mb-2" style={{ color: colors.archive.amber }}>LEGEND</div>
+            <div className="space-y-1">
+              <div><span style={{ color: colors.archive.green }}>●</span> VERIFIED</div>
+              <div><span style={{ color: colors.archive.blue }}>●</span> WHISPERED</div>
+              <div><span style={{ color: colors.archive.red }}>●</span> SEALED</div>
+              <div><span style={{ color: colors.archive.grayLight }}>●</span> MIRAGE</div>
+            </div>
+            <div className="mt-4" style={{ color: colors.archive.gray }}>
+              Click to select. Click another to connect. Drag nodes to move. Drag background to pan.
+            </div>
+          </div>
+        </ModulePanel>
 
         <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
-  <SignalPanel />
-</ModulePanel>
+          <SignalPanel />
+        </ModulePanel>
 
-<ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
-  <DocumentArchive />
-</ModulePanel>
+        <ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
+          <DocumentArchive />
+        </ModulePanel>
 
-<ModulePanel moduleId="research" title="RESEARCH LOG">
-  <ResearchPanel />
-</ModulePanel>
+        <ModulePanel moduleId="research" title="RESEARCH LOG">
+          <ResearchPanel />
+        </ModulePanel>
 
-<ModulePanel moduleId="inventory" title="INVENTORY">
-  <InventoryPanel />
-</ModulePanel>
+        <ModulePanel moduleId="inventory" title="INVENTORY">
+          <InventoryPanel />
+        </ModulePanel>
 
-<ModulePanel moduleId="discoveries" title="DISCOVERIES">
-  <DiscoveryPanel />
-</ModulePanel>
+        <ModulePanel moduleId="discoveries" title="DISCOVERIES">
+          <DiscoveryPanel />
+        </ModulePanel>
 
-<ModulePanel moduleId="system" title="SYSTEM">
-  <SystemPanel />
-</ModulePanel>
+        <ModulePanel moduleId="system" title="SYSTEM">
+          <SystemPanel />
+        </ModulePanel>
 
         {/* Overlays */}
         <DailyRitual />

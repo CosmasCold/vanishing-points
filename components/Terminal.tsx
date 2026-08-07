@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTerminalStore } from '@/state/terminalStore';
-import { useUIStore } from '@/state/uiStore';
+import { useUIStore, BUNKER7_THRESHOLDS } from '@/state/uiStore';
 import { useAudioStore } from '@/state/audioStore';
 import { registry } from '@/logic/commandRegistry';
 import { colors, typography, shadows } from '@/styles/theme';
@@ -21,6 +21,7 @@ const getOutputColor = (type: string) => {
 
 export const Terminal: React.FC = () => {
   const { terminalOpen, setTerminalOpen } = useUIStore();
+  const { status } = useUIStore();
   const { history, addCommand, clearHistory } = useTerminalStore();
   const { play, init } = useAudioStore();
   const [input, setInput] = useState('');
@@ -29,9 +30,10 @@ export const Terminal: React.FC = () => {
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
 
+  const shouldJitter = status.dustIndex >= BUNKER7_THRESHOLDS.STABLE;
+
   useEffect(() => {
     init();
-    // Start ambient on first user interaction
     const handleFirstClick = () => {
       useAudioStore.getState().startAmbient();
       window.removeEventListener('click', handleFirstClick);
@@ -104,7 +106,6 @@ export const Terminal: React.FC = () => {
     <AnimatePresence>
       {terminalOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -114,7 +115,6 @@ export const Terminal: React.FC = () => {
             onClick={() => setTerminalOpen(false)}
           />
 
-          {/* Modal Terminal Window */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -128,7 +128,6 @@ export const Terminal: React.FC = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Title bar */}
             <div
               className="flex items-center justify-between px-4 h-9 border-b shrink-0"
               style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
@@ -147,7 +146,6 @@ export const Terminal: React.FC = () => {
               </button>
             </div>
 
-            {/* History */}
             <div
               ref={historyContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-3"
@@ -169,6 +167,7 @@ export const Terminal: React.FC = () => {
                     <span style={{ color: colors.archive.white }}>{cmd.input}</span>
                   </div>
                   <div
+                    className={shouldJitter ? 'dust-jitter' : undefined}
                     style={{
                       color: getOutputColor(cmd.type),
                       whiteSpace: 'pre-wrap',
@@ -183,7 +182,6 @@ export const Terminal: React.FC = () => {
                 </div>
               ))}
 
-              {/* Suggestions */}
               <AnimatePresence>
                 {suggestions.length > 0 && (
                   <motion.div
@@ -215,7 +213,6 @@ export const Terminal: React.FC = () => {
               <div ref={historyEndRef} />
             </div>
 
-            {/* Input bar */}
             <div
               className="shrink-0 px-4 py-3 border-t flex items-center gap-3"
               style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}

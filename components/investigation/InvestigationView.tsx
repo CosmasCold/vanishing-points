@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Place } from '@/types/places';
+import { EvidenceItem } from '@/types/investigation';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
@@ -31,7 +32,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 
   // Derive evidence items from place data + store
   const evidenceItems = useMemo(() => {
-    const items: any[] = [];
+    const items: EvidenceItem[] = [];
 
     // Photos as evidence
     place.photos?.forEach((src, i) => {
@@ -40,6 +41,8 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
         type: 'photo',
         title: `Archive Photo ${i + 1}`,
         description: `Recovered photographic evidence from ${place.name}.`,
+        status: 'available',
+        relatedTo: [],
         mediaUrl: src,
         dustCost: 2,
       });
@@ -52,7 +55,8 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
         type: 'personal',
         title: `Witness Testimony #${i + 1}`,
         description: report.substring(0, 80) + (report.length > 80 ? '...' : ''),
-        mediaUrl: undefined,
+        status: 'available',
+        relatedTo: [],
         dustCost: 1,
       });
     });
@@ -81,6 +85,11 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [place, timelines]);
+
+  // Defensive: filter null/undefined from connectedTo to prevent runtime crashes
+  const safeConnections = useMemo(() => {
+    return (place.connectedTo || []).filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+  }, [place.connectedTo]);
 
   return (
     <div className="absolute inset-0 flex flex-col z-10" style={{ backgroundColor: colors.archive.black }}>
@@ -368,7 +377,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                 )}
 
                 {/* Connected locations */}
-                {place.connectedTo && place.connectedTo.length > 0 && (
+                {safeConnections.length > 0 && (
                   <div>
                     <div
                       style={{
@@ -382,7 +391,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                       RESONANCE LINKS
                     </div>
                     <div className="space-y-2">
-                      {place.connectedTo.map((slug) => (
+                      {safeConnections.map((slug) => (
                         <button
                           key={slug}
                           onClick={() => {
@@ -396,7 +405,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                             fontFamily: typography.mono,
                           }}
                         >
-                          → {(slug || '').replace(/-/g, ' ').toUpperCase()}
+                          → {slug.replace(/-/g, ' ').toUpperCase()}
                         </button>
                       ))}
                     </div>
@@ -460,7 +469,13 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                 </span>
               </div>
               {evidenceItems.length > 0 ? (
-                <EvidenceGrid items={evidenceItems} />
+                <EvidenceGrid
+                  evidence={evidenceItems}
+                  onSelect={(item) => {
+                    click();
+                    examineEvidence(item.id);
+                  }}
+                />
               ) : (
                 <div
                   className="flex items-center justify-center h-48 border"
@@ -612,9 +627,9 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
               >
                 RESONANCE CONNECTIONS
               </h2>
-              {place.connectedTo && place.connectedTo.length > 0 ? (
+              {safeConnections.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {place.connectedTo.map((slug) => (
+                  {safeConnections.map((slug) => (
                     <ConnectedCard key={slug} slug={slug} onClick={() => { click(); selectPlace(slug); }} />
                   ))}
                 </div>
@@ -689,7 +704,7 @@ const ConnectedCard: React.FC<{ slug: string; onClick: () => void }> = ({ slug, 
           marginBottom: '0.5rem',
         }}
       >
-        {target ? target.name : (slug || '').replace(/-/g, ' ').toUpperCase()}
+        {target ? target.name : slug.replace(/-/g, ' ').toUpperCase()}
       </div>
       {target && (
         <div className="flex gap-3" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>

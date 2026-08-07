@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Place } from '@/types/places';
 import { useInvestigationStore } from '@/state/investigationStore';
+import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
+import { useUIStore } from '@/state/uiStore';
 import { colors, typography } from '@/styles/theme';
+import { EvidenceGrid } from './EvidenceGrid';
 import { PhotoViewer } from '@/components/media/PhotoViewer';
 
 const TABS = ['OVERVIEW', 'EVIDENCE', 'TIMELINE', 'NOTES', 'CONNECTIONS'] as const;
@@ -15,6 +18,69 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const { click } = useAudioStore();
   const { closeInvestigation } = useInvestigationStore();
+  const { selectPlace } = useAtlasStore();
+  const { examineEvidence } = useUIStore();
+
+  // Notes local state synced with store
+  const { notes, setNotes, timelines, evidence: storeEvidence } = useInvestigationStore();
+  const [localNotes, setLocalNotes] = useState(notes[place.slug] || '');
+
+  const handleNotesBlur = () => {
+    setNotes(place.slug, localNotes);
+  };
+
+  // Derive evidence items from place data + store
+  const evidenceItems = useMemo(() => {
+    const items: any[] = [];
+
+    // Photos as evidence
+    place.photos?.forEach((src, i) => {
+      items.push({
+        id: `${place.slug}-photo-${i}`,
+        type: 'photo',
+        title: `Archive Photo ${i + 1}`,
+        description: `Recovered photographic evidence from ${place.name}.`,
+        mediaUrl: src,
+        dustCost: 2,
+      });
+    });
+
+    // Haunting reports as testimony
+    place.hauntingReports?.forEach((report, i) => {
+      items.push({
+        id: `${place.slug}-report-${i}`,
+        type: 'personal',
+        title: `Witness Testimony #${i + 1}`,
+        description: report.substring(0, 80) + (report.length > 80 ? '...' : ''),
+        mediaUrl: undefined,
+        dustCost: 1,
+      });
+    });
+
+    // Any store evidence
+    const stored = storeEvidence[place.slug] || [];
+    stored.forEach((item) => items.push(item));
+
+    return items;
+  }, [place, storeEvidence]);
+
+  // Derive timeline from place data + store
+  const timelineEvents = useMemo(() => {
+    const events: { date: string; title: string; body: string }[] = [];
+
+    if (place.yearAbandoned) {
+      events.push({
+        date: `${place.yearAbandoned}-01-01`,
+        title: 'Site Abandoned',
+        body: `${place.name} was officially abandoned or sealed.`,
+      });
+    }
+
+    const stored = timelines[place.slug] || [];
+    stored.forEach((e) => events.push({ date: e.date, title: e.title, body: e.description || '' }));
+
+    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [place, timelines]);
 
   return (
     <div className="absolute inset-0 flex flex-col z-10" style={{ backgroundColor: colors.archive.black }}>
@@ -131,7 +197,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                   >
                     {place.history?.split('\n\n').map((para, i) => (
                       <p key={i}>{para}</p>
-                    ))}
+                    )) || <p>No historical records available.</p>}
                   </div>
                 </section>
 
@@ -210,110 +276,13 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
               <div className="lg:col-span-2 space-y-6">
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div
-                    className="p-4 border"
-                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
-                  >
-                    <div
-                      style={{
-                        color: colors.archive.gray,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.xs,
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      DANGER LEVEL
-                    </div>
-                    <div
-                      style={{
-                        color:
-                          place.dangerLevel >= 4
-                            ? colors.archive.red
-                            : place.dangerLevel >= 3
-                            ? colors.archive.amber
-                            : colors.archive.green,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.xl,
-                      }}
-                    >
-                      {place.dangerLevel}/5
-                    </div>
-                  </div>
-
-                  <div
-                    className="p-4 border"
-                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
-                  >
-                    <div
-                      style={{
-                        color: colors.archive.gray,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.xs,
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      STATUS
-                    </div>
-                    <div
-                      style={{
-                        color: colors.archive.white,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.lg,
-                      }}
-                    >
-                      {(place.status || 'verified').toUpperCase()}
-                    </div>
-                  </div>
-
-                  <div
-                    className="p-4 border"
-                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
-                  >
-                    <div
-                      style={{
-                        color: colors.archive.gray,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.xs,
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      YEAR
-                    </div>
-                    <div
-                      style={{
-                        color: colors.archive.white,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.lg,
-                      }}
-                    >
-                      {place.yearAbandoned || 'UNKNOWN'}
-                    </div>
-                  </div>
-
-                  <div
-                    className="p-4 border"
-                    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
-                  >
-                    <div
-                      style={{
-                        color: colors.archive.gray,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.xs,
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      EVIDENCE
-                    </div>
-                    <div
-                      style={{
-                        color: colors.archive.green,
-                        fontFamily: typography.mono,
-                        fontSize: typography.sizes.lg,
-                      }}
-                    >
-                      {(place.photos?.length || 0) + (place.hauntingReports?.length || 0)}
-                    </div>
-                  </div>
+                  <StatBox label="DANGER LEVEL" value={`${place.dangerLevel || 0}/5`} color={
+                    (place.dangerLevel || 0) >= 4 ? colors.archive.red :
+                    (place.dangerLevel || 0) >= 3 ? colors.archive.amber : colors.archive.green
+                  } />
+                  <StatBox label="STATUS" value={(place.status || 'verified').toUpperCase()} color={colors.archive.white} />
+                  <StatBox label="YEAR" value={place.yearAbandoned ? String(place.yearAbandoned) : 'UNKNOWN'} color={colors.archive.white} />
+                  <StatBox label="EVIDENCE" value={`${(place.photos?.length || 0) + (place.hauntingReports?.length || 0)}`} color={colors.archive.green} />
                 </div>
 
                 {/* Coordinates */}
@@ -414,9 +383,13 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                     </div>
                     <div className="space-y-2">
                       {place.connectedTo.map((slug) => (
-                        <div
+                        <button
                           key={slug}
-                          className="px-3 py-2 border text-xs"
+                          onClick={() => {
+                            click();
+                            selectPlace(slug);
+                          }}
+                          className="w-full text-left px-3 py-2 border text-xs hover:border-blue-700 transition-colors"
                           style={{
                             borderColor: colors.archive.grayDark,
                             color: colors.archive.grayLight,
@@ -424,7 +397,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                           }}
                         >
                           → {slug.replace(/-/g, ' ').toUpperCase()}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -464,21 +437,195 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
             </motion.div>
           )}
 
-          {activeTab !== 0 && (
+          {activeTab === 1 && (
             <motion.div
-              key="placeholder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center justify-center h-64"
-              style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.sm }}
+              key="evidence"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
             >
-              <div className="text-center space-y-2">
-                <div>{TABS[activeTab]} MODULE INITIALIZING...</div>
-                <div style={{ fontSize: typography.sizes.xs, opacity: 0.6 }}>
-                  Data sync pending for {place.name}
-                </div>
+              <div className="mb-4 flex justify-between items-center">
+                <h2
+                  style={{
+                    color: colors.archive.amber,
+                    fontFamily: typography.mono,
+                    fontSize: typography.sizes.xs,
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  EVIDENCE LOCKER
+                </h2>
+                <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+                  {evidenceItems.length} ITEMS
+                </span>
               </div>
+              {evidenceItems.length > 0 ? (
+                <EvidenceGrid items={evidenceItems} />
+              ) : (
+                <div
+                  className="flex items-center justify-center h-48 border"
+                  style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono }}
+                >
+                  No evidence catalogued for this location.
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 2 && (
+            <motion.div
+              key="timeline"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-3xl"
+            >
+              <h2
+                className="mb-6"
+                style={{
+                  color: colors.archive.amber,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                INVESTIGATION TIMELINE
+              </h2>
+              {timelineEvents.length > 0 ? (
+                <div className="relative pl-8 border-l" style={{ borderColor: colors.archive.grayDark }}>
+                  {timelineEvents.map((event, i) => (
+                    <div key={i} className="mb-8 relative">
+                      <div
+                        className="absolute -left-[33px] w-3 h-3 rounded-full border"
+                        style={{
+                          borderColor: colors.archive.amber,
+                          backgroundColor: colors.archive.black,
+                          top: '0.25rem',
+                        }}
+                      />
+                      <div
+                        style={{
+                          color: colors.archive.gray,
+                          fontFamily: typography.mono,
+                          fontSize: typography.sizes.xs,
+                          marginBottom: '0.25rem',
+                        }}
+                      >
+                        {event.date}
+                      </div>
+                      <div
+                        style={{
+                          color: colors.archive.white,
+                          fontFamily: typography.mono,
+                          fontSize: typography.sizes.sm,
+                          marginBottom: '0.25rem',
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                      <p
+                        style={{
+                          color: colors.archive.grayLight,
+                          fontFamily: typography.serif,
+                          fontSize: typography.sizes.base,
+                        }}
+                      >
+                        {event.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="flex items-center justify-center h-48 border"
+                  style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono }}
+                >
+                  No timeline events recorded.
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 3 && (
+            <motion.div
+              key="notes"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-3xl"
+            >
+              <h2
+                className="mb-4"
+                style={{
+                  color: colors.archive.amber,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                FIELD NOTES
+              </h2>
+              <textarea
+                value={localNotes}
+                onChange={(e) => setLocalNotes(e.target.value)}
+                onBlur={handleNotesBlur}
+                placeholder="Record observations, theories, and connections..."
+                className="w-full h-96 p-4 border resize-none focus:outline-none focus:border-amber-700 transition-colors"
+                style={{
+                  borderColor: colors.archive.grayDark,
+                  backgroundColor: colors.archive.surface,
+                  color: colors.archive.grayLight,
+                  fontFamily: typography.serif,
+                  fontSize: typography.sizes.base,
+                  lineHeight: '1.7',
+                }}
+              />
+              <div
+                className="mt-2 text-right"
+                style={{
+                  color: colors.archive.gray,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                }}
+              >
+                {localNotes.length} CHARACTERS • AUTO-SAVED
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 4 && (
+            <motion.div
+              key="connections"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-3xl"
+            >
+              <h2
+                className="mb-6"
+                style={{
+                  color: colors.archive.blue,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                RESONANCE CONNECTIONS
+              </h2>
+              {place.connectedTo && place.connectedTo.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {place.connectedTo.map((slug) => (
+                    <ConnectedCard key={slug} slug={slug} onClick={() => { click(); selectPlace(slug); }} />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="flex items-center justify-center h-48 border"
+                  style={{ borderColor: colors.archive.grayDark, color: colors.archive.gray, fontFamily: typography.mono }}
+                >
+                  No resonance links detected.
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -492,5 +639,73 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
         />
       )}
     </div>
+  );
+};
+
+/* Subcomponents */
+
+const StatBox: React.FC<{ label: string; value: string; color: string }> = ({ label, value, color }) => (
+  <div
+    className="p-4 border"
+    style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+  >
+    <div
+      style={{
+        color: colors.archive.gray,
+        fontFamily: typography.mono,
+        fontSize: typography.sizes.xs,
+        marginBottom: '0.5rem',
+      }}
+    >
+      {label}
+    </div>
+    <div
+      style={{
+        color,
+        fontFamily: typography.mono,
+        fontSize: typography.sizes.xl,
+      }}
+    >
+      {value}
+    </div>
+  </div>
+);
+
+const ConnectedCard: React.FC<{ slug: string; onClick: () => void }> = ({ slug, onClick }) => {
+  const { places } = useAtlasStore();
+  const target = places.find((p) => p.slug === slug);
+
+  return (
+    <button
+      onClick={onClick}
+      className="p-4 border text-left hover:border-blue-700 transition-colors"
+      style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}
+    >
+      <div
+        style={{
+          color: colors.archive.white,
+          fontFamily: typography.mono,
+          fontSize: typography.sizes.sm,
+          marginBottom: '0.5rem',
+        }}
+      >
+        {target ? target.name : slug.replace(/-/g, ' ').toUpperCase()}
+      </div>
+      {target && (
+        <div className="flex gap-3" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+          <span style={{ color: target.status === 'sealed' ? colors.archive.red : colors.archive.green }}>
+            {(target.status || 'verified').toUpperCase()}
+          </span>
+          <span style={{ color: colors.archive.gray }}>
+            D{target.dangerLevel || 0}
+          </span>
+        </div>
+      )}
+      {!target && (
+        <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+          COORDINATES UNVERIFIED
+        </span>
+      )}
+    </button>
   );
 };

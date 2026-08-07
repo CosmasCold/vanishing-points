@@ -27,22 +27,81 @@ import { ImpossibleChangeToast } from './ImpossibleChangeToast';
 import { colors, typography, spacing, shadows } from '@/styles/theme';
 import { GuideOverlay } from './GuideOverlay';
 import { PrologueOverlay } from './PrologueOverlay';
+import { useAudioStore } from '@/state/audioStore';
+import { SignalPanel } from './signals/SignalPanel';
+import { DocumentArchive } from './documents/DocumentArchive';
+import { ResearchPanel } from './research/ResearchPanel';
+import { DiscoveryPanel } from './discoveries/DiscoveryPanel';
+import { SystemPanel } from './system/SystemPanel';
 
-const InvestigationsContent: React.FC = () => (
-  <div className="space-y-2">
-    {['Case #2847 - Blackwood Hospital', 'Case #2901 - St. Elmo Lighthouse', 'Case #2912 - Meridian Mine'].map(
-      (c) => (
-        <div
-          key={c}
-          className="p-2 border cursor-pointer hover:border-amber-700 transition-colors"
-          style={{ borderColor: colors.archive.grayDark }}
+const InvestigationsContent: React.FC = () => {
+  const { places, selectPlace } = useAtlasStore();
+  const { openInvestigation } = useInvestigationStore();
+  const { click } = useAudioStore();
+  const { setActiveModule } = useUIStore();
+
+  const caseNumber = (slug: string) => {
+    let hash = 0;
+    for (let i = 0; i < slug.length; i++) {
+      hash = ((hash << 5) - hash) + slug.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash % 9000) + 1000;
+  };
+
+  const handleOpenCase = (place: typeof places[0]) => {
+    click();
+    selectPlace(place.slug);
+    openInvestigation(place.slug, place.name);
+    setActiveModule(null);
+  };
+
+  return (
+    <div className="space-y-2">
+      {places.map((place) => (
+        <button
+          key={place.slug}
+          onClick={() => handleOpenCase(place)}
+          className="w-full text-left p-3 border cursor-pointer hover:border-amber-700 transition-colors"
+          style={{ borderColor: colors.archive.grayDark, backgroundColor: 'transparent' }}
         >
-          <span style={{ color: colors.archive.white, fontSize: typography.sizes.sm }}>{c}</span>
-        </div>
-      )
-    )}
-  </div>
-);
+          <div className="flex justify-between items-center">
+            <span style={{ color: colors.archive.white, fontSize: typography.sizes.sm, fontFamily: typography.mono }}>
+              Case #{caseNumber(place.slug)} — {place.name}
+            </span>
+            <span
+              className="px-1.5 py-0.5 text-xs border"
+              style={{
+                borderColor: statusColor(place.status),
+                color: statusColor(place.status),
+                fontFamily: typography.mono,
+              }}
+            >
+              {(place.status || 'verified').toUpperCase()}
+            </span>
+          </div>
+          <div
+            className="mt-1 flex gap-3"
+            style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
+          >
+            <span>D{place.dangerLevel || 0}</span>
+            {place.yearAbandoned && <span>{place.yearAbandoned}</span>}
+            <span>{(place.category || 'unknown').toUpperCase()}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+function statusColor(status?: string): string {
+  switch (status) {
+    case 'sealed': return colors.archive.red;
+    case 'whispered': return colors.archive.blue;
+    case 'mirage': return colors.archive.grayLight;
+    default: return colors.archive.green;
+  }
+}
 
 export const DashboardShell: React.FC = () => {
   useKeyboardShortcuts();
@@ -160,28 +219,30 @@ export const DashboardShell: React.FC = () => {
         </ModulePanel>
 
         <ModulePanel moduleId="signals" title="SIGNAL ANALYSIS">
-          <div style={{ color: colors.archive.gray }}>Signal processor offline...</div>
-        </ModulePanel>
+  <SignalPanel />
+</ModulePanel>
 
-        <ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
-          <div style={{ color: colors.archive.gray }}>Document viewer not loaded...</div>
-        </ModulePanel>
+<ModulePanel moduleId="documents" title="DOCUMENT ARCHIVE">
+  <DocumentArchive />
+</ModulePanel>
 
-        <ModulePanel moduleId="research" title="RESEARCH LOG">
-          <div style={{ color: colors.archive.gray }}>Research database empty...</div>
-        </ModulePanel>
+<ModulePanel moduleId="research" title="RESEARCH LOG">
+  <ResearchPanel />
+</ModulePanel>
 
-        <ModulePanel moduleId="inventory" title="INVENTORY">
-          <div style={{ color: colors.archive.gray }}>No items in quarantine...</div>
-        </ModulePanel>
+<ModulePanel moduleId="inventory" title="INVENTORY">
+  <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono }}>
+    No items in quarantine...
+  </div>
+</ModulePanel>
 
-        <ModulePanel moduleId="discoveries" title="DISCOVERIES">
-          <div style={{ color: colors.archive.gray }}>Discovery tracker ready...</div>
-        </ModulePanel>
+<ModulePanel moduleId="discoveries" title="DISCOVERIES">
+  <DiscoveryPanel />
+</ModulePanel>
 
-        <ModulePanel moduleId="system" title="SYSTEM">
-          <div style={{ color: colors.archive.gray }}>System diagnostics nominal...</div>
-        </ModulePanel>
+<ModulePanel moduleId="system" title="SYSTEM">
+  <SystemPanel />
+</ModulePanel>
 
         {/* Overlays */}
         <DailyRitual />

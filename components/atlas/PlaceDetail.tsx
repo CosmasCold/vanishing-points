@@ -57,7 +57,7 @@ const ConnectedPlaceButton: React.FC<{ slug: string }> = ({ slug }) => {
         fontFamily: typography.mono,
       }}
     >
-      {place ? place.name : `[${slug}]`}
+      {place ? place.name : `[${slug || 'unknown'}]`}
     </button>
   );
 };

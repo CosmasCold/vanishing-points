@@ -396,7 +396,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                             fontFamily: typography.mono,
                           }}
                         >
-                          → {slug.replace(/-/g, ' ').toUpperCase()}
+                          → {(slug || '').replace(/-/g, ' ').toUpperCase()}
                         </button>
                       ))}
                     </div>
@@ -689,7 +689,7 @@ const ConnectedCard: React.FC<{ slug: string; onClick: () => void }> = ({ slug, 
           marginBottom: '0.5rem',
         }}
       >
-        {target ? target.name : slug.replace(/-/g, ' ').toUpperCase()}
+        {target ? target.name : (slug || '').replace(/-/g, ' ').toUpperCase()}
       </div>
       {target && (
         <div className="flex gap-3" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>

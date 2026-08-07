@@ -17,14 +17,14 @@ import { ModulePanel } from './ModulePanel';
 import { AtlasMap } from './atlas/AtlasMap';
 import { AtlasPanel } from './atlas/AtlasPanel';
 import { InvestigationView } from './investigation/InvestigationView';
-import { EvidenceBoard } from './evidence/EvidenceBoard';
+import { EvidenceBoard } from './evidenceBoard/EvidenceBoard';
 import { MediaViewer } from './media/MediaViewer';
 import { DocumentViewer } from './documents/DocumentViewer';
 import { ArtifactViewer } from './artifacts/ArtifactViewer';
 import { DailyRitual } from './DailyRitual';
 import { InboxPanel } from './inbox/InboxPanel';
 import { ImpossibleChangeToast } from './ImpossibleChangeToast';
-import { colors, typography, spacing, shadows } from '@/styles/theme';
+import { colors, typography, spacing, microform } from '@/styles/theme';
 import { GuideOverlay } from './GuideOverlay';
 import { PrologueOverlay } from './PrologueOverlay';
 import { useAudioStore } from '@/state/audioStore';
@@ -69,11 +69,20 @@ const InvestigationsContent: React.FC = () => {
         <button
           key={place.slug}
           onClick={() => handleOpenCase(place)}
-          className="w-full text-left p-3 border cursor-pointer hover:border-amber-700 transition-colors"
-          style={{ borderColor: colors.archive.grayDark, backgroundColor: 'transparent' }}
+          className="w-full text-left p-3 border cursor-pointer transition-all hover:border-amber-700/50"
+          style={{
+            borderColor: microform.mahoganyLight,
+            backgroundColor: 'transparent',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
+          }}
         >
           <div className="flex justify-between items-center">
-            <span style={{ color: colors.archive.white, fontSize: typography.sizes.sm, fontFamily: typography.mono }}>
+            <span style={{
+              color: colors.archive.white,
+              fontSize: typography.sizes.sm,
+              fontFamily: typography.mono,
+              textShadow: microform.halogenText,
+            }}>
               Case #{caseNumber(place.slug)} — {place.name}
             </span>
             <span
@@ -82,6 +91,7 @@ const InvestigationsContent: React.FC = () => {
                 borderColor: statusColor(place.status),
                 color: statusColor(place.status),
                 fontFamily: typography.mono,
+                backgroundColor: 'rgba(20,20,18,0.6)',
               }}
             >
               {(place.status || 'verified').toUpperCase()}
@@ -113,7 +123,6 @@ function statusColor(status?: string): string {
 export const DashboardShell: React.FC = () => {
   useKeyboardShortcuts();
 
-  // Register all terminal commands once on mount
   useEffect(() => {
     registerSystemCommands(registry);
     registerInvestigationCommands(registry);
@@ -140,11 +149,30 @@ export const DashboardShell: React.FC = () => {
       className="fixed inset-0 flex"
       style={{ backgroundColor: colors.archive.black }}
     >
+      {/* Tungsten lamp radial gradient — bridges 3D desk into 2D */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 28% 18%, rgba(255, 170, 85, 0.055) 0%, transparent 55%)`,
+          zIndex: 1,
+        }}
+      />
+
+      {/* Secondary cool fill from window side */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 85% 30%, rgba(107, 143, 163, 0.02) 0%, transparent 50%)`,
+          zIndex: 1,
+        }}
+      />
+
       {/* Desk texture overlay */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.03]"
+        className="fixed inset-0 pointer-events-none opacity-[0.025]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          zIndex: 1,
         }}
       />
 
@@ -162,6 +190,7 @@ export const DashboardShell: React.FC = () => {
         style={{
           marginLeft: spacing.rail,
           marginBottom: spacing.statusBar,
+          zIndex: 2,
         }}
       >
         {/* Workspace content */}
@@ -169,12 +198,13 @@ export const DashboardShell: React.FC = () => {
           {/* Empty state */}
           {!activeModule && !activeInvestigationId && (
             <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-center space-y-4" style={{ fontFamily: typography.mono }}>
+              <div className="text-center space-y-5" style={{ fontFamily: typography.mono }}>
                 <h2
                   style={{
                     color: colors.archive.green,
                     fontSize: typography.sizes.xl,
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.12em',
+                    textShadow: microform.halogenText,
                   }}
                 >
                   ARCHIVE ACTIVE
@@ -182,7 +212,7 @@ export const DashboardShell: React.FC = () => {
                 <p style={{ color: colors.archive.gray, fontSize: typography.sizes.sm }}>
                   Select a module from the rail to begin
                 </p>
-                <p style={{ color: colors.archive.grayLight, fontSize: typography.sizes.xs }}>
+                <p style={{ color: colors.archive.grayLight, fontSize: typography.sizes.xs, opacity: 0.7 }}>
                   Press ` or click TERM to open terminal
                 </p>
               </div>
@@ -232,16 +262,30 @@ export const DashboardShell: React.FC = () => {
 
         <ModulePanel moduleId="evidence" title="EVIDENCE BOARD">
           <div className="p-6" style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-            <div className="mb-4">The Evidence Board visualizes resonance connections between all indexed locations.</div>
-            <div className="mb-2" style={{ color: colors.archive.amber }}>LEGEND</div>
-            <div className="space-y-1">
-              <div><span style={{ color: colors.archive.green }}>●</span> VERIFIED</div>
-              <div><span style={{ color: colors.archive.blue }}>●</span> WHISPERED</div>
-              <div><span style={{ color: colors.archive.red }}>●</span> SEALED</div>
-              <div><span style={{ color: colors.archive.grayLight }}>●</span> MIRAGE</div>
+            <div className="mb-4" style={{ lineHeight: 1.6 }}>
+              The Evidence Board holds index cards for every location in the Archive. Connections are not inferred — they must be drawn by hand.
             </div>
-            <div className="mt-4" style={{ color: colors.archive.gray }}>
-              Click to select. Click another to connect. Drag nodes to move. Drag background to pan.
+            <div className="mb-3" style={{ color: colors.archive.amber, letterSpacing: '0.08em' }}>LEGEND</div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span style={{ color: colors.archive.green, fontSize: '0.625rem' }}>●</span>
+                <span>VERIFIED</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span style={{ color: colors.archive.blue, fontSize: '0.625rem' }}>●</span>
+                <span>WHISPERED</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span style={{ color: colors.archive.red, fontSize: '0.625rem' }}>●</span>
+                <span>SEALED</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span style={{ color: colors.archive.grayLight, fontSize: '0.625rem' }}>●</span>
+                <span>MIRAGE</span>
+              </div>
+            </div>
+            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${microform.mahoganyLight}`, color: colors.archive.gray, lineHeight: 1.6 }}>
+              Click a card to select. Click a second card to draw a thread. Drag cards to rearrange. Drag the felt to pan.
             </div>
           </div>
         </ModulePanel>

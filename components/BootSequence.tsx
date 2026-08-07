@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 import { useBootStore } from "@/state/bootStore";
@@ -27,6 +27,7 @@ const BOOT_LINES = [
   { text: "Loading Investigations...", color: "#8a6000" },
   { text: "Synchronizing Evidence...", color: "#8a6000" },
   { text: "Loading Local Cache...", color: "#8a6000" },
+  { text: "4,211 days since last session", color: "#a85d5d" },
   { text: "Dust Index: Stable", color: "#6a9a5a" },
   { text: "Good evening, Investigator.", color: "#e8e0d0" },
 ];
@@ -153,9 +154,9 @@ function LoadingScreen({ progress }: { progress: number }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CRT TERMINAL OVERLAY (Centered, readable, atmospheric)
+   HALOGEN PROJECTION SCREEN (replaces CRT)
    ═══════════════════════════════════════════════════════════════ */
-function CRTTerminal({
+function HalogenProjection({
   visibleCount,
   showPrompt,
   cursorOn,
@@ -169,54 +170,70 @@ function CRTTerminal({
       <div
         className="relative font-mono"
         style={{
-          width: "520px",
-          padding: "36px 40px",
-          background: "rgba(8, 6, 3, 0.78)",
-          border: "1px solid rgba(255, 176, 0, 0.25)",
-          borderRadius: "3px",
-          boxShadow: `
-            0 0 0 1px rgba(0,0,0,0.8),
-            0 0 40px rgba(255, 176, 0, 0.08),
-            inset 0 0 60px rgba(0,0,0,0.6)
+          width: "540px",
+          padding: "40px 44px",
+          /* Frosted glass pane backlit by halogen */
+          background: "rgba(20, 18, 14, 0.82)",
+          backgroundImage: `
+            linear-gradient(180deg, rgba(255,170,85,0.03) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 0%, rgba(255,170,85,0.06) 0%, transparent 60%)
           `,
-          backdropFilter: "blur(2px)",
+          border: "1px solid #1a1a1a",
+          boxShadow: `
+            0 0 0 2px #2a1f1a,
+            0 0 0 3px #1a1a1a,
+            0 0 60px rgba(255, 170, 85, 0.06),
+            inset 0 0 40px rgba(0,0,0,0.5)
+          `,
+          backdropFilter: "blur(0.5px)",
+          borderRadius: "2px",
         }}
       >
-        {/* Corner accents */}
-        <div className="absolute left-0 top-0 h-3 w-3 border-l border-t" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
-        <div className="absolute right-0 top-0 h-3 w-3 border-r border-t" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
-        <div className="absolute bottom-0 left-0 h-3 w-3 border-b border-l" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
-        <div className="absolute bottom-0 right-0 h-3 w-3 border-b border-r" style={{ borderColor: "rgba(255,176,0,0.4)" }} />
-
-        {/* Header */}
+        {/* Inner bezel line */}
         <div
-          className="mb-5 text-center text-[10px] tracking-[4px]"
-          style={{ color: "rgba(255,176,0,0.35)" }}
+          className="absolute inset-2 pointer-events-none"
+          style={{
+            border: "1px solid rgba(255,170,85,0.06)",
+            borderRadius: "1px",
+          }}
+        />
+
+        {/* Header: stamped brass */}
+        <div
+          className="mb-6 text-center text-[10px] tracking-[4px]"
+          style={{ color: "rgba(255,170,85,0.25)", fontFamily: "'SF Mono', monospace" }}
         >
           ARCHIVE TERMINAL — MODEL 7-B
         </div>
 
-        {/* Boot lines */}
-        <div className="text-[13px] leading-[1.8]" style={{ color: "#ffb000", textShadow: "0 0 8px rgba(255,176,0,0.4)" }}>
+        {/* Boot lines: halogen warm bloom */}
+        <div
+          className="text-[13px] leading-[1.9]"
+          style={{
+            color: "#e8e4d9",
+            textShadow: "0 0 10px rgba(255,170,85,0.2), 0 0 24px rgba(255,170,85,0.08)",
+          }}
+        >
           {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: 4 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.08 }}
-              className="mb-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="mb-1.5"
               style={{ color: line.color }}
             >
               {line.text}
               {i === visibleCount - 1 && cursorOn && (
                 <span
-                  className="ml-1 inline-block"
+                  className="ml-1.5 inline-block"
                   style={{
-                    width: "8px",
-                    height: "14px",
+                    width: "7px",
+                    height: "13px",
                     background: line.color,
                     verticalAlign: "middle",
-                    boxShadow: `0 0 6px ${line.color}`,
+                    boxShadow: `0 0 8px ${line.color}`,
+                    opacity: 0.9,
                   }}
                 />
               )}
@@ -224,13 +241,13 @@ function CRTTerminal({
           ))}
         </div>
 
-        {/* Prompt */}
+        {/* Prompt: halogen pulse */}
         {showPrompt && (
           <motion.div
-            className="mt-6 text-center text-[11px] tracking-[2.5px]"
-            style={{ color: "#ffb000" }}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            className="mt-8 text-center text-[11px] tracking-[2.5px]"
+            style={{ color: "#ffaa55", textShadow: "0 0 12px rgba(255,170,85,0.3)" }}
+            animate={{ opacity: [0.35, 1, 0.35] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           >
             [ PRESS ENTER ]
           </motion.div>
@@ -238,8 +255,8 @@ function CRTTerminal({
 
         {/* Footer */}
         <div
-          className="mt-5 text-center text-[9px] tracking-[2px]"
-          style={{ color: "rgba(138,96,0,0.4)" }}
+          className="mt-6 text-center text-[9px] tracking-[2px]"
+          style={{ color: "rgba(138,96,0,0.35)" }}
         >
           VANISHING POINTS ARCHIVE
         </div>
@@ -329,13 +346,13 @@ export function BootSequence() {
     t.push(setTimeout(() => { a.crtWarmup?.fade(0, 0.35, 3500); a.crtWarmup?.play(); }, 1200));
 
     // Lines appear silently — no relay clicks
-    const lineTimes = [2000, 3100, 4300, 5500, 6700, 7900, 9100, 10800, 13500];
+    const lineTimes = [2000, 3100, 4300, 5500, 6700, 7900, 9100, 10800, 13500, 15500];
     lineTimes.forEach((time, idx) => {
       if (idx === 0) return;
       t.push(setTimeout(() => setVisibleCount(idx + 1), time));
     });
 
-    t.push(setTimeout(() => setShowPrompt(true), 15500));
+    t.push(setTimeout(() => setShowPrompt(true), 17500));
 
     return () => t.forEach(clearTimeout);
   }, [phase]);
@@ -423,20 +440,11 @@ export function BootSequence() {
             style={{ backgroundImage: "url(/images/boot-room-render.png)" }}
           />
 
-          {/* CRT Terminal (centered, readable) */}
-          <CRTTerminal visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+          {/* Halogen Projection Terminal (centered, readable) */}
+          <HalogenProjection visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
 
           {/* Dust particles */}
           <DustCanvas />
-
-          {/* Scanlines */}
-          <div
-            className="pointer-events-none fixed inset-0 z-25"
-            style={{
-              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px)",
-              mixBlendMode: "multiply",
-            }}
-          />
 
           {/* Vignette */}
           <div

@@ -58,3 +58,27 @@ export const timing = {
   slow: 0.5,
   panelSlide: 0.35,
 };
+
+export const microform = {
+  halogen: '#ffaa55',
+  halogenDim: 'rgba(255, 170, 85, 0.08)',
+  halogenGlow: 'rgba(255, 170, 85, 0.15)',
+  halogenText: '0 0 8px rgba(255,170,85,0.25), 0 0 20px rgba(255,170,85,0.08)',
+  mahogany: '#2a1f1a',
+  mahoganyLight: '#3d2e26',
+  iron: '#1a1a1a',
+  ironBorder: '1px solid #1a1a1a',
+  paperWarm: '#f0ebe0',
+  frosted: 'rgba(232, 228, 217, 0.025)',
+  chassisShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -2px 6px rgba(0,0,0,0.6)',
+  opticalBlur: 'blur(0.4px)',
+} as const;
+
+export const bezels = {
+  heavy: `
+    1px solid ${microform.iron},
+    0 0 0 2px ${microform.mahogany},
+    0 0 0 3px ${microform.iron}
+  `,
+  screenInset: 'inset 0 0 30px rgba(0,0,0,0.7), inset 0 0 4px rgba(0,0,0,0.9)',
+} as const;

@@ -4,29 +4,29 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDocumentStore } from '@/state/documentStore';
 import { useAudioStore } from '@/state/audioStore';
-import { colors, typography, spacing } from '@/styles/theme';
+import { colors, typography, spacing, microform } from '@/styles/theme';
 import { DocumentArtifact, DocumentType } from '@/types/documents';
 
-const TYPE_META: Record<DocumentType, { label: string; font: string; size: string }> = {
-  typed_report: { label: 'OFFICIAL REPORT', font: typography.mono, size: '0.8125rem' },
-  handwritten: { label: 'HANDWRITTEN LETTER', font: typography.serif, size: '0.9375rem' },
-  blueprint: { label: 'TECHNICAL DRAWING', font: typography.mono, size: '0.75rem' },
-  telegram: { label: 'TELEGRAM', font: typography.mono, size: '0.875rem' },
-  form: { label: 'INSTITUTIONAL FORM', font: typography.mono, size: '0.8125rem' },
-  newspaper: { label: 'PRESS CLIPPING', font: typography.serif, size: '0.875rem' },
-  photograph: { label: 'PHOTOGRAPH', font: typography.mono, size: '0.8125rem' },
-  journal: { label: 'FIELD JOURNAL', font: typography.serif, size: '0.9375rem' },
-  field_report: { label: 'FIELD REPORT', font: typography.mono, size: '0.8125rem' },
-  witness_statement: { label: 'WITNESS STATEMENT', font: typography.serif, size: '0.9375rem' },
-  bunker7_transmission: { label: 'BUNKER_7 TRANSMISSION', font: typography.mono, size: '0.8125rem' },
+const TYPE_META: Record<DocumentType, { label: string; font: string; size: string; leading: string }> = {
+  typed_report: { label: 'OFFICIAL REPORT', font: typography.mono, size: '0.8125rem', leading: '1.65' },
+  handwritten: { label: 'HANDWRITTEN LETTER', font: typography.serif, size: '0.9375rem', leading: '1.7' },
+  blueprint: { label: 'TECHNICAL DRAWING', font: typography.mono, size: '0.75rem', leading: '1.5' },
+  telegram: { label: 'TELEGRAM', font: typography.mono, size: '0.875rem', leading: '1.8' },
+  form: { label: 'INSTITUTIONAL FORM', font: typography.mono, size: '0.8125rem', leading: '1.6' },
+  newspaper: { label: 'PRESS CLIPPING', font: typography.serif, size: '0.9375rem', leading: '1.65' },
+  photograph: { label: 'PHOTOGRAPH', font: typography.mono, size: '0.8125rem', leading: '1.6' },
+  journal: { label: 'FIELD JOURNAL', font: typography.serif, size: '0.9375rem', leading: '1.75' },
+  field_report: { label: 'FIELD REPORT', font: typography.mono, size: '0.8125rem', leading: '1.65' },
+  witness_statement: { label: 'WITNESS STATEMENT', font: typography.serif, size: '0.9375rem', leading: '1.7' },
+  bunker7_transmission: { label: 'BUNKER_7 TRANSMISSION', font: typography.mono, size: '0.8125rem', leading: '1.65' },
 };
 
 const CONDITION_OPACITY: Record<string, number> = {
   pristine: 1,
-  aged: 0.92,
+  aged: 0.9,
   damaged: 0.78,
   corrupted: 0.7,
-  fragment: 0.65,
+  fragment: 0.6,
 };
 
 export const DocumentViewer: React.FC = () => {
@@ -64,7 +64,6 @@ export const DocumentViewer: React.FC = () => {
   const meta = TYPE_META[activeDocument.type];
   const conditionOpacity = CONDITION_OPACITY[activeDocument.condition] || 1;
 
-  // Determine displayed content
   const displayContent = showCorrupted && activeDocument.corruptedContent
     ? activeDocument.corruptedContent
     : activeDocument.content;
@@ -81,28 +80,39 @@ export const DocumentViewer: React.FC = () => {
       style={{
         marginLeft: spacing.rail,
         marginBottom: spacing.statusBar,
-        backgroundColor: 'rgba(26, 26, 24, 0.98)',
+        backgroundColor: 'rgba(12, 10, 8, 0.97)',
       }}
       onClick={closeDocument}
     >
-      {/* Toolbar */}
+      {/* Toolbar — iron/mahogany chassis */}
       <div
-        className="flex items-center justify-between px-4 h-10 border-b shrink-0"
-        style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
+        className="flex items-center justify-between px-4 h-10 shrink-0"
+        style={{
+          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
+          borderBottom: `1px solid ${microform.iron}`,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}
       >
         <div className="flex items-center gap-4" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-          <span style={{ color: colors.archive.amber }}>{meta.label}</span>
-          <span style={{ color: colors.archive.gray }}>|</span>
+          <span style={{ color: microform.halogen, textShadow: microform.halogenText }}>
+            {meta.label}
+          </span>
+          <span style={{ color: colors.archive.gray, opacity: 0.4 }}>|</span>
           <span style={{ color: colors.archive.gray }}>{activeDocument.date}</span>
-          <span style={{ color: colors.archive.gray }}>|</span>
+          <span style={{ color: colors.archive.gray, opacity: 0.4 }}>|</span>
           <span style={{ color: colors.archive.gray }}>{activeDocument.author}</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => { e.stopPropagation(); click(); adjustZoom(0.25); }}
-            className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
-            style={{ borderColor: colors.archive.gray, color: colors.archive.white, fontFamily: typography.mono }}
+            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
+            style={{
+              border: `1px solid ${microform.mahoganyLight}`,
+              color: colors.archive.white,
+              fontFamily: typography.mono,
+              background: microform.iron,
+            }}
           >
             +
           </button>
@@ -111,29 +121,40 @@ export const DocumentViewer: React.FC = () => {
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); click(); adjustZoom(-0.25); }}
-            className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
-            style={{ borderColor: colors.archive.gray, color: colors.archive.white, fontFamily: typography.mono }}
+            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
+            style={{
+              border: `1px solid ${microform.mahoganyLight}`,
+              color: colors.archive.white,
+              fontFamily: typography.mono,
+              background: microform.iron,
+            }}
           >
             -
           </button>
 
-          <div className="w-px h-5 mx-1" style={{ backgroundColor: colors.archive.gray }} />
+          <div className="w-px h-5 mx-1" style={{ backgroundColor: microform.mahoganyLight }} />
 
           <button
             onClick={(e) => { e.stopPropagation(); click(); setRotation(rotation === 0 ? 90 : 0); }}
-            className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
-            style={{ borderColor: colors.archive.gray, color: colors.archive.white, fontFamily: typography.mono }}
+            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
+            style={{
+              border: `1px solid ${microform.mahoganyLight}`,
+              color: colors.archive.white,
+              fontFamily: typography.mono,
+              background: microform.iron,
+            }}
           >
             ROT
           </button>
 
           <button
             onClick={(e) => { e.stopPropagation(); click(); toggleUV(); }}
-            className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
+            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
             style={{
-              borderColor: showUV ? colors.archive.blue : colors.archive.gray,
+              border: `1px solid ${showUV ? colors.archive.blue : microform.mahoganyLight}`,
               color: showUV ? colors.archive.blue : colors.archive.white,
               fontFamily: typography.mono,
+              background: microform.iron,
             }}
           >
             UV
@@ -142,11 +163,12 @@ export const DocumentViewer: React.FC = () => {
           {hasAnnotation && (
             <button
               onClick={(e) => { e.stopPropagation(); click(); toggleAnnotation(); }}
-              className="px-2 py-0.5 border text-xs hover:border-amber-700 transition-colors"
+              className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
               style={{
-                borderColor: showAnnotation ? colors.archive.amber : colors.archive.gray,
+                border: `1px solid ${showAnnotation ? colors.archive.amber : microform.mahoganyLight}`,
                 color: showAnnotation ? colors.archive.amber : colors.archive.white,
                 fontFamily: typography.mono,
+                background: microform.iron,
               }}
             >
               NOTE
@@ -156,183 +178,297 @@ export const DocumentViewer: React.FC = () => {
           {activeDocument.corruptedContent && (
             <button
               onClick={(e) => { e.stopPropagation(); click(); setShowCorrupted(!showCorrupted); }}
-              className="px-2 py-0.5 border text-xs hover:border-red-700 transition-colors"
+              className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
               style={{
-                borderColor: showCorrupted ? colors.archive.red : colors.archive.gray,
+                border: `1px solid ${showCorrupted ? colors.archive.red : microform.mahoganyLight}`,
                 color: showCorrupted ? colors.archive.red : colors.archive.white,
                 fontFamily: typography.mono,
+                background: microform.iron,
               }}
             >
               {showCorrupted ? 'ORIGINAL' : 'CORRUPTED'}
             </button>
           )}
 
-          <div className="w-px h-5 mx-1" style={{ backgroundColor: colors.archive.gray }} />
+          <div className="w-px h-5 mx-1" style={{ backgroundColor: microform.mahoganyLight }} />
 
           <button
             onClick={(e) => { e.stopPropagation(); click(); closeDocument(); }}
-            className="px-2 py-0.5 border text-xs hover:border-red-700 transition-colors"
-            style={{ borderColor: colors.archive.red, color: colors.archive.red, fontFamily: typography.mono }}
+            className="px-3 py-0.5 text-xs transition-colors hover:opacity-70"
+            style={{
+              border: `1px solid ${colors.archive.red}`,
+              color: colors.archive.red,
+              fontFamily: typography.mono,
+              background: microform.iron,
+            }}
           >
-            CLOSE
+            × CLOSE
           </button>
         </div>
       </div>
 
-      {/* Viewport */}
+      {/* Document workspace */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden flex items-center justify-center p-8"
+        className="flex-1 overflow-auto relative flex items-start justify-center py-12"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 50% 20%, rgba(255, 170, 85, 0.025) 0%, transparent 60%),
+            radial-gradient(ellipse at 50% 50%, rgba(20, 18, 14, 0.5) 0%, transparent 100%)
+          `,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <motion.div
-          className="relative"
-          style={{
-            transform: `scale(${zoom}) rotate(${rotation}deg)`,
-            transformOrigin: 'center center',
-            transition: 'transform 0.2s ease-out',
-          }}
-        >
-          {/* Paper */}
-          <div
-            className="relative p-8 min-w-[400px] max-w-[600px] shadow-2xl"
+        <div className="flex gap-8 items-start">
+          {/* Main document page */}
+          <motion.div
+            className="relative shrink-0"
             style={{
-              backgroundColor: showUV ? '#1a1f2e' : `rgba(232, 228, 216, ${conditionOpacity})`,
-              color: showUV ? '#4a90d9' : '#1a1a18',
-              fontFamily: meta.font,
-              fontSize: meta.size,
-              lineHeight: activeDocument.type === 'telegram' ? '1.8' : '1.6',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.03)',
+              width: '34rem',
+              minHeight: '44rem',
+              transform: `scale(${zoom}) rotate(${rotation}deg)`,
+              transformOrigin: 'center top',
             }}
           >
-            {/* Paper texture overlay */}
+            {/* Paper sheet */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-30"
+              className="relative w-full min-h-[44rem] p-10"
               style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E")`,
-                mixBlendMode: 'multiply',
+                backgroundColor: microform.paperWarm,
+                backgroundImage: `
+                  linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 10%),
+                  linear-gradient(0deg, rgba(0,0,0,0.03) 0%, transparent 10%)
+                `,
+                boxShadow: `
+                  0 1px 2px rgba(0,0,0,0.15),
+                  0 4px 12px rgba(0,0,0,0.2),
+                  0 12px 32px rgba(0,0,0,0.25),
+                  inset 0 0 60px rgba(139, 119, 89, 0.04)
+                `,
+                opacity: conditionOpacity,
+                fontFamily: meta.font,
+                fontSize: meta.size,
+                lineHeight: meta.leading,
+                color: '#2a2620',
               }}
-            />
-
-            {/* Aging gradient */}
-            {!showUV && (
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse at center, transparent 40%, rgba(160, 140, 100, ${activeDocument.corruptionLevel * 50 + 10}) 100%)`,
-                  mixBlendMode: 'multiply',
-                }}
-              />
-            )}
-
-            {/* Fold marks */}
-            {(activeDocument.foldMarks && activeDocument.foldMarks > 0) && !showUV && (
-              <>
-                <div className="absolute top-1/2 left-0 right-0 h-px pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }} />
-                {activeDocument.foldMarks > 1 && (
-                  <div className="absolute top-0 bottom-0 left-1/2 w-px pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }} />
-                )}
-              </>
-            )}
-
-            {/* Water damage */}
-            {activeDocument.waterDamage && !showUV && (
-              <div
-                className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(to top, rgba(100, 90, 70, 0.15), transparent)',
-                }}
-              />
-            )}
-
-            {/* Burn marks */}
-            {activeDocument.burnMarks && !showUV && (
-              <div
-                className="absolute top-4 right-8 w-12 h-12 rounded-full pointer-events-none"
-                style={{
-                  border: '1px solid rgba(80, 60, 40, 0.2)',
-                  boxShadow: 'inset 0 0 12px rgba(80, 60, 40, 0.15)',
-                }}
-              />
-            )}
-
-            {/* Coffee stain */}
-            {activeDocument.coffeeStain && !showUV && (
-              <div
-                className="absolute bottom-8 right-12 w-24 h-24 rounded-full pointer-events-none"
-                style={{
-                  border: '2px solid rgba(120, 90, 60, 0.15)',
-                  boxShadow: 'inset 0 0 8px rgba(120, 90, 60, 0.1)',
-                }}
-              />
-            )}
-
-            {/* Content */}
-            <div className="relative z-10 whitespace-pre-wrap">
-              {activeDocument.type === 'telegram' ? (
-                <div>
-                  <div style={{ borderBottom: '1px solid rgba(0,0,0,0.2)', paddingBottom: '0.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                    TELEGRAM
-                  </div>
-                  <div style={{ fontWeight: 'bold', letterSpacing: '0.05em' }}>
-                    {displayContent}
-                  </div>
+            >
+              {/* Fold marks */}
+              {activeDocument.foldMarks && activeDocument.foldMarks > 0 && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {Array.from({ length: activeDocument.foldMarks }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute left-0 right-0"
+                      style={{
+                        top: `${(i + 1) * (100 / (activeDocument.foldMarks! + 1))}%`,
+                        height: '1px',
+                        background: 'linear-gradient(90deg, transparent 2%, rgba(80,70,50,0.15) 10%, rgba(80,70,50,0.25) 50%, rgba(80,70,50,0.15) 90%, transparent 98%)',
+                        boxShadow: '0 1px 0 rgba(255,255,255,0.3)',
+                      }}
+                    />
+                  ))}
                 </div>
-              ) : activeDocument.type === 'blueprint' ? (
-                <div>
-                  <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.75rem', opacity: 0.6 }}>
-                    [TECHNICAL DRAWING — NOT TO SCALE]
-                  </div>
-                  <div style={{ fontFamily: typography.mono, lineHeight: '1.4' }}>
-                    {displayContent}
-                  </div>
-                </div>
-              ) : (
-                displayContent
               )}
-            </div>
 
-            {/* Annotation (margin note) */}
-            <AnimatePresence>
-              {showAnnotation && hasAnnotation && (
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="absolute -right-4 top-12 w-48 p-2 border"
+              {/* Coffee stain */}
+              {activeDocument.coffeeStain && (
+                <div
+                  className="absolute pointer-events-none"
                   style={{
-                    borderColor: colors.archive.amber,
-                    backgroundColor: 'rgba(255, 250, 230, 0.95)',
-                    color: '#5a4a2a',
-                    fontFamily: typography.serif,
-                    fontSize: '0.75rem',
-                    lineHeight: '1.4',
-                    boxShadow: '2px 2px 8px rgba(0,0,0,0.2)',
-                    transform: 'rotate(-2deg)',
+                    width: 90,
+                    height: 90,
+                    right: 30,
+                    bottom: 60,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(120, 90, 60, 0.12) 0%, rgba(120, 90, 60, 0.06) 40%, transparent 70%)',
+                    filter: 'blur(1px)',
+                    transform: 'scale(1.2, 1)',
+                  }}
+                />
+              )}
+
+              {/* Water damage */}
+              {activeDocument.waterDamage && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(100, 120, 140, 0.06) 0%, transparent 30%, transparent 70%, rgba(100, 120, 140, 0.08) 100%)',
+                    mixBlendMode: 'multiply',
+                  }}
+                />
+              )}
+
+              {/* Burn marks */}
+              {activeDocument.burnMarks && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    inset: -2,
+                    borderRadius: 1,
+                    boxShadow: 'inset 0 0 30px rgba(40, 20, 10, 0.25), inset 0 0 80px rgba(40, 20, 10, 0.1)',
+                  }}
+                />
+              )}
+
+              {/* UV overlay */}
+              {showUV && (
+                <div
+                  className="absolute inset-0 pointer-events-none z-10"
+                  style={{
+                    background: 'rgba(60, 20, 120, 0.08)',
+                    mixBlendMode: 'color-dodge',
+                  }}
+                />
+              )}
+
+              {/* Header stamp */}
+              <div
+                className="mb-8 pb-4"
+                style={{
+                  borderBottom: '1px solid rgba(80, 70, 50, 0.2)',
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                  color: '#5a5040',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                <div className="flex justify-between items-baseline">
+                  <span>REF: {activeDocument.id.toUpperCase()}</span>
+                  <span
+                    style={{
+                      color: activeDocument.verificationStatus === 'verified' ? '#5a7a5a' : activeDocument.verificationStatus === 'forged' ? '#a85d5d' : '#8a7a5a',
+                      border: `1px solid ${activeDocument.verificationStatus === 'verified' ? '#5a7a5a' : activeDocument.verificationStatus === 'forged' ? '#a85d5d' : '#8a7a5a'}`,
+                      padding: '1px 6px',
+                    }}
+                  >
+                    {activeDocument.verificationStatus.toUpperCase()}
+                  </span>
+                </div>
+                <div className="mt-1 flex gap-4">
+                  <span>SOURCE: {activeDocument.source.toUpperCase()}</span>
+                  <span>PAGES: {activeDocument.pages}</span>
+                  <span>INK: {activeDocument.inkType.toUpperCase()}</span>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2
+                className="mb-6"
+                style={{
+                  fontFamily: typography.serif,
+                  fontSize: typography.sizes.lg,
+                  color: '#1a1814',
+                  fontWeight: 600,
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.3,
+                }}
+              >
+                {activeDocument.title}
+              </h2>
+
+              {/* Body content */}
+              <div
+                className="whitespace-pre-wrap"
+                style={{
+                  textShadow: showUV ? '0 0 1px rgba(80, 60, 180, 0.3)' : 'none',
+                }}
+              >
+                {displayContent.split('\n').map((paragraph, i) => (
+                  <p key={i} className="mb-4 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              {/* Corruption overlay text */}
+              {activeDocument.corruptionLevel > 0.3 && !showCorrupted && (
+                <div
+                  className="absolute inset-0 pointer-events-none flex items-center justify-center"
+                  style={{
+                    background: 'rgba(20, 18, 14, 0.03)',
+                    mixBlendMode: 'multiply',
                   }}
                 >
-                  <div style={{ color: colors.archive.amber, fontSize: '0.625rem', fontFamily: typography.mono, marginBottom: '0.25rem' }}>
-                    MARGINALIA
+                  <div
+                    className="text-center rotate-[-12deg]"
+                    style={{
+                      fontFamily: typography.mono,
+                      fontSize: '4rem',
+                      color: 'rgba(160, 40, 40, 0.04)',
+                      letterSpacing: '0.3em',
+                      fontWeight: 700,
+                    }}
+                  >
+                    CORRUPTED
                   </div>
-                  {annotationText}
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Provenance footer */}
-      <div
-        className="shrink-0 px-4 py-2 border-t flex justify-between items-center"
-        style={{ borderColor: colors.archive.gray, backgroundColor: colors.archive.surface }}
-      >
-        <div className="flex gap-4" style={{ fontFamily: typography.mono, fontSize: '0.625rem', color: colors.archive.gray }}>
-          <span>COND: {activeDocument.condition.toUpperCase()}</span>
-          <span>TIER: {activeDocument.tier}</span>
-          <span>VERIFIED: {activeDocument.verificationStatus.toUpperCase()}</span>
-        </div>
-        <div style={{ fontFamily: typography.mono, fontSize: '0.625rem', color: colors.archive.gray }}>
-          RECOVERED: {activeDocument.recoveredBy} / {activeDocument.recoveredAt.split('T')[0]}
+              {/* Footer metadata */}
+              <div
+                className="mt-12 pt-4"
+                style={{
+                  borderTop: '1px solid rgba(80, 70, 50, 0.2)',
+                  fontFamily: typography.mono,
+                  fontSize: '0.6875rem',
+                  color: '#8a8070',
+                }}
+              >
+                <div className="flex justify-between">
+                  <span>RECOVERED: {new Date(activeDocument.recoveredAt).toLocaleDateString()}</span>
+                  <span>BY: {activeDocument.recoveredBy.toUpperCase()}</span>
+                </div>
+                {activeDocument.relatedDocuments.length > 0 && (
+                  <div className="mt-1">
+                    SEE ALSO: {activeDocument.relatedDocuments.join(', ').toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Annotation sidebar */}
+          <AnimatePresence>
+            {showAnnotation && hasAnnotation && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="w-64 shrink-0"
+                style={{
+                  background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
+                  border: `1px solid ${microform.iron}`,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+                }}
+              >
+                <div
+                  className="px-4 py-3"
+                  style={{
+                    borderBottom: `1px solid ${microform.iron}`,
+                    fontFamily: typography.mono,
+                    fontSize: typography.sizes.xs,
+                    color: microform.halogen,
+                    textShadow: microform.halogenText,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  MARGINALIA
+                </div>
+                <div
+                  className="p-4 whitespace-pre-wrap"
+                  style={{
+                    fontFamily: typography.serif,
+                    fontSize: typography.sizes.sm,
+                    color: colors.archive.white,
+                    lineHeight: 1.7,
+                    opacity: 0.85,
+                  }}
+                >
+                  {annotationText}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>

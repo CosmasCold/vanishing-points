@@ -162,4 +162,46 @@ Please continue.
     readCount: 0,
     annotations: [],
   },
+    {
+    id: 'doc-arch-1962-001',
+    slug: 'archivist-arrival-log-1962',
+    title: 'Personnel Transfer Record — Archivist INV_RED-7',
+    type: 'typed_report',
+    date: '1962-03-15',
+    source: 'archive_recovery',
+    author: 'Dr. H. Vance, Personnel Division',
+    condition: 'aged',
+    tier: 3,
+    placeSlug: 'eastern-state-penitentiary',
+    content: `PERSONNEL TRANSFER — ARCHIVAL DIVISION
+Date: March 15, 1962
+Designation: INV_RED-7
+Previous Assignment: [REDACTED]
+Start Date: September 14, 1950
+
+Subject has completed 4,211 days of continuous archival service. Subject does not age in photographs. Subject does not appear in mirror reflections taken within facility grounds. Subject refers to the Archive as "the room that grew around me."
+
+Subject was transferred without request or application. There is no record of who authorized the transfer. The signature block on Form 27-B contains a name that does not match any personnel file. The handwriting matches subject's own.
+
+Subject's duties: Maintain index cards. Monitor remote sensors. Do not enter the basement after midnight. Subject agreed to all terms before they were read aloud.
+
+Note from Medical: Subject's physical examination shows no anomalies. Subject's shadow shows a different posture than subject's body. Medical has elected not to file a secondary report.
+
+Note from Security: The basement carrel assigned to INV_RED-7 was not built by this facility. The mortar is 40 years older than the foundation. The door has no keyhole. Subject entered at 1800 hours and has not emerged. The light beneath the door is not the color of our bulbs.
+
+This record is classified until further notice. The 4,211-day figure is to be considered approximate. The exact duration is 4,211 days, 7 hours, and 33 minutes. Subject provided this precision voluntarily.`,
+    pages: 2,
+    paperType: 'bond',
+    inkType: 'typewriter',
+    corruptionLevel: 0.1,
+    foldMarks: 2,
+    coffeeStain: true,
+    recoveredAt: '2024-05-01T00:00:00Z',
+    recoveredBy: 'system',
+    verificationStatus: 'verified',
+    relatedDocuments: ['doc-b7-001'],
+    dustReward: 25,
+    readCount: 0,
+    annotations: [],
+  },
 ];

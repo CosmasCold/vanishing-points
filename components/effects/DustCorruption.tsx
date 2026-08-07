@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useUIStore, BUNKER7_THRESHOLDS } from '@/state/uiStore';
+import { microform } from '@/styles/theme';
 
 export const DustCorruption: React.FC = () => {
   const { status } = useUIStore();
@@ -10,112 +11,110 @@ export const DustCorruption: React.FC = () => {
   const corruption = useMemo(() => {
     if (dust >= BUNKER7_THRESHOLDS.UNSTABLE) {
       return {
-        scanlineOpacity: 0.35,
-        flickerIntensity: 0.08,
-        chromaticShift: 3,
-        textJitter: 0.4,
-        vignetteStrength: 0.6,
-        hueRotate: 15,
+        blur: 1.2,
+        warmth: 0.1,
+        bulbFlicker: 0.07,
+        vignette: 0.55,
+        dustMotes: 0.35,
+        focusShift: 1.5,
       };
     }
     if (dust >= BUNKER7_THRESHOLDS.STABLE) {
       return {
-        scanlineOpacity: 0.2,
-        flickerIntensity: 0.03,
-        chromaticShift: 1.5,
-        textJitter: 0.15,
-        vignetteStrength: 0.3,
-        hueRotate: 5,
+        blur: 0.4,
+        warmth: 0.04,
+        bulbFlicker: 0.025,
+        vignette: 0.28,
+        dustMotes: 0.15,
+        focusShift: 0.6,
       };
     }
     return {
-      scanlineOpacity: 0.08,
-      flickerIntensity: 0,
-      chromaticShift: 0,
-      textJitter: 0,
-      vignetteStrength: 0.1,
-      hueRotate: 0,
+      blur: 0,
+      warmth: 0,
+      bulbFlicker: 0,
+      vignette: 0.06,
+      dustMotes: 0,
+      focusShift: 0,
     };
   }, [dust]);
+
+  const flickerDuration = useMemo(() => 0.15 + Math.random() * 0.25, [dust]);
 
   return (
     <div
       className="fixed inset-0 pointer-events-none z-[60]"
       style={{
-        mixBlendMode: 'screen',
-        opacity: corruption.flickerIntensity > 0 ? undefined : 1,
-        animation: corruption.flickerIntensity > 0
-          ? `dustFlicker ${0.1 + Math.random() * 0.2}s infinite alternate`
+        opacity: corruption.bulbFlicker > 0 ? undefined : 1,
+        animation: corruption.bulbFlicker > 0
+          ? `bulbFlicker ${flickerDuration}s infinite alternate ease-in-out`
           : undefined,
       }}
     >
-      {/* Scanlines */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)',
-          backgroundSize: '100% 4px',
-          opacity: corruption.scanlineOpacity,
-        }}
-      />
-
-      {/* Chromatic aberration layers */}
-      {corruption.chromaticShift > 0 && (
-        <>
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: 'rgba(255, 0, 0, 0.03)',
-              transform: `translateX(${corruption.chromaticShift}px)`,
-              mixBlendMode: 'screen',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: 'rgba(0, 255, 255, 0.03)',
-              transform: `translateX(-${corruption.chromaticShift}px)`,
-              mixBlendMode: 'screen',
-            }}
-          />
-        </>
-      )}
-
-      {/* Vignette */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle, transparent 50%, rgba(20, 20, 18, ${corruption.vignetteStrength}) 100%)`,
-        }}
-      />
-
-      {/* Hue rotation */}
-      {corruption.hueRotate > 0 && (
+      {/* Optical defocus blur */}
+      {corruption.blur > 0 && (
         <div
           className="absolute inset-0"
           style={{
-            backdropFilter: `hue-rotate(${corruption.hueRotate}deg)`,
-            WebkitBackdropFilter: `hue-rotate(${corruption.hueRotate}deg)`,
+            backdropFilter: `blur(${corruption.blur}px)`,
+            WebkitBackdropFilter: `blur(${corruption.blur}px)`,
           }}
         />
       )}
 
-      {/* Global text jitter injection */}
-      {corruption.textJitter > 0 && (
+      {/* Halogen warmth drift */}
+      {corruption.warmth > 0 && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: `rgba(255, 170, 85, ${corruption.warmth})`,
+            mixBlendMode: 'overlay',
+          }}
+        />
+      )}
+
+      {/* Dust motes — organic floating particles */}
+      {corruption.dustMotes > 0 && (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 20% 30%, rgba(212, 197, 169, ${corruption.dustMotes * 0.6}) 0%, transparent 50%),
+                                 radial-gradient(circle at 70% 60%, rgba(212, 197, 169, ${corruption.dustMotes * 0.4}) 0%, transparent 40%),
+                                 radial-gradient(circle at 40% 80%, rgba(212, 197, 169, ${corruption.dustMotes * 0.5}) 0%, transparent 45%)`,
+              animation: 'dustMoteDrift 8s ease-in-out infinite alternate',
+            }}
+          />
+          <style>{`
+            @keyframes dustMoteDrift {
+              0% { transform: translate(0, 0) scale(1); }
+              33% { transform: translate(12px, -8px) scale(1.05); }
+              66% { transform: translate(-6px, 10px) scale(0.95); }
+              100% { transform: translate(4px, 4px) scale(1); }
+            }
+          `}</style>
+        </>
+      )}
+
+      {/* Light falloff vignette (warm, optical) */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(26, 22, 18, ${corruption.vignette}) 100%)`,
+          mixBlendMode: 'multiply',
+        }}
+      />
+
+      {/* Halogen bulb flicker keyframes */}
+      {corruption.bulbFlicker > 0 && (
         <style>{`
-          .dust-jitter {
-            animation: textJitter ${0.3 + Math.random() * 0.5}s infinite steps(2);
-          }
-          @keyframes textJitter {
-            0% { transform: translate(0, 0); }
-            25% { transform: translate(${corruption.textJitter}px, -${corruption.textJitter}px); }
-            50% { transform: translate(-${corruption.textJitter}px, ${corruption.textJitter}px); }
-            75% { transform: translate(${corruption.textJitter}px, ${corruption.textJitter}px); }
-            100% { transform: translate(0, 0); }
-          }
-          @keyframes dustFlicker {
+          @keyframes bulbFlicker {
             0% { opacity: 1; }
-            100% { opacity: ${1 - corruption.flickerIntensity}; }
+            10% { opacity: ${1 - corruption.bulbFlicker * 0.3}; }
+            20% { opacity: 1; }
+            55% { opacity: ${1 - corruption.bulbFlicker}; }
+            60% { opacity: ${1 - corruption.bulbFlicker * 0.5}; }
+            100% { opacity: 1; }
           }
         `}</style>
       )}

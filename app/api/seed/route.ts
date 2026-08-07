@@ -20,6 +20,10 @@ export async function POST(req: NextRequest) {
     }
 
     const client = await clientPromise;
+    if (!client) {
+      return NextResponse.json({ error: 'MongoDB is not configured.' }, { status: 503 });
+    }
+
     const db = client.db('vanishing-points');
 
     // Clear existing and insert mapped data

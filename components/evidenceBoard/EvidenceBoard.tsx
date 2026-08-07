@@ -9,21 +9,23 @@ import { useInvestigationStore } from '@/state/investigationStore';
 import { useUIStore } from '@/state/uiStore';
 import { colors, typography, microform } from '@/styles/theme';
 
-interface BoardNode {
+interface BoardNodeView {
   id: string;
   name: string;
   status: string;
   dangerLevel: number;
+  category: string;
+  history: string;
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-const NODE_WIDTH = 220;
-const NODE_HEIGHT = 68;
+const NODE_WIDTH = 218;
+const NODE_HEIGHT = 92;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-const MIN_NODE_SPACING = 115;
+const MIN_NODE_SPACING = 130;
 
 export const EvidenceBoard: React.FC = () => {
   const { places } = useAtlasStore();
@@ -35,12 +37,18 @@ export const EvidenceBoard: React.FC = () => {
   const {
     nodePositions,
     selectedNodeId,
+    focusNodeId,
+    viewMode,
+    filterMode,
     discoveredEdges,
     playerEdges,
     zoom,
     pan,
     setNodePosition,
     selectNode,
+    setFocusNode,
+    setViewMode,
+    setFilterMode,
     addPlayerEdge,
     setViewport,
   } = useEvidenceBoardStore();
@@ -57,18 +65,17 @@ export const EvidenceBoard: React.FC = () => {
   const dragStartClientRef = useRef({ x: 0, y: 0 });
   const initializedRef = useRef<Set<string>>(new Set());
 
-  // Initialize positions using phyllotaxis spiral
   useEffect(() => {
     if (dims.width === 0 || dims.height === 0) return;
     const { nodePositions: existing, setNodePosition: setPos } = useEvidenceBoardStore.getState();
     places.forEach((place, i) => {
       if (!initializedRef.current.has(place.slug) && !existing[place.slug]) {
         initializedRef.current.add(place.slug);
-        const r = MIN_NODE_SPACING * Math.sqrt(i + 1);
+        const radius = MIN_NODE_SPACING * Math.sqrt(i + 1);
         const theta = i * GOLDEN_ANGLE;
         setPos(place.slug, {
-          x: dims.width / 2 + r * Math.cos(theta),
-          y: dims.height / 2 + r * Math.sin(theta),
+          x: dims.width / 2 + radius * Math.cos(theta),
+          y: dims.height / 2 + radius * Math.sin(theta),
         });
       }
     });
@@ -86,16 +93,79 @@ export const EvidenceBoard: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  const renderNodes = useMemo(() => {
-    const nodes: BoardNode[] = [];
-    places.forEach((place) => {
+  const filteredPlaces = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return places.filter((place) => {
+      if (filterMode === 'visited' && !visited.has(place.slug)) return false;
+      if (filterMode === 'sealed' && place.status !== 'sealed') return false;
+      if (filterMode === 'whispered' && place.status !== 'whispered') return false;
+      if (filterMode === 'mirage' && place.status !== 'mirage') return false;
+      if (filterMode === 'suspected' && place.dangerLevel < 4 && place.status !== 'pending') return false;
+      if (query) {
+        const haystack = `${place.name} ${place.slug} ${place.history}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    });
+  }, [places, filterMode, search, visited]);
+
+  const placeLookup = useMemo(() => new Map(places.map((place) => [place.slug, place])), [places]);
+
+  const visibleNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    const selected = selectedNodeId;
+    const focus = focusNodeId ?? selected;
+
+    const addNeighbors = (slug: string | null) => {
+      if (!slug) return;
+      const place = placeLookup.get(slug);
+      if (!place) return;
+      place.connectedTo.forEach((neighbor) => ids.add(neighbor));
+      ids.add(slug);
+    };
+
+    filteredPlaces.forEach((place) => {
+      if (viewMode === 'detail') {
+        if (selected && (place.slug === selected || place.connectedTo.includes(selected))) {
+          ids.add(place.slug);
+        }
+      } else if (viewMode === 'focus') {
+        if (focus && (place.slug === focus || place.connectedTo.includes(focus))) {
+          ids.add(place.slug);
+        }
+        if (visited.has(place.slug) || place.dangerLevel >= 4 || place.status === 'sealed' || place.status === 'whispered') {
+          ids.add(place.slug);
+        }
+      } else {
+        if (visited.has(place.slug) || place.dangerLevel >= 4 || place.status === 'sealed' || place.status === 'whispered' || place.status === 'mirage') {
+          ids.add(place.slug);
+        }
+        if (selected) ids.add(selected);
+      }
+    });
+
+    if (selected) ids.add(selected);
+    if (focus) ids.add(focus);
+
+    if (ids.size === 0 && filteredPlaces.length > 0) {
+      filteredPlaces.slice(0, 8).forEach((place) => ids.add(place.slug));
+    }
+
+    return ids;
+  }, [filteredPlaces, selectedNodeId, focusNodeId, placeLookup, viewMode, visited]);
+
+  const renderNodes = useMemo<BoardNodeView[]>(() => {
+    const nodes: BoardNodeView[] = [];
+    filteredPlaces.forEach((place) => {
       const pos = nodePositions[place.slug];
-      if (!pos) return;
+      if (!pos || !visibleNodeIds.has(place.slug)) return;
       nodes.push({
         id: place.slug,
         name: place.name,
         status: place.status || 'verified',
         dangerLevel: place.dangerLevel || 0,
+        category: place.category,
+        history: place.history,
         x: pos.x,
         y: pos.y,
         width: NODE_WIDTH,
@@ -103,7 +173,7 @@ export const EvidenceBoard: React.FC = () => {
       });
     });
     return nodes;
-  }, [places, nodePositions]);
+  }, [filteredPlaces, nodePositions, visibleNodeIds]);
 
   useEffect(() => {
     if (renderNodes.length > 0 && !hasFitted && dims.width > 0 && dims.height > 0) {
@@ -123,13 +193,36 @@ export const EvidenceBoard: React.FC = () => {
     }
   }, [renderNodes, dims, hasFitted, setViewport]);
 
-  const filteredSlugs = useMemo(() => {
-    if (!search.trim()) return new Set(renderNodes.map((n) => n.id));
-    const q = search.toLowerCase();
-    return new Set(renderNodes.filter((n) => n.name.toLowerCase().includes(q)).map((n) => n.id));
-  }, [renderNodes, search]);
+  const allEdges = useMemo(() => {
+    const visibleIds = new Set(visibleNodeIds);
+    return [...discoveredEdges, ...playerEdges].filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target));
+  }, [discoveredEdges, playerEdges, visibleNodeIds]);
 
-  const allEdges = useMemo(() => [...discoveredEdges, ...playerEdges], [discoveredEdges, playerEdges]);
+  const selectedPlace = useMemo(() => places.find((place) => place.slug === selectedNodeId) ?? null, [places, selectedNodeId]);
+  const focusPlace = useMemo(() => places.find((place) => place.slug === (focusNodeId ?? selectedNodeId)) ?? null, [places, focusNodeId, selectedNodeId]);
+
+  const handleNodeSelection = useCallback(
+    (nodeId: string) => {
+      const currentSelected = useEvidenceBoardStore.getState().selectedNodeId;
+      if (currentSelected === null) {
+        selectNode(nodeId);
+      } else if (currentSelected === nodeId) {
+        selectNode(null);
+      } else {
+        addPlayerEdge({
+          id: `player-${currentSelected}-${nodeId}`,
+          source: currentSelected,
+          target: nodeId,
+          type: 'suspected',
+          label: 'SUSPECTED',
+        });
+        selectNode(null);
+      }
+      setFocusNode(nodeId);
+      click();
+    },
+    [addPlayerEdge, click, selectNode, setFocusNode]
+  );
 
   const onContainerMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.board-node')) return;
@@ -163,34 +256,22 @@ export const EvidenceBoard: React.FC = () => {
     }
   }, [dragNodeId, isPanning, panStart, setNodePosition, setViewport]);
 
-  const onContainerMouseUp = useCallback((e: React.MouseEvent) => {
-    if (dragNodeId) {
-      const dx = e.clientX - dragStartClientRef.current.x;
-      const dy = e.clientY - dragStartClientRef.current.y;
-      const isClick = Math.abs(dx) < 5 && Math.abs(dy) < 5;
+  const onContainerMouseUp = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragNodeId) {
+        const dx = e.clientX - dragStartClientRef.current.x;
+        const dy = e.clientY - dragStartClientRef.current.y;
+        const isClick = Math.abs(dx) < 5 && Math.abs(dy) < 5;
 
-      if (isClick) {
-        const currentSelected = useEvidenceBoardStore.getState().selectedNodeId;
-        if (currentSelected === null) {
-          selectNode(dragNodeId);
-        } else if (currentSelected === dragNodeId) {
-          selectNode(null);
-        } else {
-          addPlayerEdge({
-            id: `player-${currentSelected}-${dragNodeId}`,
-            source: currentSelected,
-            target: dragNodeId,
-            type: 'suspected',
-            label: 'SUSPECTED',
-          });
-          selectNode(null);
+        if (isClick) {
+          handleNodeSelection(dragNodeId);
         }
-        click();
+        setDragNodeId(null);
       }
-      setDragNodeId(null);
-    }
-    setIsPanning(false);
-  }, [dragNodeId, selectNode, addPlayerEdge, click]);
+      setIsPanning(false);
+    },
+    [dragNodeId, handleNodeSelection]
+  );
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -200,15 +281,21 @@ export const EvidenceBoard: React.FC = () => {
     setViewport(nextZoom, p);
   }, [setViewport]);
 
+  const panelStyle = {
+    border: `1px solid ${microform.iron}`,
+    boxShadow: `0 0 0 1px ${microform.mahogany}, 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.03)`,
+    background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${colors.archive.surface} 100%)`,
+  } as const;
+
   const bounds = useMemo(() => {
     if (renderNodes.length === 0) return { minX: 0, minY: 0, maxX: dims.width, maxY: dims.height };
     const xs = renderNodes.map((n) => n.x);
     const ys = renderNodes.map((n) => n.y);
     return {
-      minX: Math.min(...xs) - 100,
-      minY: Math.min(...ys) - 100,
-      maxX: Math.max(...xs) + 100,
-      maxY: Math.max(...ys) + 100,
+      minX: Math.min(...xs) - NODE_WIDTH,
+      minY: Math.min(...ys) - NODE_HEIGHT,
+      maxX: Math.max(...xs) + NODE_WIDTH,
+      maxY: Math.max(...ys) + NODE_HEIGHT,
     };
   }, [renderNodes, dims]);
 
@@ -227,8 +314,8 @@ export const EvidenceBoard: React.FC = () => {
       style={{
         backgroundColor: '#161412',
         backgroundImage: `
-          radial-gradient(ellipse at 50% 30%, rgba(255, 170, 85, 0.025) 0%, transparent 60%),
-          url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")
+          radial-gradient(ellipse at 50% 28%, rgba(255, 170, 85, 0.035) 0%, transparent 58%),
+          url("data:image/svg+xml,%3Csvg width='220' height='220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")
         `,
       }}
       onMouseDown={onContainerMouseDown}
@@ -237,88 +324,119 @@ export const EvidenceBoard: React.FC = () => {
       onMouseLeave={onContainerMouseUp}
       onWheel={onWheel}
     >
-      {/* Felt board texture overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 40%, transparent 30%, rgba(10, 8, 6, 0.6) 100%)`,
-          mixBlendMode: 'multiply',
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 40%, transparent 30%, rgba(10, 8, 6, 0.62) 100%)', mixBlendMode: 'multiply' }} />
 
-      {/* Edges SVG — string and wire aesthetic */}
-      <svg
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          width: dims.width,
-          height: dims.height,
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: '0 0',
-        }}
-      >
-        {allEdges.map((edge, i) => {
-          const a = renderNodes.find((n) => n.id === edge.source);
-          const b = renderNodes.find((n) => n.id === edge.target);
+      <svg className="absolute inset-0 pointer-events-none" style={{ width: dims.width, height: dims.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
+        {allEdges.map((edge, index) => {
+          const a = renderNodes.find((node) => node.id === edge.source);
+          const b = renderNodes.find((node) => node.id === edge.target);
           if (!a || !b) return null;
-          const isDimmed = !filteredSlugs.has(a.id) || !filteredSlugs.has(b.id);
-          const isHighlighted = selectedNodeId && (a.id === selectedNodeId || b.id === selectedNodeId);
-
-          // String / wire / thread aesthetic
+          const isHighlighted = Boolean(selectedNodeId && (a.id === selectedNodeId || b.id === selectedNodeId));
           const isSuspected = edge.type === 'suspected';
           const isUnstable = edge.type === 'unstable';
-          const edgeColor = isUnstable
-            ? 'rgba(168, 93, 93, 0.45)'
-            : isSuspected
-            ? 'rgba(180, 160, 130, 0.5)'
-            : 'rgba(140, 130, 110, 0.55)';
-          const strokeWidth = isHighlighted ? 1.2 : 0.7;
-          const dashArray = isSuspected ? '3 4' : isUnstable ? '1 3' : 'none';
-
+          const edgeColor = isUnstable ? 'rgba(168, 93, 93, 0.4)' : isSuspected ? 'rgba(180, 160, 130, 0.5)' : 'rgba(140, 130, 110, 0.55)';
           return (
             <line
-              key={edge.id || i}
+              key={edge.id || index}
               x1={a.x}
               y1={a.y}
               x2={b.x}
               y2={b.y}
               stroke={edgeColor}
-              strokeWidth={strokeWidth}
-              strokeDasharray={dashArray}
-              opacity={isDimmed ? 0.06 : isHighlighted ? 0.7 : 0.35}
-              style={{
-                filter: isHighlighted
-                  ? 'drop-shadow(0 0 2px rgba(255, 170, 85, 0.3))'
-                  : 'drop-shadow(0 1px 1px rgba(0,0,0,0.4))',
-              }}
+              strokeWidth={isHighlighted ? 1.4 : 0.9}
+              strokeDasharray={isSuspected ? '3 4' : isUnstable ? '1 3' : 'none'}
+              opacity={isHighlighted ? 0.8 : 0.35}
             />
           );
         })}
 
         {selectedNodeId && (() => {
-          const a = renderNodes.find((n) => n.id === selectedNodeId);
-          if (!a) return null;
+          const active = renderNodes.find((node) => node.id === selectedNodeId);
+          if (!active) return null;
           return (
             <line
-              x1={a.x}
-              y1={a.y}
+              x1={active.x}
+              y1={active.y}
               x2={mouseWorld.x}
               y2={mouseWorld.y}
-              stroke="rgba(201, 169, 110, 0.5)"
-              strokeWidth={0.6}
+              stroke="rgba(201, 169, 110, 0.45)"
+              strokeWidth={0.7}
               strokeDasharray="4 4"
               opacity={0.35}
-              style={{ filter: 'drop-shadow(0 0 2px rgba(201, 169, 110, 0.2))' }}
             />
           );
         })()}
       </svg>
 
-      {/* Nodes — microfiche card aesthetic */}
+      <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between p-4">
+        <div className="flex flex-col gap-2" style={{ maxWidth: '24rem' }}>
+          <div className="flex items-center gap-2 px-3 py-2" style={{ ...panelStyle, borderColor: microform.mahoganyLight }}>
+            <span style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.sm }}>◉</span>
+            <span style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.08em' }}>
+              EVIDENCE BOARD / {viewMode.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2" style={panelStyle}>
+            <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.sm }}>⌕</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search the archive..."
+              className="bg-transparent outline-none w-40"
+              style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
+            />
+            <select
+              value={filterMode}
+              onChange={(e) => setFilterMode(e.target.value as typeof filterMode)}
+              className="bg-transparent outline-none"
+              style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
+            >
+              <option value="all" style={{ color: '#111' }}>All</option>
+              <option value="visited" style={{ color: '#111' }}>Visited</option>
+              <option value="sealed" style={{ color: '#111' }}>Sealed</option>
+              <option value="whispered" style={{ color: '#111' }}>Whispered</option>
+              <option value="mirage" style={{ color: '#111' }}>Mirage</option>
+              <option value="suspected" style={{ color: '#111' }}>Suspected</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2" style={{ ...panelStyle, padding: '0.3rem' }}>
+            {(['overview', 'focus', 'detail'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => {
+                  setViewMode(mode);
+                  if (selectedNodeId) setFocusNode(selectedNodeId);
+                }}
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  color: viewMode === mode ? colors.archive.amber : colors.archive.grayLight,
+                  fontFamily: typography.mono,
+                  fontSize: typography.sizes.xs,
+                  border: viewMode === mode ? `1px solid ${colors.archive.amber}` : `1px solid transparent`,
+                  background: viewMode === mode ? 'rgba(201, 169, 110, 0.12)' : 'transparent',
+                }}
+              >
+                {mode.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="px-3 py-2" style={panelStyle}>
+            <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+              {renderNodes.length} SHADOWS • {allEdges.length} THREADS
+            </span>
+          </div>
+        </div>
+      </div>
+
       {renderNodes.map((node) => {
-        const isFiltered = filteredSlugs.has(node.id);
         const isSelected = selectedNodeId === node.id;
-        const isActiveInvestigation = activeInvestigationId === node.id;
+        const isFocused = focusNodeId === node.id || selectedNodeId === node.id;
         const hasVisited = visited.has(node.id);
+        const isActiveInvestigation = activeInvestigationId === node.id;
 
         return (
           <motion.div
@@ -331,211 +449,143 @@ export const EvidenceBoard: React.FC = () => {
               height: node.height,
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               transformOrigin: `${node.width / 2}px ${node.height / 2}px`,
-              opacity: isFiltered ? (hasVisited ? 1 : 0.45) : 0.08,
-              zIndex: isSelected ? 20 : isActiveInvestigation ? 15 : 10,
+              zIndex: isSelected ? 25 : isActiveInvestigation ? 20 : 10,
             }}
             onMouseDown={(e) => onNodeMouseDown(e, node.id)}
-            whileHover={{ scale: 1.04 }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setFocusNode(node.id);
+              setViewMode('detail');
+              click();
+            }}
+            whileHover={{ scale: 1.02 }}
             animate={{
               boxShadow: isSelected
-                ? `0 0 0 1px ${microform.mahoganyLight}, 0 0 20px rgba(255, 170, 85, 0.15), 0 4px 12px rgba(0,0,0,0.5)`
-                : `0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px ${microform.iron}`,
+                ? `0 0 0 1px ${microform.mahoganyLight}, 0 0 20px rgba(255, 170, 85, 0.14), 0 4px 16px rgba(0,0,0,0.55)`
+                : `0 2px 10px rgba(0,0,0,0.4), 0 0 0 1px ${microform.iron}`,
             }}
           >
             <div
-              className="w-full h-full flex flex-col justify-center px-3 relative overflow-hidden"
+              className="w-full h-full flex flex-col justify-between px-3 py-2 relative overflow-hidden"
               style={{
                 background: hasVisited
                   ? `linear-gradient(135deg, ${microform.mahogany} 0%, ${colors.archive.surfaceRaised} 100%)`
-                  : `linear-gradient(135deg, #1a1816 0%, #141210 100%)`,
-                border: `1px solid ${isSelected ? colors.archive.amber : microform.mahoganyLight}`,
-                borderRadius: '1px',
+                  : `linear-gradient(135deg, #171411 0%, #11100d 100%)`,
+                border: `1px solid ${isSelected ? colors.archive.amber : isFocused ? colors.archive.blue : microform.mahoganyLight}`,
+                borderRadius: '2px',
               }}
             >
-              {/* Halogen highlight on selected */}
-              {isSelected && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(255,170,85,0.04) 0%, transparent 60%)',
-                  }}
-                />
-              )}
-
-              <div
-                className="truncate relative z-10"
-                style={{
-                  color: hasVisited ? colors.archive.white : colors.archive.gray,
-                  fontFamily: typography.mono,
-                  fontSize: typography.sizes.xs,
-                  letterSpacing: '0.02em',
-                  textShadow: hasVisited ? microform.halogenText : 'none',
-                }}
-              >
-                {node.name}
-              </div>
-              <div className="flex gap-2 mt-1 relative z-10">
-                <span
-                  style={{
-                    color: statusColor(node.status),
-                    fontFamily: typography.mono,
-                    fontSize: '0.5rem',
-                    letterSpacing: '0.06em',
-                  }}
-                >
+              <div className="flex items-start justify-between gap-2">
+                <div style={{ color: hasVisited ? colors.archive.white : colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, lineHeight: 1.2 }}>
+                  {node.name}
+                </div>
+                <span style={{ color: statusColor(node.status), fontFamily: typography.mono, fontSize: '0.55rem', letterSpacing: '0.08em' }}>
                   {node.status.toUpperCase()}
                 </span>
-                <span
-                  style={{
-                    color: node.dangerLevel >= 4 ? colors.archive.red : colors.archive.gray,
-                    fontFamily: typography.mono,
-                    fontSize: '0.5rem',
-                  }}
-                >
+              </div>
+
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: '0.54rem', letterSpacing: '0.06em' }}>
+                  {node.category.toUpperCase()}
+                </span>
+                <span style={{ color: node.dangerLevel >= 4 ? colors.archive.red : colors.archive.blue, fontFamily: typography.mono, fontSize: '0.56rem' }}>
                   D{node.dangerLevel}
                 </span>
-                {!hasVisited && (
-                  <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: '0.5rem', opacity: 0.6 }}>
-                    UNINDEXED
-                  </span>
-                )}
               </div>
             </div>
           </motion.div>
         );
       })}
 
-      {/* Search — iron bezel */}
-      <div
-        className="absolute top-4 left-4 z-30 flex items-center gap-2 px-3 py-2"
-        style={{
-          border: `1px solid ${microform.iron}`,
-          boxShadow: `0 0 0 1px ${microform.mahogany}, 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)`,
-          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${colors.archive.surface} 100%)`,
-        }}
-      >
-        <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.sm }}>
-          ⌕
-        </span>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter index cards..."
-          className="bg-transparent outline-none w-48"
-          style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
-        />
-        {search && (
-          <button
-            onClick={() => setSearch('')}
-            style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {/* Hint — brass plate */}
-      <div
-        className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-2"
-        style={{
-          border: `1px solid ${microform.mahoganyLight}`,
-          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        }}
-      >
-        <span style={{ color: 'rgba(255,170,85,0.6)', fontFamily: typography.mono, fontSize: '0.5625rem', letterSpacing: '0.08em' }}>
-          CLICK TO SELECT • CLICK ANOTHER TO CONNECT • DRAG TO MOVE
-        </span>
-      </div>
-
-      {/* Stats — stamped plate */}
-      <div
-        className="absolute top-4 right-4 z-30 px-3 py-2"
-        style={{
-          border: `1px solid ${microform.iron}`,
-          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${colors.archive.surface} 100%)`,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        }}
-      >
-        <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-          {renderNodes.length} CARDS • {allEdges.length} THREADS
-        </span>
-      </div>
-
-      {/* Zoom controls — mechanical switches */}
-      <div
-        className="absolute bottom-4 left-4 z-30 flex flex-col gap-1"
-        style={{
-          background: microform.iron,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          border: `1px solid ${microform.mahogany}`,
-        }}
-      >
-        <button
-          onClick={() => {
-            const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
-            setViewport(Math.min(3, z * 1.2), p);
-          }}
-          className="px-3 py-1 transition-colors hover:bg-white/5"
-          style={{ color: colors.archive.gray, fontFamily: typography.mono, borderBottom: `1px solid ${microform.mahogany}` }}
-        >
+      <div className="absolute bottom-4 left-4 z-30 flex flex-col gap-1" style={{ ...panelStyle, padding: '0.25rem' }}>
+        <button onClick={() => { const { zoom: z, pan: p } = useEvidenceBoardStore.getState(); setViewport(Math.min(3, z * 1.15), p); }} className="px-3 py-1 transition-colors hover:bg-white/5" style={{ color: colors.archive.grayLight, fontFamily: typography.mono }}>
           +
         </button>
-        <button
-          onClick={() => {
-            const { zoom: z, pan: p } = useEvidenceBoardStore.getState();
-            setViewport(Math.max(0.3, z / 1.2), p);
-          }}
-          className="px-3 py-1 transition-colors hover:bg-white/5"
-          style={{ color: colors.archive.gray, fontFamily: typography.mono, borderBottom: `1px solid ${microform.mahogany}` }}
-        >
+        <button onClick={() => { const { zoom: z, pan: p } = useEvidenceBoardStore.getState(); setViewport(Math.max(0.3, z / 1.15), p); }} className="px-3 py-1 transition-colors hover:bg-white/5" style={{ color: colors.archive.grayLight, fontFamily: typography.mono }}>
           −
         </button>
-        <button
-          onClick={() => setViewport(1, { x: 0, y: 0 })}
-          className="px-3 py-1 transition-colors hover:bg-white/5"
-          style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}
-        >
+        <button onClick={() => setViewport(1, { x: 0, y: 0 })} className="px-3 py-1 transition-colors hover:bg-white/5" style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
           ⌂
         </button>
       </div>
 
-      {/* Minimap — felt tray */}
-      <div
-        className="absolute bottom-4 right-4 z-30 border overflow-hidden"
-        style={{
-          width: 140,
-          height: 100,
-          border: `1px solid ${microform.iron}`,
-          boxShadow: `0 0 0 1px ${microform.mahogany}, 0 4px 12px rgba(0,0,0,0.4)`,
-          backgroundColor: '#141210',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E")`,
-        }}
-      >
+      <div className="absolute bottom-4 right-4 z-30 border overflow-hidden" style={{ width: 140, height: 100, ...panelStyle }}>
         <svg width={140} height={100} viewBox={`0 0 ${mapWidth * miniScale} ${mapHeight * miniScale}`}>
-          {renderNodes.map((n) => (
-            <rect
-              key={n.id}
-              x={(n.x - bounds.minX - n.width / 2) * miniScale}
-              y={(n.y - bounds.minY - n.height / 2) * miniScale}
-              width={Math.max(2, n.width * miniScale)}
-              height={Math.max(2, n.height * miniScale)}
-              fill={statusColor(n.status)}
-              opacity={visited.has(n.id) ? 0.5 : 0.2}
-              rx={0.5}
-            />
+          {renderNodes.map((node) => (
+            <rect key={node.id} x={(node.x - bounds.minX - node.width / 2) * miniScale} y={(node.y - bounds.minY - node.height / 2) * miniScale} width={Math.max(2, node.width * miniScale)} height={Math.max(2, node.height * miniScale)} fill={statusColor(node.status)} opacity={visited.has(node.id) ? 0.55 : 0.22} rx={0.5} />
           ))}
-          <rect
-            x={viewX}
-            y={viewY}
-            width={viewW}
-            height={viewH}
-            fill="none"
-            stroke="rgba(255, 170, 85, 0.4)"
-            strokeWidth={0.5}
-          />
+          <rect x={viewX} y={viewY} width={viewW} height={viewH} fill="none" stroke="rgba(255, 170, 85, 0.45)" strokeWidth={0.6} />
         </svg>
+      </div>
+
+      <div className="absolute inset-y-0 right-0 z-30 flex w-[24rem] max-w-[32vw] items-stretch p-4">
+        <div className="w-full rounded-sm border border-[#2c2925] bg-[#161412]/90 p-4 backdrop-blur-sm" style={{ boxShadow: '0 12px 28px rgba(0,0,0,0.48)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: '0.55rem', letterSpacing: '0.12em' }}>INSPECTOR</div>
+              <div style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.lg, marginTop: '0.2rem' }}>
+                {focusPlace?.name ?? 'No focus yet'}
+              </div>
+            </div>
+            <div style={{ color: statusColor(focusPlace?.status ?? 'verified'), fontFamily: typography.mono, fontSize: '0.7rem' }}>
+              {focusPlace?.status?.toUpperCase() ?? 'STANDBY'}
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-[#2c2925] pt-3">
+            <div style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs, lineHeight: 1.6 }}>
+              {focusPlace?.history ?? 'Select a node to read the case summary, its current state, and the links that keep it alive.'}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2">
+            <div className="flex items-center justify-between rounded-sm border border-[#2c2925] px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <span style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>Threat</span>
+              <span style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>D{focusPlace?.dangerLevel ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-sm border border-[#2c2925] px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <span style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>Connections</span>
+              <span style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>{focusPlace?.connectedTo.length ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-sm border border-[#2c2925] px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <span style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>State</span>
+              <span style={{ color: colors.archive.blueBright, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>{selectedPlace ? 'Active case' : 'Awaiting selection'}</span>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: '0.55rem', letterSpacing: '0.12em' }}>NEARBY CASES</div>
+            <div className="mt-2 flex flex-col gap-2">
+              {(focusPlace?.connectedTo.length ? focusPlace.connectedTo : ['no-neighbors']).map((slug) => {
+                const place = slug === 'no-neighbors' ? null : places.find((candidate) => candidate.slug === slug);
+                if (!place) {
+                  return (
+                    <div key={slug} className="rounded-sm border border-[#2c2925] px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', color: colors.archive.gray }}>
+                      No linked cases yet. Create one by selecting a second node.
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    key={place.slug}
+                    className="rounded-sm border border-[#2c2925] px-3 py-2 text-left"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                    onClick={() => {
+                      setFocusNode(place.slug);
+                      selectNode(place.slug);
+                      setViewMode('detail');
+                    }}
+                  >
+                    <div style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>{place.name}</div>
+                    <div style={{ color: colors.archive.grayLight, fontFamily: typography.mono, fontSize: '0.56rem', marginTop: '0.2rem' }}>
+                      {place.status.toUpperCase()} • D{place.dangerLevel}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

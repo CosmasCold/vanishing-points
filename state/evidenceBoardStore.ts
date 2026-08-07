@@ -13,9 +13,15 @@ interface BoardEdge {
   label?: string;
 }
 
+export type EvidenceBoardViewMode = 'overview' | 'focus' | 'detail';
+export type EvidenceBoardFilterMode = 'all' | 'visited' | 'sealed' | 'whispered' | 'mirage' | 'suspected';
+
 interface EvidenceBoardState {
   nodePositions: Record<string, NodePosition>;
   selectedNodeId: string | null;
+  focusNodeId: string | null;
+  viewMode: EvidenceBoardViewMode;
+  filterMode: EvidenceBoardFilterMode;
   discoveredEdges: BoardEdge[];
   playerEdges: BoardEdge[];
   zoom: number;
@@ -23,6 +29,9 @@ interface EvidenceBoardState {
 
   setNodePosition: (id: string, pos: NodePosition) => void;
   selectNode: (id: string | null) => void;
+  setFocusNode: (id: string | null) => void;
+  setViewMode: (mode: EvidenceBoardViewMode) => void;
+  setFilterMode: (mode: EvidenceBoardFilterMode) => void;
   discoverEdge: (edge: BoardEdge) => void;
   addPlayerEdge: (edge: BoardEdge) => void;
   removePlayerEdge: (id: string) => void;
@@ -33,6 +42,9 @@ interface EvidenceBoardState {
 export const useEvidenceBoardStore = create<EvidenceBoardState>((set) => ({
   nodePositions: {},
   selectedNodeId: null,
+  focusNodeId: null,
+  viewMode: 'overview',
+  filterMode: 'all',
   discoveredEdges: [],
   playerEdges: [],
   zoom: 1,
@@ -42,6 +54,12 @@ export const useEvidenceBoardStore = create<EvidenceBoardState>((set) => ({
     set((s) => ({ nodePositions: { ...s.nodePositions, [id]: pos } })),
 
   selectNode: (id) => set({ selectedNodeId: id }),
+
+  setFocusNode: (id) => set({ focusNodeId: id }),
+
+  setViewMode: (mode) => set({ viewMode: mode }),
+
+  setFilterMode: (mode) => set({ filterMode: mode }),
 
   discoverEdge: (edge) =>
     set((s) => {
@@ -77,5 +95,8 @@ export const useEvidenceBoardStore = create<EvidenceBoardState>((set) => ({
       discoveredEdges: [],
       playerEdges: [],
       selectedNodeId: null,
+      focusNodeId: null,
+      viewMode: 'overview',
+      filterMode: 'all',
     }),
 }));

@@ -9352,13 +9352,29 @@ const SEED_DATA = [
   }
 ];
 
-// Insert or update
+// Loop through and upsert safely, translating Extended JSON $oid and preventing _id mutations
 for (const place of SEED_DATA) {
+  // 1. Create a deep copy of the place object to manipulate
+  const updateData = JSON.parse(JSON.stringify(place));
+  
+  // 2. Extract the $oid and convert it to a real BSON ObjectId
+  let nativeId = null;
+  if (updateData._id && updateData._id.$oid) {
+    nativeId = ObjectId(updateData._id.$oid);
+  }
+
+  // 3. Delete the _id key entirely from the update payload to bypass syntax/immutability errors
+  delete updateData._id;
+
+  // 4. Update with $set for variables, and $setOnInsert to set the ID ONLY on creation
   db.places.updateOne(
     { slug: place.slug },
-    { $set: place },
+    { 
+      $set: updateData,
+      $setOnInsert: { _id: nativeId }
+    },
     { upsert: true }
   );
 }
 
-print("Seeded " + SEED_DATA.length + " places");
+print("Seeded " + SEED_DATA.length + " places safely.");

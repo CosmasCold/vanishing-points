@@ -258,5 +258,49 @@ Do not attempt to ground yourself inside the centroid. The physical space is uns
       'The center of the triangle is 40 kilometers from nowhere in Kansas.', 
       'The future transmission in Tokyo has a date. The date is currently in our future.'
     ],
+  },
+  {
+    id: 'doc-tbg-1999',
+    slug: 'teufelsberg-nsa-intercept',
+    title: 'Declassified Intercept: Grunewald Echo',
+    type: 'field_report',
+    date: '2026-08-08',
+    source: 'National Security Agency / Field Station Berlin',
+    author: 'Archival Division, Agent 7-4',
+    condition: 'damaged',
+    waterDamage: true,
+    tier: 3,
+    placeSlug: 'teufelsberg',
+    content: `NSA FIELD STATION BERLIN
+DECLASSIFIED ACQUISITION LOG // DEVIL'S MOUNTAIN
+
+1. GEODETIC ORIGIN AND SITE HISTORY
+* Teufelsberg (Devil's Mountain) is entirely artificial, constructed from 12 million cubic meters of structural rubble cleared from bombed-out Berlin between 1945 and 1972 [1]. The mound has since been grown over with birch and pine [1].
+* In 1963, the US National Security Agency established Field Station Berlin on the summit, erecting five prominent white fiberglass radomes to listen to Warsaw Pact communications [1].
+* The facility specialized in intercepting microwave transmissions passing between Moscow and East Berlin [1]. After operations ceased in 1999, the radomes were left empty; freeze-thaw cycles have cracked their fiberglass shells and street artists have claimed the interior corridors [1].
+
+2. COGNITIVE ECHO ANOMALY
+* Testing inside the facility's largest radome reveals a severe acoustic phenomenon [1]. Standing at the exact geometric center and whispering causes the signal to return from all directions simultaneously, as if the mountain of rubble is repeating your secrets back to you [1].
+* Acoustic feedback is not behaving naturally. The delay patterns suggest the granite-and-brick structural heap is storing, processing, and reflecting auditory frequencies on a closed delay loop.
+
+3. CORRUPTION VECTOR: SYSTEMIC AUTO-COGNITION
+* WARNING: System monitors indicate that the Archive database has actively begun referring to the Teufelsberg coordinate in the first person [1]. 
+* If you query the database and it responds as "I", terminate your terminal session immediately [1]. The boundary between the observer and the observed is collapsing.`,
+    pages: 3,
+    paperType: 'bond',
+    inkType: 'typewriter',
+    corruptionLevel: 0.35,
+    foldMarks: 3,
+    coffeeStain: true,
+    recoveredAt: '2026-08-08T13:10:00Z',
+    recoveredBy: 'system',
+    verificationStatus: 'verified',
+    relatedDocuments: [],
+    dustReward: 35,
+    readCount: 0,
+    annotations: [
+      'The mountain is made of a destroyed city. It is made of things that died.',
+      'Why does the database say "I" when I search for the radomes?'
+    ],
   }
 ];

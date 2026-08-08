@@ -28,10 +28,10 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const MIN_NODE_SPACING = 130;
 
 export const EvidenceBoard: React.FC = () => {
-  const { places } = useAtlasStore();
+  const { places, selectPlace } = useAtlasStore();
   const { click } = useAudioStore();
-  const { activeInvestigationId } = useInvestigationStore();
-  const { status } = useUIStore();
+  const { activeInvestigationId, openInvestigation, addEvidence, addTimelineEvent, evidence } = useInvestigationStore();
+  const { status, investigatePlace } = useUIStore();
   const visited = useMemo(() => new Set(status.investigatedSlugs), [status.investigatedSlugs]);
 
   const {
@@ -92,6 +92,15 @@ export const EvidenceBoard: React.FC = () => {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (selectedNodeId || focusNodeId) {
+      const slug = selectedNodeId || focusNodeId;
+      if (slug) {
+        selectPlace(slug);
+      }
+    }
+  }, [selectedNodeId, focusNodeId, selectPlace]);
 
   const filteredPlaces = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -222,6 +231,64 @@ export const EvidenceBoard: React.FC = () => {
       click();
     },
     [addPlayerEdge, click, selectNode, setFocusNode]
+  );
+
+  const handleOpenCase = useCallback(
+    (nodeId: string) => {
+      const place = places.find((candidate) => candidate.slug === nodeId);
+      if (!place) return;
+
+      selectPlace(place.slug);
+      selectNode(place.slug);
+      setFocusNode(place.slug);
+      setViewMode('detail');
+      openInvestigation(place.slug, place.name);
+      investigatePlace(place.slug);
+
+      const generated = evidence[place.slug] || [];
+      const hasInitialEntry = generated.some((item) => item.id === `${place.slug}-archive-entry`);
+
+      if (!hasInitialEntry) {
+        const connected = (place.connectedTo || []).filter(Boolean);
+        const archiveEntry = {
+          id: `${place.slug}-archive-entry`,
+          type: 'document' as const,
+          title: 'Archive Entry',
+          description: `Field notes for ${place.name} have been indexed and linked to the active case file.`,
+          status: 'available' as const,
+          relatedTo: connected,
+          dustCost: 1,
+          metadata: { source: 'BUNKER_7', state: place.status },
+        };
+
+        addEvidence(place.slug, archiveEntry);
+
+        if (connected.length > 0) {
+          addEvidence(place.slug, {
+            id: `${place.slug}-resonance-thread`,
+            type: 'signal' as const,
+            title: 'Resonance Thread',
+            description: `The archive has linked ${place.name} to ${connected.length} nearby sites.`,
+            status: 'available' as const,
+            relatedTo: connected,
+            dustCost: 2,
+          });
+        }
+
+        addTimelineEvent(place.slug, {
+          id: `${place.slug}-first-contact`,
+          date: new Date().toISOString().slice(0, 10),
+          title: 'Initial scan complete',
+          description: `The archive established a stable link with ${place.name}.`,
+          evidenceIds: [archiveEntry.id],
+          certainty: 'confirmed' as const,
+          category: 'discovery' as const,
+        });
+      }
+
+      click();
+    },
+    [addEvidence, addTimelineEvent, click, evidence, investigatePlace, openInvestigation, places, selectNode, selectPlace, setFocusNode, setViewMode]
   );
 
   const onContainerMouseDown = useCallback((e: React.MouseEvent) => {
@@ -454,9 +521,7 @@ export const EvidenceBoard: React.FC = () => {
             onMouseDown={(e) => onNodeMouseDown(e, node.id)}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              setFocusNode(node.id);
-              setViewMode('detail');
-              click();
+              handleOpenCase(node.id);
             }}
             whileHover={{
               scale: 1,
@@ -558,6 +623,22 @@ export const EvidenceBoard: React.FC = () => {
               <span style={{ color: colors.archive.blueBright, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>{selectedPlace ? 'Active case' : 'Awaiting selection'}</span>
             </div>
           </div>
+
+          {focusPlace && (
+            <button
+              onClick={() => handleOpenCase(focusPlace.slug)}
+              className="mt-4 w-full border px-3 py-2 text-left transition-colors hover:border-amber-700"
+              style={{
+                borderColor: colors.archive.amber,
+                color: colors.archive.amber,
+                fontFamily: typography.mono,
+                fontSize: typography.sizes.xs,
+                letterSpacing: '0.06em',
+              }}
+            >
+              OPEN CASE FILE
+            </button>
+          )}
 
           <div className="mt-4">
             <div style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: '0.55rem', letterSpacing: '0.12em' }}>NEARBY CASES</div>

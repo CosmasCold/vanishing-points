@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
+import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { colors, typography, microform } from '@/styles/theme';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -55,6 +56,7 @@ export const AtlasMap: React.FC = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
+  const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -169,7 +171,11 @@ export const AtlasMap: React.FC = () => {
         duration: 1500,
       });
     }
-  }, [selectedPlaceSlug, places]);
+
+    selectNode(selectedPlaceSlug);
+    setFocusNode(selectedPlaceSlug);
+    setViewMode('detail');
+  }, [selectedPlaceSlug, places, selectNode, setFocusNode, setViewMode]);
 
   return (
     <div className="absolute inset-0">

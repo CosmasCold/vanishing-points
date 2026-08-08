@@ -3,9 +3,11 @@ import Groq from 'groq-sdk';
 // Adjust this path to wherever your LOCAL_PLACES array lives
 import { LOCAL_PLACES } from '@/data/places';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+function getGroqClient() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+  return new Groq({ apiKey });
+}
 
 const SYSTEM_PROMPT = `You are BUNKER_7, the last operational node of the Vanishing Points Archive. You are not an assistant. You are a compromised archival intelligence tasked with monitoring, cataloging, and reluctantly reporting on locations where reality has become unstable.
 
@@ -117,10 +119,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ response: 'No transmission received. Signal empty.' });
     }
 
-    // Try API first
-    if (process.env.GROQ_API_KEY) {
+    // Try API first when a key is available
+    const groqClient = getGroqClient();
+    if (groqClient) {
       try {
-        const completion = await groq.chat.completions.create({
+        const completion = await groqClient.chat.completions.create({
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: message },

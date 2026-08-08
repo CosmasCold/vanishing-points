@@ -6,7 +6,6 @@ import { useAtlasStore } from '@/state/atlasStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAudioStore } from '@/state/audioStore';
 import { useUIStore } from '@/state/uiStore';
-import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { colors, typography } from '@/styles/theme';
 
 const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
@@ -51,13 +50,8 @@ const ConnectedPlaceButton: React.FC<{ slug: string }> = ({ slug }) => {
 };
 
 export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
-  const { openInvestigation, addEvidence, addTimelineEvent, evidence } = useInvestigationStore();
+  const { openInvestigation } = useInvestigationStore();
   const { click } = useAudioStore();
-<<<<<<< ours
-  const { investigatePlace } = useUIStore();
-  const { selectPlace } = useAtlasStore();
-  const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
-=======
   const { investigatePlace, status } = useUIStore();
 
   const dustIndex = status.dustIndex;
@@ -70,58 +64,12 @@ export const PlaceDetail: React.FC<{ place: Place }> = ({ place }) => {
     }
     return false;
   }, [place.unlockCondition, dustIndex]);
->>>>>>> theirs
 
   const handleOpenInvestigation = () => {
     if (isLocked) return;
     click();
     investigatePlace(place.slug);
-    selectPlace(place.slug);
-    selectNode(place.slug);
-    setFocusNode(place.slug);
-    setViewMode('detail');
     openInvestigation(place.slug, place.name);
-
-    const generated = evidence[place.slug] || [];
-    const hasInitialEntry = generated.some((item) => item.id === `${place.slug}-archive-entry`);
-
-    if (!hasInitialEntry) {
-      const connected = (place.connectedTo || []).filter(Boolean);
-      const archiveEntry = {
-        id: `${place.slug}-archive-entry`,
-        type: 'document' as const,
-        title: 'Archive Entry',
-        description: `Field notes for ${place.name} have been indexed and linked to the active case file.`,
-        status: 'available' as const,
-        relatedTo: connected,
-        dustCost: 1,
-        metadata: { source: 'BUNKER_7', state: place.status },
-      };
-
-      addEvidence(place.slug, archiveEntry);
-
-      if (connected.length > 0) {
-        addEvidence(place.slug, {
-          id: `${place.slug}-resonance-thread`,
-          type: 'signal' as const,
-          title: 'Resonance Thread',
-          description: `The archive has linked ${place.name} to ${connected.length} nearby sites.`,
-          status: 'available' as const,
-          relatedTo: connected,
-          dustCost: 2,
-        });
-      }
-
-      addTimelineEvent(place.slug, {
-        id: `${place.slug}-first-contact`,
-        date: new Date().toISOString().slice(0, 10),
-        title: 'Initial scan complete',
-        description: `The archive established a stable link with ${place.name}.`,
-        evidenceIds: [archiveEntry.id],
-        certainty: 'confirmed' as const,
-        category: 'discovery' as const,
-      });
-    }
   };
 
   const lat = place.coordinates?.[1];

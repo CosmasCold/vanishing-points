@@ -458,7 +458,13 @@ export const EvidenceBoard: React.FC = () => {
               setViewMode('detail');
               click();
             }}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{
+              scale: 1,
+              boxShadow: isSelected
+                ? `0 0 0 1px ${microform.mahoganyLight}, 0 0 22px rgba(255, 170, 85, 0.2), 0 6px 18px rgba(0,0,0,0.6)`
+                : `0 3px 12px rgba(0,0,0,0.46), 0 0 0 1px ${microform.mahoganyLight}`,
+            }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
             animate={{
               boxShadow: isSelected
                 ? `0 0 0 1px ${microform.mahoganyLight}, 0 0 20px rgba(255, 170, 85, 0.14), 0 4px 16px rgba(0,0,0,0.55)`

@@ -91,6 +91,15 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
     return (place.connectedTo || []).filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
   }, [place.connectedTo]);
 
+  const progressionSummary = useMemo(() => {
+    const unlockedCount = evidenceItems.filter((item) => ['available', 'collected', 'analyzing', 'analyzed', 'viewed'].includes(item.status)).length;
+    return {
+      unlockedCount,
+      timelineCount: timelineEvents.length,
+      resonanceCount: safeConnections.length,
+    };
+  }, [evidenceItems, safeConnections.length, timelineEvents.length]);
+
   return (
     <div className="absolute inset-0 flex flex-col z-10" style={{ backgroundColor: colors.archive.black }}>
       {/* Header */}
@@ -283,6 +292,29 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 
               {/* Right: metadata, photos, connections */}
               <div className="lg:col-span-2 space-y-6">
+                <div
+                  className="p-4 border"
+                  style={{ borderColor: colors.archive.amber, backgroundColor: 'rgba(201, 169, 110, 0.08)' }}
+                >
+                  <div
+                    style={{
+                      color: colors.archive.amber,
+                      fontFamily: typography.mono,
+                      fontSize: typography.sizes.xs,
+                      letterSpacing: '0.1em',
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    ARCHIVE PROGRESSION
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ProgressPill label="UNLOCKED" value={String(progressionSummary.unlockedCount)} color={colors.archive.green} />
+                    <ProgressPill label="TIMELINE" value={String(progressionSummary.timelineCount)} color={colors.archive.blue} />
+                    <ProgressPill label="LINKS" value={String(progressionSummary.resonanceCount)} color={colors.archive.amber} />
+                    <ProgressPill label="STATE" value="ACTIVE" color={colors.archive.white} />
+                  </div>
+                </div>
+
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-3">
                   <StatBox label="DANGER LEVEL" value={`${place.dangerLevel || 0}/5`} color={
@@ -658,6 +690,15 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 };
 
 /* Subcomponents */
+
+const ProgressPill: React.FC<{ label: string; value: string; color: string }> = ({ label, value, color }) => (
+  <div className="p-3 border" style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}>
+    <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, marginBottom: '0.3rem' }}>
+      {label}
+    </div>
+    <div style={{ color, fontFamily: typography.mono, fontSize: typography.sizes.lg }}>{value}</div>
+  </div>
+);
 
 const StatBox: React.FC<{ label: string; value: string; color: string }> = ({ label, value, color }) => (
   <div

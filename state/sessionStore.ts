@@ -44,6 +44,16 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
     read: false,
   });
 
+  // Synchronized 4.5 Hz Geodetic Alert
+  items.push({
+    id: `signal-intercept-4.5hz-${Date.now()}`,
+    type: 'alert',
+    title: 'SIGNAL INTERCEPT: Centroid Active',
+    body: 'WARNING: Subsonic carrier wave at 4.5 Hz detected across Blue Ridge geophones. Extreme spatial folding measured along Kansas 7-B solstice vector. Physical coordinates: collapsing. Center of the triangle is active. Do not follow the lines.',
+    timestamp: now,
+    read: false,
+  });
+
   // Dust warnings
   if (dust >= 30) {
     items.push({

@@ -204,4 +204,59 @@ This record is classified until further notice. The 4,211-day figure is to be co
     readCount: 0,
     annotations: [],
   },
+  {
+    id: 'doc-mwe-4.5hz',
+    slug: 'mount-weather-geodetic-analysis',
+    title: 'Declassified Survey: Blue Ridge Triangulation',
+    type: 'field_report',
+    date: '2026-08-08',
+    source: 'FEMA / Geodetic Survey Division',
+    author: 'Archival Division, Agent 7-4',
+    condition: 'aged',
+    tier: 2,
+    placeSlug: 'mount-weather-emergency-operations-center',
+    content: `FEMA / GEODETIC SURVEY DIVISION
+DECLASSIFIED SIGNAL ANALYSIS REPORT
+
+Subject: BLUE RIDGE MOUNTAIN RESONANCE AND TRIANGULATION
+Date: August 8, 2026
+Author: Agent 7-4, Archival Division
+
+We have confirmed a severe spatial folding phenomenon along the summer solstice axis between Lebanon, Kansas (The Grid Null Point) and Stull Cemetery, Kansas.
+
+1. SPATIAL COMPRESSION METRICS
+* Geodetic Haversine Distance (Physical Reality): 172.38 km
+* Cartographic Database Mapped Distance (Anomalous Atlas): 47.00 km
+* Net Spatial Compression: -125.38 km (72.7% compression)
+
+The space between these coordinates is actively collapsing. The Atlas does not record equipment error; it tracks active geodetic contraction. 
+
+2. THE 4.5 HZ TUNNEL NETWORK
+Seismic arrays at Mount Weather (Virginia), Cheyenne Mountain (Colorado), and Raven Rock (Pennsylvania) are vibrating in perfect, synchronized unison at a sub-audible frequency of 4.5 Hz.
+
+The geometric centroid of these three coordinates points directly to the center of the Lebanon crop spiral ([-97.00, 38.00]).
+
+The bunkers were not constructed to generate this hum; they were built to inhabit its preexisting nodes.
+
+3. THE 2047 Solstice Alignment
+The Lebanon spiral is rotating 15 degrees counterclockwise per year. Calculations indicate perfect alignment with the summer solstice axis will occur in June 2047—matching the timestamp of the future Tokyo hospital transmission.
+
+Do not attempt to ground yourself inside the centroid. The physical space is unstable.`,
+    pages: 2,
+    paperType: 'bond',
+    inkType: 'typewriter',
+    corruptionLevel: 0.1,
+    foldMarks: 2,
+    coffeeStain: true,
+    recoveredAt: '2026-08-08T12:00:00Z',
+    recoveredBy: 'system',
+    verificationStatus: 'verified',
+    relatedDocuments: [],
+    dustReward: 15,
+    readCount: 0,
+    annotations: [
+      'The center of the triangle is 40 kilometers from nowhere in Kansas.', 
+      'The future transmission in Tokyo has a date. The date is currently in our future.'
+    ],
+  }
 ];

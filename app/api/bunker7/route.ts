@@ -74,6 +74,8 @@ const LOCAL_RESPONSES: Record<string, string> = {
   reveal: 'I cannot reveal what you do not name. Specify a location or case file.',
   unlock: 'I cannot reveal what you do not name. Specify a location or case file.',
   path: 'I cannot reveal what you do not name. Specify a location or case file.',
+  triangle: 'Mount Weather, Cheyenne Mountain, and Raven Rock are vibrating in synchronized 4.5 Hz unison [3]. I have mapped their geodetic coordinates. The centroid is the wheat field in Kansas. Do not follow the lines.',
+  '4.5hz': 'A frequency heard only in granite [3]. Mount Weather hums [3]. The center points to Lebanon. Dust level 30 will unlock the declassified geodetic survey in your Documents module [3-5].',
 };
 
 function getLocalResponse(message: string): string {

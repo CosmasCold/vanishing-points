@@ -49,7 +49,6 @@
       "pripyat-jupiter-factory",
       "chernobyl-reactor-4-control-room",
       "dallol-sulfur-cathedral",
-      null,
       "kennecott-mines"
     ],
     "unlockCondition": {
@@ -111,9 +110,7 @@
     "narrativeRole": "baseline_cautionary",
     "connectedTo": [
       "mount-moriah-cemetery",
-      null,
       "pripyat-amusement-park",
-      null,
       "chernobyl-reactor-4-control-room"
     ]
   },
@@ -227,10 +224,7 @@
     "narrativeRole": "framebreak_impossible",
     "connectedTo": [
       "manzanar",
-      "winchester-mystery-house",
-      null,
-      null,
-      null
+      "winchester-mystery-house"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -293,7 +287,6 @@
       "aokigahara-sea-of-trees-station",
       "nara-dreamland",
       "madain-saleh",
-      null,
       "kennecott-mines"
     ],
     "unlockCondition": {
@@ -351,9 +344,7 @@
     "connectedTo": [
       "duga-control-room",
       "nocton-hall-raf-hospital",
-      null,
-      "chteau-de-brissac",
-      null
+      "chteau-de-brissac"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -474,10 +465,7 @@
     "narrativeRole": "baseline_cautionary",
     "connectedTo": [
       "letchworth-village",
-      null,
-      null,
-      "ani",
-      null
+      "ani"
     ]
   },
   {
@@ -529,8 +517,6 @@
     "connectedTo": [
       "humberstone-saltpeter-morgue",
       "chacaltaya-ski-resort",
-      null,
-      null,
       "vieques-island"
     ],
     "unlockCondition": {
@@ -592,10 +578,7 @@
     "narrativeRole": "pattern_dense",
     "connectedTo": [
       "oradour-church-crypt",
-      "duga-radar-array",
-      null,
-      null,
-      null
+      "duga-radar-array"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -706,9 +689,7 @@
     "connectedTo": [
       "kolmanskop-hospital-wing",
       "duga-control-room",
-      null,
-      "st-thomas-ghost-town",
-      null
+      "st-thomas-ghost-town"
     ],
     "unlockCondition": {
       "type": "code",
@@ -770,10 +751,7 @@
     "narrativeRole": "pattern_dense",
     "connectedTo": [
       "beelitz-surgery-basement",
-      null,
-      "gila-river-relocation-center",
-      null,
-      null
+      "gila-river-relocation-center"
     ],
     "unlockCondition": {
       "type": "visit",
@@ -888,10 +866,7 @@
     "narrativeRole": "impossible_unstable",
     "connectedTo": [
       "poveglia-subterranean-ward",
-      null,
-      "shanghai-tunnels",
-      null,
-      null
+      "shanghai-tunnels"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -953,9 +928,7 @@
     "connectedTo": [
       "the-grid-null-point",
       "moynaq-ship-graveyard",
-      null,
-      "nara-dreamland",
-      null
+      "nara-dreamland"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -1076,8 +1049,6 @@
     "connectedTo": [
       "chteau-de-brissac",
       "belchite",
-      null,
-      null,
       "d-ghetto-industrial-ruins"
     ],
     "unlockCondition": {
@@ -1136,9 +1107,7 @@
     "connectedTo": [
       "beelitz-heilsttten",
       "bunker-3-relay",
-      null,
-      "al-madam-ghost-town",
-      null
+      "al-madam-ghost-town"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -1317,10 +1286,8 @@
     "narrativeRole": "baseline_cautionary",
     "connectedTo": [
       "flannan-isles-lighthouse",
-      null,
       "kolmanskop-hospital-wing",
-      "la-noria-cemetery",
-      null
+      "la-noria-cemetery"
     ]
   },
   {
@@ -1377,9 +1344,7 @@
     "connectedTo": [
       "stull-cemetery",
       "fengdu-ghost-city",
-      "babylon-reconstruction",
-      null,
-      null
+      "babylon-reconstruction"
     ],
     "unlockCondition": {
       "type": "visit",
@@ -1441,8 +1406,7 @@
       "houska-castle",
       "al-madam-ghost-town",
       "poveglia-island",
-      "armero",
-      null
+      "armero"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -1562,9 +1526,7 @@
     "connectedTo": [
       "centralia-municipal-building",
       "rolling-hills-asylum",
-      null,
-      "jatinga-bird-suicide-point",
-      null
+      "jatinga-bird-suicide-point"
     ]
   },
   {
@@ -1670,9 +1632,7 @@
     "connectedTo": [
       "bunker-3-relay",
       "leptis-magna",
-      "babylon-reconstruction",
-      null,
-      null
+      "babylon-reconstruction"
     ],
     "unlockCondition": {
       "type": "reading",
@@ -1798,8 +1758,7 @@
       "brest-fortress-casemates",
       "gila-river-relocation-center",
       "chacaltaya-ski-resort",
-      "bombay-beach",
-      null
+      "bombay-beach"
     ],
     "unlockCondition": {
       "type": "visit",
@@ -1861,7 +1820,6 @@
     "connectedTo": [
       "port-arthur-separate-prison",
       "sarajevo-bobsled-track",
-      null,
       "gonjiam-psychiatric-hospital",
       "lawang-sewu"
     ],
@@ -1980,9 +1938,7 @@
     "connectedTo": [
       "sathorn-unique-tower",
       "tuol-sleng-security-prison-21",
-      "edinburgh-vaults",
-      null,
-      null
+      "edinburgh-vaults"
     ]
   },
   {
@@ -2037,11 +1993,7 @@
     "tier": 1,
     "narrativeRole": "pattern_dense",
     "connectedTo": [
-      "kepulauan-seribu-dutch-fort",
-      null,
-      null,
-      null,
-      null
+      "kepulauan-seribu-dutch-fort"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -2156,8 +2108,6 @@
     "connectedTo": [
       "humberstone-saltpeter-works",
       "hill-of-crosses",
-      null,
-      null,
       "shanghai-tunnels"
     ]
   },
@@ -2593,10 +2543,7 @@
     "narrativeRole": "impossible_unstable",
     "connectedTo": [
       "houtouwan",
-      "sanatorium-du-basil",
-      null,
-      null,
-      null
+      "sanatorium-du-basil"
     ],
     "unlockCondition": {
       "type": "evidence",
@@ -2655,7 +2602,6 @@
       "hashima-island",
       "aokigahara-sea-of-trees-station",
       "the-stanley-hotel",
-      null,
       "the-vanishing-hospital"
     ],
     "unlockCondition": {
@@ -2768,8 +2714,7 @@
       "montserrat-buried-st-patricks",
       "hill-of-crosses",
       "bhangarh-fort",
-      "six-flags-new-orleans",
-      null
+      "six-flags-new-orleans"
     ]
   },
   {
@@ -2874,9 +2819,7 @@
     "connectedTo": [
       "canfranc-international-railway-station",
       "hohenwerfen-dark-archive",
-      "the-sayer-house",
-      null,
-      null
+      "the-sayer-house"
     ],
     "unlockCondition": {
       "type": "evidence",
@@ -3214,9 +3157,7 @@
     "connectedTo": [
       "craco",
       "buzludzha-monument",
-      null,
-      "port-arthur-penal-settlement",
-      null
+      "port-arthur-penal-settlement"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -3274,9 +3215,7 @@
     "connectedTo": [
       "plymouth",
       "letchworth-village",
-      "humberstone-saltpeter-works",
-      null,
-      null
+      "humberstone-saltpeter-works"
     ]
   },
   {
@@ -3328,9 +3267,7 @@
     "connectedTo": [
       "maunsell-forts",
       "skellig-michael",
-      null,
-      "kolmanskop-hospital-wing",
-      null
+      "kolmanskop-hospital-wing"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -3579,9 +3516,7 @@
     "narrativeRole": "pattern_dense",
     "connectedTo": [
       "val-jalbert",
-      null,
       "chaitn",
-      null,
       "fengdu-ghost-city"
     ],
     "unlockCondition": {
@@ -3638,8 +3573,6 @@
     "narrativeRole": "baseline_cautionary",
     "connectedTo": [
       "seringal-de-iranduba",
-      null,
-      null,
       "chaitn",
       "macquarie-island-station"
     ]
@@ -3803,9 +3736,7 @@
     "connectedTo": [
       "dallol-sulfur-cathedral",
       "armero",
-      "kowloon-walled-city-park",
-      null,
-      null
+      "kowloon-walled-city-park"
     ]
   },
   {
@@ -3857,9 +3788,7 @@
     "connectedTo": [
       "kolmanskop",
       "aokigahara-sea-of-trees-station",
-      null,
-      "garnet-ghost-town",
-      null
+      "garnet-ghost-town"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -4082,10 +4011,7 @@
     "narrativeRole": "pattern_dense",
     "connectedTo": [
       "bhangarh-fort",
-      "dallol",
-      null,
-      null,
-      null
+      "dallol"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -4205,7 +4131,6 @@
     "connectedTo": [
       "san-zhi-pod-village",
       "bhangarh-fort",
-      null,
       "flannan-isles-lighthouse",
       "danvers-state-hospital"
     ],
@@ -4264,9 +4189,7 @@
     "connectedTo": [
       "canfranc-international-railway-station",
       "spreepark-berlin",
-      "shanghai-tunnels",
-      null,
-      null
+      "shanghai-tunnels"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -4375,9 +4298,7 @@
     "narrativeRole": "impossible_unstable",
     "connectedTo": [
       "shanghai-tunnels",
-      null,
       "flannan-isles-lighthouse",
-      null,
       "mururoa-atoll-bunker-810"
     ],
     "unlockCondition": {
@@ -4435,10 +4356,7 @@
     "narrativeRole": "framebreak_impossible",
     "connectedTo": [
       "fordlndia",
-      "belchite",
-      null,
-      null,
-      null
+      "belchite"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -4564,10 +4482,7 @@
     "narrativeRole": "pattern_dense",
     "connectedTo": [
       "waverly-hills-sanatorium",
-      "paranapiacaba",
-      null,
-      null,
-      null
+      "paranapiacaba"
     ],
     "unlockCondition": {
       "type": "visit",
@@ -4689,9 +4604,7 @@
     "connectedTo": [
       "six-flags-new-orleans",
       "pyramiden",
-      null,
-      "gedi-national-monument",
-      null
+      "gedi-national-monument"
     ],
     "unlockCondition": {
       "type": "dust",
@@ -4737,8 +4650,7 @@
       "chteau-miranda",
       "sanatorium-du-basil",
       "ross-island",
-      "montserrat-buried-st-patricks",
-      null
+      "montserrat-buried-st-patricks"
     ],
     "__v": 0,
     "createdAt": {
@@ -4794,7 +4706,6 @@
       "city-of-the-dead",
       "teufelsberg",
       "pyramiden",
-      null,
       "copemish-masonic-temple"
     ],
     "__v": 0,
@@ -4849,9 +4760,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "hill-of-crosses",
-      null,
       "oradour-sur-glane",
-      null,
       "fordlndia"
     ],
     "__v": 0,
@@ -5089,10 +4998,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "shanghai-tunnels",
-      "rhyolite",
-      null,
-      null,
-      null
+      "rhyolite"
     ],
     "__v": 0,
     "createdAt": {
@@ -5146,9 +5052,7 @@
     "connectedTo": [
       "rhyolite",
       "garnet-ghost-town",
-      null,
-      "nocton-hall-raf-hospital",
-      null
+      "nocton-hall-raf-hospital"
     ],
     "__v": 0,
     "createdAt": {
@@ -5178,7 +5082,7 @@
     },
     "history": "A 564-acre underground city built into the granite of the Blue Ridge Mountains, constructed by the Bureau of Mines in 1959 and expanded continuously through the Cold War. Mount Weather is the primary relocation site for the highest levels of the US government in the event of nuclear war. It has its own power plant, water reservoirs, crematorium, and television studio. The above-ground portion is a maintenance facility. The underground portion is classified. FEMA operates the site. Tours are not available. The existence of the facility was not officially acknowledged until 1974. The mountain is honeycombed with tunnels extending an unknown depth. Seismic sensors in the region detect irregular low-frequency vibrations from beneath Mount Weather. FEMA attributes them to the power plant. The vibrations do not match any known generator signature. The frequency is 4.5 Hz. The same frequency is detected at the Cheyenne Mountain Complex and the Raven Rock Mountain Complex. The three facilities are 2,000 kilometers apart. The vibrations are synchronized.",
     "dangerLevel": 4,
-    "photos": [],
+    "photos": ["/story-assets/bunker-resonance-triangle.png"],
     "hauntingReports": [],
     "viewCount": 3561,
     "status": "mirage",
@@ -5306,11 +5210,7 @@
     },
     "verifiedBy": "system",
     "connectedTo": [
-      "bokor-hill-station",
-      null,
-      null,
-      null,
-      null
+      "bokor-hill-station"
     ],
     "__v": 0,
     "createdAt": {
@@ -5370,9 +5270,7 @@
     "connectedTo": [
       "val-jalbert",
       "north-brother-island",
-      "moynaq-ship-graveyard",
-      null,
-      null
+      "moynaq-ship-graveyard"
     ],
     "__v": 0,
     "createdAt": {
@@ -5431,8 +5329,6 @@
     "connectedTo": [
       "willard-asylum-suitcases",
       "al-madam-ghost-town",
-      null,
-      null,
       "pripyat-hospital-126"
     ],
     "__v": 0,
@@ -5615,9 +5511,7 @@
     "connectedTo": [
       "kolmanskop",
       "st-kilda",
-      "tyneham",
-      null,
-      null
+      "tyneham"
     ],
     "__v": 0,
     "createdAt": {
@@ -5799,7 +5693,6 @@
       "chteau-miranda",
       "san-zhi-pod-village",
       "the-grid-null-point",
-      null,
       "madain-saleh"
     ],
     "__v": 0,
@@ -5916,9 +5809,7 @@
     "connectedTo": [
       "bodie-ghost-town",
       "manzanar",
-      null,
-      "port-arthur-penal-settlement",
-      null
+      "port-arthur-penal-settlement"
     ],
     "__v": 0,
     "createdAt": {
@@ -6102,7 +5993,6 @@
       "north-brother-island",
       "byberry-state-hospital",
       "chteau-miranda",
-      null,
       "wittenoom"
     ],
     "__v": 0,
@@ -6166,10 +6056,7 @@
     },
     "connectedTo": [
       "eastern-state-penitentiary",
-      null,
-      "letchworth-village",
-      null,
-      null
+      "letchworth-village"
     ],
     "__v": 0,
     "createdAt": {
@@ -6224,9 +6111,7 @@
     "connectedTo": [
       "maunsell-forts",
       "edinburgh-vaults",
-      "duga-radar-array",
-      null,
-      null
+      "duga-radar-array"
     ],
     "__v": 0,
     "createdAt": {
@@ -6291,8 +6176,7 @@
       "poveglia-island",
       "choeung-ek-killing-fields",
       "great-zimbabwe-hill-complex",
-      "teufelsberg-echo-dome",
-      null
+      "teufelsberg-echo-dome"
     ],
     "resonanceNote": "I have the 1968 orderlies' records. They all drew the same thing: a ward of beds, all facing the wall. None of them could explain why this frightened them.",
     "__v": 0,
@@ -6341,10 +6225,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "bombay-beach",
-      "moynaq-ship-graveyard",
-      null,
-      null,
-      null
+      "moynaq-ship-graveyard"
     ],
     "__v": 0,
     "createdAt": {
@@ -6523,8 +6404,7 @@
       "varosha",
       "tyneham",
       "cahawba",
-      "babylon-reconstruction",
-      null
+      "babylon-reconstruction"
     ],
     "resonanceNote": "Structure 9 appeared after the earthquake. It is 80 by 40 meters. It is 50 meters underwater. It was not built. It was revealed.",
     "__v": 0,
@@ -6642,7 +6522,6 @@
       "st-kilda",
       "houtouwan",
       "the-door-to-hell",
-      null,
       "manzanar"
     ],
     "__v": 0,
@@ -6697,9 +6576,7 @@
     "connectedTo": [
       "sedlec-ossuary",
       "houska-castle",
-      "wewak-japanese-tunnels",
-      null,
-      null
+      "wewak-japanese-tunnels"
     ],
     "resonanceNote": "The bridge hums at a frequency the ears cannot hear but the bones can. I have felt it in my teeth.",
     "__v": 0,
@@ -6926,10 +6803,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "six-flags-new-orleans",
-      "pripyat-amusement-park",
-      null,
-      null,
-      null
+      "pripyat-amusement-park"
     ],
     "__v": 0,
     "createdAt": {
@@ -7084,7 +6958,7 @@
     },
     "history": "The geographic center of the contiguous United States is near Lebanon, Kansas. The grid null point is 40 kilometers north. It is not a place. It is a coordinate where the grid's mapping fails. Satellite imagery shows a wheat field. Ground surveys confirm a wheat field. The wheat in this field grows in a spiral pattern, 200 meters in diameter. The spiral is not visible from the ground. It is visible only from above. The farmer who owns the field — his family has farmed it since 1887 — does not plant in spirals. He plants in rows. The spiral appears every June, regardless of the crop. In 2019, a drone survey found that the spiral's center is 1 meter lower than the surrounding field. The depression is not a sinkhole. It is perfectly circular. It is 30 centimeters deep. It contains no water. It contains no soil. It contains ash. The ash has been tested. It is volcanic. There are no volcanoes in Kansas. The ash is 12,000 years old. The wheat grows through it.",
     "dangerLevel": 3,
-    "photos": [],
+    "photos": ["/story-assets/bunker-resonance-triangle.png"],
     "hauntingReports": [
       "The spiral pattern rotates 15 degrees counterclockwise each year, though no mechanical process affects the field.",
       "The ash at the center produces a temperature 5°C above ambient at midnight, though it has no heat source.",
@@ -7111,9 +6985,7 @@
     },
     "connectedTo": [
       "the-stanley-hotel",
-      null,
       "sanatorium-du-basil",
-      null,
       "aokigahara-forest"
     ],
     "resonanceNote": "The ash is 12,000 years old. The spiral rotates. I have calculated that the rotation will align with the summer solstice in 2047. I do not know what happens then.",
@@ -7168,10 +7040,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "battery-russell",
-      null,
-      "chacaltaya-ski-resort",
-      null,
-      null
+      "chacaltaya-ski-resort"
     ],
     "__v": 0,
     "createdAt": {
@@ -7332,9 +7201,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "aokigahara-forest",
-      null,
       "bunker-3-relay",
-      null,
       "edinburgh-vaults"
     ],
     "__v": 0,
@@ -7512,10 +7379,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "kolmanskop",
-      null,
-      "al-madam-ghost-town",
-      null,
-      null
+      "al-madam-ghost-town"
     ],
     "__v": 0,
     "createdAt": {
@@ -7761,9 +7625,6 @@
     },
     "connectedTo": [
       "pripyat-amusement-park",
-      null,
-      null,
-      null,
       "duga-radar-array"
     ],
     "resonanceNote": "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
@@ -7825,8 +7686,7 @@
       "duga-radar-array",
       "duga-control-room",
       "the-stanley-hotel",
-      "oradour-sur-glane",
-      null
+      "oradour-sur-glane"
     ],
     "resonanceNote": "The button is still warm. I have the thermal imaging to prove it.",
     "__v": 0,
@@ -7884,8 +7744,6 @@
     },
     "connectedTo": [
       "poveglia-island",
-      null,
-      null,
       "gonjiam-psychiatric-hospital",
       "the-leap-castle-bloody-chapel"
     ],
@@ -8064,9 +7922,7 @@
     "connectedTo": [
       "bokor-hill-station",
       "poveglia-subterranean-ward",
-      null,
-      "pripyat-jupiter-factory",
-      null
+      "pripyat-jupiter-factory"
     ],
     "__v": 0,
     "createdAt": {
@@ -8170,9 +8026,7 @@
     "connectedTo": [
       "bodie-ghost-town",
       "humberstone-saltpeter-works",
-      null,
-      "buzludzha-monument",
-      null
+      "buzludzha-monument"
     ],
     "__v": 0,
     "createdAt": {
@@ -8230,11 +8084,7 @@
     },
     "verifiedBy": "system",
     "connectedTo": [
-      "centralia",
-      null,
-      null,
-      null,
-      null
+      "centralia"
     ],
     "__v": 0,
     "createdAt": {
@@ -8406,7 +8256,6 @@
       "villisca-axe-murder-house",
       "tskaltubo-sanatoriums",
       "roanoke-colony",
-      null,
       "houska-castle"
     ],
     "__v": 0,
@@ -8577,11 +8426,7 @@
     },
     "verifiedBy": "system",
     "connectedTo": [
-      "coordinates-4089n-2915e",
-      null,
-      null,
-      null,
-      null
+      "coordinates-4089n-2915e"
     ],
     "__v": 0,
     "createdAt": {
@@ -8707,9 +8552,7 @@
     "connectedTo": [
       "duga-radar-array",
       "kolmanskop",
-      "port-arthur-separate-prison",
-      null,
-      null
+      "port-arthur-separate-prison"
     ],
     "resonanceNote": "The pulse was directed upward. I have calculated the angle. It was not listening for missiles. It was listening for something above the atmosphere.",
     "__v": 0,
@@ -8763,10 +8606,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "sathorn-unique-tower",
-      "byberry-state-hospital",
-      null,
-      null,
-      null
+      "byberry-state-hospital"
     ],
     "__v": 0,
     "createdAt": {
@@ -8877,10 +8717,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "hashima-island",
-      null,
-      null,
-      "macquarie-island-station",
-      null
+      "macquarie-island-station"
     ],
     "__v": 0,
     "createdAt": {
@@ -9109,7 +8946,6 @@
     "connectedTo": [
       "teufelsberg",
       "teufelsberg-echo-dome",
-      null,
       "mururoa-atoll-bunker-810",
       "isla-de-las-muecas"
     ],
@@ -9171,8 +9007,6 @@
     "connectedTo": [
       "pripyat-amusement-park",
       "chernobyl-reactor-4-control-room",
-      null,
-      null,
       "choeung-ek-killing-fields"
     ],
     "resonanceNote": "The windows are painted black from the inside. The scratches are on the outside. I do not know which side the paint was meant to protect.",
@@ -9227,10 +9061,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "st-kilda",
-      null,
-      "edinburgh-vaults",
-      null,
-      null
+      "edinburgh-vaults"
     ],
     "__v": 0,
     "createdAt": {

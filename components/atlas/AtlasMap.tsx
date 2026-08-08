@@ -9,45 +9,16 @@ import { useAudioStore } from '@/state/audioStore';
 import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { colors, microform } from '@/styles/theme';
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
-
-function applyArchivePalette(mapInstance: mapboxgl.Map) {
-  try {
-    mapInstance.setFog({
-      color: '#130e0a',
-      'high-color': '#0a0604',
-      range: [0.2, 1.5],
-      'horizon-blend': 0.2,
-    });
-  } catch (error) {
-    console.warn('[AtlasMap] Failed to apply archive fog:', error);
-  }
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'sealed':
-      return colors.archive.red;
-
-    case 'whispered':
-      return colors.archive.blue;
-
-    case 'mirage':
-      return colors.archive.white;
-
-    default:
-      return colors.archive.green;
-  }
-}
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 export const AtlasMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
-
   const {
     selectNode,
     setFocusNode,
@@ -64,21 +35,15 @@ export const AtlasMap: React.FC = () => {
    */
 
   useEffect(() => {
-    if (!mapContainer.current) {
-      console.error('[AtlasMap] Map container is missing.');
+    const container = mapContainer.current;
+
+    if (!container) {
+      console.error('[AtlasMap] ❌ Map container does not exist.');
       return;
     }
 
     if (map.current) {
-      return;
-    }
-
-    if (!MAPBOX_TOKEN) {
-      const message =
-        'NEXT_PUBLIC_MAPBOX_TOKEN is missing. Mapbox cannot initialize.';
-
-      console.error(`[AtlasMap] ${message}`);
-      setMapError(message);
+      console.warn('[AtlasMap] Map already initialized.');
       return;
     }
 
@@ -86,58 +51,274 @@ export const AtlasMap: React.FC = () => {
     console.log('[AtlasMap] Token present:', Boolean(MAPBOX_TOKEN));
     console.log(
       '[AtlasMap] Token prefix:',
-      MAPBOX_TOKEN.slice(0, 8) + '...'
+      MAPBOX_TOKEN ? `${MAPBOX_TOKEN.substring(0, 10)}...` : 'NONE'
     );
+
+    /*
+     * Check the physical dimensions BEFORE Mapbox initializes.
+     */
+    const rect = container.getBoundingClientRect();
+
+    console.log('[AtlasMap] Container dimensions:', {
+      width: rect.width,
+      height: rect.height,
+      clientWidth: container.clientWidth,
+      clientHeight: container.clientHeight,
+    });
+
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn(
+        '[AtlasMap] ⚠️ Container has zero dimensions at initialization.'
+      );
+    }
+
+    if (!MAPBOX_TOKEN) {
+      const errorMessage = 'NEXT_PUBLIC_MAPBOX_TOKEN is missing.';
+      console.error(`[AtlasMap] ❌ ${errorMessage}`);
+      setMapError(errorMessage);
+      return;
+    }
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [30.0542, 51.4061],
-      zoom: 1.6,
-      attributionControl: false,
-      failIfMajorPerformanceCaveat: false,
-    });
+    let mapInstance: mapboxgl.Map;
+
+    try {
+      mapInstance = new mapboxgl.Map({
+        container,
+        style: 'mapbox://styles/mapbox/dark-v11',
+
+        center: [30.0542, 51.4061] as [number, number],
+        zoom: 1.6,
+
+        attributionControl: false,
+
+        // Keep Mapbox from trying to rotate with accidental mouse input.
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+      });
+    } catch (err) {
+      console.error('[AtlasMap] ❌ Mapbox constructor failed:', err);
+
+      const message =
+        err instanceof Error ? err.message : String(err);
+
+      setMapError(message);
+      return;
+    }
 
     map.current = mapInstance;
 
     /*
-     * Mapbox errors are asynchronous, so they must be handled
-     * separately from the constructor try/catch.
+     * ------------------------------------------------------------------------
+     * MAPBOX ERROR DIAGNOSTICS
+     * ------------------------------------------------------------------------
      */
-    const handleMapError = (event: mapboxgl.ErrorEvent) => {
-      console.error('[AtlasMap] Mapbox error:', event.error);
 
-      const message =
-        event.error?.message ||
-        'Unknown Mapbox error. Check the browser console.';
+    mapInstance.on('error', (event) => {
+      console.error('[AtlasMap] ❌ MAPBOX ERROR:', event);
 
-      setMapError(message);
-    };
+      const error =
+        event?.error instanceof Error
+          ? event.error.message
+          : event?.error
+            ? String(event.error)
+            : 'Unknown Mapbox error';
 
-    const handleMapLoad = () => {
+      console.error('[AtlasMap] Error details:', {
+        error,
+        event,
+      });
+
+      setMapError(error);
+    });
+
+    /*
+     * ------------------------------------------------------------------------
+     * STYLE EVENTS
+     * ------------------------------------------------------------------------
+     */
+
+    mapInstance.on('styledata', () => {
+      const style = mapInstance.getStyle();
+
+      console.log('[AtlasMap] styledata:', {
+        styleLoaded: mapInstance.isStyleLoaded(),
+        styleName: style?.name,
+        sourceCount: style?.sources
+          ? Object.keys(style.sources).length
+          : 0,
+        layerCount: style?.layers?.length ?? 0,
+      });
+    });
+
+    mapInstance.on('sourcedata', (event) => {
+  console.log('[AtlasMap] sourcedata:', {
+    sourceId: event.sourceId,
+    sourceDataType: event.sourceDataType,
+    isSourceLoaded: event.isSourceLoaded,
+    dataType: event.dataType,
+  });
+});
+
+    mapInstance.on('sourcedata', (event) => {
+      console.log('[AtlasMap] sourcedata:', {
+        sourceId: event.sourceId,
+        sourceDataType: event.sourceDataType,
+        isSourceLoaded: event.isSourceLoaded,
+        dataType: event.dataType,
+      });
+    });
+
+    /*
+     * ------------------------------------------------------------------------
+     * LOAD
+     * ------------------------------------------------------------------------
+     */
+
+    mapInstance.on('load', () => {
       console.log('[AtlasMap] Map loaded successfully.');
 
-      applyArchivePalette(mapInstance);
+      const style = mapInstance.getStyle();
+
+      console.log('[AtlasMap] Loaded style:', {
+        styleLoaded: mapInstance.isStyleLoaded(),
+        name: style?.name,
+        sources: style?.sources
+          ? Object.keys(style.sources)
+          : [],
+        layers: style?.layers?.length ?? 0,
+      });
+
+      /*
+       * Force a resize after the map has loaded.
+       *
+       * This is important if the Atlas panel was initially hidden,
+       * animated, or mounted inside a dynamically-sized container.
+       */
+      requestAnimationFrame(() => {
+        mapInstance.resize();
+
+        const canvas = mapInstance.getCanvas();
+        const rect = container.getBoundingClientRect();
+
+        console.log('[AtlasMap] Post-load dimensions:', {
+          container: {
+            width: rect.width,
+            height: rect.height,
+            clientWidth: container.clientWidth,
+            clientHeight: container.clientHeight,
+          },
+          canvas: {
+            width: canvas.width,
+            height: canvas.height,
+            clientWidth: canvas.clientWidth,
+            clientHeight: canvas.clientHeight,
+          },
+          styleLoaded: mapInstance.isStyleLoaded(),
+        });
+      });
 
       setMapLoaded(true);
-      setMapError(null);
-    };
+    });
 
-    mapInstance.on('error', handleMapError);
-    mapInstance.once('load', handleMapLoad);
+    /*
+     * ------------------------------------------------------------------------
+     * IDLE
+     * ------------------------------------------------------------------------
+     *
+     * `idle` means Mapbox has finished rendering the current frame/data.
+     * If we get here with a healthy canvas but no visible map, that's a
+     * particularly useful clue.
+     */
+
+    mapInstance.on('idle', () => {
+      const canvas = mapInstance.getCanvas();
+
+      console.log('[AtlasMap] Map idle:', {
+        styleLoaded: mapInstance.isStyleLoaded(),
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        canvasClientWidth: canvas.clientWidth,
+        canvasClientHeight: canvas.clientHeight,
+      });
+    });
+
+    /*
+     * ------------------------------------------------------------------------
+     * WEBGL CONTEXT EVENTS
+     * ------------------------------------------------------------------------
+     */
+
+    const canvas = mapInstance.getCanvas();
+
+    canvas.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+
+      console.error(
+        '[AtlasMap] ❌ WebGL CONTEXT LOST.'
+      );
+
+      setMapError(
+        'WebGL context lost. The browser stopped rendering the Mapbox canvas.'
+      );
+    });
+
+    canvas.addEventListener('webglcontextrestored', () => {
+      console.warn(
+        '[AtlasMap] WebGL context restored.'
+      );
+
+      setMapError(null);
+
+      requestAnimationFrame(() => {
+        mapInstance.resize();
+      });
+    });
+
+    /*
+     * ------------------------------------------------------------------------
+     * RESIZE OBSERVER
+     * ------------------------------------------------------------------------
+     *
+     * Mapbox can initialize correctly but still render incorrectly if its
+     * parent changes size after initialization.
+     */
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => {
+        if (!map.current) return;
+
+        console.log('[AtlasMap] Container resized. Calling map.resize().');
+
+        map.current.resize();
+      });
+
+      observer.observe(container);
+      resizeObserverRef.current = observer;
+    }
+
+    /*
+     * ------------------------------------------------------------------------
+     * CLEANUP
+     * ------------------------------------------------------------------------
+     */
 
     return () => {
       console.log('[AtlasMap] Cleaning up Mapbox instance.');
 
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
 
-      mapInstance.off('error', handleMapError);
-      mapInstance.remove();
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
 
-      map.current = null;
       setMapLoaded(false);
     };
   }, []);
@@ -155,54 +336,72 @@ export const AtlasMap: React.FC = () => {
 
     const mapInstance = map.current;
 
-    // Remove previous markers before rebuilding them.
+    /*
+     * Remove old markers.
+     */
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
+    if (!places || places.length === 0) {
+      console.log(
+        '[AtlasMap] No places available for marker rendering.'
+      );
+      return;
+    }
+
+    console.log(
+      `[AtlasMap] Rendering ${places.length} place markers.`
+    );
+
     places.forEach((place) => {
       if (!place.coordinates) {
+        console.warn(
+          `[AtlasMap] Place "${place.slug}" has no coordinates.`
+        );
         return;
       }
 
-      const coordinates = place.coordinates as [number, number];
-      const statusColor = getStatusColor(place.status);
-      const isSelected = selectedPlaceSlug === place.slug;
+      const el = document.createElement('div');
 
-      const el = document.createElement('button');
-
-      el.type = 'button';
       el.className = 'map-marker';
-      el.setAttribute(
-        'aria-label',
-        `Open ${place.name}`
-      );
+
+      const statusColor =
+        place.status === 'sealed'
+          ? colors.archive.red
+          : place.status === 'whispered'
+            ? colors.archive.blue
+            : place.status === 'mirage'
+              ? colors.archive.white
+              : colors.archive.green;
+
+      const isSelected =
+        selectedPlaceSlug === place.slug;
 
       /*
-       * Base marker styling.
+       * Marker appearance.
        */
+
       el.style.width = isSelected ? '14px' : '8px';
       el.style.height = isSelected ? '14px' : '8px';
-      el.style.padding = '0';
-      el.style.margin = '0';
       el.style.borderRadius = '50%';
       el.style.backgroundColor = statusColor;
+
       el.style.border = isSelected
         ? `2px solid ${colors.archive.amber}`
-        : '1px solid rgba(0, 0, 0, 0.6)';
-      el.style.cursor = 'pointer';
-      el.style.display = 'block';
-      el.style.transition =
-        'transform 0.2s ease, box-shadow 0.2s ease';
+        : '1px solid rgba(0,0,0,0.6)';
 
-      const normalShadow = isSelected
+      el.style.cursor = 'pointer';
+      el.style.transition =
+        'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+
+      el.style.boxShadow = isSelected
         ? `0 0 16px ${statusColor}, 0 0 24px ${colors.archive.amber}`
         : `0 0 8px ${statusColor}`;
 
-      el.style.boxShadow = normalShadow;
-
       /*
-       * Hover state.
+       * Hover.
        */
+
       el.addEventListener('mouseenter', () => {
         el.style.transform = 'scale(1.4)';
         el.style.boxShadow = `0 0 18px ${statusColor}`;
@@ -210,12 +409,16 @@ export const AtlasMap: React.FC = () => {
 
       el.addEventListener('mouseleave', () => {
         el.style.transform = 'scale(1)';
-        el.style.boxShadow = normalShadow;
+
+        el.style.boxShadow = isSelected
+          ? `0 0 16px ${statusColor}, 0 0 24px ${colors.archive.amber}`
+          : `0 0 8px ${statusColor}`;
       });
 
       /*
        * Selection.
        */
+
       el.addEventListener('click', (event) => {
         event.stopPropagation();
 
@@ -231,16 +434,20 @@ export const AtlasMap: React.FC = () => {
         element: el,
         anchor: 'center',
       })
-        .setLngLat(coordinates)
+        .setLngLat(
+          place.coordinates as [number, number]
+        )
         .addTo(mapInstance);
 
       markersRef.current.push(marker);
     });
 
-    return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
-    };
+    /*
+     * Ensure the map has the correct dimensions after markers are added.
+     */
+    requestAnimationFrame(() => {
+      mapInstance.resize();
+    });
   }, [
     mapLoaded,
     places,
@@ -259,12 +466,12 @@ export const AtlasMap: React.FC = () => {
    */
 
   useEffect(() => {
-    if (!mapLoaded || !map.current || !selectedPlaceSlug) {
+    if (!map.current || !selectedPlaceSlug) {
       return;
     }
 
     const place = places.find(
-      (candidate) => candidate.slug === selectedPlaceSlug
+      (p) => p.slug === selectedPlaceSlug
     );
 
     if (!place?.coordinates) {
@@ -278,7 +485,7 @@ export const AtlasMap: React.FC = () => {
       curve: 1.4,
       essential: true,
     });
-  }, [mapLoaded, selectedPlaceSlug, places]);
+  }, [selectedPlaceSlug, places]);
 
   /*
    * --------------------------------------------------------------------------
@@ -293,95 +500,66 @@ export const AtlasMap: React.FC = () => {
         background: '#130e0a',
       }}
     >
-      {/* Mapbox canvas */}
+      {/*
+       * MAPBOX CANVAS
+       *
+       * Keep this at the bottom of the stack.
+       */}
       <div
         ref={mapContainer}
         className="absolute inset-0"
         style={{
-          zIndex: 0,
+          width: '100%',
+          height: '100%',
+          minWidth: 0,
+          minHeight: 0,
           borderRadius: '2px',
+          zIndex: 1,
         }}
       />
 
-      {/* Archive visual treatment */}
+      {/*
+       * Temporary diagnostic panel.
+       *
+       * Only appears if Mapbox reports an error.
+       */}
+      {mapError && (
+        <div
+          className="absolute left-3 top-3 max-w-[420px] rounded border border-red-900/60 bg-black/90 p-3 font-mono text-[10px] leading-relaxed text-red-300"
+          style={{
+            zIndex: 20,
+            pointerEvents: 'none',
+          }}
+        >
+          <div className="mb-1 text-red-400">
+            ATLAS / MAPBOX ERROR
+          </div>
+
+          <div className="break-words opacity-90">
+            {mapError}
+          </div>
+        </div>
+      )}
+
+      {/*
+       * ARCHIVE FRAME
+       *
+       * This is deliberately BELOW interactive content and has no
+       * background color. It cannot obscure the Mapbox canvas.
+       */}
       <div
-        className="absolute inset-0 rounded-[2px] border border-[#2b241d]"
+        className="absolute inset-0 rounded-[2px]"
         style={{
-          zIndex: 1,
-          pointerEvents: 'none',
           boxShadow: `
             inset 0 0 0 1px rgba(255,255,255,0.025),
             0 0 0 1px ${microform.mahogany},
             0 8px 24px rgba(0,0,0,0.35)
           `,
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%)',
+          background: 'transparent',
+          pointerEvents: 'none',
+          zIndex: 2,
         }}
       />
-
-      {/* Diagnostic error overlay */}
-      {mapError && (
-        <div
-          className="absolute inset-0 flex items-center justify-center p-6"
-          style={{
-            zIndex: 20,
-            pointerEvents: 'none',
-            background: 'rgba(10, 8, 6, 0.82)',
-          }}
-        >
-          <div
-            className="max-w-md border p-4"
-            style={{
-              borderColor: colors.archive.red,
-              background: 'rgba(20, 15, 12, 0.96)',
-              color: colors.archive.red,
-              fontFamily: 'monospace',
-              fontSize: '0.7rem',
-              lineHeight: 1.6,
-            }}
-          >
-            <div
-              style={{
-                marginBottom: '0.5rem',
-                letterSpacing: '0.1em',
-              }}
-            >
-              ATLAS MAP / MAPBOX FAILURE
-            </div>
-
-            <div
-              style={{
-                color: colors.archive.grayLight,
-              }}
-            >
-              {mapError}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading indicator */}
-      {!mapLoaded && !mapError && (
-        <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{
-            zIndex: 10,
-            pointerEvents: 'none',
-            background: 'rgba(19, 14, 10, 0.45)',
-          }}
-        >
-          <div
-            style={{
-              color: colors.archive.amber,
-              fontFamily: 'monospace',
-              fontSize: '0.65rem',
-              letterSpacing: '0.12em',
-            }}
-          >
-            INITIALIZING ATLAS...
-          </div>
-        </div>
-      )}
     </div>
   );
 };

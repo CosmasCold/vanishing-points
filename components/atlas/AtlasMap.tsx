@@ -9,6 +9,46 @@ import { colors, typography, microform } from '@/styles/theme';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
+function applyArchivePalette(mapInstance: mapboxgl.Map) {
+  const style = mapInstance.getStyle();
+  if (!style?.layers) return;
+
+  style.layers.forEach((layer: any) => {
+    const layerId = layer.id;
+
+    if (layer.type === 'background') {
+      mapInstance.setPaintProperty(layerId, 'background-color', '#0a0807');
+      mapInstance.setPaintProperty(layerId, 'background-opacity', 0.95);
+    }
+
+    if (layerId.includes('water')) {
+      mapInstance.setPaintProperty(layerId, 'fill-color', '#05070b');
+      mapInstance.setPaintProperty(layerId, 'fill-opacity', 0.95);
+    }
+
+    if (layerId.includes('land')) {
+      mapInstance.setPaintProperty(layerId, 'fill-color', '#17120d');
+      mapInstance.setPaintProperty(layerId, 'fill-opacity', 1);
+    }
+
+    if (layerId.includes('road') || layerId.includes('bridge') || layerId.includes('tunnel')) {
+      mapInstance.setPaintProperty(layerId, 'line-color', 'rgba(201, 169, 110, 0.16)');
+      mapInstance.setPaintProperty(layerId, 'line-width', 0.8);
+    }
+
+    if (layer.type === 'symbol' && (layerId.includes('label') || layerId.includes('place'))) {
+      mapInstance.setLayoutProperty(layerId, 'visibility', 'none');
+    }
+  });
+
+  mapInstance.setFog({
+    color: '#130e0a',
+    'high-color': '#0a0604',
+    range: [0.2, 1.5],
+    'horizon-blend': 0.2,
+  });
+}
+
 export const AtlasMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -33,14 +73,7 @@ export const AtlasMap: React.FC = () => {
 
     map.current.on('load', () => {
       setMapLoaded(true);
-      const style = map.current?.getStyle();
-      if (style?.layers) {
-        style.layers.forEach((layer: any) => {
-          if (layer.type === 'symbol' && layer.id.includes('label')) {
-            map.current?.setLayoutProperty(layer.id, 'visibility', 'none');
-          }
-        });
-      }
+      applyArchivePalette(map.current!);
     });
 
     return () => {
@@ -82,31 +115,36 @@ export const AtlasMap: React.FC = () => {
       if (!place.coordinates || place.coordinates.length !== 2) return;
 
       const el = document.createElement('div');
-      el.className = 'archive-marker';
-      el.style.width = '10px';
-      el.style.height = '10px';
-      el.style.borderRadius = '50%';
-      el.style.border = `1.5px solid ${microform.halogen}`;
-      el.style.backgroundColor =
+      const isSelected = selectedPlaceSlug === place.slug;
+      const markerColor =
         place.status === 'sealed' ? colors.archive.red :
         place.status === 'whispered' ? colors.archive.blue :
         place.status === 'mirage' ? colors.archive.grayLight :
         colors.archive.green;
+
+      el.innerHTML = `
+        <div style="position: relative; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; inset: 0; border: 1.3px solid ${microform.halogen}; border-radius: 999px; box-shadow: 0 0 10px ${microform.halogenGlow}; background: rgba(10, 8, 6, 0.8); transform: ${isSelected ? 'scale(1.16)' : 'scale(1)'};"></div>
+          <div style="width: 6px; height: 6px; border-radius: 999px; background: ${markerColor}; box-shadow: 0 0 8px ${markerColor};"></div>
+        </div>
+      `;
       el.style.cursor = 'pointer';
-      el.style.boxShadow = `0 0 8px ${microform.halogenGlow}`;
-      el.style.transition = 'all 0.2s ease';
+      el.style.transition = 'transform 0.2s ease';
+      el.style.transform = isSelected ? 'scale(1.16)' : 'scale(1)';
 
-      el.addEventListener('mouseenter', () => {
-        el.style.width = '14px';
-        el.style.height = '14px';
-        el.style.boxShadow = `0 0 14px ${microform.halogen}, 0 0 4px ${microform.halogen}`;
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.width = '10px';
-        el.style.height = '10px';
-        el.style.boxShadow = `0 0 8px ${microform.halogenGlow}`;
-      });
+      const handleHover = (active: boolean) => {
+        const ring = el.firstElementChild as HTMLElement | null;
+        const dot = ring?.lastElementChild as HTMLElement | null;
+        if (!ring || !dot) return;
+        ring.style.boxShadow = active
+          ? `0 0 12px ${microform.halogen}, 0 0 4px ${microform.halogen}`
+          : `0 0 10px ${microform.halogenGlow}`;
+        ring.style.transform = active ? 'scale(1.12)' : isSelected ? 'scale(1.16)' : 'scale(1)';
+        dot.style.boxShadow = active ? `0 0 10px ${markerColor}` : `0 0 8px ${markerColor}`;
+      };
 
+      el.addEventListener('mouseenter', () => handleHover(true));
+      el.addEventListener('mouseleave', () => handleHover(false));
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         click();
@@ -119,7 +157,7 @@ export const AtlasMap: React.FC = () => {
 
       markersRef.current.push(marker);
     });
-  }, [mapLoaded, places, selectPlace, click]);
+  }, [mapLoaded, places, selectPlace, click, selectedPlaceSlug]);
 
   useEffect(() => {
     if (!map.current || !selectedPlaceSlug) return;
@@ -135,15 +173,23 @@ export const AtlasMap: React.FC = () => {
 
   return (
     <div className="absolute inset-0">
-      <div ref={mapContainer} className="w-full h-full" />
+      <div
+        className="absolute inset-0 rounded-[2px] border border-[#2b241d]"
+        style={{
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.025), 0 0 0 1px ${microform.mahogany}, 0 8px 24px rgba(0,0,0,0.35)`,
+          background: `linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%)`,
+        }}
+      />
+      <div ref={mapContainer} className="absolute inset-0" style={{ borderRadius: '2px' }} />
 
       {/* Optical glass overlay — replaces scanlines */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(ellipse at 50% 30%, transparent 40%, rgba(10, 8, 6, 0.4) 100%),
-            linear-gradient(180deg, rgba(255, 170, 85, 0.015) 0%, transparent 50%)
+            radial-gradient(ellipse at 50% 30%, transparent 40%, rgba(10, 8, 6, 0.45) 100%),
+            linear-gradient(180deg, rgba(255, 170, 85, 0.035) 0%, transparent 50%),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 0%, transparent 10%, transparent 90%, rgba(255,255,255,0.02) 100%)
           `,
           mixBlendMode: 'multiply',
         }}

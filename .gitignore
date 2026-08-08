@@ -5,3 +5,5 @@ env.local
 .env.*.local
 .next
 out
+
+project-source.txt

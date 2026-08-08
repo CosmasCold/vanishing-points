@@ -6,9 +6,7 @@ import { Howl } from "howler";
 import { useBootStore } from "@/state/bootStore";
 import { useUIStore } from "@/state/uiStore";
 
-/* ═══════════════════════════════════════════════════════════════
-   AUDIO PATHS
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ AUDIO PATHS ═══════════════════════════════════════════════════════════════ */
 const AUDIO_PATHS = {
   powerClick: "/audio/boot/power_click.mp3",
   crtWarmup: "/audio/boot/crt_warmup.wav",
@@ -16,9 +14,7 @@ const AUDIO_PATHS = {
   rain: "/audio/boot/rain.mp3",
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   BOOT TEXT DATA
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ BOOT TEXT DATA ═══════════════════════════════════════════════════════════════ */
 const BOOT_LINES = [
   { text: "POWER RESTORED", color: "#6a9a5a" },
   { text: "Loading Archive Kernel...", color: "#8a6000" },
@@ -41,9 +37,7 @@ const LOADING_STEPS = [
   "> Calibrating render pipeline...",
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   DUST PARTICLES (Canvas 2D)
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ DUST PARTICLES (Canvas 2D) ═══════════════════════════════════════════════════════════════ */
 function DustCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -53,63 +47,59 @@ function DustCanvas() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
     };
-    resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", handleResize);
 
-    const particles = Array.from({ length: 120 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: Math.random() * -0.15 - 0.05,
-      size: Math.random() * 1.5 + 0.5,
-      opacity: Math.random() * 0.25 + 0.05,
-      phase: Math.random() * Math.PI * 2,
-    }));
+    const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number; alpha: number }> = [];
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2 - 0.05,
+        r: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.5 + 0.1,
+      });
+    }
 
-    let animId: number;
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const t = Date.now() * 0.001;
-
+      ctx.clearRect(0, 0, width, height);
       particles.forEach((p) => {
-        p.x += p.vx + Math.sin(t + p.phase) * 0.1;
+        p.x += p.vx;
         p.y += p.vy;
-        if (p.y < -5) p.y = canvas.height + 5;
-        if (p.x < -5) p.x = canvas.width + 5;
-        if (p.x > canvas.width + 5) p.x = -5;
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = height;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 197, 169, ${p.opacity})`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 176, 0, ${p.alpha})`;
         ctx.fill();
       });
-
-      animId = requestAnimationFrame(draw);
+      animationFrameId = requestAnimationFrame(draw);
     };
     draw();
 
     return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-30"
-      style={{ mixBlendMode: "screen" }}
-    />
+    <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-30" style={{ mixBlendMode: "screen" }} />
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   LOADING SCREEN
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ LOADING SCREEN ═══════════════════════════════════════════════════════════════ */
 function LoadingScreen({ progress }: { progress: number }) {
   const visibleSteps = Math.min(
     Math.floor((progress / 100) * LOADING_STEPS.length) + 1,
@@ -118,159 +108,29 @@ function LoadingScreen({ progress }: { progress: number }) {
 
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div
-        className="font-mono text-sm tracking-widest"
-        style={{ color: "#8a6000", width: "380px", lineHeight: "1.8" }}
-      >
-        <div className="mb-4 text-xs tracking-[3px]" style={{ color: "#ffb000" }}>
-          ARCHIVE TERMINAL
-        </div>
+      <div className="font-mono text-sm tracking-widest" style={{ color: "#8a6000", width: "380px", lineHeight: "1.8" }} >
+        <div className="mb-4 text-xs tracking-[3px]" style={{ color: "#ffb000" }}> ARCHIVE TERMINAL </div>
         <div className="mb-4 h-px w-full" style={{ background: "#2a2520" }} />
         {LOADING_STEPS.slice(0, visibleSteps).map((step, i) => (
           <div key={i} style={{ opacity: i === visibleSteps - 1 ? 0.7 : 1 }}>
-            {step}
-            <span className="ml-3" style={{ color: "#6a9a5a" }}>
-              [OK]
-            </span>
+            {step} <span className="ml-3" style={{ color: "#6a9a5a" }}> [OK] </span>
           </div>
         ))}
         <div className="mt-5">
           <div className="h-0.5 w-full" style={{ background: "#1a1815" }}>
-            <motion.div
-              className="h-full"
-              style={{ background: "#ffb000", boxShadow: "0 0 6px rgba(255,176,0,0.3)" }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
+            <motion.div className="h-full" style={{ background: "#ffb000", boxShadow: "0 0 6px rgba(255,176,0,0.3)" }} initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
           </div>
-          <div className="mt-2 text-right text-[10px] opacity-50">
-            {Math.round(progress)}%
-          </div>
+          <div className="mt-2 text-right text-[10px] opacity-50"> {Math.round(progress)}% </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   HALOGEN PROJECTION SCREEN (replaces CRT)
-   ═══════════════════════════════════════════════════════════════ */
-function HalogenProjection({
-  visibleCount,
-  showPrompt,
-  cursorOn,
-}: {
-  visibleCount: number;
-  showPrompt: boolean;
-  cursorOn: boolean;
-}) {
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center">
-      <div
-        className="relative font-mono"
-        style={{
-          width: "540px",
-          padding: "40px 44px",
-          /* Frosted glass pane backlit by halogen */
-          background: "rgba(20, 18, 14, 0.82)",
-          backgroundImage: `
-            linear-gradient(180deg, rgba(255,170,85,0.03) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 0%, rgba(255,170,85,0.06) 0%, transparent 60%)
-          `,
-          border: "1px solid #1a1a1a",
-          boxShadow: `
-            0 0 0 2px #2a1f1a,
-            0 0 0 3px #1a1a1a,
-            0 0 60px rgba(255, 170, 85, 0.06),
-            inset 0 0 40px rgba(0,0,0,0.5)
-          `,
-          backdropFilter: "blur(0.5px)",
-          borderRadius: "2px",
-        }}
-      >
-        {/* Inner bezel line */}
-        <div
-          className="absolute inset-2 pointer-events-none"
-          style={{
-            border: "1px solid rgba(255,170,85,0.06)",
-            borderRadius: "1px",
-          }}
-        />
-
-        {/* Header: stamped brass */}
-        <div
-          className="mb-6 text-center text-[10px] tracking-[4px]"
-          style={{ color: "rgba(255,170,85,0.25)", fontFamily: "'SF Mono', monospace" }}
-        >
-          ARCHIVE TERMINAL — MODEL 7-B
-        </div>
-
-        {/* Boot lines: halogen warm bloom */}
-        <div
-          className="text-[13px] leading-[1.9]"
-          style={{
-            color: "#e8e4d9",
-            textShadow: "0 0 10px rgba(255,170,85,0.2), 0 0 24px rgba(255,170,85,0.08)",
-          }}
-        >
-          {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="mb-1.5"
-              style={{ color: line.color }}
-            >
-              {line.text}
-              {i === visibleCount - 1 && cursorOn && (
-                <span
-                  className="ml-1.5 inline-block"
-                  style={{
-                    width: "7px",
-                    height: "13px",
-                    background: line.color,
-                    verticalAlign: "middle",
-                    boxShadow: `0 0 8px ${line.color}`,
-                    opacity: 0.9,
-                  }}
-                />
-              )}
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Prompt: halogen pulse */}
-        {showPrompt && (
-          <motion.div
-            className="mt-8 text-center text-[11px] tracking-[2.5px]"
-            style={{ color: "#ffaa55", textShadow: "0 0 12px rgba(255,170,85,0.3)" }}
-            animate={{ opacity: [0.35, 1, 0.35] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            [ PRESS ENTER ]
-          </motion.div>
-        )}
-
-        {/* Footer */}
-        <div
-          className="mt-6 text-center text-[9px] tracking-[2px]"
-          style={{ color: "rgba(138,96,0,0.35)" }}
-        >
-          VANISHING POINTS ARCHIVE
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ MAIN COMPONENT ═══════════════════════════════════════════════════════════════ */
 type BootPhase = "idle" | "loading" | "booting" | "exiting";
 
-export function BootSequence() {
+export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
   const markComplete = useBootStore((s) => s.markComplete);
   const setBooted = useUIStore((s) => s.setBooted);
 
@@ -281,127 +141,131 @@ export function BootSequence() {
   const [cursorOn, setCursorOn] = useState(true);
 
   const audioRef = useRef<{
-    roomTone?: Howl;
-    rain?: Howl;
-    crtWarmup?: Howl;
-    powerClick?: Howl;
-  }>({});
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const loadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    powerClick: Howl | null;
+    crtWarmup: Howl | null;
+    roomTone: Howl | null;
+    rain: Howl | null;
+  }>({ powerClick: null, crtWarmup: null, roomTone: null, rain: null });
 
-  /* ── Audio Setup ── */
+  const timersRef = useRef<any[]>([]);
+  const cursorIntervalRef = useRef<any>(null);
+
+  // Initialize howler sounds safely on client-side mount
   useEffect(() => {
-    const a = audioRef.current;
-    a.roomTone = new Howl({ src: [AUDIO_PATHS.roomTone], loop: true, volume: 0.12 });
-    a.rain = new Howl({ src: [AUDIO_PATHS.rain], loop: true, volume: 0.18 });
-    a.crtWarmup = new Howl({ src: [AUDIO_PATHS.crtWarmup], loop: true, volume: 0 });
-    a.powerClick = new Howl({ src: [AUDIO_PATHS.powerClick], volume: 0.55 });
+    audioRef.current = {
+      powerClick: new Howl({ src: [AUDIO_PATHS.powerClick], volume: 0.8 }),
+      crtWarmup: new Howl({ src: [AUDIO_PATHS.crtWarmup], volume: 0.5, loop: true }),
+      roomTone: new Howl({ src: [AUDIO_PATHS.roomTone], volume: 0.3, loop: true }),
+      rain: new Howl({ src: [AUDIO_PATHS.rain], volume: 0.25, loop: true }),
+    };
 
     return () => {
-      Object.values(a).forEach((s) => s?.unload());
-      timersRef.current.forEach(clearTimeout);
-      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
-      if (loadIntervalRef.current) clearInterval(loadIntervalRef.current);
+      const a = audioRef.current;
+      a.powerClick?.unload();
+      a.crtWarmup?.unload();
+      a.roomTone?.unload();
+      a.rain?.unload();
     };
   }, []);
 
-  /* ── Cursor blink ── */
+  // Simulating the loading progress bar
+  useEffect(() => {
+    if (phase !== "loading") return;
+
+    const interval = setInterval(() => {
+      setLoadProgress((p) => {
+        if (p >= 100) {
+          clearInterval(interval);
+          setPhase("booting");
+          return 100;
+        }
+        return p + Math.random() * 12 + 4;
+      });
+    }, 280);
+
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // Handle line typing delays
+  useEffect(() => {
+    if (phase !== "booting") return;
+
+    audioRef.current.powerClick?.play();
+    audioRef.current.crtWarmup?.play();
+
+    BOOT_LINES.forEach((_, i) => {
+      const t = setTimeout(() => {
+        setVisibleCount(i + 1);
+        if (i === BOOT_LINES.length - 1) {
+          setShowPrompt(true);
+        }
+      }, (i + 1) * 600);
+      timersRef.current.push(t);
+    });
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+  }, [phase]);
+
+  // Cursor blink
   useEffect(() => {
     cursorIntervalRef.current = setInterval(() => setCursorOn((p) => !p), 530);
-    return () => { if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current); };
+    return () => {
+      if (cursorIntervalRef.current) clearInterval(cursorIntervalRef.current);
+    };
   }, []);
 
-  /* ── Click to start ── */
+  // Click to start
   const handleStart = useCallback(() => {
     if (phase !== "idle") return;
+
+    // Trigger procedural analog synth & monitor whine click if passed down
+    if (onPowerOn) onPowerOn();
+
     const a = audioRef.current;
     a.roomTone?.play();
     a.rain?.play();
     setPhase("loading");
+  }, [phase, onPowerOn]);
 
-    const duration = 7000 + Math.random() * 5000;
-    const startTime = Date.now();
-    loadIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min((elapsed / duration) * 100, 100);
-      setLoadProgress(pct);
-      if (pct >= 100) {
-        if (loadIntervalRef.current) clearInterval(loadIntervalRef.current);
-        setTimeout(() => setPhase("booting"), 400);
+  // Keyboard navigation bypass / complete
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (phase === "booting" && !showPrompt && e.key !== "Enter") {
+        timersRef.current.forEach(clearTimeout);
+        timersRef.current = [];
+        setVisibleCount(BOOT_LINES.length);
+        setShowPrompt(true);
+        return;
       }
-    }, 80);
-  }, [phase]);
-
-  /* ── Boot timing (NO relay clicks) ── */
-  useEffect(() => {
-    if (phase !== "booting") return;
-    const a = audioRef.current;
-    const t = timersRef.current;
-
-    // Single power click at start
-    t.push(setTimeout(() => { a.powerClick?.play(); setVisibleCount(1); }, 600));
-
-    // CRT hum fades in
-    t.push(setTimeout(() => { a.crtWarmup?.fade(0, 0.35, 3500); a.crtWarmup?.play(); }, 1200));
-
-    // Lines appear silently — no relay clicks
-    const lineTimes = [2000, 3100, 4300, 5500, 6700, 7900, 9100, 10800, 13500, 15500];
-    lineTimes.forEach((time, idx) => {
-      if (idx === 0) return;
-      t.push(setTimeout(() => setVisibleCount(idx + 1), time));
-    });
-
-    t.push(setTimeout(() => setShowPrompt(true), 17500));
-
-    return () => t.forEach(clearTimeout);
-  }, [phase]);
-
-  /* ── Keyboard ── */
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (phase === "booting" && !showPrompt && e.key !== "Enter") {
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      setVisibleCount(BOOT_LINES.length);
-      setShowPrompt(true);
-      return;
-    }
-    if (phase === "booting" && e.key === "Enter" && showPrompt) {
-      setPhase("exiting");
-      const a = audioRef.current;
-      a.roomTone?.fade(a.roomTone.volume(), 0, 2200);
-      a.rain?.fade(a.rain.volume(), 0, 2200);
-      a.crtWarmup?.fade(a.crtWarmup.volume(), 0, 2200);
-      setTimeout(() => { markComplete(); setBooted(true); }, 2500);
-    }
-  }, [phase, showPrompt, markComplete, setBooted]);
+      if (phase === "booting" && e.key === "Enter" && showPrompt) {
+        setPhase("exiting");
+        const a = audioRef.current;
+        a.roomTone?.fade(a.roomTone.volume(), 0, 2200);
+        a.rain?.fade(a.rain.volume(), 0, 2200);
+        a.crtWarmup?.fade(a.crtWarmup.volume(), 0, 2200);
+        setTimeout(() => {
+          markComplete();
+          setBooted(true);
+        }, 2500);
+      }
+    },
+    [phase, showPrompt, markComplete, setBooted]
+  );
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  /* ═══════════════════════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════════════════════ */
-
   if (phase === "idle") {
     return (
-      <motion.div
-        className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center"
-        style={{ background: "#0a0908" }}
-        onClick={handleStart}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
-      >
+      <motion.div className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center" style={{ background: "#0a0908" }} onClick={handleStart} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }} >
         <div className="text-center font-mono text-xs tracking-[3px]" style={{ color: "#ffb000", userSelect: "none" }}>
-          <motion.div animate={{ opacity: [0.35, 1, 0.35] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>
-            [ CLICK TO INITIALIZE ]
-          </motion.div>
-          <div className="mt-6 text-[10px] tracking-wider" style={{ color: "#5a4a30" }}>
-            VANISHING POINTS ARCHIVE — SYSTEM 7-B
-          </div>
+          <motion.div animate={{ opacity: [0.35, 1, 0.35] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}> [ CLICK TO INITIALIZE ] </motion.div>
+          <div className="mt-6 text-[10px] tracking-wider" style={{ color: "#5a4a30" }}> VANISHING POINTS ARCHIVE — SYSTEM 7-B </div>
         </div>
       </motion.div>
     );
@@ -409,14 +273,7 @@ export function BootSequence() {
 
   if (phase === "loading") {
     return (
-      <motion.div
-        className="fixed inset-0 z-50"
-        style={{ background: "#0a0908" }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
-      >
+      <motion.div className="fixed inset-0 z-50" style={{ background: "#0a0908" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} >
         <LoadingScreen progress={loadProgress} />
       </motion.div>
     );
@@ -425,43 +282,31 @@ export function BootSequence() {
   return (
     <AnimatePresence>
       {phase !== "exiting" && (
-        <motion.div
-          key="boot"
-          className="fixed inset-0 z-50"
-          style={{ background: "#0a0908" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 2.5, ease: "easeInOut" }}
-        >
-          {/* Background render */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url(/images/boot-room-render.png)" }}
-          />
+        <motion.div key="boot" className="fixed inset-0 z-50" style={{ background: "#0a0908" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 2.5, ease: "easeInOut" }} >
+          {/* Background render fallback static image choice */}
+          <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url(/images/boot-room-render.png)" }} />
 
-          {/* Halogen Projection Terminal (centered, readable) */}
-          <HalogenProjection visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+          {/* Foreground text logs overlay */}
+          <div className="absolute top-1/2 left-1/2 h-[360px] w-[480px] -translate-x-1/2 -translate-y-[195px] p-[28px] font-mono text-sm leading-[1.7] select-none" style={{ color: "#ffb000", textShadow: "0 0 6px rgba(255,176,0,0.5), 0 0 14px rgba(255,176,0,0.15)", whiteSpace: "pre-wrap" }}>
+            <div className="absolute inset-0" style={{ background: "rgba(8,6,3,0.85)", boxShadow: "inset 0 0 50px rgba(0,0,0,0.95)", borderRadius: "2px" }} />
+            <div className="relative z-10">
+              {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
+                <div key={i} style={{ color: line.color, marginBottom: "5px" }}>
+                  {line.text}
+                  {i === visibleCount - 1 && cursorOn && (
+                    <span className="ml-1 inline-block h-3 w-1.5 align-middle" style={{ background: line.color }} />
+                  )}
+                </div>
+              ))}
+              {showPrompt && (
+                <div className="mt-6 text-center text-xs tracking-[2.5px] animate-pulse" style={{ color: "#ffb000" }}>
+                  [ PRESS ENTER ]
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Dust particles */}
           <DustCanvas />
-
-          {/* Vignette */}
-          <div
-            className="pointer-events-none fixed inset-0 z-25"
-            style={{
-              background: "radial-gradient(circle at 50% 45%, transparent 45%, rgba(10,9,8,0.55) 100%)",
-            }}
-          />
-
-          {/* Film grain */}
-          <div
-            className="pointer-events-none fixed inset-0 z-25 opacity-[0.03]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              backgroundSize: "128px 128px",
-            }}
-          />
         </motion.div>
       )}
     </AnimatePresence>

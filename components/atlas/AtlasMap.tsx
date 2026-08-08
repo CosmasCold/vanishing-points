@@ -32,25 +32,29 @@ export const AtlasMap: React.FC = () => {
   const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // 1. Initialize Mapbox Instance
+  // 1. Initialize Mapbox Instance (Centering on default starting coords)
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11', // Monochrome dark theme matching BUNKER_7
-      center: [6, 7],
-      zoom: 1.6,
-    });
+    try {
+      const mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11', // Dark CRT Terminal theme
+        center: [30.0542, 51.4061] as [number, number], // Explicit coordinate tuple (Pripyat Area)
+        zoom: 1.6,
+      });
 
-    mapInstance.on('load', () => {
-      applyArchivePalette(mapInstance);
-      setMapLoaded(true);
-    });
+      mapInstance.on('load', () => {
+        applyArchivePalette(mapInstance);
+        setMapLoaded(true);
+      });
 
-    map.current = mapInstance;
+      map.current = mapInstance;
+    } catch (err) {
+      console.error('[AtlasMap] Mapbox GL failed to initialize:', err);
+    }
 
     return () => {
       if (map.current) {
@@ -60,22 +64,20 @@ export const AtlasMap: React.FC = () => {
     };
   }, []);
 
-  // 2. Render and Manage Glow Markers
+  // 2. Render and Manage Glowing Geo-Coordinates
   useEffect(() => {
     if (!mapLoaded || !map.current || places.length === 0) return;
 
-    // Clear old markers
+    // Remove stale nodes
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     places.forEach((place) => {
       if (!place.coordinates) return;
 
-      // Create physical node element
       const el = document.createElement('div');
       el.className = 'map-marker';
 
-      // Aesthetic color assignment matching categories and database statuses
       const statusColor = place.status === 'sealed' 
         ? colors.archive.red 
         : place.status === 'whispered' 
@@ -86,7 +88,7 @@ export const AtlasMap: React.FC = () => {
 
       const isSelected = selectedPlaceSlug === place.slug;
 
-      // Old-school glowing radar coordinates styling
+      // Glow terminal styling
       el.style.width = isSelected ? '14px' : '8px';
       el.style.height = isSelected ? '14px' : '8px';
       el.style.borderRadius = '50%';
@@ -98,7 +100,6 @@ export const AtlasMap: React.FC = () => {
         ? `0 0 16px ${statusColor}, 0 0 24px ${colors.archive.amber}` 
         : `0 0 8px ${statusColor}`;
 
-      // Tactical HUD hover behaviors
       el.addEventListener('mouseenter', () => {
         el.style.transform = 'scale(1.4)';
         el.style.boxShadow = `0 0 18px ${statusColor}`;
@@ -110,19 +111,15 @@ export const AtlasMap: React.FC = () => {
           : `0 0 8px ${statusColor}`;
       });
 
-      // Synchronize click handlers with global stores
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        click(); // Plays the mechanical relay sound
+        click();
         selectPlace(place.slug);
-        
-        // Push coordinate details to the Evidence Board
         selectNode(place.slug);
         setFocusNode(place.slug);
         setViewMode('focus');
       });
 
-      // Bind to Map
       const marker = new mapboxgl.Marker(el)
         .setLngLat(place.coordinates as [number, number])
         .addTo(map.current!);
@@ -131,7 +128,7 @@ export const AtlasMap: React.FC = () => {
     });
   }, [mapLoaded, places, selectedPlaceSlug, selectPlace, click, selectNode, setFocusNode, setViewMode]);
 
-  // 3. Coordinate Fly-To Transitions
+  // 3. Smooth Camera Fly-To transitions
   useEffect(() => {
     if (!map.current || !selectedPlaceSlug) return;
     

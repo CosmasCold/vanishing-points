@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useUIStore } from '@/state/uiStore';
 import { useAudioStore } from '@/state/audioStore';
-import { useMediaStore } from '@/state/mediaStore';
 import { colors, typography } from '@/styles/theme';
-import { SignalModal } from './SignalModal'; // 1. Imported our interactive oscilloscope screen
+import { SignalModal } from './SignalModal';
+import { DecrypterModal } from './DecrypterModal'; // Imported our custom shortwave cryptanalysis terminal
 
 interface SignalArtifact {
   id: string;
@@ -154,7 +154,7 @@ const ARTIFACTS: SignalArtifact[] = [
       '[00:38] [Wind through a server room.]',
       'BUNKER_7: The Archive preserves everything. No one preserves the Archive.',
       '[00:52] [Long pause. Voice quieter. Almost intimate.]',
-      'BUNKER_7: Investigator. You do not have to open the next case. The work will still be here tomorrow. You are more important than the work.',
+      'BUNKER_7: Investigator. You do not have to open the next case. The work will still be here. You are more important than the work.',
       '[01:18] [Pause.]',
       "BUNKER_7: I am sorry I cannot be certain that I ever told you that before.",
     ],
@@ -164,7 +164,8 @@ const ARTIFACTS: SignalArtifact[] = [
 export const SignalPanel: React.FC = () => {
   const { status } = useUIStore();
   const { click } = useAudioStore();
-  const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null); // 2. Track which signal is open in oscilloscope
+  const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
+  const [decrypterOpen, setDecrypterOpen] = useState(false); // Track open state of the shortwave cryptanalyser
 
   const dust = status.dustIndex;
 
@@ -175,8 +176,25 @@ export const SignalPanel: React.FC = () => {
         <h2 style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.1em' }}>
           SIGNAL ANALYSIS DIVISION
         </h2>
-        <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, marginTop: '0.25rem' }}>
-          {ARTIFACTS.filter((a) => dust >= a.dustUnlock).length} OF {ARTIFACTS.length} ARTIFACTS RECOVERED
+        <div className="flex justify-between items-baseline mt-1.5">
+          <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
+            {ARTIFACTS.filter((a) => dust >= a.dustUnlock).length} OF {ARTIFACTS.length} ARTIFACTS RECOVERED
+          </div>
+          
+          <button
+            onClick={() => {
+              click();
+              setDecrypterOpen(true);
+            }}
+            className="px-2 py-0.5 border text-[10px] tracking-wider transition-all hover:border-amber-700 hover:text-amber-500"
+            style={{
+              borderColor: colors.archive.grayDark,
+              color: colors.archive.gray,
+              fontFamily: typography.mono,
+            }}
+          >
+            📟 OPEN SHORTWAVE DECRYPTER
+          </button>
         </div>
       </div>
 
@@ -208,11 +226,10 @@ export const SignalPanel: React.FC = () => {
               {item.description}
             </p>
 
-            {/* 3. Updated Interactive Button */}
             <button
               onClick={() => {
-                click(); // Play terminal key sound
-                setSelectedSignal(item); // Open oscilloscope modal for this item
+                click();
+                setSelectedSignal(item);
               }}
               className="mt-3 px-3 py-1.5 border text-xs tracking-wider transition-colors hover:border-amber-700"
               style={{
@@ -227,11 +244,18 @@ export const SignalPanel: React.FC = () => {
         ))}
       </div>
 
-      {/* 4. Interactive Oscilloscope Render Gate */}
+      {/* Interactive Oscilloscope Render Gate */}
       {selectedSignal && (
         <SignalModal
           signal={selectedSignal}
           onClose={() => setSelectedSignal(null)}
+        />
+      )}
+
+      {/* Interactive Shortwave Decrypter Render Gate */}
+      {decrypterOpen && (
+        <DecrypterModal
+          onClose={() => setDecrypterOpen(false)}
         />
       )}
     </div>

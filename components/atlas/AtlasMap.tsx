@@ -11,19 +11,6 @@ import { colors, microform } from '@/styles/theme';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
-function applyArchivePalette(mapInstance: mapboxgl.Map) {
-  try {
-    mapInstance.setFog({
-      color: '#130e0a',
-      'high-color': '#0a0604',
-      range: [0.2, 1.5],
-      'horizon-blend': 0.2,
-    });
-  } catch (error) {
-    console.warn('[AtlasMap] Failed to apply fog:', error);
-  }
-}
-
 export const AtlasMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -31,7 +18,6 @@ export const AtlasMap: React.FC = () => {
 
   const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
-
   const {
     selectNode,
     setFocusNode,
@@ -41,9 +27,9 @@ export const AtlasMap: React.FC = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   /*
-   * ============================================================
-   * 1. INITIALIZE MAPBOX
-   * ============================================================
+   * ------------------------------------------------------------
+   * MAP INITIALIZATION
+   * ------------------------------------------------------------
    */
 
   useEffect(() => {
@@ -57,7 +43,7 @@ export const AtlasMap: React.FC = () => {
     }
 
     console.log('[AtlasMap] Initializing Mapbox...');
-    console.log('[AtlasMap] Token present:', Boolean(MAPBOX_TOKEN));
+    console.log('[AtlasMap] Token present:', true);
     console.log(
       '[AtlasMap] Token prefix:',
       `${MAPBOX_TOKEN.slice(0, 10)}...`
@@ -75,102 +61,53 @@ export const AtlasMap: React.FC = () => {
 
         /*
          * IMPORTANT:
-         * Explicitly force Web Mercator.
+         * Force the map into standard Web Mercator.
          *
-         * Newer Mapbox GL versions can use globe projection,
-         * so do not rely on the library default here.
+         * Do not use globe here.
          */
-        projection: 'mercator',
+        projection: {
+          name: 'mercator',
+        },
 
         /*
-         * Initial view.
-         * Pripyat / Chernobyl area.
+         * Starting view.
          */
         center: [30.0542, 51.4061],
         zoom: 1.6,
 
         /*
-         * Atlas presentation.
+         * Prevent Mapbox from trying to rotate the globe.
          */
-        attributionControl: false,
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchPitch: false,
+        renderWorldCopies: true,
+
+        attributionControl: true,
       });
     } catch (error) {
       console.error(
         '[AtlasMap] Mapbox GL failed to initialize:',
         error
       );
+
       return;
     }
 
     map.current = mapInstance;
 
-    /*
-     * ============================================================
-     * DIAGNOSTIC EVENTS
-     * ============================================================
-     *
-     * These are intentionally conservative with Mapbox's types.
-     * In particular, do NOT access event.source.id because
-     * SourceSpecification does not guarantee an id property.
-     */
-
-    mapInstance.on('sourcedata', (event) => {
-  console.log('[AtlasMap] sourcedata:', {
-    sourceId: event.sourceId,
-    sourceDataType: event.sourceDataType,
-    isSourceLoaded: event.isSourceLoaded,
-    dataType: event.dataType,
-  });
-});
-
-mapInstance.on('styledata', () => {
-  console.log('[AtlasMap] Style data loaded.');
-});
-
-mapInstance.on('error', (event) => {
-  console.error('[AtlasMap] Mapbox error:', event.error);
-});
-
-    mapInstance.on('sourcedata', (event) => {
-      console.log('[AtlasMap] sourcedata:', {
-        sourceId: event.sourceId,
-        sourceDataType: event.sourceDataType,
-        isSourceLoaded: event.isSourceLoaded,
-        dataType: event.dataType,
-      });
-    });
-
-    mapInstance.on('styledata', () => {
-      console.log('[AtlasMap] Style data loaded.');
-    });
-
-    mapInstance.on('error', (event) => {
-      console.error('[AtlasMap] Mapbox error:', event.error);
-    });
-
-    /*
-     * ============================================================
-     * MAP LOAD
-     * ============================================================
-     */
-
-    mapInstance.on('load', () => {
+    const handleLoad = () => {
       console.log('[AtlasMap] Map loaded successfully.');
 
       /*
-       * Explicitly enforce Mercator again after the style has
-       * finished loading.
+       * Explicitly re-assert Mercator after the style has loaded.
+       *
+       * This protects against a style-level projection setting
+       * overriding the initial configuration.
        */
       try {
-        mapInstance.setProjection('mercator');
+        mapInstance.setProjection({
+          name: 'mercator',
+        });
 
-        console.log(
-          '[AtlasMap] Projection:',
-          mapInstance.getProjection().name
-        );
+        console.log('[AtlasMap] Projection:', 'mercator');
       } catch (error) {
         console.error(
           '[AtlasMap] Failed to set Mercator projection:',
@@ -178,30 +115,39 @@ mapInstance.on('error', (event) => {
         );
       }
 
-      applyArchivePalette(mapInstance);
+      /*
+       * Archive atmosphere.
+       *
+       * This is intentionally kept simple. No source/layer inspection,
+       * no dataloading listeners, and no assumptions about Mapbox's
+       * internal style source types.
+       */
+      try {
+        mapInstance.setFog({
+          color: '#130e0a',
+          'high-color': '#0a0604',
+          range: [0.2, 1.5],
+          'horizon-blend': 0.2,
+        });
+      } catch (error) {
+        console.warn(
+          '[AtlasMap] Fog configuration failed:',
+          error
+        );
+      }
 
       setMapLoaded(true);
+    };
 
-      /*
-       * Mapbox occasionally needs a resize after its container
-       * becomes visible, particularly when the Atlas lives inside
-       * a dashboard/panel layout.
-       */
-      requestAnimationFrame(() => {
-        if (map.current) {
-          map.current.resize();
-        }
-      });
-    });
+    const handleError = (event: mapboxgl.ErrorEvent) => {
+      console.error('[AtlasMap] Mapbox error:', event.error);
+    };
 
-    /*
-     * ============================================================
-     * CLEANUP
-     * ============================================================
-     */
+    mapInstance.on('load', handleLoad);
+    mapInstance.on('error', handleError);
 
     return () => {
-      console.log('[AtlasMap] Destroying Mapbox instance.');
+      console.log('[AtlasMap] Cleaning up Mapbox instance...');
 
       markersRef.current.forEach((marker) => {
         marker.remove();
@@ -209,19 +155,20 @@ mapInstance.on('error', (event) => {
 
       markersRef.current = [];
 
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
+      mapInstance.off('load', handleLoad);
+      mapInstance.off('error', handleError);
 
+      mapInstance.remove();
+
+      map.current = null;
       setMapLoaded(false);
     };
   }, []);
 
   /*
-   * ============================================================
-   * 2. RENDER PLACE MARKERS
-   * ============================================================
+   * ------------------------------------------------------------
+   * MARKERS
+   * ------------------------------------------------------------
    */
 
   useEffect(() => {
@@ -230,9 +177,7 @@ mapInstance.on('error', (event) => {
     }
 
     /*
-     * Remove old markers before rebuilding them.
-     *
-     * This keeps marker state synchronized with the Atlas store.
+     * Remove previous markers before rebuilding them.
      */
     markersRef.current.forEach((marker) => {
       marker.remove();
@@ -240,25 +185,41 @@ mapInstance.on('error', (event) => {
 
     markersRef.current = [];
 
-    if (places.length === 0) {
+    if (!places || places.length === 0) {
       console.log('[AtlasMap] No places available for markers.');
       return;
     }
+
+    console.log(
+      `[AtlasMap] Rendering ${places.length} place markers.`
+    );
 
     places.forEach((place) => {
       if (!place.coordinates) {
         return;
       }
 
+      const [longitude, latitude] = place.coordinates;
+
+      /*
+       * Ignore malformed coordinates.
+       */
+      if (
+        !Number.isFinite(longitude) ||
+        !Number.isFinite(latitude)
+      ) {
+        console.warn(
+          '[AtlasMap] Invalid coordinates for place:',
+          place.slug,
+          place.coordinates
+        );
+
+        return;
+      }
+
       const el = document.createElement('div');
 
       el.className = 'map-marker';
-
-      /*
-       * ------------------------------------------------------------
-       * Marker color
-       * ------------------------------------------------------------
-       */
 
       const statusColor =
         place.status === 'sealed'
@@ -273,14 +234,12 @@ mapInstance.on('error', (event) => {
         selectedPlaceSlug === place.slug;
 
       /*
-       * ------------------------------------------------------------
-       * Marker appearance
-       * ------------------------------------------------------------
+       * Marker dimensions.
        */
+      const size = isSelected ? 14 : 8;
 
-      el.style.width = isSelected ? '14px' : '8px';
-      el.style.height = isSelected ? '14px' : '8px';
-
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
       el.style.borderRadius = '50%';
 
       el.style.backgroundColor = statusColor;
@@ -299,112 +258,152 @@ mapInstance.on('error', (event) => {
         : `0 0 8px ${statusColor}`;
 
       /*
-       * ------------------------------------------------------------
-       * Hover behavior
-       * ------------------------------------------------------------
+       * Prevent the marker itself from interfering with the
+       * map container's general interaction handling.
        */
+      el.style.pointerEvents = 'auto';
 
-      el.addEventListener('mouseenter', () => {
+      /*
+       * Hover.
+       */
+      const handleMouseEnter = () => {
         el.style.transform = 'scale(1.4)';
         el.style.boxShadow = `0 0 18px ${statusColor}`;
-      });
+      };
 
-      el.addEventListener('mouseleave', () => {
+      const handleMouseLeave = () => {
         el.style.transform = 'scale(1)';
 
         el.style.boxShadow = isSelected
           ? `0 0 16px ${statusColor}, 0 0 24px ${colors.archive.amber}`
           : `0 0 8px ${statusColor}`;
-      });
+      };
 
       /*
-       * ------------------------------------------------------------
-       * Click behavior
-       * ------------------------------------------------------------
+       * Click.
        */
-
-      el.addEventListener('click', (event) => {
+      const handleClick = (event: MouseEvent) => {
         event.stopPropagation();
 
         click();
 
         selectPlace(place.slug);
-
         selectNode(place.slug);
-
         setFocusNode(place.slug);
-
         setViewMode('focus');
-      });
+      };
+
+      el.addEventListener(
+        'mouseenter',
+        handleMouseEnter
+      );
+
+      el.addEventListener(
+        'mouseleave',
+        handleMouseLeave
+      );
+
+      el.addEventListener(
+        'click',
+        handleClick
+      );
 
       /*
-       * ------------------------------------------------------------
-       * Add marker to map
-       * ------------------------------------------------------------
+       * Create marker.
        */
-
       const marker = new mapboxgl.Marker({
         element: el,
+        anchor: 'center',
       })
-        .setLngLat(
-          place.coordinates as [number, number]
-        )
+        .setLngLat([
+          longitude,
+          latitude,
+        ])
         .addTo(map.current!);
 
       markersRef.current.push(marker);
     });
+
+    /*
+     * Marker cleanup is handled when the marker collection
+     * is rebuilt or the component unmounts.
+     */
   }, [
     mapLoaded,
     places,
     selectedPlaceSlug,
-    selectPlace,
     click,
+    selectPlace,
     selectNode,
     setFocusNode,
     setViewMode,
   ]);
 
   /*
-   * ============================================================
-   * 3. FLY TO SELECTED PLACE
-   * ============================================================
+   * ------------------------------------------------------------
+   * CAMERA
+   * ------------------------------------------------------------
    */
 
   useEffect(() => {
-    if (!map.current || !selectedPlaceSlug) {
+    if (!map.current || !mapLoaded || !selectedPlaceSlug) {
       return;
     }
 
     const place = places.find(
-      (p) => p.slug === selectedPlaceSlug
+      (item) => item.slug === selectedPlaceSlug
     );
 
     if (!place?.coordinates) {
       return;
     }
 
+    const [longitude, latitude] = place.coordinates;
+
+    if (
+      !Number.isFinite(longitude) ||
+      !Number.isFinite(latitude)
+    ) {
+      return;
+    }
+
     map.current.flyTo({
-      center: place.coordinates as [number, number],
+      center: [longitude, latitude],
       zoom: 8,
       speed: 1.2,
       curve: 1.4,
       essential: true,
     });
-  }, [selectedPlaceSlug, places]);
+  }, [
+    selectedPlaceSlug,
+    places,
+    mapLoaded,
+  ]);
 
   /*
-   * ============================================================
-   * 4. MAP CONTAINER
-   * ============================================================
+   * ------------------------------------------------------------
+   * RENDER
+   * ------------------------------------------------------------
    */
 
   return (
     <div className="absolute inset-0">
       {/*
-       * Archive frame / microform overlay.
+       * Map container.
+       */}
+      <div
+        ref={mapContainer}
+        className="absolute inset-0"
+        style={{
+          borderRadius: '2px',
+        }}
+      />
+
+      {/*
+       * Archive frame.
        *
-       * IMPORTANT:
-       * This element must not intercept mouse events.
+       * This sits ABOVE the map visually but does not intercept
+       * pointer events.
        */}
       <div
         className="absolute inset-0 rounded-[2px] border border-[#2b241d]"
@@ -418,20 +417,6 @@ mapInstance.on('error', (event) => {
             'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%)',
           zIndex: 10,
           pointerEvents: 'none',
-        }}
-      />
-
-      {/*
-       * Actual Mapbox container.
-       *
-       * Keep this below the decorative overlay and make sure it
-       * fills the entire Atlas panel.
-       */}
-      <div
-        ref={mapContainer}
-        className="absolute inset-0"
-        style={{
-          borderRadius: '2px',
         }}
       />
     </div>

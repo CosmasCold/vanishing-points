@@ -58,3 +58,9 @@ body {
   20% { opacity: 0.98; }
   100% { opacity: 0.98; }
 }
+
+.mapboxgl-canvas {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}

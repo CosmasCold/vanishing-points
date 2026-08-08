@@ -43,7 +43,6 @@ export const AtlasMap: React.FC = () => {
       style: 'mapbox://styles/mapbox/dark-v11', // Monochrome dark theme matching BUNKER_7
       center: [6, 7],
       zoom: 1.6,
-      projection: 'globe' as any,
     });
 
     mapInstance.on('load', () => {

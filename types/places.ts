@@ -33,4 +33,7 @@ export interface Place {
   unlockCondition?: UnlockCondition;
   connectedTo: string[];
   resonanceNote?: string;
+  
+  // ─── OPTION A: NATIVE GEODETIC PROGRESSION TIERS ───
+  tier?: number;
 }

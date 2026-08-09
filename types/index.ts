@@ -1,8 +1,5 @@
-// ─────────────────────────────────────────────────────────────
-// BOOT SEQUENCE
-// ─────────────────────────────────────────────────────────────
-
-export type BootPhase = 
+// ───────────────────────────────────────────────────────────── // BOOT SEQUENCE // ─────────────────────────────────────────────────────────────
+export type BootPhase =
   | 'POWER_RESTORED'
   | 'KERNEL_LOAD'
   | 'ATLAS_INIT'
@@ -20,11 +17,8 @@ export interface BootPhaseConfig {
   detail?: string;
 }
 
-// ─────────────────────────────────────────────────────────────
-// MODULE SYSTEM
-// ─────────────────────────────────────────────────────────────
-
-export type ModuleId = 
+// ───────────────────────────────────────────────────────────── // MODULE SYSTEM // ─────────────────────────────────────────────────────────────
+export type ModuleId =
   | 'inbox'
   | 'atlas'
   | 'investigations'
@@ -36,16 +30,13 @@ export type ModuleId =
   | 'discoveries'
   | 'system';
 
-// ─────────────────────────────────────────────────────────────
-// TERMINAL & COMMAND REGISTRY
-// ─────────────────────────────────────────────────────────────
-
-export type CommandOutputType = 
-  | 'system' 
-  | 'user' 
-  | 'error' 
-  | 'warning' 
-  | 'success' 
+// ───────────────────────────────────────────────────────────── // TERMINAL & COMMAND REGISTRY // ─────────────────────────────────────────────────────────────
+export type CommandOutputType =
+  | 'system'
+  | 'user'
+  | 'error'
+  | 'warning'
+  | 'success'
   | 'info'
   | 'signal';
 
@@ -71,10 +62,7 @@ export interface CommandDefinition {
   handler: (args: string[]) => CommandResult | Promise<CommandResult>;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SYSTEM STATUS
-// ─────────────────────────────────────────────────────────────
-
+// ───────────────────────────────────────────────────────────── // SYSTEM STATUS // ─────────────────────────────────────────────────────────────
 export interface SystemStatus {
   dustIndex: number;
   atlasCoverage: number;
@@ -84,12 +72,8 @@ export interface SystemStatus {
   lastSync: string;
 }
 
-// ─────────────────────────────────────────────────────────────
-// ATLAS / PLACES
-// ─────────────────────────────────────────────────────────────
-
+// ───────────────────────────────────────────────────────────── // ATLAS / PLACES // ─────────────────────────────────────────────────────────────
 export type PlaceCategory = 'abandoned' | 'haunted' | 'both';
-
 export type PlaceStatus = 'verified' | 'pending' | 'rejected' | 'sealed' | 'whispered' | 'mirage';
 
 export interface Address {
@@ -124,4 +108,7 @@ export interface Place {
   unlockCondition?: UnlockCondition;
   connectedTo: string[];
   resonanceNote?: string;
+  
+  // ─── OPTION A: NATIVE GEODETIC PROGRESSION TIERS ───
+  tier?: number;
 }

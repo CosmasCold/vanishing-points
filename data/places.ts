@@ -1,23 +1,11 @@
 import { Place } from "@/types/places";
 
 /**
- * LOCAL INTERFACE COVARIANT EXTENSION
- * This guarantees that the 'tier' property compiles successfully with zero TS2353 errors,
- * even if your global `@/types/places` type declarations have not been modified yet.
- * 
- * Since ExtendedPlace extends Place, any external hook or store expecting a Place[] type
- * (like useAtlasStore or fetchPlaces) will typecheck and assign cleanly due to TS covariance!
- */
-export interface ExtendedPlace extends Place {
-  tier?: number;
-}
-
-/**
  * PRODUCTION-READY LOCAL STATIC CORPUS SEED FOR VANISHING POINTS
  * Pre-projected, clean connectedTo arrays, and rich geodetic story lore.
- * Bypasses remote HTTP network queries for sub-millisecond local response.
+ * Bypasses remote HTTP network queries for sub-millisecond local response [2, 9].
  */
-export const LOCAL_PLACES: ExtendedPlace[] = [
+export const LOCAL_PLACES: Place[] = [
   {
     "slug": "pripyat-amusement-park",
     "name": "Pripyat Amusement Park",
@@ -524,3 +512,19 @@ export const LOCAL_PLACES: ExtendedPlace[] = [
     "resonanceNote": "You have been here before. The file says you have not. I believe the file."
   }
 ];
+
+/**
+ * Fetch places from the API, falling back to local static cache if unavailable.
+ */
+export async function fetchPlaces(): Promise<Place[]> {
+  try {
+    const res = await fetch('/api/places');
+    if (!res.ok) throw new Error('Archive unreachable');
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Invalid archive format');
+    return data as Place[];
+  } catch (err) {
+    console.warn('[Atlas] Remote archive unavailable. Using local cache.');
+    return LOCAL_PLACES;
+  }
+}

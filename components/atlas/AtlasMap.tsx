@@ -10,26 +10,49 @@ import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { colors, microform } from '@/styles/theme';
 import { Place } from '@/types/places';
 
-const MAPBOX_TOKEN =
-  process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 function isValidCoordinates(
   coordinates: Place['coordinates'] | undefined
 ): coordinates is [number, number] {
+  if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+    return false;
+  }
+
+  const [longitude, latitude] = coordinates;
+
   return (
-    Array.isArray(coordinates) &&
-    coordinates.length === 2 &&
-    Number.isFinite(coordinates[0]) &&
-    Number.isFinite(coordinates[1])
+    Number.isFinite(longitude) &&
+    Number.isFinite(latitude) &&
+    longitude >= -180 &&
+    longitude <= 180 &&
+    latitude >= -90 &&
+    latitude <= 90
   );
 }
 
+function getStatusColor(place: Place): string {
+  switch (place.status) {
+    case 'sealed':
+      return colors.archive.red;
+
+    case 'whispered':
+      return colors.archive.blue;
+
+    case 'mirage':
+      return colors.archive.white;
+
+    default:
+      return colors.archive.green;
+  }
+}
+
 /**
- * Apply the existing Vanishing Points / Archive visual treatment
- * without modifying the underlying Mapbox style structure.
+ * Applies the archive visual treatment without modifying
+ * coordinates, sources, projections, or map positioning.
  */
-function applyArchivePalette(mapInstance: mapboxgl.Map) {
-  const style = mapInstance.getStyle();
+function applyArchivePalette(map: mapboxgl.Map) {
+  const style = map.getStyle();
 
   if (!style?.layers) {
     return;
@@ -40,13 +63,13 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
 
     try {
       if (layer.type === 'background') {
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'background-color',
           '#0a0807'
         );
 
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'background-opacity',
           0.95
@@ -57,13 +80,13 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
         layer.type === 'fill' &&
         layerId.includes('water')
       ) {
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'fill-color',
           '#05070b'
         );
 
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'fill-opacity',
           0.95
@@ -74,13 +97,13 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
         layer.type === 'fill' &&
         layerId.includes('land')
       ) {
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'fill-color',
           '#17120d'
         );
 
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'fill-opacity',
           1
@@ -95,13 +118,13 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
           layerId.includes('tunnel')
         )
       ) {
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'line-color',
           'rgba(201, 169, 110, 0.16)'
         );
 
-        mapInstance.setPaintProperty(
+        map.setPaintProperty(
           layer.id,
           'line-width',
           0.8
@@ -116,17 +139,13 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
           layerId.includes('poi')
         )
       ) {
-        mapInstance.setLayoutProperty(
+        map.setLayoutProperty(
           layer.id,
           'visibility',
           'none'
         );
       }
     } catch (error) {
-      /*
-       * Some Mapbox layers do not expose every paint/layout
-       * property. One failed layer should never kill the map.
-       */
       console.warn(
         '[AtlasMap] Failed to restyle layer:',
         layer.id,
@@ -136,7 +155,7 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
   });
 
   try {
-    mapInstance.setFog({
+    map.setFog({
       color: '#130e0a',
       'high-color': '#0a0604',
       range: [0.2, 1.5],
@@ -150,39 +169,118 @@ function applyArchivePalette(mapInstance: mapboxgl.Map) {
   }
 }
 
-function getStatusColor(place: Place): string {
-  if (place.status === 'sealed') {
-    return colors.archive.red;
-  }
+function createMarkerElement(
+  place: Place,
+  isSelected: boolean,
+  onClick: (event: MouseEvent) => void
+): HTMLDivElement {
+  const statusColor = getStatusColor(place);
 
-  if (place.status === 'whispered') {
-    return colors.archive.blue;
-  }
+  const el = document.createElement('div');
 
-  if (place.status === 'mirage') {
-    return colors.archive.white;
-  }
+  el.className = 'map-marker';
 
-  return colors.archive.green;
+  Object.assign(el.style, {
+    position: 'relative',
+    width: '18px',
+    height: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    transition: 'transform 0.2s ease',
+    transform: isSelected ? 'scale(1.16)' : 'scale(1)',
+  });
+
+  const ring = document.createElement('div');
+
+  Object.assign(ring.style, {
+    position: 'absolute',
+    inset: '0',
+    border: `1.3px solid ${microform.halogen}`,
+    borderRadius: '999px',
+    background: 'rgba(10, 8, 6, 0.8)',
+    boxShadow: isSelected
+      ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
+      : `0 0 10px ${microform.halogenGlow}`,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  });
+
+  const dot = document.createElement('div');
+
+  Object.assign(dot.style, {
+    width: isSelected ? '8px' : '6px',
+    height: isSelected ? '8px' : '6px',
+    borderRadius: '999px',
+    background: statusColor,
+    boxShadow: `0 0 8px ${statusColor}`,
+    transition:
+      'width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease',
+    zIndex: '1',
+  });
+
+  const handleMouseEnter = () => {
+    el.style.transform = 'scale(1.22)';
+
+    ring.style.boxShadow =
+      `0 0 12px ${microform.halogen}, ` +
+      `0 0 4px ${microform.halogen}`;
+
+    dot.style.width = '8px';
+    dot.style.height = '8px';
+    dot.style.boxShadow = `0 0 10px ${statusColor}`;
+  };
+
+  const handleMouseLeave = () => {
+    el.style.transform = isSelected
+      ? 'scale(1.16)'
+      : 'scale(1)';
+
+    ring.style.boxShadow = isSelected
+      ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
+      : `0 0 10px ${microform.halogenGlow}`;
+
+    dot.style.width = isSelected ? '8px' : '6px';
+    dot.style.height = isSelected ? '8px' : '6px';
+    dot.style.boxShadow = `0 0 8px ${statusColor}`;
+  };
+
+  el.addEventListener(
+    'mouseenter',
+    handleMouseEnter
+  );
+
+  el.addEventListener(
+    'mouseleave',
+    handleMouseLeave
+  );
+
+  el.addEventListener(
+    'click',
+    onClick
+  );
+
+  el.appendChild(ring);
+  el.appendChild(dot);
+
+  return el;
 }
 
 export const AtlasMap: React.FC = () => {
-  /*
-   * The outer container is deliberately separate from the
-   * Mapbox container. This prevents Mapbox from calculating its
-   * canvas dimensions from an unstable parent layout.
-   */
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapContainer =
+    useRef<HTMLDivElement | null>(null);
 
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef =
+    useRef<mapboxgl.Map | null>(null);
 
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const markersRef =
+    useRef<Map<string, mapboxgl.Marker>>(
+      new Map()
+    );
 
-  const resizeObserverRef =
-    useRef<ResizeObserver | null>(null);
-
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] =
+    useState(false);
 
   const {
     places,
@@ -199,16 +297,24 @@ export const AtlasMap: React.FC = () => {
   } = useEvidenceBoardStore();
 
   /*
-   * ------------------------------------------------------------
+   * ---------------------------------------------------------
    * MAP INITIALIZATION
-   * ------------------------------------------------------------
+   * ---------------------------------------------------------
+   *
+   * The projection is specified once at construction.
+   *
+   * There is deliberately NO:
+   *   - setProjection() on load
+   *   - sourceId inspection
+   *   - source coordinate manipulation
+   *   - projection event listener
+   *
+   * Markers use Mapbox's native [lng, lat] coordinate system.
    */
-
   useEffect(() => {
-    const viewport = viewportRef.current;
-    const container = mapContainerRef.current;
+    const container = mapContainer.current;
 
-    if (!viewport || !container) {
+    if (!container) {
       console.error(
         '[AtlasMap] Map container not found.'
       );
@@ -221,24 +327,10 @@ export const AtlasMap: React.FC = () => {
 
     if (!MAPBOX_TOKEN) {
       console.error(
-        '[AtlasMap] Mapbox token is missing.'
+        '[AtlasMap] NEXT_PUBLIC_MAPBOX_TOKEN is missing.'
       );
       return;
     }
-
-    console.log(
-      '[AtlasMap] Initializing Mapbox...'
-    );
-
-    console.log(
-      '[AtlasMap] Token present:',
-      true
-    );
-
-    console.log(
-      '[AtlasMap] Token prefix:',
-      `${MAPBOX_TOKEN.slice(0, 10)}...`
-    );
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -248,46 +340,38 @@ export const AtlasMap: React.FC = () => {
       mapInstance = new mapboxgl.Map({
         container,
 
-        /*
-         * KEEP THE EXISTING MAP DESIGN.
-         */
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style:
+          'mapbox://styles/mapbox/dark-v11',
 
         /*
-         * Mercator is specified at creation time.
-         * We do NOT call setProjection() later.
+         * IMPORTANT:
+         *
+         * This is explicitly Mercator.
+         * Do not change this to "globe".
          */
-        projection: 'mercator',
+        projection: {
+          name: 'mercator',
+        },
 
         /*
-         * Existing Atlas starting position.
+         * Initial viewport only.
+         *
+         * This is the location of the first archive entry,
+         * but it does NOT control marker coordinates.
          */
         center: [30.0542, 51.4061],
 
         zoom: 1.6,
 
-        /*
-         * Preserve the flat world-map presentation.
-         */
         renderWorldCopies: true,
 
-        /*
-         * Atlas is not a navigation app.
-         */
+        attributionControl: false,
+
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
 
-        /*
-         * Keep the map flat.
-         */
-        pitch: 0,
-
-        /*
-         * We don't need the default Mapbox attribution
-         * control occupying part of the Atlas interface.
-         */
-        attributionControl: false,
+        cooperativeGestures: false,
       });
     } catch (error) {
       console.error(
@@ -300,59 +384,39 @@ export const AtlasMap: React.FC = () => {
 
     mapRef.current = mapInstance;
 
-    /*
-     * ----------------------------------------------------------
-     * MAP LOAD
-     * ----------------------------------------------------------
-     */
-
     const handleLoad = () => {
       console.log(
         '[AtlasMap] Map loaded successfully.'
       );
 
       /*
-       * Do not change projection here.
-       *
-       * The map was created as Mercator above. Changing it
-       * after load was one of the unnecessary moving parts
-       * in the previous versions.
+       * The map was already created as Mercator.
+       * We intentionally do not call setProjection here.
        */
+      console.log(
+        '[AtlasMap] Projection:',
+        mapInstance.getProjection().name
+      );
 
-      try {
-        applyArchivePalette(mapInstance);
-      } catch (error) {
-        console.error(
-          '[AtlasMap] Failed to apply archive palette:',
-          error
-        );
-      }
+      applyArchivePalette(mapInstance);
 
       /*
-       * Mapbox can calculate its initial canvas size before
-       * the surrounding Atlas layout has completely settled.
-       *
-       * Give it several resize opportunities without changing
-       * anything about the map itself.
+       * Force a resize after the map becomes visible.
+       * This prevents the common "map disappeared / only
+       * partial map rendered" problem caused by initializing
+       * Mapbox while its parent is still settling.
        */
       requestAnimationFrame(() => {
         mapInstance.resize();
 
         requestAnimationFrame(() => {
           mapInstance.resize();
-
-          window.setTimeout(() => {
-            mapInstance.resize();
-          }, 100);
         });
       });
 
       setMapLoaded(true);
     };
 
-    /*
-     * Keep Mapbox errors visible in the console.
-     */
     const handleError = (
       event: mapboxgl.ErrorEvent
     ) => {
@@ -362,67 +426,44 @@ export const AtlasMap: React.FC = () => {
       );
     };
 
-    mapInstance.on('load', handleLoad);
-    mapInstance.on('error', handleError);
+    mapInstance.on(
+      'load',
+      handleLoad
+    );
 
-    /*
-     * ----------------------------------------------------------
-     * RESIZE OBSERVER
-     * ----------------------------------------------------------
-     *
-     * This is important for the Atlas interface because its
-     * panels can change size after React has mounted the map.
-     */
-
-    if (
-      typeof ResizeObserver !== 'undefined'
-    ) {
-      const observer = new ResizeObserver(() => {
-        if (!mapRef.current) {
-          return;
-        }
-
-        mapRef.current.resize();
-      });
-
-      observer.observe(viewport);
-      observer.observe(container);
-
-      resizeObserverRef.current = observer;
-    }
-
-    /*
-     * Browser-level resize fallback.
-     */
-    const handleWindowResize = () => {
-      mapRef.current?.resize();
-    };
-
-    window.addEventListener(
-      'resize',
-      handleWindowResize
+    mapInstance.on(
+      'error',
+      handleError
     );
 
     /*
-     * ----------------------------------------------------------
-     * CLEANUP
-     * ----------------------------------------------------------
+     * Keep the map correctly sized if the Atlas panel
+     * changes dimensions.
      */
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            if (
+              mapRef.current &&
+              mapContainer.current
+            ) {
+              mapRef.current.resize();
+            }
+          })
+        : null;
+
+    if (resizeObserver) {
+      resizeObserver.observe(container);
+    }
 
     return () => {
-      window.removeEventListener(
-        'resize',
-        handleWindowResize
-      );
-
-      resizeObserverRef.current?.disconnect();
-      resizeObserverRef.current = null;
+      resizeObserver?.disconnect();
 
       markersRef.current.forEach(
         (marker) => marker.remove()
       );
 
-      markersRef.current = [];
+      markersRef.current.clear();
 
       mapInstance.off(
         'load',
@@ -443,35 +484,60 @@ export const AtlasMap: React.FC = () => {
   }, []);
 
   /*
-   * ------------------------------------------------------------
+   * ---------------------------------------------------------
    * MARKERS
-   * ------------------------------------------------------------
+   * ---------------------------------------------------------
+   *
+   * Every marker is positioned directly from:
+   *
+   *     place.coordinates
+   *
+   * Your Place type defines this as:
+   *
+   *     [number, number]
+   *
+   * and your data uses:
+   *
+   *     [longitude, latitude]
+   *
+   * Mapbox expects exactly that.
+   *
+   * No conversion happens here.
    */
-
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current) {
+    const map = mapRef.current;
+
+    if (!mapLoaded || !map) {
       return;
     }
-
-    const mapInstance = mapRef.current;
 
     /*
-     * Remove existing markers before rebuilding them.
+     * Remove markers that are no longer present.
      */
-    markersRef.current.forEach(
-      (marker) => marker.remove()
+    const currentSlugs = new Set(
+      places.map((place) => place.slug)
     );
 
-    markersRef.current = [];
+    markersRef.current.forEach(
+      (marker, slug) => {
+        if (!currentSlugs.has(slug)) {
+          marker.remove();
+          markersRef.current.delete(slug);
+        }
+      }
+    );
 
-    if (!places || places.length === 0) {
-      return;
-    }
-
+    /*
+     * Build/update markers.
+     */
     places.forEach((place) => {
-      if (!isValidCoordinates(place.coordinates)) {
+      if (
+        !isValidCoordinates(
+          place.coordinates
+        )
+      ) {
         console.warn(
-          '[AtlasMap] Invalid coordinates for place:',
+          '[AtlasMap] Invalid coordinates:',
           place.slug,
           place.coordinates
         );
@@ -479,153 +545,53 @@ export const AtlasMap: React.FC = () => {
         return;
       }
 
-      const statusColor =
-        getStatusColor(place);
+      /*
+       * IMPORTANT:
+       *
+       * We use the coordinates EXACTLY as supplied.
+       *
+       * Example:
+       * [30.0542, 51.4061]
+       *
+       * becomes:
+       *
+       * .setLngLat([30.0542, 51.4061])
+       */
+      const coordinates: [
+        number,
+        number
+      ] = [
+        place.coordinates[0],
+        place.coordinates[1],
+      ];
 
       const isSelected =
         selectedPlaceSlug === place.slug;
 
       /*
-       * Marker root.
+       * If this marker already exists, update its
+       * position rather than creating another marker.
        */
-      const el =
-        document.createElement('div');
+      const existingMarker =
+        markersRef.current.get(
+          place.slug
+        );
 
-      el.className =
-        'map-marker';
+      if (existingMarker) {
+        existingMarker.setLngLat(
+          coordinates
+        );
 
-      el.style.position =
-        'relative';
-
-      el.style.width =
-        '18px';
-
-      el.style.height =
-        '18px';
-
-      el.style.display =
-        'flex';
-
-      el.style.alignItems =
-        'center';
-
-      el.style.justifyContent =
-        'center';
-
-      el.style.cursor =
-        'pointer';
-
-      el.style.pointerEvents =
-        'auto';
-
-      el.style.transition =
-        'transform 0.2s ease';
-
-      el.style.transform =
-        isSelected
-          ? 'scale(1.16)'
-          : 'scale(1)';
-
-      /*
-       * Outer marker ring.
-       */
-      const ring =
-        document.createElement('div');
-
-      ring.style.position =
-        'absolute';
-
-      ring.style.inset =
-        '0';
-
-      ring.style.border =
-        `1.3px solid ${microform.halogen}`;
-
-      ring.style.borderRadius =
-        '999px';
-
-      ring.style.background =
-        'rgba(10, 8, 6, 0.8)';
-
-      ring.style.boxShadow =
-        isSelected
-          ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
-          : `0 0 10px ${microform.halogenGlow}`;
-
-      ring.style.transition =
-        'transform 0.2s ease, box-shadow 0.2s ease';
-
-      /*
-       * Colored status dot.
-       */
-      const dot =
-        document.createElement('div');
-
-      dot.style.width =
-        isSelected ? '8px' : '6px';
-
-      dot.style.height =
-        isSelected ? '8px' : '6px';
-
-      dot.style.borderRadius =
-        '999px';
-
-      dot.style.background =
-        statusColor;
-
-      dot.style.boxShadow =
-        `0 0 8px ${statusColor}`;
-
-      dot.style.transition =
-        'width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease';
-
-      dot.style.zIndex =
-        '1';
-
-      /*
-       * Hover behavior.
-       */
-      const handleMouseEnter = () => {
-        el.style.transform =
-          'scale(1.22)';
-
-        ring.style.boxShadow =
-          `0 0 12px ${microform.halogen}, 0 0 4px ${microform.halogen}`;
-
-        dot.style.width =
-          '8px';
-
-        dot.style.height =
-          '8px';
-
-        dot.style.boxShadow =
-          `0 0 10px ${statusColor}`;
-      };
-
-      const handleMouseLeave = () => {
-        el.style.transform =
+        existingMarker
+          .getElement()
+          .style.transform =
           isSelected
             ? 'scale(1.16)'
             : 'scale(1)';
 
-        ring.style.boxShadow =
-          isSelected
-            ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
-            : `0 0 10px ${microform.halogenGlow}`;
+        return;
+      }
 
-        dot.style.width =
-          isSelected ? '8px' : '6px';
-
-        dot.style.height =
-          isSelected ? '8px' : '6px';
-
-        dot.style.boxShadow =
-          `0 0 8px ${statusColor}`;
-      };
-
-      /*
-       * Click behavior.
-       */
       const handleClick = (
         event: MouseEvent
       ) => {
@@ -633,62 +599,54 @@ export const AtlasMap: React.FC = () => {
 
         click();
 
-        selectPlace(place.slug);
+        selectPlace(
+          place.slug
+        );
 
-        selectNode(place.slug);
+        selectNode(
+          place.slug
+        );
 
-        setFocusNode(place.slug);
+        setFocusNode(
+          place.slug
+        );
 
-        setViewMode('focus');
+        setViewMode(
+          'focus'
+        );
       };
 
-      el.addEventListener(
-        'mouseenter',
-        handleMouseEnter
-      );
-
-      el.addEventListener(
-        'mouseleave',
-        handleMouseLeave
-      );
-
-      el.addEventListener(
-        'click',
-        handleClick
-      );
-
-      el.appendChild(ring);
-      el.appendChild(dot);
+      const element =
+        createMarkerElement(
+          place,
+          isSelected,
+          handleClick
+        );
 
       const marker =
         new mapboxgl.Marker({
-          element: el,
+          element,
           anchor: 'center',
         })
           .setLngLat(
-            place.coordinates
+            coordinates
           )
-          .addTo(mapInstance);
+          .addTo(map);
 
-      markersRef.current.push(
+      markersRef.current.set(
+        place.slug,
         marker
       );
-    });
 
-    /*
-     * Final layout pass after markers exist.
-     */
-    requestAnimationFrame(() => {
-      mapInstance.resize();
-    });
-
-    return () => {
-      markersRef.current.forEach(
-        (marker) => marker.remove()
+      console.log(
+        `[AtlasMap] Marker "${place.name}"`,
+        {
+          slug: place.slug,
+          longitude: coordinates[0],
+          latitude: coordinates[1],
+        }
       );
-
-      markersRef.current = [];
-    };
+    });
   }, [
     mapLoaded,
     places,
@@ -701,15 +659,19 @@ export const AtlasMap: React.FC = () => {
   ]);
 
   /*
-   * ------------------------------------------------------------
-   * SELECTED PLACE CAMERA
-   * ------------------------------------------------------------
+   * ---------------------------------------------------------
+   * SELECTED PLACE
+   * ---------------------------------------------------------
+   *
+   * When the user selects an archive entry, fly directly
+   * to its stored coordinates.
    */
-
   useEffect(() => {
+    const map = mapRef.current;
+
     if (
       !mapLoaded ||
-      !mapRef.current ||
+      !map ||
       !selectedPlaceSlug
     ) {
       return;
@@ -718,7 +680,8 @@ export const AtlasMap: React.FC = () => {
     const place =
       places.find(
         (item) =>
-          item.slug === selectedPlaceSlug
+          item.slug ===
+          selectedPlaceSlug
       );
 
     if (
@@ -730,9 +693,11 @@ export const AtlasMap: React.FC = () => {
       return;
     }
 
-    mapRef.current.flyTo({
-      center:
-        place.coordinates,
+    map.flyTo({
+      center: [
+        place.coordinates[0],
+        place.coordinates[1],
+      ],
 
       zoom: 8,
 
@@ -748,45 +713,31 @@ export const AtlasMap: React.FC = () => {
     selectedPlaceSlug,
   ]);
 
-  /*
-   * ------------------------------------------------------------
-   * RENDER
-   * ------------------------------------------------------------
-   */
-
   return (
     <div
-      ref={viewportRef}
-      className="absolute inset-0 overflow-hidden rounded-[2px]"
+      className="absolute inset-0"
       style={{
-        width: '100%',
-        height: '100%',
         minWidth: 0,
         minHeight: 0,
-        background: '#0a0807',
       }}
     >
       {/*
-       * Dedicated Mapbox viewport.
+       * Actual Mapbox container.
        *
-       * This element is intentionally kept separate from all
-       * visual overlays.
+       * It must remain underneath all visual overlays.
        */}
       <div
-        ref={mapContainerRef}
+        ref={mapContainer}
         className="absolute inset-0"
         style={{
-          width: '100%',
-          height: '100%',
+          borderRadius: '2px',
           minWidth: 0,
           minHeight: 0,
-          borderRadius: '2px',
-          overflow: 'hidden',
         }}
       />
 
       {/*
-       * Archive frame.
+       * Archive frame
        */}
       <div
         className="absolute inset-0 rounded-[2px] border border-[#2b241d]"
@@ -804,11 +755,7 @@ export const AtlasMap: React.FC = () => {
       />
 
       {/*
-       * Atmospheric overlay.
-       *
-       * This preserves the visual treatment from the version
-       * you showed me rather than replacing the map with a
-       * generic dark theme.
+       * Atmospheric overlay
        */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -838,21 +785,19 @@ export const AtlasMap: React.FC = () => {
       />
 
       {/*
-       * Fine analog grain.
+       * Fine archive grain
        */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.02]"
         style={{
-          backgroundImage:
-            `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize:
-            '128px 128px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: '128px 128px',
           zIndex: 12,
         }}
       />
 
       {/*
-       * Archive corner registration marks.
+       * Corner registration marks
        */}
       {[
         {
@@ -878,7 +823,14 @@ export const AtlasMap: React.FC = () => {
       ].map((corner) => (
         <div
           key={corner.pos}
-          className={`absolute ${corner.pos} w-6 h-6 pointer-events-none ${corner.borders}`}
+          className={`
+            absolute
+            ${corner.pos}
+            w-6
+            h-6
+            pointer-events-none
+            ${corner.borders}
+          `}
           style={{
             borderColor:
               'rgba(255, 170, 85, 0.2)',

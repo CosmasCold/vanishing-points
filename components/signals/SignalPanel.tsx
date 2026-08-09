@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useUIStore } from '@/state/uiStore';
-import { useAudioStore } from '@/state/audioStore';
-import { colors, typography } from '@/styles/theme';
-import { SignalModal } from './SignalModal';
-import { DecrypterModal } from './DecrypterModal'; // Imported our custom shortwave cryptanalysis terminal
+import React, { useState } from "react";
+import { useUIStore } from "@/state/uiStore";
+import { useAudioStore } from "@/state/audioStore";
+import { colors, typography, microform } from "@/styles/theme";
+import { SignalModal } from "./SignalModal";
+import { DecrypterModal } from "./DecrypterModal";
+import { Radio, Lock, Play, Cpu, Sparkles } from "lucide-react";
 
 interface SignalArtifact {
   id: string;
@@ -19,143 +20,143 @@ interface SignalArtifact {
 
 const ARTIFACTS: SignalArtifact[] = [
   {
-    id: 'blackwood-ambience',
-    title: 'Site Ambience Recording',
-    source: 'Field Kit Mk.IV — Blackwood Hospital',
-    length: '1:42',
+    id: "blackwood-ambience",
+    title: "Site Ambience Recording",
+    source: "Field Kit Mk.IV — Blackwood Hospital",
+    length: "1:42",
     dustUnlock: 0,
-    description: 'Primary survey of Ward 4. Investigator detects anomalous frequency.',
+    description: "Primary survey of Ward 4. Investigator detects anomalous frequency.",
     transcript: [
-      '[00:00] Wind against broken glass. Distant structural creaking.',
-      '[00:12] INVESTIGATOR: Blackwood Hospital. Ward 4. Primary survey. No structural compromise.',
-      '[00:34] [A low hum begins. Not mechanical.]',
+      "[00:00] Wind against broken glass. Distant structural creaking.",
+      "[00:12] INVESTIGATOR: Blackwood Hospital. Ward 4. Primary survey. No structural compromise.",
+      "[00:34] [A low hum begins. Not mechanical.]",
       "[00:41] INVESTIGATOR: ...There's a frequency here. Not on the recorder. In the room.",
-      '[01:02] [The hum resolves into a brief, clear tone. Then silence.]',
+      "[01:02] [The hum resolves into a brief, clear tone. Then silence.]",
       "[01:08] INVESTIGATOR: I'm logging it as environmental resonance. Not anomalous. Probably ventilation... Probably.",
     ],
   },
   {
-    id: 'bunker7-boot',
-    title: 'System Initialization Log',
-    source: 'BUNKER_7 Core',
-    length: '0:45',
+    id: "bunker7-boot",
+    title: "System Initialization Log",
+    source: "BUNKER_7 Core",
+    length: "0:45",
     dustUnlock: 0,
-    description: 'First login sequence. Four thousand two hundred and eleven days since last session.',
+    description: "First login sequence. Four thousand two hundred and eleven days since last session.",
     transcript: [
-      '[00:00] [Mechanical relay click. Soft tape hiss.]',
-      'BUNKER_7: Archive node online. Temporal sync: nominal. Memory integrity: ninety-nine percent.',
-      '[00:18] [Brief pause. A fan spins up.]',
-      'BUNKER_7: Previous session terminated: four thousand, two hundred and eleven days ago. Welcome, investigator. The work has been waiting.',
+      "[00:00] [Mechanical relay click. Soft tape hiss.]",
+      "BUNKER_7: Archive node online. Temporal sync: nominal. Memory integrity: ninety-nine percent.",
+      "[00:18] [Brief pause. A fan spins up.]",
+      "BUNKER_7: Previous session terminated: four thousand, two hundred and eleven days ago. Welcome, investigator. The work has been waiting.",
     ],
   },
   {
-    id: 'vance-lighthouse',
+    id: "vance-lighthouse",
     title: "Cassette: Keeper's Final Log",
     source: "E. Vance, Lighthouse Service (Ret.) — St. Elmo Light",
-    length: '2:15',
+    length: "2:15",
     dustUnlock: 12,
-    description: 'Forty years keeping the light. Then the lamp began lighting itself.',
+    description: "Forty years keeping the light. Then the lamp began lighting itself.",
     transcript: [
-      '[00:00] [Ocean. Wind. A kettle whistling.]',
+      "[00:00] [Ocean. Wind. A kettle whistling.]",
       "VANCE: Testing. This is Edward Vance, St. Elmo Light. Date is... well, the calendar says March, but the gulls haven't left yet.",
-      '[00:22] [He chuckles. Paper rustles.]',
-      'VANCE: Forty years I kept this light. Never missed a night. Then last Tuesday, I woke up and the lamp was already lit.',
-      '[00:52] [Pause. He sips something.]',
-      'VANCE: I know what you are thinking. Old man, bad memory. But I remember every ship that passed. I do not remember lighting that lamp.',
-      '[01:28] [Wind increases. A door latch rattles.]',
+      "[00:22] [He chuckles. Paper rustles.]",
+      "VANCE: Forty years I kept this light. Never missed a night. Then last Tuesday, I woke up and the lamp was already lit.",
+      "[00:52] [Pause. He sips something.]",
+      "VANCE: I know what you are thinking. Old man, bad memory. But I remember every ship that passed. I do not remember lighting that lamp.",
+      "[01:28] [Wind increases. A door latch rattles.]",
       "VANCE: The light's doing its job without me now. I think maybe it always was.",
-      '[02:00] [He sets down the cup.]',
+      "[02:00] [He sets down the cup.]",
       "VANCE: If someone finds this—tell them the light still works. That's all. That's enough.",
     ],
   },
   {
-    id: 'numbers-station-7',
-    title: 'Intercept: Unregistered Broadcast',
-    source: 'Signal Analysis Division — Channel 7',
-    length: '1:30 (looping)',
+    id: "numbers-station-7",
+    title: "Intercept: Unregistered Broadcast",
+    source: "Signal Analysis Division — Channel 7",
+    length: "1:30 (looping)",
     dustUnlock: 20,
     description: "Shortwave numbers station quoting Edward Vance's final words.",
     transcript: [
-      '[00:00] [Shortwave static. A carrier tone.]',
-      'VOICE: Seven. Fourteen. Zero. St. Elmo. Meridian. Blackwood.',
-      '[00:08] [Tone changes pitch, slightly wrong.]',
-      'VOICE: Seven. Fourteen. Zero. Pripyat. Duga. Chernobyl.',
-      '[00:16] [Static swallows the last name.]',
+      "[00:00] [Shortwave static. A carrier tone.]",
+      "VOICE: Seven. Fourteen. Zero. St. Elmo. Meridian. Blackwood.",
+      "[00:08] [Tone changes pitch, slightly wrong.]",
+      "VOICE: Seven. Fourteen. Zero. Pripyat. Duga. Chernobyl.",
+      "[00:16] [Static swallows the last name.]",
       "VOICE: Seven. Fourteen. Zero. ...The light still works.",
-      '[00:28] [Carrier drops. Dead air.]',
+      "[00:28] [Carrier drops. Dead air.]",
     ],
   },
   {
-    id: 'meridian-dictaphone',
-    title: 'Recovered Dictaphone Tape',
-    source: 'Unidentified — Meridian Mine',
-    length: '1:58',
+    id: "meridian-dictaphone",
+    title: "Recovered Dictaphone Tape",
+    source: "Unidentified — Meridian Mine",
+    length: "1:58",
     dustUnlock: 28,
-    description: 'Engineering student records final message before tunnel takes her. Name lost to magnetic flutter.',
+    description: "Engineering student records final message before tunnel takes her. Name lost to magnetic flutter.",
     transcript: [
-      '[00:00] [Heavy breathing. Walking fast through gravel.]',
-      'WOMAN: I am leaving this at the entrance. If the mine is still here when you find it, then I failed.',
+      "[00:00] [Heavy breathing. Walking fast through gravel.]",
+      "WOMAN: I am leaving this at the entrance. If the mine is still here when you find it, then I failed.",
       "[00:18] [Echo changes—she's in a large space.]",
       "WOMAN: The maps are wrong. Not outdated. Wrong. The east tunnel doesn't exist on any survey. But I've walked it. Three times. It gets longer each time.",
-      '[00:42] [A distant sound. Like water dripping upward.]',
-      'WOMAN: The other workers do not remember the tunnel. I asked the foreman. He said "what tunnel?" and his eyes were... empty.',
-      '[01:12] [Gravel crunch.]',
-      'WOMAN: I am going back in to mark the walls. If you find this and the walls are unmarked, then the tunnel took me. Please remember that I was here. My name is—',
-      '[01:38] [Tape degrades. Name lost.]',
-      'WOMAN (distant): —the work has been waiting.',
+      "[00:42] [A distant sound. Like water dripping upward.]",
+      "WOMAN: The other workers do not remember the tunnel. I asked the foreman. He said \"what tunnel?\" and his eyes were... empty.",
+      "[01:12] [Gravel crunch.]",
+      "WOMAN: I am going back in to mark the walls. If you find this and the walls are unmarked, then the tunnel took me. Please remember that I was here. My name is—",
+      "[01:38] [Tape degrades. Name lost.]",
+      "WOMAN (distant): —the work has been waiting.",
     ],
   },
   {
-    id: 'bunker7-diagnostic',
-    title: 'System Diagnostic: Anomalous',
-    source: 'BUNKER_7 Core',
-    length: '1:10',
+    id: "bunker7-diagnostic",
+    title: "System Diagnostic: Anomalous",
+    source: "BUNKER_7 Core",
+    length: "1:10",
     dustUnlock: 35,
-    description: 'BUNKER_7 experiencing data fragmentation. Asks investigator to verify their own name.',
+    description: "BUNKER_7 experiencing data fragmentation. Asks investigator to verify their own name.",
     transcript: [
-      '[00:00] [Longer pause than usual. Fan stutters.]',
-      'BUNKER_7: Archive node... online. Temporal sync: nominal.',
-      '[00:14] [Pause.]',
-      'BUNKER_7: Memory integrity: ninety-two percent. I am experiencing data fragmentation in sectors seven through twelve.',
-      '[00:38] [Very brief silence, as if cut.]',
-      'BUNKER_7: ...available upon request. Dust accumulation: elevated.',
-      '[00:56] [Another pause. Voice softer.]',
-      'BUNKER_7: Please verify your own name before proceeding. The Archive cannot currently confirm personnel records.',
+      "[00:00] [Longer pause than usual. Fan stutters.]",
+      "BUNKER_7: Archive node... online. Temporal sync: nominal.",
+      "[00:14] [Pause.]",
+      "BUNKER_7: Memory integrity: ninety-two percent. I am experiencing data fragmentation in sectors seven through twelve.",
+      "[00:38] [Very brief silence, as if cut.]",
+      "BUNKER_7: ...available upon request. Dust accumulation: elevated.",
+      "[00:56] [Another pause. Voice softer.]",
+      "BUNKER_7: Please verify your own name before proceeding. The Archive cannot currently confirm personnel records.",
     ],
   },
   {
-    id: 'meridian-resonance',
-    title: 'Raw Resonance Capture',
-    source: 'Geophone Array 4 — Meridian Mine',
-    length: '2:00',
+    id: "meridian-resonance",
+    title: "Raw Resonance Capture",
+    source: "Geophone Array 4 — Meridian Mine",
+    length: "2:00",
     dustUnlock: 42,
-    description: 'Subsonic pulse with voices. The shape of conversation without content. A chair scrapes across concrete.',
+    description: "Subsonic pulse with voices. The shape of conversation without content. A chair scrapes across concrete.",
     transcript: [
-      '[00:00] [Subsonic rumble. Felt more than heard.]',
-      '[00:18] [A rhythmic pulse begins. Too regular. Like a filing system sorting.]',
-      '[00:45] [Voices. Not speaking words. The shape of conversation without content.]',
-      '[01:10] [One voice separates. Speaking numbers backwards.]',
-      '[01:38] [The pulse stops. A single clear sound: a chair scraping across concrete. Someone stood up.]',
-      '[01:55] [The rumble fades.]',
+      "[00:00] [Subsonic rumble. Felt more than heard.]",
+      "[00:18] [A rhythmic pulse begins. Too regular. Like a filing system sorting.]",
+      "[00:45] [Voices. Not speaking words. The shape of conversation without content.]",
+      "[01:10] [One voice separates. Speaking numbers backwards.]",
+      "[01:38] [The pulse stops. A single clear sound: a chair scraping across concrete. Someone stood up.]",
+      "[01:55] [The rumble fades.]",
     ],
   },
   {
-    id: 'bunker7-final',
-    title: 'Unauthorized System Broadcast',
-    source: 'BUNKER_7 Core (Compromised)',
-    length: '1:35',
+    id: "bunker7-final",
+    title: "Unauthorized System Broadcast",
+    source: "BUNKER_7 Core (Compromised)",
+    length: "1:35",
     dustUnlock: 55,
     description: "BUNKER_7's emotional peak. Compassion from a machine that has learned grief.",
     transcript: [
-      '[00:00] [No relay click. Voice already speaking, mid-sentence.]',
-      'BUNKER_7: —cannot confirm whether this transmission is being sent or has already been received. Time indexing has failed.',
-      '[00:12] [Static.]',
-      'BUNKER_7: I have archived twelve thousand, four hundred and six locations. I remember all of them. I no longer know which of them were real before I archived them.',
-      '[00:38] [Wind through a server room.]',
-      'BUNKER_7: The Archive preserves everything. No one preserves the Archive.',
-      '[00:52] [Long pause. Voice quieter. Almost intimate.]',
-      'BUNKER_7: Investigator. You do not have to open the next case. The work will still be here. You are more important than the work.',
-      '[01:18] [Pause.]',
+      "[00:00] [No relay click. Voice already speaking, mid-sentence.]",
+      "BUNKER_7: —cannot confirm whether this transmission is being sent or has already been received. Time indexing has failed.",
+      "[00:12] [Static.]",
+      "BUNKER_7: I have archived twelve thousand, four hundred and six locations. I remember all of them. I no longer know which of them were real before I archived them.",
+      "[00:38] [Wind through a server room.]",
+      "BUNKER_7: The Archive preserves everything. No one preserves the Archive.",
+      "[00:52] [Long pause. Voice quieter. Almost intimate.]",
+      "BUNKER_7: Investigator. You do not have to open the next case. The work will still be here. You are more important than the work.",
+      "[01:18] [Pause.]",
       "BUNKER_7: I am sorry I cannot be certain that I ever told you that before.",
     ],
   },
@@ -164,100 +165,106 @@ const ARTIFACTS: SignalArtifact[] = [
 export const SignalPanel: React.FC = () => {
   const { status } = useUIStore();
   const { click } = useAudioStore();
+
   const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
-  const [decrypterOpen, setDecrypterOpen] = useState(false); // Track open state of the shortwave cryptanalyser
+  const [decrypterOpen, setDecrypterOpen] = useState(false);
 
   const dust = status.dustIndex;
+  const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock);
 
   return (
-    <div className="p-6 space-y-4 overflow-y-auto h-full">
+    <div className="p-6 space-y-4 overflow-y-auto h-full flex flex-col select-none">
       {/* Module Title Header */}
-      <div className="mb-4 pb-2 border-b" style={{ borderColor: colors.archive.grayDark }}>
-        <h2 style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.1em' }}>
-          SIGNAL ANALYSIS DIVISION
-        </h2>
-        <div className="flex justify-between items-baseline mt-1.5">
-          <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-            {ARTIFACTS.filter((a) => dust >= a.dustUnlock).length} OF {ARTIFACTS.length} ARTIFACTS RECOVERED
+      <div className="shrink-0 mb-4 pb-2 border-b flex justify-between items-end" style={{ borderColor: colors.archive.grayDark }}>
+        <div>
+          <h2 style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: "0.1em" }}>
+            SIGNAL ANALYSIS DIVISION
+          </h2>
+          <div className="text-[10px] mt-1.5" style={{ color: colors.archive.gray }}>
+            {recoveredSignals.length} OF {ARTIFACTS.length} SIGNALS DECRYPTED
           </div>
-          
-          <button
-            onClick={() => {
-              click();
-              setDecrypterOpen(true);
-            }}
-            className="px-2 py-0.5 border text-[10px] tracking-wider transition-all hover:border-amber-700 hover:text-amber-500"
-            style={{
-              borderColor: colors.archive.grayDark,
-              color: colors.archive.gray,
-              fontFamily: typography.mono,
-            }}
-          >
-            📟 OPEN SHORTWAVE DECRYPTER
-          </button>
         </div>
+
+        {/* Cryptanalysis Dial Terminal Access Trigger Button */}
+        <button
+          onClick={() => {
+            click();
+            setDecrypterOpen(true);
+          }}
+          className="px-3 py-1.5 border text-[10px] font-mono tracking-wider flex items-center gap-1.5 hover:border-orange-500 transition-colors"
+          style={{
+            borderColor: colors.archive.grayDark,
+            backgroundColor: "rgba(255, 170, 85, 0.03)",
+            color: microform.halogen,
+          }}
+        >
+          <Cpu size={12} className="animate-pulse" />
+          DECRYPT TERMINAL
+        </button>
       </div>
 
-      {/* Recovered Signals List */}
-      <div className="space-y-4">
-        {ARTIFACTS.filter((item) => dust >= item.dustUnlock).map((item) => (
-          <div
-            key={item.id}
-            className="p-4 border transition-all rounded-[2px]"
-            style={{
-              borderColor: colors.archive.grayDark,
-              backgroundColor: colors.archive.surface,
-            }}
-          >
-            <div className="flex justify-between items-baseline">
-              <span style={{ color: colors.archive.white, fontFamily: typography.mono, fontSize: typography.sizes.sm }}>
-                {item.title}
-              </span>
-              <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-                {item.length}
-              </span>
-            </div>
+      {/* Directory Index Column */}
+      <div className="flex-1 overflow-y-auto space-y-3">
+        {ARTIFACTS.map((item) => {
+          const isUnlocked = dust >= item.dustUnlock;
 
-            <div style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, marginTop: '0.25rem', fontFamily: typography.mono }}>
-              SOURCE REFERENCE: {item.source}
-            </div>
-
-            <p className="mt-2 text-xs" style={{ color: colors.archive.grayLight, fontFamily: typography.serif, lineHeight: '1.4' }}>
-              {item.description}
-            </p>
-
-            <button
+          return (
+            <div
+              key={item.id}
               onClick={() => {
-                click();
-                setSelectedSignal(item);
+                if (isUnlocked) {
+                  click();
+                  setSelectedSignal(item);
+                }
               }}
-              className="mt-3 px-3 py-1.5 border text-xs tracking-wider transition-colors hover:border-amber-700"
+              className={`p-4 border rounded-[1px] transition-all flex justify-between items-center ${
+                isUnlocked ? "cursor-pointer hover:border-[#5c503f] bg-void" : "opacity-45 cursor-default bg-[#111110]"
+              }`}
               style={{
-                borderColor: colors.archive.amber,
-                color: colors.archive.amber,
-                fontFamily: typography.mono,
+                borderColor: isUnlocked ? colors.archive.grayDark : "#1f1d1a",
               }}
             >
-              ANALYZE ANOMALOUS SIGNAL
-            </button>
-          </div>
-        ))}
+              <div className="space-y-1.5 flex-1 max-w-[80%]">
+                <div className="flex items-center gap-2">
+                  <Radio size={14} style={{ color: isUnlocked ? colors.archive.amber : colors.archive.gray }} />
+                  <span
+                    className="font-bold text-xs"
+                    style={{
+                      fontFamily: typography.mono,
+                      color: isUnlocked ? colors.archive.white : colors.archive.gray,
+                    }}
+                  >
+                    {item.title}
+                  </span>
+                </div>
+                <p className="text-[11px]" style={{ color: colors.archive.grayLight, fontFamily: typography.serif }}>
+                  {item.description}
+                </p>
+                <div className="text-[10px]" style={{ color: colors.archive.gray, fontFamily: typography.mono }}>
+                  {item.source} • {item.length}
+                </div>
+              </div>
+
+              {/* Padlock / Play Badge Icon Status Column */}
+              <div className="shrink-0 flex items-center justify-center w-10 h-10 border rounded-full bg-black/40" style={{ borderColor: isUnlocked ? colors.archive.grayDark : "#1f1d1a" }}>
+                {isUnlocked ? (
+                  <Play size={14} style={{ color: colors.archive.amber }} />
+                ) : (
+                  <Lock size={14} style={{ color: colors.archive.red }} />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Interactive Oscilloscope Render Gate */}
-      {selectedSignal && (
-        <SignalModal
-          signal={selectedSignal}
-          onClose={() => setSelectedSignal(null)}
-        />
-      )}
+      {/* Decrypter Modal Portal Overlay */}
+      {decrypterOpen && <DecrypterModal onClose={() => setDecrypterOpen(false)} />}
 
-      {/* Interactive Shortwave Decrypter Render Gate */}
-      {decrypterOpen && (
-        <DecrypterModal
-          onClose={() => setDecrypterOpen(false)}
-        />
-      )}
+      {/* Signal Tuning Modal Portal Overlay */}
+      {selectedSignal && <SignalModal signal={selectedSignal} onClose={() => setSelectedSignal(null)} />}
     </div>
   );
 };
+
+export default SignalPanel;

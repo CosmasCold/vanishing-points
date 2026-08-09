@@ -1,845 +1,435 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useAtlasStore } from "@/state/atlasStore";
+import { useAudioStore } from "@/state/audioStore";
+import { useEvidenceBoardStore } from "@/state/evidenceBoardStore";
+import { colors, microform, typography, shadows } from "@/styles/theme";
+import { Place } from "@/types/places";
+import { project, WORLD_SIZE } from "./mercator";
+import worldMapData from "./world-map.json";
 
-import { useAtlasStore } from '@/state/atlasStore';
-import { useAudioStore } from '@/state/audioStore';
-import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
-import { colors, microform } from '@/styles/theme';
-import { Place } from '@/types/places';
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
-
-function isValidCoordinates(
-  coordinates: Place['coordinates'] | undefined
-): coordinates is [number, number] {
-  if (!Array.isArray(coordinates) || coordinates.length !== 2) {
-    return false;
-  }
-
-  const [longitude, latitude] = coordinates;
-
-  return (
-    Number.isFinite(longitude) &&
-    Number.isFinite(latitude) &&
-    longitude >= -180 &&
-    longitude <= 180 &&
-    latitude >= -90 &&
-    latitude <= 90
-  );
-}
-
-function getStatusColor(place: Place): string {
-  switch (place.status) {
-    case 'sealed':
-      return colors.archive.red;
-
-    case 'whispered':
-      return colors.archive.blue;
-
-    case 'mirage':
-      return colors.archive.white;
-
-    default:
-      return colors.archive.green;
-  }
-}
-
-/**
- * Applies the archive visual treatment without modifying
- * coordinates, sources, projections, or map positioning.
- */
-function applyArchivePalette(map: mapboxgl.Map) {
-  const style = map.getStyle();
-
-  if (!style?.layers) {
-    return;
-  }
-
-  style.layers.forEach((layer) => {
-    const layerId = layer.id.toLowerCase();
-
-    try {
-      if (layer.type === 'background') {
-        map.setPaintProperty(
-          layer.id,
-          'background-color',
-          '#0a0807'
-        );
-
-        map.setPaintProperty(
-          layer.id,
-          'background-opacity',
-          0.95
-        );
-      }
-
-      if (
-        layer.type === 'fill' &&
-        layerId.includes('water')
-      ) {
-        map.setPaintProperty(
-          layer.id,
-          'fill-color',
-          '#05070b'
-        );
-
-        map.setPaintProperty(
-          layer.id,
-          'fill-opacity',
-          0.95
-        );
-      }
-
-      if (
-        layer.type === 'fill' &&
-        layerId.includes('land')
-      ) {
-        map.setPaintProperty(
-          layer.id,
-          'fill-color',
-          '#17120d'
-        );
-
-        map.setPaintProperty(
-          layer.id,
-          'fill-opacity',
-          1
-        );
-      }
-
-      if (
-        layer.type === 'line' &&
-        (
-          layerId.includes('road') ||
-          layerId.includes('bridge') ||
-          layerId.includes('tunnel')
-        )
-      ) {
-        map.setPaintProperty(
-          layer.id,
-          'line-color',
-          'rgba(201, 169, 110, 0.16)'
-        );
-
-        map.setPaintProperty(
-          layer.id,
-          'line-width',
-          0.8
-        );
-      }
-
-      if (
-        layer.type === 'symbol' &&
-        (
-          layerId.includes('label') ||
-          layerId.includes('place') ||
-          layerId.includes('poi')
-        )
-      ) {
-        map.setLayoutProperty(
-          layer.id,
-          'visibility',
-          'none'
-        );
-      }
-    } catch (error) {
-      console.warn(
-        '[AtlasMap] Failed to restyle layer:',
-        layer.id,
-        error
-      );
-    }
-  });
-
-  try {
-    map.setFog({
-      color: '#130e0a',
-      'high-color': '#0a0604',
-      range: [0.2, 1.5],
-      'horizon-blend': 0.2,
-    });
-  } catch (error) {
-    console.warn(
-      '[AtlasMap] Fog configuration failed:',
-      error
-    );
-  }
-}
-
-function createMarkerElement(
-  place: Place,
-  isSelected: boolean,
-  onClick: (event: MouseEvent) => void
-): HTMLDivElement {
-  const statusColor = getStatusColor(place);
-
-  const el = document.createElement('div');
-
-  el.className = 'map-marker';
-
-  Object.assign(el.style, {
-    position: 'relative',
-    width: '18px',
-    height: '18px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    pointerEvents: 'auto',
-    transition: 'transform 0.2s ease',
-    transform: isSelected ? 'scale(1.16)' : 'scale(1)',
-  });
-
-  const ring = document.createElement('div');
-
-  Object.assign(ring.style, {
-    position: 'absolute',
-    inset: '0',
-    border: `1.3px solid ${microform.halogen}`,
-    borderRadius: '999px',
-    background: 'rgba(10, 8, 6, 0.8)',
-    boxShadow: isSelected
-      ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
-      : `0 0 10px ${microform.halogenGlow}`,
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-  });
-
-  const dot = document.createElement('div');
-
-  Object.assign(dot.style, {
-    width: isSelected ? '8px' : '6px',
-    height: isSelected ? '8px' : '6px',
-    borderRadius: '999px',
-    background: statusColor,
-    boxShadow: `0 0 8px ${statusColor}`,
-    transition:
-      'width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease',
-    zIndex: '1',
-  });
-
-  const handleMouseEnter = () => {
-    el.style.transform = 'scale(1.22)';
-
-    ring.style.boxShadow =
-      `0 0 12px ${microform.halogen}, ` +
-      `0 0 4px ${microform.halogen}`;
-
-    dot.style.width = '8px';
-    dot.style.height = '8px';
-    dot.style.boxShadow = `0 0 10px ${statusColor}`;
-  };
-
-  const handleMouseLeave = () => {
-    el.style.transform = isSelected
-      ? 'scale(1.16)'
-      : 'scale(1)';
-
-    ring.style.boxShadow = isSelected
-      ? `0 0 14px ${statusColor}, 0 0 6px ${microform.halogen}`
-      : `0 0 10px ${microform.halogenGlow}`;
-
-    dot.style.width = isSelected ? '8px' : '6px';
-    dot.style.height = isSelected ? '8px' : '6px';
-    dot.style.boxShadow = `0 0 8px ${statusColor}`;
-  };
-
-  el.addEventListener(
-    'mouseenter',
-    handleMouseEnter
-  );
-
-  el.addEventListener(
-    'mouseleave',
-    handleMouseLeave
-  );
-
-  el.addEventListener(
-    'click',
-    onClick
-  );
-
-  el.appendChild(ring);
-  el.appendChild(dot);
-
-  return el;
+// Typed representation of the pre-projected geographic data
+interface CountryGeo {
+  name: string;
+  code: string;
+  path: string;
 }
 
 export const AtlasMap: React.FC = () => {
-  const mapContainer =
-    useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  
+  // Transform state: x/y pan in pixels, k is scale factor (zoom level)
+  const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.15 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [hoveredPlaceSlug, setHoveredPlaceSlug] = useState<string | null>(null);
 
-  const mapRef =
-    useRef<mapboxgl.Map | null>(null);
-
-  const markersRef =
-    useRef<Map<string, mapboxgl.Marker>>(
-      new Map()
-    );
-
-  const [mapLoaded, setMapLoaded] =
-    useState(false);
-
-  const {
-    places,
-    selectPlace,
-    selectedPlaceSlug,
-  } = useAtlasStore();
-
+  const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
+  const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
 
-  const {
-    selectNode,
-    setFocusNode,
-    setViewMode,
-  } = useEvidenceBoardStore();
-
-  /*
-   * ---------------------------------------------------------
-   * MAP INITIALIZATION
-   * ---------------------------------------------------------
-   *
-   * The projection is specified once at construction.
-   *
-   * There is deliberately NO:
-   *   - setProjection() on load
-   *   - sourceId inspection
-   *   - source coordinate manipulation
-   *   - projection event listener
-   *
-   * Markers use Mapbox's native [lng, lat] coordinate system.
-   */
+  // 1. Measure and track container size dynamically
   useEffect(() => {
-    const container = mapContainer.current;
-
-    if (!container) {
-      console.error(
-        '[AtlasMap] Map container not found.'
-      );
-      return;
-    }
-
-    if (mapRef.current) {
-      return;
-    }
-
-    if (!MAPBOX_TOKEN) {
-      console.error(
-        '[AtlasMap] NEXT_PUBLIC_MAPBOX_TOKEN is missing.'
-      );
-      return;
-    }
-
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-
-    let mapInstance: mapboxgl.Map;
-
-    try {
-      mapInstance = new mapboxgl.Map({
-        container,
-
-        style:
-          'mapbox://styles/mapbox/dark-v11',
-
-        /*
-         * IMPORTANT:
-         *
-         * This is explicitly Mercator.
-         * Do not change this to "globe".
-         */
-        projection: {
-          name: 'mercator',
-        },
-
-        /*
-         * Initial viewport only.
-         *
-         * This is the location of the first archive entry,
-         * but it does NOT control marker coordinates.
-         */
-        center: [30.0542, 51.4061],
-
-        zoom: 1.6,
-
-        renderWorldCopies: true,
-
-        attributionControl: false,
-
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchPitch: false,
-
-        cooperativeGestures: false,
-      });
-    } catch (error) {
-      console.error(
-        '[AtlasMap] Failed to create Mapbox instance:',
-        error
-      );
-
-      return;
-    }
-
-    mapRef.current = mapInstance;
-
-    const handleLoad = () => {
-      console.log(
-        '[AtlasMap] Map loaded successfully.'
-      );
-
-      /*
-       * The map was already created as Mercator.
-       * We intentionally do not call setProjection here.
-       */
-      console.log(
-        '[AtlasMap] Projection:',
-        mapInstance.getProjection().name
-      );
-
-      applyArchivePalette(mapInstance);
-
-      /*
-       * Force a resize after the map becomes visible.
-       * This prevents the common "map disappeared / only
-       * partial map rendered" problem caused by initializing
-       * Mapbox while its parent is still settling.
-       */
-      requestAnimationFrame(() => {
-        mapInstance.resize();
-
-        requestAnimationFrame(() => {
-          mapInstance.resize();
+    if (!containerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setDimensions({
+          width: entry.contentRect.width || 800,
+          height: entry.contentRect.height || 600,
         });
-      });
-
-      setMapLoaded(true);
-    };
-
-    const handleError = (
-      event: mapboxgl.ErrorEvent
-    ) => {
-      console.error(
-        '[AtlasMap] Mapbox error:',
-        event.error
-      );
-    };
-
-    mapInstance.on(
-      'load',
-      handleLoad
-    );
-
-    mapInstance.on(
-      'error',
-      handleError
-    );
-
-    /*
-     * Keep the map correctly sized if the Atlas panel
-     * changes dimensions.
-     */
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            if (
-              mapRef.current &&
-              mapContainer.current
-            ) {
-              mapRef.current.resize();
-            }
-          })
-        : null;
-
-    if (resizeObserver) {
-      resizeObserver.observe(container);
-    }
-
-    return () => {
-      resizeObserver?.disconnect();
-
-      markersRef.current.forEach(
-        (marker) => marker.remove()
-      );
-
-      markersRef.current.clear();
-
-      mapInstance.off(
-        'load',
-        handleLoad
-      );
-
-      mapInstance.off(
-        'error',
-        handleError
-      );
-
-      mapInstance.remove();
-
-      mapRef.current = null;
-
-      setMapLoaded(false);
-    };
+      }
+    });
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
   }, []);
 
-  /*
-   * ---------------------------------------------------------
-   * MARKERS
-   * ---------------------------------------------------------
-   *
-   * Every marker is positioned directly from:
-   *
-   *     place.coordinates
-   *
-   * Your Place type defines this as:
-   *
-   *     [number, number]
-   *
-   * and your data uses:
-   *
-   *     [longitude, latitude]
-   *
-   * Mapbox expects exactly that.
-   *
-   * No conversion happens here.
-   */
+  // 2. Initial fit-to-viewport transform calculation
+  const getFitTransform = useCallback(() => {
+    const scale = Math.min(dimensions.width / WORLD_SIZE, dimensions.height / WORLD_SIZE);
+    const x = (dimensions.width - WORLD_SIZE * scale) / 2;
+    const y = (dimensions.height - WORLD_SIZE * scale) / 2;
+    return { x, y, k: scale };
+  }, [dimensions]);
+
+  // Apply initial fit once on dimensions ready and selectedPlaceSlug is null
   useEffect(() => {
-    const map = mapRef.current;
-
-    if (!mapLoaded || !map) {
-      return;
+    if (!selectedPlaceSlug) {
+      setTransform(getFitTransform());
     }
+  }, [dimensions, selectedPlaceSlug, getFitTransform]);
 
-    /*
-     * Remove markers that are no longer present.
-     */
-    const currentSlugs = new Set(
-      places.map((place) => place.slug)
-    );
-
-    markersRef.current.forEach(
-      (marker, slug) => {
-        if (!currentSlugs.has(slug)) {
-          marker.remove();
-          markersRef.current.delete(slug);
-        }
-      }
-    );
-
-    /*
-     * Build/update markers.
-     */
-    places.forEach((place) => {
-      if (
-        !isValidCoordinates(
-          place.coordinates
-        )
-      ) {
-        console.warn(
-          '[AtlasMap] Invalid coordinates:',
-          place.slug,
-          place.coordinates
-        );
-
-        return;
-      }
-
-      /*
-       * IMPORTANT:
-       *
-       * We use the coordinates EXACTLY as supplied.
-       *
-       * Example:
-       * [30.0542, 51.4061]
-       *
-       * becomes:
-       *
-       * .setLngLat([30.0542, 51.4061])
-       */
-      const coordinates: [
-        number,
-        number
-      ] = [
-        place.coordinates[0],
-        place.coordinates[1],
-      ];
-
-      const isSelected =
-        selectedPlaceSlug === place.slug;
-
-      /*
-       * If this marker already exists, update its
-       * position rather than creating another marker.
-       */
-      const existingMarker =
-        markersRef.current.get(
-          place.slug
-        );
-
-      if (existingMarker) {
-        existingMarker.setLngLat(
-          coordinates
-        );
-
-        existingMarker
-          .getElement()
-          .style.transform =
-          isSelected
-            ? 'scale(1.16)'
-            : 'scale(1)';
-
-        return;
-      }
-
-      const handleClick = (
-        event: MouseEvent
-      ) => {
-        event.stopPropagation();
-
-        click();
-
-        selectPlace(
-          place.slug
-        );
-
-        selectNode(
-          place.slug
-        );
-
-        setFocusNode(
-          place.slug
-        );
-
-        setViewMode(
-          'focus'
-        );
-      };
-
-      const element =
-        createMarkerElement(
-          place,
-          isSelected,
-          handleClick
-        );
-
-      const marker =
-        new mapboxgl.Marker({
-          element,
-          anchor: 'center',
-        })
-          .setLngLat(
-            coordinates
-          )
-          .addTo(map);
-
-      markersRef.current.set(
-        place.slug,
-        marker
-      );
-
-      console.log(
-        `[AtlasMap] Marker "${place.name}"`,
-        {
-          slug: place.slug,
-          longitude: coordinates[0],
-          latitude: coordinates[1],
-        }
-      );
-    });
-  }, [
-    mapLoaded,
-    places,
-    selectedPlaceSlug,
-    click,
-    selectPlace,
-    selectNode,
-    setFocusNode,
-    setViewMode,
-  ]);
-
-  /*
-   * ---------------------------------------------------------
-   * SELECTED PLACE
-   * ---------------------------------------------------------
-   *
-   * When the user selects an archive entry, fly directly
-   * to its stored coordinates.
-   */
+  // 3. Smooth Fly-to selection trigger
   useEffect(() => {
-    const map = mapRef.current;
+    if (!selectedPlaceSlug) return;
+    const place = places.find((p) => p.slug === selectedPlaceSlug);
+    if (!place || !place.coordinates) return;
 
-    if (
-      !mapLoaded ||
-      !map ||
-      !selectedPlaceSlug
-    ) {
-      return;
+    const [longitude, latitude] = place.coordinates;
+    const { x: targetX, y: targetY } = project(longitude, latitude);
+
+    // Zoom level 4.5 gives deep focus with context intact [97]
+    const targetK = 4.5;
+    const targetXPixel = dimensions.width / 2 - targetX * targetK;
+    const targetYPixel = dimensions.height / 2 - targetY * targetK;
+
+    setIsAnimating(true);
+    setTransform({ x: targetXPixel, y: targetYPixel, k: targetK });
+
+    const timer = setTimeout(() => setIsAnimating(false), 800);
+    return () => clearTimeout(timer);
+  }, [selectedPlaceSlug, places, dimensions.width, dimensions.height]);
+
+  // 4. Drag and Pan Event Handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isAnimating) return;
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const x = e.clientX - dragStart.current.x;
+    const y = e.clientY - dragStart.current.y;
+    setTransform((prev) => ({ ...prev, x, y }));
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // 5. Wheel Zoom Event Handler (Zoom toward cursor) [94]
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (isAnimating) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = 1.15;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const nextScale = direction > 0
+      ? Math.min(30, transform.k * zoomFactor)
+      : Math.max(dimensions.width / WORLD_SIZE * 0.8, transform.k / zoomFactor);
+
+    // Zooming toward the mouse cursor rather than always toward the center [94]
+    const mouseWorldX = (mouseX - transform.x) / transform.k;
+    const mouseWorldY = (mouseY - transform.y) / transform.k;
+
+    const nextX = mouseX - mouseWorldX * nextScale;
+    const nextY = mouseY - mouseWorldY * nextScale;
+
+    setTransform({ x: nextX, y: nextY, k: nextScale });
+  };
+
+  // Double click to reset world view
+  const handleDoubleClick = () => {
+    setIsAnimating(true);
+    setTransform(getFitTransform());
+    selectPlace(null);
+    setTimeout(() => setIsAnimating(false), 800);
+  };
+
+  // 6. Procedural Graticules (Latitude & Longitude grid lines) [99]
+  const graticules = useMemo(() => {
+    const paths: string[] = [];
+    
+    // Longitude lines (every 30 degrees)
+    for (let lng = -180; lng <= 180; lng += 30) {
+      const coords: string[] = [];
+      for (let lat = -80; lat <= 80; lat += 10) {
+        const { x, y } = project(lng, lat);
+        coords.push(`${coords.length === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`);
+      }
+      paths.push(coords.join(" "));
     }
-
-    const place =
-      places.find(
-        (item) =>
-          item.slug ===
-          selectedPlaceSlug
-      );
-
-    if (
-      !place ||
-      !isValidCoordinates(
-        place.coordinates
-      )
-    ) {
-      return;
+    
+    // Latitude lines (every 20 degrees)
+    for (let lat = -80; lat <= 80; lat += 20) {
+      const coords: string[] = [];
+      for (let lng = -180; lng <= 180; lng += 10) {
+        const { x, y } = project(lng, lat);
+        coords.push(`${coords.length === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`);
+      }
+      paths.push(coords.join(" "));
     }
+    return paths;
+  }, []);
 
-    map.flyTo({
-      center: [
-        place.coordinates[0],
-        place.coordinates[1],
-      ],
-
-      zoom: 8,
-
-      speed: 1.2,
-
-      curve: 1.4,
-
-      essential: true,
-    });
-  }, [
-    mapLoaded,
-    places,
-    selectedPlaceSlug,
-  ]);
+  // 7. Map Place status colors to theme
+  const getStatusColor = useCallback((place: Place): string => {
+    switch (place.status) {
+      case "sealed":
+        return colors.archive.red;
+      case "whispered":
+        return colors.archive.blue;
+      case "mirage":
+        return microform.halogen;
+      case "pending":
+        return colors.archive.grayLight;
+      case "rejected":
+        return "#4a4740";
+      default:
+        return colors.archive.green;
+    }
+  }, []);
 
   return (
     <div
-      className="absolute inset-0"
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onWheel={handleWheel}
+      onDoubleClick={handleDoubleClick}
+      className={`absolute inset-0 select-none overflow-hidden ${
+        isDragging ? "cursor-grabbing" : "cursor-grab"
+      }`}
       style={{
+        backgroundColor: colors.archive.black,
         minWidth: 0,
         minHeight: 0,
       }}
     >
-      {/*
-       * Actual Mapbox container.
-       *
-       * It must remain underneath all visual overlays.
-       */}
-      <div
-        ref={mapContainer}
-        className="absolute inset-0"
-        style={{
-          borderRadius: '2px',
-          minWidth: 0,
-          minHeight: 0,
-        }}
-      />
-
-      {/*
-       * Archive frame
-       */}
-      <div
-        className="absolute inset-0 rounded-[2px] border border-[#2b241d]"
-        style={{
-          boxShadow: `
-            inset 0 0 0 1px rgba(255,255,255,0.025),
-            0 0 0 1px ${microform.mahogany},
-            0 8px 24px rgba(0,0,0,0.35)
-          `,
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%)',
-          zIndex: 10,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/*
-       * Atmospheric overlay
-       */}
+      {/* Visual Overlay: Vignette & Desklamp lighting glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(
-              ellipse at 50% 30%,
-              transparent 40%,
-              rgba(10, 8, 6, 0.45) 100%
-            ),
-            linear-gradient(
-              180deg,
-              rgba(255, 170, 85, 0.035) 0%,
-              transparent 50%
-            ),
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,0.02) 0%,
-              transparent 10%,
-              transparent 90%,
-              rgba(255,255,255,0.02) 100%
-            )
+            radial-gradient(ellipse at 30% 20%, rgba(255, 170, 85, 0.05) 0%, transparent 60%),
+            radial-gradient(circle at center, transparent 35%, rgba(10, 8, 6, 0.8) 100%)
           `,
-          mixBlendMode: 'multiply',
-          zIndex: 11,
+          zIndex: 4,
         }}
       />
 
-      {/*
-       * Fine archive grain
-       */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.02]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: '128px 128px',
-          zIndex: 12,
-        }}
-      />
-
-      {/*
-       * Corner registration marks
-       */}
-      {[
-        {
-          pos: 'top-4 left-4',
-          borders:
-            'border-t border-l',
-        },
-        {
-          pos: 'top-4 right-4',
-          borders:
-            'border-t border-r',
-        },
-        {
-          pos: 'bottom-4 left-4',
-          borders:
-            'border-b border-l',
-        },
-        {
-          pos: 'bottom-4 right-4',
-          borders:
-            'border-b border-r',
-        },
-      ].map((corner) => (
-        <div
-          key={corner.pos}
-          className={`
-            absolute
-            ${corner.pos}
-            w-6
-            h-6
-            pointer-events-none
-            ${corner.borders}
-          `}
+      {/* Main SVG Map Canvas */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: "auto" }}
+      >
+        <g
           style={{
-            borderColor:
-              'rgba(255, 170, 85, 0.2)',
-            boxShadow:
-              '0 0 8px rgba(255, 170, 85, 0.05)',
-            zIndex: 13,
+            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`,
+            transition: isAnimating ? "transform 800ms cubic-bezier(0.25, 1, 0.5, 1)" : "none",
           }}
+        >
+          {/* Subtle ocean grid lines (graticules) */}
+          <g>
+            {graticules.map((path, idx) => (
+              <path
+                key={`graticule-${idx}`}
+                d={path}
+                fill="none"
+                stroke={microform.halogen}
+                strokeWidth={1}
+                strokeDasharray="4, 12"
+                opacity={0.05}
+              />
+            ))}
+          </g>
+
+          {/* Map Base Layer: High-fidelity simplified country paths */}
+          <g>
+            {(worldMapData as CountryGeo[]).map((country) => (
+              <path
+                key={country.code}
+                d={country.path}
+                fill="#161310" // Dark brown/charcoal [99]
+                stroke="#2a221a" // Very faint borders
+                strokeWidth={1.2 / transform.k} // Border stays crisp
+                className="transition-colors duration-200 hover:fill-[#1e1915]"
+                style={{ vectorEffect: "non-scaling-stroke" }}
+              />
+            ))}
+          </g>
+
+          {/* Connection Lines (Geodetic grids/threads) [94, 99] */}
+          <g>
+            {places.map((place) => {
+              if (!place.coordinates || !place.connectedTo) return null;
+              const { x: x1, y: y1 } = project(place.coordinates[0], place.coordinates[1]);
+              
+              return place.connectedTo.map((slug) => {
+                const target = places.find((p) => p.slug === slug);
+                if (!target || !target.coordinates) return null;
+                const { x: x2, y: y2 } = project(target.coordinates[0], target.coordinates[1]);
+
+                return (
+                  <line
+                    key={`conn-${place.slug}-${slug}`}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke={microform.halogen}
+                    strokeWidth={0.7 / transform.k}
+                    opacity={0.06}
+                    strokeDasharray="5, 5"
+                  />
+                );
+              });
+            })}
+          </g>
+
+          {/* Place Markers Layer [95] */}
+          <g>
+            {places.map((place) => {
+              if (!place.coordinates) return null;
+              const [longitude, latitude] = place.coordinates;
+              const { x, y } = project(longitude, latitude);
+              
+              const isSelected = selectedPlaceSlug === place.slug;
+              const isHovered = hoveredPlaceSlug === place.slug;
+              const statusColor = getStatusColor(place);
+
+              // Responsive scaling: keeps pixel dimensions crisp at any scale [95]
+              const baseScale = isSelected ? 1.4 : isHovered ? 1.25 : 1.0;
+              const markerScale = baseScale / transform.k;
+
+              const handleMarkerClick = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                click();
+                selectPlace(place.slug);
+                selectNode(place.slug);
+                setFocusNode(place.slug);
+                setViewMode("focus");
+              };
+
+              return (
+                <g
+                  key={`marker-${place.slug}`}
+                  transform={`translate(${x}, ${y}) scale(${markerScale})`}
+                  onClick={handleMarkerClick}
+                  onMouseEnter={() => setHoveredPlaceSlug(place.slug)}
+                  onMouseLeave={() => setHoveredPlaceSlug(null)}
+                  className="cursor-pointer"
+                  style={{
+                    transition: isAnimating ? "none" : "transform 0.15s ease",
+                  }}
+                >
+                  {/* Outer glow ring (larger for selected) */}
+                  <circle
+                    r={isSelected ? 10 : 8}
+                    fill="rgba(10, 8, 6, 0.85)"
+                    stroke={microform.halogen}
+                    strokeWidth={1.1}
+                    style={{
+                      filter: `drop-shadow(0 0 ${isSelected ? "6px" : "3px"} ${statusColor})`,
+                    }}
+                  />
+                  {/* Status core center dot */}
+                  <circle
+                    r={isSelected ? 4 : 3}
+                    fill={statusColor}
+                    style={{
+                      filter: `drop-shadow(0 0 3px ${statusColor})`,
+                    }}
+                  />
+
+                  {/* Floating tooltip on hover (scaled down so it reads correctly) */}
+                  {isHovered && (
+                    <g transform={`translate(0, -18) scale(${1 / baseScale})`}>
+                      <rect
+                        x={-55}
+                        y={-14}
+                        width={110}
+                        height={18}
+                        fill="rgba(15, 12, 10, 0.95)"
+                        stroke={microform.halogen}
+                        strokeWidth={0.8}
+                        rx={1}
+                      />
+                      <text
+                        x={0}
+                        y={-2}
+                        textAnchor="middle"
+                        fill={colors.archive.white}
+                        style={{
+                          fontFamily: typography.mono,
+                          fontSize: "7.5px",
+                          letterSpacing: "0.03em",
+                        }}
+                      >
+                        {place.name.length > 20
+                          ? `${place.name.substring(0, 18)}...`
+                          : place.name}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        </g>
+      </svg>
+
+      {/* Decorative Corner Brackets & Outbox framing [100] */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          border: `1px solid ${microform.mahogany}`,
+          boxShadow: `inset 0 0 0 4px rgba(26, 17, 10, 0.05)`,
+          zIndex: 5,
+        }}
+      >
+        {/* Top-Left Bracket */}
+        <div
+          className="absolute top-3 left-3 w-4 h-4 border-t border-l pointer-events-none"
+          style={{ borderColor: microform.halogen, opacity: 0.3 }}
         />
-      ))}
+        {/* Top-Right Bracket */}
+        <div
+          className="absolute top-3 right-3 w-4 h-4 border-t border-r pointer-events-none"
+          style={{ borderColor: microform.halogen, opacity: 0.3 }}
+        />
+        {/* Bottom-Left Bracket */}
+        <div
+          className="absolute bottom-3 left-3 w-4 h-4 border-b border-l pointer-events-none"
+          style={{ borderColor: microform.halogen, opacity: 0.3 }}
+        />
+        {/* Bottom-Right Bracket */}
+        <div
+          className="absolute bottom-3 right-3 w-4 h-4 border-b border-r pointer-events-none"
+          style={{ borderColor: microform.halogen, opacity: 0.3 }}
+        />
+
+        {/* Legend Panel (Classified Overlay style) */}
+        <div
+          className="absolute bottom-5 right-5 p-3 border font-mono text-[9px] tracking-wider pointer-events-auto"
+          style={{
+            borderColor: colors.archive.grayDark,
+            backgroundColor: "rgba(10, 8, 6, 0.95)",
+            boxShadow: shadows.paper,
+            color: colors.archive.grayLight,
+          }}
+        >
+          <div style={{ color: microform.halogen, fontWeight: "bold", marginBottom: "4px" }}>
+            GEODETIC ATLAS INDEX
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: colors.archive.green }} />
+            VERIFIED NO-DRIFT
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: colors.archive.red }} />
+            SEALED SECTOR
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: colors.archive.blue }} />
+            WHISPERED ECHO
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50%", background: microform.halogen }} />
+            MIRAGE CORRELATION
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -282,7 +282,7 @@ export const DashboardShell: React.FC = () => {
   });
 
   // Mount high-performance CSS-Variable driven terminal scanline jitters & hold slips [28]
-  const { jitterStyles } = useTerminalJitter();
+  const { containerRef } = useTerminalJitter();
 
   // Register command registry loops on cold boot
   useEffect(() => {
@@ -306,13 +306,13 @@ export const DashboardShell: React.FC = () => {
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
       className="fixed inset-0 flex overflow-hidden select-none"
       style={{ 
         backgroundColor: colors.archive.black,
-        ...jitterStyles,
         transform: `translate(var(--crt-jitter-x, 0px), var(--crt-jitter-y, 0px))`,
         opacity: `var(--crt-flicker, 1)`,
         filter: `contrast(1.05) brightness(var(--crt-flicker, 1))`,

@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useUIStore } from "@/state/uiStore";
-
-interface JitterStyles {
-  "--crt-flicker": string;
-  "--crt-jitter-x": string;
-  "--crt-jitter-y": string;
-  "--crt-chromatic-shift": string;
-  "--crt-scanline-opacity": number;
-  transition: string;
-}
 
 /**
  * Custom hook to procedurally calculate and inject retro CRT electromagnetic drift,
@@ -24,15 +15,7 @@ export function useTerminalJitter() {
   const observerStability = status?.observerStability ?? 100; // [0..100] [191]
   const dustIndex = status?.dustIndex ?? 0; // [0..100] [191]
 
-  const [cssVars, setCssVars] = useState<JitterStyles>({
-    "--crt-flicker": "1",
-    "--crt-jitter-x": "0px",
-    "--crt-jitter-y": "0px",
-    "--crt-chromatic-shift": "0px",
-    "--crt-scanline-opacity": 0.12,
-    transition: "transform 150ms ease, opacity 200ms ease",
-  });
-
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const cycleRef = useRef<number>(0);
 
@@ -91,16 +74,16 @@ export function useTerminalJitter() {
       // Static scanline grids thicken and darken under high particulate (dust) saturation
       const scanlineOpacity = Math.max(0.08, Math.min(0.45, 0.12 + dustRatio * 0.28));
 
-      // Direct GPU updates via CSS Custom Variables
-      setCssVars({
-        "--crt-flicker": crtFlicker.toFixed(4),
-        "--crt-jitter-x": `${jitterX.toFixed(2)}px`,
-        "--crt-jitter-y": `${jitterY.toFixed(2)}px`,
-        "--crt-chromatic-shift": `${chromaticShift.toFixed(2)}px`,
-        "--crt-scanline-opacity": parseFloat(scanlineOpacity.toFixed(3)),
-        // Fast transition for high-frequency jitters, smooth transition for flicker
-        transition: isNaN(jitterX) ? "none" : "transform 0.01s ease, filter 0.05s ease",
-      });
+      // Direct GPU updates via CSS Custom Variables on the DOM style declaration.
+      // This completely bypasses React's diffing/rerender cycle, preventing memory exhaustion [28].
+      if (containerRef.current) {
+        containerRef.current.style.setProperty("--crt-flicker", crtFlicker.toFixed(4));
+        containerRef.current.style.setProperty("--crt-jitter-x", `${jitterX.toFixed(2)}px`);
+        containerRef.current.style.setProperty("--crt-jitter-y", `${jitterY.toFixed(2)}px`);
+        containerRef.current.style.setProperty("--crt-chromatic-shift", `${chromaticShift.toFixed(2)}px`);
+        containerRef.current.style.setProperty("--crt-scanline-opacity", scanlineOpacity.toFixed(3));
+        containerRef.current.style.transition = isNaN(jitterX) ? "none" : "transform 0.01s ease, filter 0.05s ease";
+      }
 
       frameRef.current = requestAnimationFrame(updateDrift);
     };
@@ -114,9 +97,8 @@ export function useTerminalJitter() {
     };
   }, [observerStability, dustIndex]);
 
-  // CSS variables can be bound directly to the container style attribute
   return {
-    jitterStyles: cssVars,
+    containerRef,
     observerStability,
     dustIndex,
   };

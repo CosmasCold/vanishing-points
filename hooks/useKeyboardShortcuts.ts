@@ -1,14 +1,10 @@
-'use client';
-
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useUIStore } from '@/state/uiStore';
-import { useTerminalStore } from '@/state/terminalStore';
-import { useInvestigationStore } from '@/state/investigationStore';
-import { useDocumentStore } from '@/state/documentStore';
-import { useArtifactStore } from '@/state/artifactStore';
-import { useMediaStore } from '@/state/mediaStore';
+import { useSessionStore } from '@/state/sessionStore';
+import { useAudioStore } from '@/state/audioStore';
+import { ModuleId } from '@/types';
 
-const MODULE_KEYS: Record<string, string> = {
+const HOTKEY_MAP: Record<string, ModuleId> = {
   '1': 'inbox',
   '2': 'atlas',
   '3': 'investigations',
@@ -22,68 +18,47 @@ const MODULE_KEYS: Record<string, string> = {
 };
 
 export function useKeyboardShortcuts() {
+  const { activeModule, setActiveModule, setTerminalOpen, terminalOpen } = useUIStore();
+  const { ritualComplete } = useSessionStore();
+  const { click } = useAudioStore();
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // 1. Backtick terminal toggling remains active for emergencies
+    if (e.key === '`' || e.key === '~') {
+      e.preventDefault();
+      click();
+      setTerminalOpen(!terminalOpen);
+      return;
+    }
+
+    // 2. Prevent shortcut routing when terminal is focused or during text inputs
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.isContentEditable || 
+      terminalOpen
+    ) {
+      return;
+    }
+
+    // 3. SECURE PROGRESSION GATE: Block module switching before Daily Ritual sync completes
+    if (!ritualComplete) {
+      // Shhh... the terminal is still synchronizing. No shortcuts allowed.
+      return;
+    }
+
+    // 4. Run module switching
+    const targetModule = HOTKEY_MAP[e.key];
+    if (targetModule) {
+      e.preventDefault();
+      click();
+      setActiveModule(targetModule);
+    }
+  }, [terminalOpen, setTerminalOpen, ritualComplete, setActiveModule, click]);
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const { terminalOpen, setTerminalOpen, setActiveModule, activeModule } = useUIStore.getState();
-      const { activeInvestigationId, closeInvestigation } = useInvestigationStore.getState();
-      const { activeDocument, closeDocument } = useDocumentStore.getState();
-      const { activeArtifact, closeArtifact } = useArtifactStore.getState();
-      const { activeMedia, closeMedia } = useMediaStore.getState();
-
-      // Close overlays with ESC (priority)
-      if (e.key === 'Escape') {
-        if (activeMedia) { closeMedia(); return; }
-        if (activeDocument) { closeDocument(); return; }
-        if (activeArtifact) { closeArtifact(); return; }
-        if (activeInvestigationId) { closeInvestigation(); return; }
-        if (terminalOpen) { setTerminalOpen(false); return; }
-        return;
-      }
-
-      // Terminal toggle: backtick or tilde
-      if (e.key === '`' || e.key === '~') {
-        e.preventDefault();
-        setTerminalOpen(!terminalOpen);
-        return;
-      }
-
-      // Ignore shortcuts when typing in inputs or overlays are open
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        activeMedia ||
-        activeDocument ||
-        activeArtifact
-      ) {
-        return;
-      }
-
-      // Module switching (number keys)
-      if (!terminalOpen && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const moduleId = MODULE_KEYS[e.key];
-        if (moduleId) {
-          e.preventDefault();
-          setActiveModule(activeModule === moduleId ? null : moduleId);
-          return;
-        }
-      }
-
-      // Help
-      if (e.key === '?' && !terminalOpen) {
-        e.preventDefault();
-        const { addCommand } = useTerminalStore.getState();
-        addCommand({
-          id: `help-${Date.now()}`,
-          input: 'help',
-          output: `KEYBOARD SHORTCUTS\n══════════════════\n\`        Toggle terminal\n1-9,0    Toggle modules\n?        Show this help\nESC      Close overlay / terminal\n\nType 'help' in terminal for command list.`,
-          timestamp: Date.now(),
-          type: 'system',
-        });
-        setTerminalOpen(true);
-      }
-    };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleKeyDown]);
 }

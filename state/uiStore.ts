@@ -1,53 +1,53 @@
 import { create } from 'zustand';
+import { ModuleId } from '@/types';
+import { useInvestigationStore } from './investigationStore';
 
 export const DUST_THRESHOLDS = {
-  LOW: 10,
-  MODERATE: 25,
-  HIGH: 50,
-  EXTREME: 75,
-} as const;
-
-export const BUNKER7_THRESHOLDS = {
-  STABLE: 40,   // clinical persona
-  UNSTABLE: 60, // full erosion
-} as const;
+  NOMINAL: 0,
+  LOW: 15,
+  MODERATE: 40,
+  HIGH: 70,
+  EXTREME: 90,
+};
 
 export const STABILITY_THRESHOLDS = {
   NOMINAL: 90,
-  STABLE: 80,
-  DEGRADED: 60,
-  CRITICAL: 40,
-  UNSTABLE: 20,
-} as const;
+  STABLE: 70,
+  DEGRADED: 45,
+  CRITICAL: 20,
+  UNSTABLE: 0,
+};
 
-interface Status {
+export const BUNKER7_THRESHOLDS = {
+  STABLE: 15,
+  UNSTABLE: 50,
+};
+
+export interface Status {
   dustIndex: number;
   observerStability: number;
-  atlasCoverage: number;
+  investigatedSlugs: string[];
   activeAlerts: number;
-  investigatedSlugs: string[]; // anti-farming: track once-per-place
+  sessionWorkDone: number; // Tracker for active grounding gate checks
 }
 
 interface UIState {
   booted: boolean;
-  activeModule: string | null;
+  activeModule: ModuleId | null;
   terminalOpen: boolean;
   prologueComplete: boolean;
   guideOpen: boolean;
   status: Status;
-
   setBooted: (booted: boolean) => void;
-  setActiveModule: (module: string | null) => void;
+  setActiveModule: (module: ModuleId | null) => void;
   setTerminalOpen: (open: boolean) => void;
   setPrologueComplete: () => void;
   setGuideOpen: (open: boolean) => void;
   updateStatus: (status: Partial<Status>) => void;
-
-  // Dust & stability mechanics
   investigatePlace: (slug: string) => void;
-  ground: () => void;
-  restoreStability: () => void;
-  examineEvidence: (evidenceId: string) => void;
+  ground: () => { success: boolean; message: string };
+  restoreStability: () => { success: boolean; message: string };
+  examineEvidence: (evidenceId: string, isVerified?: boolean) => void;
   catalogue: () => string;
   profile: () => string;
 }
@@ -61,9 +61,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   status: {
     dustIndex: 0,
     observerStability: 100,
-    atlasCoverage: 0,
-    activeAlerts: 0,
     investigatedSlugs: [],
+    activeAlerts: 0,
+    sessionWorkDone: 0,
   },
 
   setBooted: (booted) => set({ booted }),
@@ -71,34 +71,63 @@ export const useUIStore = create<UIState>((set, get) => ({
   setTerminalOpen: (terminalOpen) => set({ terminalOpen }),
   setPrologueComplete: () => set({ prologueComplete: true }),
   setGuideOpen: (guideOpen) => set({ guideOpen }),
-  updateStatus: (status) =>
-    set((s) => ({ status: { ...s.status, ...status } })),
+  
+  updateStatus: (newStatus) => set((s) => ({
+    status: { ...s.status, ...newStatus }
+  })),
 
-  investigatePlace: (slug) =>
-    set((s) => {
-      if (s.status.investigatedSlugs.includes(slug)) {
-        return s; // No double-dipping. The Archive remembers.
-      }
-      return {
-        status: {
-          ...s.status,
-          dustIndex: s.status.dustIndex + 3,
-          investigatedSlugs: [...s.status.investigatedSlugs, slug],
-        },
-      };
-    }),
+  investigatePlace: (slug) => set((s) => {
+    if (s.status.investigatedSlugs.includes(slug)) {
+      return s; // The Archive remembers double-dipping
+    }
+    return {
+      status: {
+        ...s.status,
+        dustIndex: Math.min(100, s.status.dustIndex + 5),
+        investigatedSlugs: [...s.status.investigatedSlugs, slug],
+        sessionWorkDone: s.status.sessionWorkDone + 1, // Log progress
+      },
+    };
+  }),
 
+  // Refactored active grounding loop: Grounding now requires reference work
   ground: () => {
+    const { status } = get();
+    
+    // Core Gate: Grounding requires at least 2 active reference checks or investigations
+    if (status.sessionWorkDone < 2 && status.dustIndex > 10) {
+      return {
+        success: false,
+        message: `BUNKER_7: Grounding failed. Calibration requires physical focus. Organize the Archive [6], review unread documents [8], or record notes inside case files to ground your perception before attempting reset.`
+      };
+    }
+
     set((s) => ({
       status: {
         ...s.status,
-        dustIndex: Math.max(0, s.status.dustIndex - 15),
-        observerStability: Math.min(100, s.status.observerStability + 10),
+        dustIndex: Math.max(0, s.status.dustIndex - 20),
+        observerStability: Math.min(100, s.status.observerStability + 15),
+        sessionWorkDone: 0, // Reset the grounding charge
       },
     }));
+
+    return {
+      success: true,
+      message: `BUNKER_7: Grounding sequence complete. Particulate levels neutralized. Observer focus aligned.`
+    };
   },
 
   restoreStability: () => {
+    const { status } = get();
+    
+    // Restoring stability requires a heavy grounding cost: you must have investigated at least one site
+    if (status.investigatedSlugs.length === 0) {
+      return {
+        success: false,
+        message: `BUNKER_7: Stability lock denied. You have not logged any geodetic points this session. A physical coordinate anchor is required to lock focus.`
+      };
+    }
+
     set((s) => ({
       status: {
         ...s.status,
@@ -106,37 +135,48 @@ export const useUIStore = create<UIState>((set, get) => ({
         dustIndex: Math.max(0, s.status.dustIndex - 5),
       },
     }));
+
+    return {
+      success: true,
+      message: `BUNKER_7: Observer calibration reset to 100%. Neural sync: secure.`
+    };
   },
 
-  examineEvidence: (evidenceId: string) => {
-    set((s) => ({
-      status: {
-        ...s.status,
-        dustIndex: s.status.dustIndex + 3,
-        observerStability: Math.max(0, s.status.observerStability - 2),
-      },
-    }));
+  // Redesigned evidence logic to reward careful, methodical reading of verified records
+  examineEvidence: (evidenceId, isVerified = false) => {
+    set((s) => {
+      if (isVerified) {
+        // Active grounding: studying verified history purges dust and grounds mind
+        return {
+          status: {
+            ...s.status,
+            dustIndex: Math.max(0, s.status.dustIndex - 2),
+            observerStability: Math.min(100, s.status.observerStability + 3),
+            sessionWorkDone: s.status.sessionWorkDone + 1,
+          }
+        };
+      } else {
+        // Breaking open sealed, dusty folders releases particulate and strains stability
+        return {
+          status: {
+            ...s.status,
+            dustIndex: Math.min(100, s.status.dustIndex + 4),
+            observerStability: Math.max(0, s.status.observerStability - 3),
+            sessionWorkDone: s.status.sessionWorkDone + 1,
+          }
+        };
+      }
+    });
   },
 
   catalogue: () => {
     const { status } = get();
-    const dustLevel =
-      status.dustIndex >= DUST_THRESHOLDS.EXTREME ? 'EXTREME' :
-      status.dustIndex >= DUST_THRESHOLDS.HIGH ? 'HIGH' :
-      status.dustIndex >= DUST_THRESHOLDS.MODERATE ? 'MODERATE' :
-      status.dustIndex >= DUST_THRESHOLDS.LOW ? 'LOW' : 'NOMINAL';
-
-    const stabilityLevel =
-      status.observerStability >= STABILITY_THRESHOLDS.NOMINAL ? 'NOMINAL' :
-      status.observerStability >= STABILITY_THRESHOLDS.STABLE ? 'STABLE' :
-      status.observerStability >= STABILITY_THRESHOLDS.DEGRADED ? 'DEGRADED' :
-      status.observerStability >= STABILITY_THRESHOLDS.CRITICAL ? 'CRITICAL' : 'UNSTABLE';
-
-    return `DUST INDEX: ${status.dustIndex} [${dustLevel}]\nSTABILITY: ${status.observerStability.toFixed(1)}% [${stabilityLevel}]\nCOVERAGE: ${status.atlasCoverage} km²\nALERTS: ${status.activeAlerts}`;
+    if (status.dustIndex >= DUST_THRESHOLDS.EXTREME) return 'EXTREME';
+    if (status.dustIndex >= DUST_THRESHOLDS.HIGH) return 'HIGH';
+    if (status.dustIndex >= DUST_THRESHOLDS.MODERATE) return 'MODERATE';
+    if (status.dustIndex >= DUST_THRESHOLDS.LOW) return 'LOW';
+    return 'NOMINAL';
   },
 
-  profile: () => {
-    // Anonymity is lore. The Witness is never a user.
-    return 'INV_RED-7';
-  },
+  profile: () => 'INV_RED-7',
 }));

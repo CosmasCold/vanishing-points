@@ -36,7 +36,7 @@
     "lucide-react": "^0.414.0",
     "maath": "^0.10.8",
     "mapbox-gl": "^3.27.0",
-    "mongodb": "^7.5.0",
+    "mongodb": "3.6",
     "mongoose": "^8.24.2",
     "next": "14.2.5",
     "pixi.js": "^8.19.0",

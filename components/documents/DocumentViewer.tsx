@@ -1,476 +1,524 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useDocumentStore } from '@/state/documentStore';
-import { useAudioStore } from '@/state/audioStore';
-import { colors, typography, spacing, microform } from '@/styles/theme';
-import { DocumentArtifact, DocumentType } from '@/types/documents';
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useUIStore } from "@/state/uiStore";
+import { colors, microform, typography, shadows } from "@/styles/theme";
+import { FileText, Eye, AlertTriangle, Sparkles, Shield, ChevronLeft, ChevronRight, Check } from "lucide-react";
 
-const TYPE_META: Record<DocumentType, { label: string; font: string; size: string; leading: string }> = {
-  typed_report: { label: 'OFFICIAL REPORT', font: typography.mono, size: '0.8125rem', leading: '1.65' },
-  handwritten: { label: 'HANDWRITTEN LETTER', font: typography.serif, size: '0.9375rem', leading: '1.7' },
-  blueprint: { label: 'TECHNICAL DRAWING', font: typography.mono, size: '0.75rem', leading: '1.5' },
-  telegram: { label: 'TELEGRAM', font: typography.mono, size: '0.875rem', leading: '1.8' },
-  form: { label: 'INSTITUTIONAL FORM', font: typography.mono, size: '0.8125rem', leading: '1.6' },
-  newspaper: { label: 'PRESS CLIPPING', font: typography.serif, size: '0.9375rem', leading: '1.65' },
-  photograph: { label: 'PHOTOGRAPH', font: typography.mono, size: '0.8125rem', leading: '1.6' },
-  journal: { label: 'FIELD JOURNAL', font: typography.serif, size: '0.9375rem', leading: '1.75' },
-  field_report: { label: 'FIELD REPORT', font: typography.mono, size: '0.8125rem', leading: '1.65' },
-  witness_statement: { label: 'WITNESS STATEMENT', font: typography.serif, size: '0.9375rem', leading: '1.7' },
-  bunker7_transmission: { label: 'BUNKER_7 TRANSMISSION', font: typography.mono, size: '0.8125rem', leading: '1.65' },
-};
+// Local dataset of sensitive declassified files described in the Master Bible
+interface DeclassifiedDocument {
+  id: string;
+  title: string;
+  source: string;
+  author: string;
+  date: string;
+  condition: string;
+  paperType: "carbon" | "typewriter" | "thermal";
+  requiredDustMin: number;
+  requiredDustMax: number;
+  requiredStabMin: number;
+  segments: {
+    isRedacted: boolean;
+    text: string;
+    unstableTextFallback: string; // Text shown when Stability collapse triggers
+  }[];
+}
 
-const CONDITION_OPACITY: Record<string, number> = {
-  pristine: 1,
-  aged: 0.9,
-  damaged: 0.78,
-  corrupted: 0.7,
-  fragment: 0.6,
-};
+const DECLASSIFIED_FILES: DeclassifiedDocument[] = [
+  {
+    id: "doc-RED-7",
+    title: "IA_TRANSFER_RECORD // INV_RED-7",
+    source: "Archive Internal Affairs Division",
+    author: "Security Director Cosmas",
+    date: "1962-03-15",
+    condition: "peeling / carbon-stained",
+    paperType: "typewriter",
+    requiredDustMin: 35,
+    requiredDustMax: 65,
+    requiredStabMin: 50,
+    segments: [
+      { isRedacted: false, text: "Subject's clinical evaluation indicates completed cycle of service. Subject completed exactly ", unstableTextFallback: "Subject is still sitting at the walnut desk. " },
+      { isRedacted: true, text: "4,211 days of continuous archival intake. ", unstableTextFallback: "Subject has spent 4,211 days in this empty chair. " },
+      { isRedacted: false, text: "Subject exhibits severe cognitive drift but continues keyboard output. Physical examination shows no aging anomalies, however, ", unstableTextFallback: "The monitor has been powered on for forty years. " },
+      { isRedacted: true, text: "Subject's shadow shows a different posture than subject's body. ", unstableTextFallback: "Your shadow has stood up and is standing behind you. " },
+      { isRedacted: false, text: "Subject refers to the Archive carrel as 'the room that grew around me'. Subject entered the basement carrel at 1800 hours and ", unstableTextFallback: "There is no door behind you. There was never a door. " },
+      { isRedacted: true, text: "has not emerged. The light beneath the door is not the color of our bulbs. ", unstableTextFallback: "You walked in and the door has no keyhole. " },
+      { isRedacted: false, text: "The workstation ID has been marked as VACANT. Reassigning slot to next interchangeable observer.", unstableTextFallback: "BUNKER_7: The work has been waiting." }
+    ]
+  },
+  {
+    id: "doc-ora-001",
+    title: "FIELD_LOG // ORADOUR PARISH RECOVERY",
+    source: "FEMA Archival Recovery Team",
+    author: "Agent 7-4 (Limoges Sector)",
+    date: "1946-06-12",
+    condition: "damp / water-damaged",
+    paperType: "carbon",
+    requiredDustMin: 40,
+    requiredDustMax: 60,
+    requiredStabMin: 55,
+    segments: [
+      { isRedacted: false, text: "Structural inspection of Saint-Martin Church Ruins completed. The concrete slab sealing the crypt was removed. Inside, the ", unstableTextFallback: "The water rising from the drain is salt water. " },
+      { isRedacted: true, text: "communion wine bottles and parish registers were fully intact. ", unstableTextFallback: "The parish records continued writing themselves. " },
+      { isRedacted: false, text: "However, analysis of the ink on page 247 shows a temporal mismatch. The massacre occurred on June 10, 1944. Yet, ", unstableTextFallback: "They died in the fire, but they did not stop breathing. " },
+      { isRedacted: true, text: "entries in the baptism ledger continue until June 17, 1944. ", unstableTextFallback: "Seven days after the fire, the ink was still wet. " },
+      { isRedacted: false, text: "The handwriting matches no deceased parish clerk. The last logged name was ", unstableTextFallback: "The last entry in the register was your name. " },
+      { isRedacted: true, text: "Edward Vance, keeper of the St. Elmo light. ", unstableTextFallback: "Edward Vance spent forty years lit by an empty lamp. " },
+      { isRedacted: false, text: "The crypt has no natural water source. We have resealed the slab with reinforced mortar. Recommend complete quarantine of sector.", unstableTextFallback: "The church is empty, but the chairs are facing the wall." }
+    ]
+  },
+  {
+    id: "doc-mwe-4.5hz",
+    title: "GEODETIC_SURVEY // BLUE RIDGE CO-AXIAL",
+    source: "FEMA Geodetic Survey Division",
+    author: "Lead Signal Analyst",
+    date: "2026-08-08",
+    condition: "charred / thermal-ink",
+    paperType: "thermal",
+    requiredDustMin: 30,
+    requiredDustMax: 70,
+    requiredStabMin: 45,
+    segments: [
+      { isRedacted: false, text: "Seismic geophone arrays installed in three secure bunkers: Mount Weather (VA), Cheyenne Mountain (CO), and ", unstableTextFallback: "The granite is transmitting a human voice. " },
+      { isRedacted: true, text: "Raven Rock (PA) have locked onto a synchronized 4.5 Hz vibration. ", unstableTextFallback: "The three mountains are breathing in unison. " },
+      { isRedacted: false, text: "The signal is not tectonic; it travels through solid rock faster than local acoustic speeds. The geophones are no longer recording crust movements, ", unstableTextFallback: "I am counting backward from zero. " },
+      { isRedacted: true, text: "they are transmitting a single looped count. ", unstableTextFallback: "BUNKER_7: I am counting backward from zero. " },
+      { isRedacted: false, text: "Calculating the geodetic centroid of these three coordinates yields a precise intersection point. The lines cross in an empty wheat field in ", unstableTextFallback: "Do not follow the lines on the map. " },
+      { isRedacted: true, text: "Lebanon, Kansas - The Grid Null Point. ", unstableTextFallback: " Lebanon Kansas. The center where the world fails. " },
+      { isRedacted: false, text: "The wheat in this sector grows in a counterclockwise spiral that rotates exactly 15 degrees every solstice cycle. Recommend immediate cutoff.", unstableTextFallback: "The wheat spiral is aligning with the sunrise of 2047." }
+    ]
+  }
+];
 
 export const DocumentViewer: React.FC = () => {
-  const {
-    activeDocument,
-    zoom,
-    rotation,
-    showUV,
-    showAnnotation,
-    closeDocument,
-    adjustZoom,
-    setRotation,
-    toggleUV,
-    toggleAnnotation,
-  } = useDocumentStore();
-  const { click } = useAudioStore();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [showCorrupted, setShowCorrupted] = useState(false);
+  const [activeDocIdx, setActiveDocIdx] = useState(0);
+  const [scrambleTick, setScrambleTick] = useState(0);
+  const [rewriteTick, setRewriteTick] = useState(false);
 
+  // Subscribe directly to the global state metrics from useUIStore
+  const { status, booted } = useUIStore();
+  
+  // Safe default boundaries matching your Master Bible parameters [9]
+  const dustIndex = status?.dustIndex ?? 0;
+  const observerStability = status?.observerStability ?? 100;
+
+  const activeDoc = DECLASSIFIED_FILES[activeDocIdx];
+
+  // Consensus Window evaluation gates [9]
+  const isInsideDustWindow = dustIndex >= activeDoc.requiredDustMin && dustIndex <= activeDoc.requiredDustMax;
+  const isInsideStabWindow = observerStability >= activeDoc.requiredStabMin;
+  const isConsensusLocked = isInsideDustWindow && isInsideStabWindow;
+
+  // 1. Scramble Engine: Under high Dust overload (>65), text scrambles into logic logic
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (!activeDocument) return;
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      adjustZoom(delta);
-    };
+    if (dustIndex <= activeDoc.requiredDustMax) return;
+    const interval = setInterval(() => {
+      setScrambleTick((prev) => (prev + 1) % 100);
+    }, 180);
+    return () => clearInterval(interval);
+  }, [dustIndex, activeDoc.requiredDustMax]);
 
-    const el = containerRef.current;
-    if (el) el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el?.removeEventListener('wheel', handleWheel);
-  }, [activeDocument, adjustZoom]);
+  // 2. Rewrite Engine: Under Stability collapse (<50%), letters rewrite themselves into existentials
+  useEffect(() => {
+    if (observerStability >= activeDoc.requiredStabMin) {
+      setRewriteTick(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRewriteTick((prev) => !prev);
+    }, 4200);
+    return () => clearInterval(interval);
+  }, [observerStability, activeDoc.requiredStabMin]);
 
-  if (!activeDocument) return null;
+  // Scramble helper that procedurally substitutes letters based on noise indices
+  const scrambleText = (text: string): string => {
+    const chars = "01fba7%§ØΔX[]▰▱■□";
+    return text
+      .split("")
+      .map((char) => {
+        if (char === " ") return " ";
+        return Math.random() < 0.28 ? chars[Math.floor(Math.random() * chars.length)] : char;
+      })
+      .join("");
+  };
 
-  const meta = TYPE_META[activeDocument.type];
-  const conditionOpacity = CONDITION_OPACITY[activeDocument.condition] || 1;
+  // Navigations between file sheets
+  const handleNext = () => {
+    setActiveDocIdx((prev) => (prev + 1) % DECLASSIFIED_FILES.length);
+  };
 
-  const displayContent = showCorrupted && activeDocument.corruptedContent
-    ? activeDocument.corruptedContent
-    : activeDocument.content;
+  const handlePrev = () => {
+    setActiveDocIdx((prev) => (prev - 1 + DECLASSIFIED_FILES.length) % DECLASSIFIED_FILES.length);
+  };
 
-  const hasAnnotation = activeDocument.annotations.length > 0;
-  const annotationText = activeDocument.annotations.join('\n\n');
+  // Renders the specific segment of a declassified report under active state filtration
+  const renderSegment = (segment: typeof activeDoc.segments[0], idx: number) => {
+    // If stability has collapsed, render the unsettling rewrite narrative
+    if (!isInsideStabWindow && rewriteTick) {
+      return (
+        <span
+          key={`rewrite-${idx}`}
+          className="text-red-500 font-bold transition-all duration-500"
+          style={{
+            color: colors.archive.red,
+            textShadow: `0 0 4px ${colors.archive.red}40`,
+          }}
+        >
+          {segment.unstableTextFallback}
+        </span>
+      );
+    }
+
+    // Standard unredacted text block
+    if (!segment.isRedacted) {
+      const displayText = dustIndex > activeDoc.requiredDustMax ? scrambleText(segment.text) : segment.text;
+      return <span key={`text-${idx}`}>{displayText}</span>;
+    }
+
+    // Redacted block handling:
+    // Case A: Perfect Consensus Window -> Black redaction blocks glow halogen-amber and fade out [9]
+    if (isConsensusLocked) {
+      const displayText = dustIndex > activeDoc.requiredDustMax ? scrambleText(segment.text) : segment.text;
+      return (
+        <motion.span
+          key={`redacted-unlocked-${idx}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="relative inline-block px-1 border border-amber-600/20 bg-amber-950/10 text-amber-100 font-medium transition-colors"
+          style={{
+            color: microform.halogen,
+            textShadow: `0 0 2px ${microform.halogen}50`,
+          }}
+        >
+          {displayText}
+          <motion.span
+            className="absolute inset-0 bg-stone-950 opacity-10 pointer-events-none"
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: 1.4, ease: "easeInOut" }}
+            style={{ originX: 0 }}
+          />
+        </motion.span>
+      );
+    }
+
+    // Case B: Dust under-exposure -> Solid, opaque charcoal redaction blocks [9]
+    return (
+      <span
+        key={`redacted-locked-${idx}`}
+        className="inline-block bg-[#161310] text-transparent select-none rounded-[1px]"
+        style={{
+          borderBottom: `1px solid ${colors.archive.grayDark}`,
+          height: "1.1em",
+          verticalAlign: "middle",
+          width: `${segment.text.length * 0.55}em`,
+          minWidth: "4rem",
+        }}
+      >
+        {segment.text}
+      </span>
+    );
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 flex flex-col"
+    <div
+      className="w-full h-full flex flex-col p-6 select-none relative font-mono text-xs overflow-hidden"
       style={{
-        marginLeft: spacing.rail,
-        marginBottom: spacing.statusBar,
-        backgroundColor: 'rgba(12, 10, 8, 0.97)',
+        backgroundColor: colors.archive.black,
+        color: colors.archive.grayLight,
       }}
-      onClick={closeDocument}
     >
-      {/* Toolbar — iron/mahogany chassis */}
+      {/* Interactive header panel */}
       <div
-        className="flex items-center justify-between px-4 h-10 shrink-0"
-        style={{
-          background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
-          borderBottom: `1px solid ${microform.iron}`,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
-        }}
+        className="flex justify-between items-center shrink-0 border-b pb-4 mb-6"
+        style={{ borderColor: colors.archive.grayDark }}
       >
-        <div className="flex items-center gap-4" style={{ fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-          <span style={{ color: microform.halogen, textShadow: microform.halogenText }}>
-            {meta.label}
-          </span>
-          <span style={{ color: colors.archive.gray, opacity: 0.4 }}>|</span>
-          <span style={{ color: colors.archive.gray }}>{activeDocument.date}</span>
-          <span style={{ color: colors.archive.gray, opacity: 0.4 }}>|</span>
-          <span style={{ color: colors.archive.gray }}>{activeDocument.author}</span>
+        <div className="flex items-center gap-3">
+          <FileText size={15} style={{ color: microform.halogen }} />
+          <div>
+            <div className="text-[9px] text-stone-500 uppercase tracking-widest">Declassified Desk Registry</div>
+            <div className="text-sm font-bold text-white tracking-wide">{activeDoc.title}</div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); click(); adjustZoom(0.25); }}
-            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-            style={{
-              border: `1px solid ${microform.mahoganyLight}`,
-              color: colors.archive.white,
-              fontFamily: typography.mono,
-              background: microform.iron,
-            }}
-          >
-            +
-          </button>
-          <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, minWidth: '3rem', textAlign: 'center' }}>
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); click(); adjustZoom(-0.25); }}
-            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-            style={{
-              border: `1px solid ${microform.mahoganyLight}`,
-              color: colors.archive.white,
-              fontFamily: typography.mono,
-              background: microform.iron,
-            }}
-          >
-            -
-          </button>
+        <div className="flex items-center gap-4">
+          {/* Geodetic Status Gauge */}
+          <div className="flex items-center gap-2 border px-3 py-1 bg-void" style={{ borderColor: colors.archive.grayDark }}>
+            <Shield size={10} style={{ color: isConsensusLocked ? colors.archive.green : colors.archive.red }} />
+            <span style={{ fontSize: "9px" }}>
+              STATE INTEGRITY:{" "}
+              <span style={{ color: isConsensusLocked ? colors.archive.green : colors.archive.red, fontWeight: "bold" }}>
+                {isConsensusLocked ? "VERIFIED" : "DEGRADED"}
+              </span>
+            </span>
+          </div>
 
-          <div className="w-px h-5 mx-1" style={{ backgroundColor: microform.mahoganyLight }} />
-
-          <button
-            onClick={(e) => { e.stopPropagation(); click(); setRotation(rotation === 0 ? 90 : 0); }}
-            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-            style={{
-              border: `1px solid ${microform.mahoganyLight}`,
-              color: colors.archive.white,
-              fontFamily: typography.mono,
-              background: microform.iron,
-            }}
-          >
-            ROT
-          </button>
-
-          <button
-            onClick={(e) => { e.stopPropagation(); click(); toggleUV(); }}
-            className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-            style={{
-              border: `1px solid ${showUV ? colors.archive.blue : microform.mahoganyLight}`,
-              color: showUV ? colors.archive.blue : colors.archive.white,
-              fontFamily: typography.mono,
-              background: microform.iron,
-            }}
-          >
-            UV
-          </button>
-
-          {hasAnnotation && (
+          {/* Quick Page Browsers */}
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={(e) => { e.stopPropagation(); click(); toggleAnnotation(); }}
-              className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-              style={{
-                border: `1px solid ${showAnnotation ? colors.archive.amber : microform.mahoganyLight}`,
-                color: showAnnotation ? colors.archive.amber : colors.archive.white,
-                fontFamily: typography.mono,
-                background: microform.iron,
-              }}
+              onClick={handlePrev}
+              className="p-1 border hover:bg-[#151310] transition-colors"
+              style={{ borderColor: colors.archive.grayDark }}
             >
-              NOTE
+              <ChevronLeft size={13} />
             </button>
-          )}
-
-          {activeDocument.corruptedContent && (
+            <span className="text-[10px] min-w-[3.5rem] text-center">
+              PAGE {activeDocIdx + 1} / {DECLASSIFIED_FILES.length}
+            </span>
             <button
-              onClick={(e) => { e.stopPropagation(); click(); setShowCorrupted(!showCorrupted); }}
-              className="px-2 py-0.5 text-xs transition-colors hover:opacity-70"
-              style={{
-                border: `1px solid ${showCorrupted ? colors.archive.red : microform.mahoganyLight}`,
-                color: showCorrupted ? colors.archive.red : colors.archive.white,
-                fontFamily: typography.mono,
-                background: microform.iron,
-              }}
+              onClick={handleNext}
+              className="p-1 border hover:bg-[#151310] transition-colors"
+              style={{ borderColor: colors.archive.grayDark }}
             >
-              {showCorrupted ? 'ORIGINAL' : 'CORRUPTED'}
+              <ChevronRight size={13} />
             </button>
-          )}
-
-          <div className="w-px h-5 mx-1" style={{ backgroundColor: microform.mahoganyLight }} />
-
-          <button
-            onClick={(e) => { e.stopPropagation(); click(); closeDocument(); }}
-            className="px-3 py-0.5 text-xs transition-colors hover:opacity-70"
-            style={{
-              border: `1px solid ${colors.archive.red}`,
-              color: colors.archive.red,
-              fontFamily: typography.mono,
-              background: microform.iron,
-            }}
-          >
-            × CLOSE
-          </button>
+          </div>
         </div>
       </div>
 
-      {/* Document workspace */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-auto relative flex items-start justify-center py-12"
-        style={{
-          backgroundImage: `
-            radial-gradient(ellipse at 50% 20%, rgba(255, 170, 85, 0.025) 0%, transparent 60%),
-            radial-gradient(ellipse at 50% 50%, rgba(20, 18, 14, 0.5) 0%, transparent 100%)
-          `,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex gap-8 items-start">
-          {/* Main document page */}
-          <motion.div
-            className="relative shrink-0"
+      <div className="flex-1 flex gap-6 min-h-0">
+        {/* Left Side: Physical Carbon Paper Sheet Workspace */}
+        <div className="flex-1 flex flex-col justify-center items-center relative min-h-0 bg-[#070503] border border-stone-900 p-8 rounded-[1px] shadow-2xl">
+          {/* Desklamp halftone vignette lighting */}
+          <div
+            className="absolute inset-0 pointer-events-none"
             style={{
-              width: '34rem',
-              minHeight: '44rem',
-              transform: `scale(${zoom}) rotate(${rotation}deg)`,
-              transformOrigin: 'center top',
+              background: `radial-gradient(circle at center, transparent 40%, rgba(5,4,3,0.92) 100%)`,
+              zIndex: 3,
+            }}
+          />
+
+          {/* Cassette/Paper Sheet Holder */}
+          <motion.div
+            key={activeDoc.id}
+            initial={{ y: 25, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="w-full max-w-lg aspect-[3/4] p-8 relative flex flex-col text-left overflow-hidden bg-[#1f1a16]"
+            style={{
+              boxShadow: shadows.paper || "0 12px 36px rgba(0,0,0,0.9)",
+              backgroundImage: `
+                repeating-linear-gradient(180deg, rgba(10, 8, 6, 0.015) 0px, rgba(10, 8, 6, 0.015) 1px, transparent 1px, transparent 24px)
+              `,
+              zIndex: 2,
             }}
           >
-            {/* Paper sheet */}
+            {/* Ink Stamps and classification seals */}
             <div
-              className="relative w-full min-h-[44rem] p-10"
-              style={{
-                backgroundColor: microform.paperWarm,
-                backgroundImage: `
-                  linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 10%),
-                  linear-gradient(0deg, rgba(0,0,0,0.03) 0%, transparent 10%)
-                `,
-                boxShadow: `
-                  0 1px 2px rgba(0,0,0,0.15),
-                  0 4px 12px rgba(0,0,0,0.2),
-                  0 12px 32px rgba(0,0,0,0.25),
-                  inset 0 0 60px rgba(139, 119, 89, 0.04)
-                `,
-                opacity: conditionOpacity,
-                fontFamily: meta.font,
-                fontSize: meta.size,
-                lineHeight: meta.leading,
-                color: '#2a2620',
-              }}
+              className="absolute top-6 right-6 border-2 border-red-900/40 rounded px-2 py-0.5 text-[8px] font-bold tracking-widest text-red-900/60 uppercase rotate-12 select-none pointer-events-none"
+              style={{ fontFamily: typography.mono }}
             >
-              {/* Fold marks */}
-              {activeDocument.foldMarks && activeDocument.foldMarks > 0 && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {Array.from({ length: activeDocument.foldMarks }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute left-0 right-0"
-                      style={{
-                        top: `${(i + 1) * (100 / (activeDocument.foldMarks! + 1))}%`,
-                        height: '1px',
-                        background: 'linear-gradient(90deg, transparent 2%, rgba(80,70,50,0.15) 10%, rgba(80,70,50,0.25) 50%, rgba(80,70,50,0.15) 90%, transparent 98%)',
-                        boxShadow: '0 1px 0 rgba(255,255,255,0.3)',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+              RESTRICTED ENTRY
+            </div>
 
-              {/* Coffee stain */}
-              {activeDocument.coffeeStain && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    width: 90,
-                    height: 90,
-                    right: 30,
-                    bottom: 60,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(120, 90, 60, 0.12) 0%, rgba(120, 90, 60, 0.06) 40%, transparent 70%)',
-                    filter: 'blur(1px)',
-                    transform: 'scale(1.2, 1)',
-                  }}
-                />
-              )}
-
-              {/* Water damage */}
-              {activeDocument.waterDamage && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(100, 120, 140, 0.06) 0%, transparent 30%, transparent 70%, rgba(100, 120, 140, 0.08) 100%)',
-                    mixBlendMode: 'multiply',
-                  }}
-                />
-              )}
-
-              {/* Burn marks */}
-              {activeDocument.burnMarks && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    inset: -2,
-                    borderRadius: 1,
-                    boxShadow: 'inset 0 0 30px rgba(40, 20, 10, 0.25), inset 0 0 80px rgba(40, 20, 10, 0.1)',
-                  }}
-                />
-              )}
-
-              {/* UV overlay */}
-              {showUV && (
-                <div
-                  className="absolute inset-0 pointer-events-none z-10"
-                  style={{
-                    background: 'rgba(60, 20, 120, 0.08)',
-                    mixBlendMode: 'color-dodge',
-                  }}
-                />
-              )}
-
-              {/* Header stamp */}
-              <div
-                className="mb-8 pb-4"
-                style={{
-                  borderBottom: '1px solid rgba(80, 70, 50, 0.2)',
-                  fontFamily: typography.mono,
-                  fontSize: typography.sizes.xs,
-                  color: '#5a5040',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                <div className="flex justify-between items-baseline">
-                  <span>REF: {activeDocument.id.toUpperCase()}</span>
-                  <span
-                    style={{
-                      color: activeDocument.verificationStatus === 'verified' ? '#5a7a5a' : activeDocument.verificationStatus === 'forged' ? '#a85d5d' : '#8a7a5a',
-                      border: `1px solid ${activeDocument.verificationStatus === 'verified' ? '#5a7a5a' : activeDocument.verificationStatus === 'forged' ? '#a85d5d' : '#8a7a5a'}`,
-                      padding: '1px 6px',
-                    }}
-                  >
-                    {activeDocument.verificationStatus.toUpperCase()}
-                  </span>
-                </div>
-                <div className="mt-1 flex gap-4">
-                  <span>SOURCE: {activeDocument.source.toUpperCase()}</span>
-                  <span>PAGES: {activeDocument.pages}</span>
-                  <span>INK: {activeDocument.inkType.toUpperCase()}</span>
-                </div>
+            {/* Document metadata panel */}
+            <div className="mb-6 space-y-1 font-mono text-[9px] uppercase tracking-wider text-stone-500 border-b pb-3 border-stone-800">
+              <div className="flex justify-between">
+                <span>REGISTRY: {activeDoc.id}</span>
+                <span>ORIGIN: {activeDoc.source}</span>
               </div>
-
-              {/* Title */}
-              <h2
-                className="mb-6"
-                style={{
-                  fontFamily: typography.serif,
-                  fontSize: typography.sizes.lg,
-                  color: '#1a1814',
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.3,
-                }}
-              >
-                {activeDocument.title}
-              </h2>
-
-              {/* Body content */}
-              <div
-                className="whitespace-pre-wrap"
-                style={{
-                  textShadow: showUV ? '0 0 1px rgba(80, 60, 180, 0.3)' : 'none',
-                }}
-              >
-                {displayContent.split('\n').map((paragraph, i) => (
-                  <p key={i} className="mb-4 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
+              <div className="flex justify-between">
+                <span>AUTHOR: {activeDoc.author}</span>
+                <span>DATE: {activeDoc.date}</span>
               </div>
-
-              {/* Corruption overlay text */}
-              {activeDocument.corruptionLevel > 0.3 && !showCorrupted && (
-                <div
-                  className="absolute inset-0 pointer-events-none flex items-center justify-center"
-                  style={{
-                    background: 'rgba(20, 18, 14, 0.03)',
-                    mixBlendMode: 'multiply',
-                  }}
-                >
-                  <div
-                    className="text-center rotate-[-12deg]"
-                    style={{
-                      fontFamily: typography.mono,
-                      fontSize: '4rem',
-                      color: 'rgba(160, 40, 40, 0.04)',
-                      letterSpacing: '0.3em',
-                      fontWeight: 700,
-                    }}
-                  >
-                    CORRUPTED
-                  </div>
-                </div>
-              )}
-
-              {/* Footer metadata */}
-              <div
-                className="mt-12 pt-4"
-                style={{
-                  borderTop: '1px solid rgba(80, 70, 50, 0.2)',
-                  fontFamily: typography.mono,
-                  fontSize: '0.6875rem',
-                  color: '#8a8070',
-                }}
-              >
-                <div className="flex justify-between">
-                  <span>RECOVERED: {new Date(activeDocument.recoveredAt).toLocaleDateString()}</span>
-                  <span>BY: {activeDocument.recoveredBy.toUpperCase()}</span>
-                </div>
-                {activeDocument.relatedDocuments.length > 0 && (
-                  <div className="mt-1">
-                    SEE ALSO: {activeDocument.relatedDocuments.join(', ').toUpperCase()}
-                  </div>
-                )}
+              <div className="flex justify-between">
+                <span>CONDITION: {activeDoc.condition}</span>
+                <span>TYPE: {activeDoc.paperType} CARBON</span>
               </div>
             </div>
-          </motion.div>
 
-          {/* Annotation sidebar */}
-          <AnimatePresence>
-            {showAnnotation && hasAnnotation && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="w-64 shrink-0"
-                style={{
-                  background: `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)`,
-                  border: `1px solid ${microform.iron}`,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
-                }}
-              >
-                <div
-                  className="px-4 py-3"
-                  style={{
-                    borderBottom: `1px solid ${microform.iron}`,
-                    fontFamily: typography.mono,
-                    fontSize: typography.sizes.xs,
-                    color: microform.halogen,
-                    textShadow: microform.halogenText,
-                    letterSpacing: '0.08em',
-                  }}
-                >
-                  MARGINALIA
+            {/* Document text body (typewriter layout) */}
+            <div
+              className="flex-1 overflow-y-auto leading-6 text-stone-300 font-mono text-[11px] space-y-4 tracking-wide pr-2 select-text selection:bg-amber-900/30 selection:text-white"
+              style={{
+                fontFamily: typography.mono,
+                scrollbarWidth: "thin",
+              }}
+            >
+              <div className="space-y-3">
+                {activeDoc.segments.map((segment, idx) => renderSegment(segment, idx))}
+              </div>
+            </div>
+
+            {/* Bottom physical binder holes */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-24 opacity-35 select-none pointer-events-none">
+              <span className="w-4 h-4 rounded-full bg-stone-950 border border-stone-800" />
+              <span className="w-4 h-4 rounded-full bg-stone-950 border border-stone-800" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right Side: Geodetic Alignment Panel */}
+        <div className="w-80 shrink-0 flex flex-col gap-4">
+          {/* Mind Resonance Calibration Dashboard */}
+          <div
+            className="p-4 border rounded-[1px]"
+            style={{
+              borderColor: colors.archive.grayDark,
+              backgroundColor: "rgba(10, 8, 6, 0.96)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3 text-[10px] text-stone-400 uppercase tracking-widest border-b pb-2 border-stone-800">
+              <Sparkles size={11} style={{ color: microform.halogen }} />
+              <span>COGNITIVE RESOLUTION GATES</span>
+            </div>
+
+            <div className="space-y-4">
+              {/* Dust Exposure Gate */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-stone-500">AMBIENT DUST WINDOW:</span>
+                  <span
+                    style={{
+                      color: isInsideDustWindow ? colors.archive.green : colors.archive.amber,
+                    }}
+                  >
+                    {activeDoc.requiredDustMin}-{activeDoc.requiredDustMax}
+                  </span>
                 </div>
-                <div
-                  className="p-4 whitespace-pre-wrap"
-                  style={{
-                    fontFamily: typography.serif,
-                    fontSize: typography.sizes.sm,
-                    color: colors.archive.white,
-                    lineHeight: 1.7,
-                    opacity: 0.85,
-                  }}
-                >
-                  {annotationText}
+                {/* Horizontal status slider */}
+                <div className="h-4 w-full bg-[#0d0a08] border border-stone-900 relative flex items-center px-1">
+                  {/* Min limit bar */}
+                  <div
+                    className="absolute h-full bg-stone-800/40"
+                    style={{
+                      left: 0,
+                      width: `${activeDoc.requiredDustMin}%`,
+                    }}
+                  />
+                  {/* Max limit bar */}
+                  <div
+                    className="absolute h-full bg-stone-800/40"
+                    style={{
+                      right: 0,
+                      width: `${100 - activeDoc.requiredDustMax}%`,
+                    }}
+                  />
+                  {/* Target interval indicator */}
+                  <div
+                    className="absolute h-1.5 bg-amber-500/20"
+                    style={{
+                      left: `${activeDoc.requiredDustMin}%`,
+                      width: `${activeDoc.requiredDustMax - activeDoc.requiredDustMin}%`,
+                    }}
+                  />
+                  {/* Active observer marker */}
+                  <div
+                    className="absolute w-1.5 h-3 transition-all duration-300"
+                    style={{
+                      left: `${dustIndex}%`,
+                      backgroundColor: isInsideDustWindow ? colors.archive.green : colors.archive.amber,
+                      boxShadow: `0 0 8px ${isInsideDustWindow ? colors.archive.green : colors.archive.amber}`,
+                    }}
+                  />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="flex justify-between text-[9px] text-stone-600">
+                  <span>UN-TUNED</span>
+                  <span>CURRENT: {dustIndex}</span>
+                  <span>OVERLOAD</span>
+                </div>
+              </div>
+
+              {/* Observer Stability Gate */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-stone-500">MINIMUM OBSERVER STABILITY:</span>
+                  <span
+                    style={{
+                      color: isInsideStabWindow ? colors.archive.green : colors.archive.red,
+                    }}
+                  >
+                    {activeDoc.requiredStabMin}%
+                  </span>
+                </div>
+                {/* Horizontal progress bar */}
+                <div className="h-4 w-full bg-[#0d0a08] border border-stone-900 relative flex items-center px-1">
+                  {/* Limit line */}
+                  <div
+                    className="absolute h-full w-[1px] bg-red-950"
+                    style={{
+                      left: `${activeDoc.requiredStabMin}%`,
+                    }}
+                  />
+                  {/* Active progress */}
+                  <div
+                    className="h-2 transition-all duration-300 rounded-[1px]"
+                    style={{
+                      width: `${observerStability}%`,
+                      backgroundColor: isInsideStabWindow ? colors.archive.green : colors.archive.red,
+                      boxShadow: `0 0 6px ${isInsideStabWindow ? colors.archive.green : colors.archive.red}40`,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-stone-600">
+                  <span>STABILITY CRITICAL</span>
+                  <span>CURRENT: {observerStability}%</span>
+                  <span>CALIBRATED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Log Panel */}
+          <div
+            className="flex-1 p-4 border rounded-[1px] flex flex-col justify-between text-left"
+            style={{
+              borderColor: colors.archive.grayDark,
+              backgroundColor: "rgba(10, 8, 6, 0.96)",
+            }}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[10px] text-stone-400 uppercase tracking-widest border-b pb-2 border-stone-800">
+                <Eye size={11} style={{ color: microform.halogen }} />
+                <span>STATE DIAGNOSTIC LOG</span>
+              </div>
+
+              <div className="space-y-2 text-[10px] text-stone-500 leading-4">
+                {/* Evaluation Prompt 1: Dust status */}
+                <div className="flex items-start gap-2">
+                  {isInsideDustWindow ? (
+                    <Check size={11} className="text-green-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle size={11} className="text-amber-500 shrink-0 mt-0.5" />
+                  )}
+                  <span>
+                    {isInsideDustWindow
+                      ? "Cognitive threshold optimal. Metadata layer parsed."
+                      : dustIndex < activeDoc.requiredDustMin
+                      ? `COGNITIVE GATE CLOSED: Present: ${dustIndex}. Dust must be >= ${activeDoc.requiredDustMin} to perceive redacted carbon ink.`
+                      : `COGNITIVE OVERLOAD: Present: ${dustIndex}. Dust must be <= ${activeDoc.requiredDustMax} to prevent screen scramble.`}
+                  </span>
+                </div>
+
+                {/* Evaluation Prompt 2: Stability status */}
+                <div className="flex items-start gap-2 border-t pt-2 border-stone-900">
+                  {isInsideStabWindow ? (
+                    <Check size={11} className="text-green-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle size={11} className="text-red-500 shrink-0 mt-0.5" />
+                  )}
+                  <span>
+                    {isInsideStabWindow
+                      ? "Observer neural state stable. Letter alignments nominal."
+                      : `NEURAL DISSOCIATION: Stability below ${activeDoc.requiredStabMin}%. Words actively drift and overwrite themselves.`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Instruction footnote block */}
+            <div className="p-3 border text-[9px] text-stone-500 leading-4 mt-4 bg-void border-stone-800/40">
+              <div style={{ color: microform.halogen, fontWeight: "medium", marginBottom: "2px" }}>
+                COGNITIVE ALIGNMENT RITUAL:
+              </div>
+              Examine sealed documents to <span className="text-amber-600 font-bold">INCREASE</span> Dust. Examine verified evidence records to <span className="text-green-600 font-bold">DECREASE</span> Dust and restore Stability, until your observer mind balances perfectly inside the Consensus Window.
+            </div>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
+
+export default DocumentViewer;

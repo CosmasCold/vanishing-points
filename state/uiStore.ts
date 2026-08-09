@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { ModuleId } from '@/types';
-import { useInvestigationStore } from './investigationStore';
 
 export const DUST_THRESHOLDS = {
   NOMINAL: 0,
@@ -29,6 +28,7 @@ export interface Status {
   investigatedSlugs: string[];
   activeAlerts: number;
   sessionWorkDone: number; // Tracker for active grounding gate checks
+  atlasCoverage: number;     // Restored to resolve the Vercel compilation error
 }
 
 interface UIState {
@@ -64,6 +64,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     investigatedSlugs: [],
     activeAlerts: 0,
     sessionWorkDone: 0,
+    atlasCoverage: 1240, // Baseline declassified military grid mapping in km²
   },
 
   setBooted: (booted) => set({ booted }),
@@ -86,19 +87,20 @@ export const useUIStore = create<UIState>((set, get) => ({
         dustIndex: Math.min(100, s.status.dustIndex + 5),
         investigatedSlugs: [...s.status.investigatedSlugs, slug],
         sessionWorkDone: s.status.sessionWorkDone + 1, // Log progress
+        // Increment coverage by +42.8 km² per newly mapped sector
+        atlasCoverage: s.status.atlasCoverage + 42.8, 
       },
     };
   }),
 
-  // Refactored active grounding loop: Grounding now requires reference work
+  // Grounding loop: Grounding requires reference work
   ground: () => {
     const { status } = get();
     
-    // Core Gate: Grounding requires at least 2 active reference checks or investigations
     if (status.sessionWorkDone < 2 && status.dustIndex > 10) {
       return {
         success: false,
-        message: `BUNKER_7: Grounding failed. Calibration requires physical focus. Organize the Archive [6], review unread documents [8], or record notes inside case files to ground your perception before attempting reset.`
+        message: `BUNKER_7: Grounding failed. Calibration requires physical focus. Organize the Archive, review unread documents, or record notes inside case files to ground your perception before attempting reset.`
       };
     }
 
@@ -120,7 +122,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   restoreStability: () => {
     const { status } = get();
     
-    // Restoring stability requires a heavy grounding cost: you must have investigated at least one site
     if (status.investigatedSlugs.length === 0) {
       return {
         success: false,
@@ -142,7 +143,6 @@ export const useUIStore = create<UIState>((set, get) => ({
     };
   },
 
-  // Redesigned evidence logic to reward careful, methodical reading of verified records
   examineEvidence: (evidenceId, isVerified = false) => {
     set((s) => {
       if (isVerified) {

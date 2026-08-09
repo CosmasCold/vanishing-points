@@ -114,7 +114,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
       ctx.strokeStyle = isLocked ? colors.archive.green : microform.halogen;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.6;
 
       const t = Date.now() * 0.015;
       const count = canvas.width;
@@ -125,10 +125,36 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
         if (isPlaying) {
           if (isLocked) {
-            // Decrypted cleanly: stable, repeating sin/cos harmonic waveforms
-            y += Math.sin(i * 0.05 + t) * 12 + Math.cos(i * 0.1 - t) * 4;
+            // Decrypted cleanly: render highly distinctive waveforms depending on the locked resonance signal type [332, 333]
+            switch (profile.type) {
+              case "ghostly":
+                // 1. Ghostly: Low-frequency infrasound wave with eerie micro-ripples
+                y += Math.sin(i * 0.035 + t) * 16 + Math.sin(i * 0.3 - t * 2.5) * 2.5 * Math.sin(t * 0.12);
+                break;
+              case "terminal":
+                // 2. Terminal: Square-wave digital steps with subtle high-speed logic jitters
+                const square = Math.sign(Math.sin(i * 0.06 + t));
+                const jitter = Math.random() > 0.985 ? (Math.random() - 0.5) * 6 : 0;
+                y += square * 15 + jitter;
+                break;
+              case "numbers":
+                // 3. Numbers: Heavily modulated Amplitude Modulation (AM) sideband envelope
+                const envelope = Math.sin(i * 0.02 + t * 0.5) * 16;
+                const carrier = Math.sin(i * 0.38 + t * 3.5);
+                y += envelope * carrier;
+                break;
+              case "radar":
+                // 4. Radar: Rhythmic sharp sawtooth transients mimicking the 10 Hz Duga woodpecker spikes
+                const period = 35; // distance between clicks
+                const phase = (i + t * 45) % period;
+                y += phase < 3.2 ? -28 : 5; // A heavy downward electrostatic coil strike
+                break;
+              default:
+                y += Math.sin(i * 0.05 + t) * 12 + Math.cos(i * 0.1 - t) * 4;
+                break;
+            }
           } else {
-            // Tuned static: heavy erratic waves modulated by accuracy distance
+            // Tuned static: heavy erratic waves modulated by tuning distance [1]
             const distance = Math.abs(frequency - targetFrequency);
             const noise = (Math.random() - 0.5) * distance * 22;
             y += Math.sin(i * 0.12 * (11 - frequency) + t) * (1.2 / distance) + noise;
@@ -148,7 +174,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
     draw();
     return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, frequency, targetFrequency, isLocked]);
+  }, [isPlaying, frequency, targetFrequency, isLocked, profile.type]);
 
   return (
     <AnimatePresence>

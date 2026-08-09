@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '@/state/uiStore';
 import { useBootStore } from '@/state/bootStore';
@@ -8,6 +8,7 @@ import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useMediaStore } from '@/state/mediaStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useRelayTypingInjector } from '@/hooks/useRelayTypingInjector'; // Global keystroke solenoid feedback
 import { ArchiveErrorBoundary } from './ArchiveErrorBoundary';
 import { NavigationRail } from './NavigationRail';
 import { StatusBar } from './StatusBar';
@@ -39,11 +40,17 @@ import { registerSystemCommands } from '@/logic/commands/system';
 import { registerInvestigationCommands } from '@/logic/commands/investigation';
 import { registerEvidenceBoardCommands } from '@/logic/commands/evidenceBoard';
 import { colors, spacing } from '@/styles/theme';
-import { ModuleId } from '@/types';
 
 export const DashboardShell: React.FC = () => {
   // Mount global hotkeys and keyboard navigation
   useKeyboardShortcuts();
+
+  // Mount global mechanical keyboard solenoid typewriter clicks [2, 9, 44]
+  // Generates real-time click/armature thuds on every textual input globally
+  useRelayTypingInjector({
+    baseVolume: 0.22,
+    pitchOffset: 145, // Heavy iron frame resonance base frequency (Hz)
+  });
 
   // Register command registry loops on cold boot
   useEffect(() => {
@@ -73,7 +80,7 @@ export const DashboardShell: React.FC = () => {
       className="fixed inset-0 flex overflow-hidden select-none"
       style={{ backgroundColor: colors.archive.black }}
     >
-      {/* Tungsten desklamp radial lighting glow — visually locks the screen's canvas depth */}
+      {/* Tungsten desklamp radial lighting glow — visually locks the screen's canvas depth [1] */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -100,7 +107,7 @@ export const DashboardShell: React.FC = () => {
           </div>
         </ArchiveErrorBoundary>
 
-        {/* Alternative View: Crimson-Threaded Evidence Graph Board */}
+        {/* Alternative View: Crimson-Threaded Evidence Graph Board [14] */}
         <ArchiveErrorBoundary moduleName="Evidence Connection Board">
           {activeModule === 'evidence' && (
             <div className="absolute inset-0 animate-fade-in">
@@ -160,7 +167,7 @@ export const DashboardShell: React.FC = () => {
 
         {/* ─── DYNAMIC OVERLAYS, VIEWERS & ACTIVE CASEFILES ─── */}
 
-        {/* Active Dossier Investigation Folder View */}
+        {/* Active Dossier Investigation Folder View [30] */}
         <AnimatePresence mode="wait">
           {activeInvestigationId && activePlace && (
             <ArchiveErrorBoundary moduleName="Active Case Dossier">
@@ -192,12 +199,12 @@ export const DashboardShell: React.FC = () => {
 
       {/* ─── ROOT LEVEL POPUPS, TAPE DECKS & SYSTEM HUDs ─── */}
 
-      {/* Full-screen Terminal Command Console Overlay */}
+      {/* Full-screen Terminal Command Console Overlay [16] */}
       <ArchiveErrorBoundary moduleName="Terminal CLI Panel">
         <Terminal />
       </ArchiveErrorBoundary>
 
-      {/* Cassette Tape & Video Monitor Media Overlay */}
+      {/* Cassette Tape & Video Monitor Media Overlay [5] */}
       <AnimatePresence>
         {activeMedia && (
           <ArchiveErrorBoundary moduleName="Workstation Tape/Monitor Media System">
@@ -211,17 +218,17 @@ export const DashboardShell: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Paper Sheet Document Zoom/UV Viewer Overlay */}
+      {/* Paper Sheet Document Zoom/UV Viewer Overlay [30] */}
       <ArchiveErrorBoundary moduleName="Document Inspection Panel">
         <DocumentViewer />
       </ArchiveErrorBoundary>
 
-      {/* 3D Physical Artifact Magnification Desk Overlay */}
+      {/* 3D Physical Artifact Magnification Desk Overlay [5] */}
       <ArchiveErrorBoundary moduleName="Physical Artifact Inspection Panel">
         <ArtifactViewer />
       </ArchiveErrorBoundary>
 
-      {/* Daily Archival Boot-Up Sync Ritual Gate */}
+      {/* Daily Archival Boot-Up Sync Ritual Gate [17] */}
       <ArchiveErrorBoundary moduleName="Personnel Sync Sequence">
         <DailyRitual />
       </ArchiveErrorBoundary>
@@ -236,7 +243,7 @@ export const DashboardShell: React.FC = () => {
         <PrologueOverlay />
       </ArchiveErrorBoundary>
 
-      {/* Silent environmental anomalies watcher */}
+      {/* Silent environmental anomalies watcher [26] */}
       <ImpossibleChangeToast />
 
       {/* 2rem Footer Status HUD Bar */}

@@ -179,6 +179,11 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
             return next;
           });
           
+          // Safely award Dust ONCE strictly upon active completion of the code-dial alignment [6]
+          updateStatus({
+            dustIndex: Math.min(100, useUIStore.getState().status.dustIndex + 6),
+          });
+          
           play("success" as any); // Play locked validation tone
           return 100;
         }
@@ -191,15 +196,8 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
     return () => clearInterval(interval);
   }, [isProcessing, activeChannel.id, play]);
 
-  // 5. Award Dust on decryption completion (+6 Dust toward game progression - slow burn calibration)
-  useEffect(() => {
-    if (isDecrypted && !dustAwarded) {
-      setDustAwarded(true);
-      updateStatus({
-        dustIndex: Math.min(100, status.dustIndex + 6),
-      });
-    }
-  }, [isDecrypted, dustAwarded, status.dustIndex, updateStatus]);
+  // Disabled automatic effects to eliminate spam-click progression exploits [7]
+  useEffect(() => {}, []);
 
   // 6. Reset Workstation
   const [engageMessage, setEngageMessage] = useState<string | null>(null);

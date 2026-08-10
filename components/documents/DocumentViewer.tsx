@@ -144,25 +144,34 @@ export const DocumentViewer: React.FC = () => {
     };
   }, [activeDocument]);
 
-  // If there is no active document open, do not render the viewer overlay
-  if (!activeDocument || !activeDoc) return null;
-
   // Consensus Window evaluation gates [9]
-  const isInsideDustWindow = dustIndex >= activeDoc.requiredDustMin && dustIndex <= activeDoc.requiredDustMax;
-  const isInsideStabWindow = observerStability >= activeDoc.requiredStabMin;
-  const isConsensusLocked = isInsideDustWindow && isInsideStabWindow;
+  const isInsideDustWindow = useMemo(() => {
+    if (!activeDoc) return false;
+    return dustIndex >= activeDoc.requiredDustMin && dustIndex <= activeDoc.requiredDustMax;
+  }, [dustIndex, activeDoc]);
+
+  const isInsideStabWindow = useMemo(() => {
+    if (!activeDoc) return false;
+    return observerStability >= activeDoc.requiredStabMin;
+  }, [observerStability, activeDoc]);
+
+  const isConsensusLocked = useMemo(() => {
+    return isInsideDustWindow && isInsideStabWindow;
+  }, [isInsideDustWindow, isInsideStabWindow]);
 
   // 1. Scramble Engine: Under high Dust overload, text scrambles
   useEffect(() => {
+    if (!activeDoc) return;
     if (dustIndex <= activeDoc.requiredDustMax) return;
     const interval = setInterval(() => {
       setScrambleTick((prev) => (prev + 1) % 100);
     }, 180);
     return () => clearInterval(interval);
-  }, [dustIndex, activeDoc.requiredDustMax]);
+  }, [dustIndex, activeDoc?.requiredDustMax]);
 
   // 2. Rewrite Engine: Under Stability collapse, letters rewrite themselves
   useEffect(() => {
+    if (!activeDoc) return;
     if (observerStability >= activeDoc.requiredStabMin) {
       setRewriteTick(false);
       return;
@@ -171,7 +180,11 @@ export const DocumentViewer: React.FC = () => {
       setRewriteTick((prev) => !prev);
     }, 4200);
     return () => clearInterval(interval);
-  }, [observerStability, activeDoc.requiredStabMin]);
+  }, [observerStability, activeDoc?.requiredStabMin]);
+
+  // If there is no active document open, do not render the viewer overlay
+  // Placed down safely below all hook declarations to satisfy React Rules of Hooks!
+  if (!activeDocument || !activeDoc) return null;
 
   // Scramble helper that procedurally substitutes letters based on noise indices
   const scrambleText = (text: string): string => {

@@ -120,7 +120,13 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
 
   const activeChannel = DECRYPTION_CHANNELS.find((c) => c.id === selectedChannelId) || DECRYPTION_CHANNELS[0];
   const isDecrypted = decryptedIds.includes(activeChannel.id);
-  const targetDials = activeChannel.dials;
+  const baseDials = activeChannel.dials;
+  // Dynamic solstice offset key of +2 applied to all channels [6]
+  const targetDials = {
+    a: (baseDials.a + 2) % 21,
+    b: (baseDials.b + 2) % 21,
+    c: (baseDials.c + 2) % 21,
+  };
 
   // 1. Wire in the Procedural Modulator Hook!
   const { start, stop, tuningAccuracy } = useSignalModulator({
@@ -153,19 +159,8 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
     }
   };
 
-  // 3. Monitor input alignment for lock-on triggers
-  useEffect(() => {
-    if (
-      dialA === targetDials.a &&
-      dialB === targetDials.b &&
-      dialC === targetDials.c &&
-      !isDecrypted &&
-      !isProcessing
-    ) {
-      setIsProcessing(true);
-      play("alert");
-    }
-  }, [dialA, dialB, dialC, isDecrypted, isProcessing, targetDials, play]);
+  // Disabled automatic triggers to favor manual solenoid engagement
+  useEffect(() => {}, []);
 
   // 4. Processing cascade progress loop
   useEffect(() => {
@@ -196,18 +191,44 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
     return () => clearInterval(interval);
   }, [isProcessing, activeChannel.id, play]);
 
-  // 5. Award Dust on decryption completion (+15 Dust toward game progression)
+  // 5. Award Dust on decryption completion (+6 Dust toward game progression - slow burn calibration)
   useEffect(() => {
     if (isDecrypted && !dustAwarded) {
       setDustAwarded(true);
       updateStatus({
-        dustIndex: Math.min(100, status.dustIndex + 15),
+        dustIndex: Math.min(100, status.dustIndex + 6),
       });
     }
   }, [isDecrypted, dustAwarded, status.dustIndex, updateStatus]);
 
   // 6. Reset Workstation
+  const [engageMessage, setEngageMessage] = useState<string | null>(null);
+
+  const handleEngageCoupler = () => {
+    if (isDecrypted || isProcessing) return;
+    
+    // Verify dials matching with our mathematical offset (+2 Solstice drift)
+    if (dialA === targetDials.a && dialB === targetDials.b && dialC === targetDials.c) {
+      setIsProcessing(true);
+      setEngageMessage(null);
+      play("alert");
+    } else {
+      // Static Feedback Shock!
+      play("error");
+      setEngageMessage("COAXIAL DISCHARGE! STATIC FEEDBACK DETECTED.");
+      
+      // Inflict cognitive strain penalty (+4 Dust, -10% Stability)
+      updateStatus({
+        dustIndex: Math.min(100, status.dustIndex + 4),
+        observerStability: Math.max(0, status.observerStability - 10),
+      });
+      
+      setTimeout(() => setEngageMessage(null), 3000);
+    }
+  };
+
   const handleReset = () => {
+    setEngageMessage(null);
     click();
     setDialA(0);
     setDialB(0);
@@ -458,6 +479,36 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
                 })}
               </div>
 
+              {/* Manual Solenoid Coupler Engagement Button */}
+              <div className="flex flex-col gap-2 shrink-0">
+                <button
+                  onClick={handleEngageCoupler}
+                  disabled={isDecrypted || isProcessing}
+                  className="w-full py-2 border font-mono text-[10px] tracking-widest font-bold transition-colors hover:bg-orange-950/20 active:scale-98 disabled:opacity-30 flex items-center justify-center gap-2"
+                  style={{
+                    borderColor: isDecrypted ? colors.archive.green : "rgba(255, 170, 85, 0.4)",
+                    color: isDecrypted ? colors.archive.green : microform.halogen,
+                    backgroundColor: "rgba(255, 170, 85, 0.02)",
+                  }}
+                >
+                  <Cpu size={12} className={isProcessing ? "animate-spin" : ""} />
+                  ENGAGE COAXIAL SOLENOID COUPLER
+                </button>
+
+                {/* Error static discharge warning display */}
+                {engageMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-[10px] text-center font-bold font-mono py-1 border border-red-900 bg-red-950/20 text-red-400 rounded-[1px] flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck size={12} className="text-red-400" />
+                    <span>{engageMessage}</span>
+                  </motion.div>
+                )}
+              </div>
+
               {/* Visual Tuning Oscilloscope & Accuracy Readout */}
               <div
                 className="p-2.5 border font-mono text-[10px] text-left flex flex-col gap-1.5 rounded-[1px]"
@@ -508,10 +559,15 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="text-[10px] text-amber-500 flex items-center gap-2"
+                      className="text-[10px] text-amber-500 flex flex-col items-center gap-1"
                     >
-                      <Activity size={12} className="animate-pulse" />
-                      Awaiting Lock-on... Target combination: ({targetDials.a} - {targetDials.b} - {targetDials.c})
+                      <div className="flex items-center gap-2">
+                        <Activity size={12} className="animate-pulse" />
+                        <span>TACTILE WAVE BALANCE: AWAITING SOLENOID COUPLING</span>
+                      </div>
+                      <div className="text-[8.5px] text-stone-500">
+                        Base Registry Signatures: ({baseDials.a} - {baseDials.b} - {baseDials.c}) • SOLSTICE DRIFT AXIS: +2 OFFSET REQ.
+                      </div>
                     </motion.div>
                   )}
 

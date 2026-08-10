@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo } from 'react';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useUIStore } from '@/state/uiStore';
-import { colors, typography } from '@/styles/theme';
+import { colors, typography, microform } from '@/styles/theme';
+import { Shield, Activity, Lock, CheckCircle2, AlertTriangle, FileDigit } from 'lucide-react';
 
 export const DiscoveryPanel: React.FC = () => {
   const { places } = useAtlasStore();
@@ -19,97 +19,149 @@ export const DiscoveryPanel: React.FC = () => {
   const totalEvidence = Object.values(evidence).reduce((sum, arr) => sum + (arr?.length || 0), 0);
   const totalTimelineEvents = Object.values(timelines).reduce((sum, arr) => sum + (arr?.length || 0), 0);
 
-  const stats = [
-    { label: 'LOCATIONS INDEXED', value: places.length, color: colors.archive.amber },
-    { label: 'INVESTIGATIONS OPENED', value: investigatedSlugs.length, color: colors.archive.blue },
-    { label: 'EVIDENCE EXAMINED', value: totalEvidence, color: colors.archive.green },
-    { label: 'TIMELINE EVENTS', value: totalTimelineEvents, color: colors.archive.redBright },
-    { label: 'FIELD NOTES', value: placesWithNotes.length, color: colors.archive.grayLight },
-    { label: 'DUST INDEX', value: status.dustIndex, color: colors.archive.amber },
+  // Redesigning stats into clinically dry surveillance/consensus metrics [122]
+  const metrics = [
+    { label: 'CORES INDEXED', value: `${places.length} SITES`, color: colors.archive.amber, desc: 'Total mapped spatial irregularities' },
+    { label: 'DOSSIERS OPENED', value: `${investigatedSlugs.length} ACTIVE`, color: colors.archive.blue, desc: 'Local cognitive investigations synchronized' },
+    { label: 'EVIDENCE EXAMINED', value: `${totalEvidence} DOSSIERS`, color: colors.archive.green, desc: 'Analyzed archival materials' },
+    { label: 'TEMPORAL DRIFT LOGS', value: `${totalTimelineEvents} MARKS`, color: colors.archive.redBright, desc: 'Chronological anomalies cataloged' },
+    { label: 'INVESTIGATOR ANNOTATIONS', value: `${placesWithNotes.length} SECTORS`, color: colors.archive.grayLight, desc: 'Free-form observation sets saved' },
+    { label: 'ELECTROSTATIC LOAD', value: `${status.dustIndex}% DUST`, color: colors.archive.amber, desc: 'TIMELINE RESIDUE RESISTANCE PRESSURE' },
   ];
 
-  const milestones = [
-    { label: 'First Investigation', condition: investigatedSlugs.length >= 1, desc: 'Open your first case file' },
-    { label: 'Evidence Collector', condition: totalEvidence >= 5, desc: 'Examine 5 pieces of evidence' },
-    { label: 'Chronicler', condition: placesWithNotes.length >= 3, desc: 'Write notes for 3 cases' },
-    { label: 'Historian', condition: totalTimelineEvents >= 5, desc: 'Record 5 timeline events' },
-    { label: 'Dust Walker', condition: status.dustIndex >= 25, desc: 'Reach Moderate Dust exposure' },
-    { label: 'Stability Keeper', condition: status.observerStability >= 90, desc: 'Maintain 90%+ stability' },
-    { label: 'Resonance Hunter', condition: places.some((p) => p.connectedTo?.some((c) => investigatedSlugs.includes(c))), desc: 'Follow a resonance connection' },
-    { label: 'Archivist', condition: investigatedSlugs.length >= 10, desc: 'Open 10 investigations' },
+  // Overhaul achievements into highly threatening "Consensus Slip Threat Diagnostics"
+  const intercepts = [
+    {
+      id: "LOG-01",
+      label: "INITIAL OBSERVATION CYCLE",
+      condition: investigatedSlugs.length >= 1,
+      desc: "Observer initiated first carrel session. The walnut desk and CRT persistence have locked onto physical coordinates.",
+    },
+    {
+      id: "LOG-02",
+      label: "EVIDENCE EXPOSURE BLEED",
+      condition: totalEvidence >= 5,
+      desc: "Five distinct declassified dossiers analyzed. Electrostatic particulate is settling into your keyboard contacts.",
+    },
+    {
+      id: "LOG-03",
+      label: "CHRONOLOGY CORROSION",
+      condition: totalTimelineEvents >= 5,
+      desc: "Five impossible dates logged. Time indexing has failed. The Archive cannot guarantee chronological alignment.",
+    },
+    {
+      id: "LOG-04",
+      label: "PARTICULATE OVERLOAD SENSING",
+      condition: status.dustIndex >= 25,
+      desc: "Moderate Dust accumulation. Micro-fine ash has settled on the screen interior, blooming the phosphorus glow.",
+    },
+    {
+      id: "LOG-05",
+      label: "NOMINAL ANCHOR CALIBRATION",
+      condition: status.observerStability >= 90,
+      desc: "Cognitive stability sustained above 90%. Consensus reality remains cleanly locked in. For now.",
+    },
+    {
+      id: "LOG-06",
+      label: "GEODETIC SECTOR CROSSOVER",
+      condition: places.some((p) => p.connectedTo?.some((c) => investigatedSlugs.includes(c))),
+      desc: "Resonance lines connected. You have perceived the geodetic triangle forming around the Null Point.",
+    },
+    {
+      id: "LOG-07",
+      label: "RECURSIVE EXPOSURE CASCADE",
+      condition: investigatedSlugs.length >= 8,
+      desc: "Ten cases synchronized. Your assignment parameters have begun repeating. You have spent 4,211 days here.",
+    }
   ];
-
-  const completedMilestones = milestones.filter((m) => m.condition).length;
 
   return (
-    <div className="p-6 overflow-y-auto h-full">
-      <div className="mb-6 pb-2 border-b" style={{ borderColor: colors.archive.grayDark }}>
-        <h2 style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.1em' }}>
-          DISCOVERY TRACKER
-        </h2>
-        <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, marginTop: '0.25rem' }}>
-          {completedMilestones} OF {milestones.length} MILESTONES REACHED
+    <div className="p-6 overflow-y-auto h-full flex flex-col select-none font-mono text-xs">
+      {/* Header Bezel */}
+      <div className="shrink-0 mb-4 pb-2 border-b flex justify-between items-end" style={{ borderColor: colors.archive.grayDark }}>
+        <div>
+          <h2 style={{ color: colors.archive.amber, fontSize: typography.sizes.xs, letterSpacing: '0.12em' }}>
+            REALITY CONSENSUS INTEGRITY LOG
+          </h2>
+          <div className="text-[10px] mt-1.5" style={{ color: colors.archive.gray }}>
+            SECURE DIAG_BUS SYSTEM-7B STATUS READOUTS
+          </div>
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="p-4 border" style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.surface }}>
-            <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs, marginBottom: '0.5rem' }}>
-              {stat.label}
-            </div>
-            <div style={{ color: stat.color, fontFamily: typography.mono, fontSize: typography.sizes.xl }}>
-              {stat.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Milestones */}
-      <div className="space-y-2">
-        <h3 style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: typography.sizes.xs, letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
-          MILESTONES
-        </h3>
-        {milestones.map((milestone, i) => (
-          <motion.div
-            key={milestone.label}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            className="flex items-center gap-3 p-3 border"
-            style={{
-              borderColor: milestone.condition ? colors.archive.green : colors.archive.grayDark,
-              backgroundColor: milestone.condition ? 'rgba(106, 168, 106, 0.05)' : 'transparent',
-              opacity: milestone.condition ? 1 : 0.6,
-            }}
-          >
-            <span
-              style={{
-                color: milestone.condition ? colors.archive.green : colors.archive.grayDark,
-                fontFamily: typography.mono,
-                fontSize: typography.sizes.sm,
-              }}
+      <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+        {/* Core System Status Diagnostics Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {metrics.map((m) => (
+            <div
+              key={m.label}
+              className="p-3 border rounded-[1px] bg-void"
+              style={{ borderColor: colors.archive.grayDark }}
             >
-              {milestone.condition ? '▣' : '▪'}
-            </span>
-            <div className="flex-1">
+              <div className="text-[8px] opacity-50 uppercase tracking-widest" style={{ color: m.color }}>
+                {m.label}
+              </div>
+              <div className="text-sm font-bold mt-1 text-white tracking-wide">
+                {m.value}
+              </div>
+              <div className="text-[9px] text-stone-500 leading-normal mt-1">
+                {m.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Security Drifts & Intercept Logs */}
+        <div className="space-y-3">
+          <div className="text-[9px] uppercase tracking-wider text-stone-500 font-bold border-b pb-1 mb-2" style={{ borderColor: 'rgba(255,255,255,0.02)' }}>
+            CONSENSUS MEMORY SLIP INTERCEPTS
+          </div>
+
+          <div className="space-y-2.5">
+            {intercepts.map((log) => (
               <div
+                key={log.id}
+                className="p-3 border flex gap-3 items-start"
                 style={{
-                  color: milestone.condition ? colors.archive.white : colors.archive.gray,
-                  fontFamily: typography.mono,
-                  fontSize: typography.sizes.sm,
+                  borderColor: log.condition ? colors.archive.grayDark : "rgba(255, 170, 85, 0.05)",
+                  backgroundColor: log.condition ? "rgba(20, 18, 16, 0.2)" : "rgba(10, 8, 6, 0.4)",
+                  opacity: log.condition ? 1 : 0.4,
                 }}
               >
-                {milestone.label}
+                {/* Visual Status Indicator */}
+                <div className="shrink-0 mt-0.5">
+                  {log.condition ? (
+                    <CheckCircle2 size={13} style={{ color: colors.archive.green }} />
+                  ) : (
+                    <Lock size={13} style={{ color: colors.archive.gray }} />
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span
+                      className="font-bold text-[10px] tracking-wide"
+                      style={{ color: log.condition ? colors.archive.white : colors.archive.gray }}
+                    >
+                      {log.id} // {log.label}
+                    </span>
+                    {log.condition && (
+                      <span className="text-[8px] px-1 bg-[#1a2d1a] text-green-500 font-bold scale-90 border border-green-900 rounded-[1px]">
+                        ACTIVE
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] leading-relaxed" style={{ color: log.condition ? colors.archive.grayLight : colors.archive.gray }}>
+                    {log.desc}
+                  </p>
+                </div>
               </div>
-              <div style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-                {milestone.desc}
-              </div>
-            </div>
-          </motion.div>
-        ))}
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
+export default DiscoveryPanel;

@@ -48,6 +48,8 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [frequency, setFrequency] = useState(1.0); // Tuning slider from 1.0 to 10.0 Hz
+  const [filterQ, setFilterQ] = useState(1.0); // Filter Q factor from 0.1 to 10.0
+  const [inductiveGain, setInductiveGain] = useState(-6.0); // Inductive Gain from -12 to +12
   const [isLocked, setIsLocked] = useState(false);
 
   // Audio elements references for physical narration track playback
@@ -61,9 +63,18 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
   const targetFrequency = profile.frequency;
 
   // 1. Wire useSignalModulator Hook (Map 1D frequency to 3D Dial space)
+  // Map Frequency, Q-Bandwidth, and Gain directly into activeDials [8]
   const { start, stop, tuningAccuracy } = useSignalModulator({
-    activeDials: { a: frequency * 2, b: 0, c: 0 },
-    targetDials: { a: targetFrequency * 2, b: 0, c: 0 },
+    activeDials: { 
+      a: frequency * 2, 
+      b: filterQ * 2, 
+      c: (inductiveGain + 12) 
+    },
+    targetDials: { 
+      a: targetFrequency * 2, 
+      b: 5.0 * 2, 
+      c: 12.0 // Target is 0.0 dB (which corresponds to 12.0 offset)
+    },
     isProcessing: false,
     isUnlocked: isLocked,
     baseStaticVolume: 0.15,
@@ -74,8 +85,13 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
   useEffect(() => {
     if (!isPlaying) return;
 
-    // Standard locking range threshold
-    if (Math.abs(frequency - targetFrequency) < 0.06) {
+    // Multi-band Lock-on: Requires Frequency (Hz), Bandwidth (Q), and Inductive Gain (dB) aligned
+    const freqMatch = Math.abs(frequency - targetFrequency) < 0.06;
+    const qMatch = Math.abs(filterQ - 5.0) < 0.5;
+    const gainMatch = Math.abs(inductiveGain - 0.0) < 1.0;
+    const fullyAligned = freqMatch && qMatch && gainMatch;
+
+    if (fullyAligned) {
       if (!isLocked) {
         setIsLocked(true);
         play("alert"); // Locked alert thud
@@ -190,9 +206,15 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
             }
           } else {
             // Tuned static: heavy erratic waves modulated by tuning distance
-            const distance = Math.abs(frequency - targetFrequency);
-            const noise = (Math.random() - 0.5) * distance * 22;
-            y += Math.sin(i * 0.12 * (11 - frequency) + t) * (1.2 / distance) + noise;
+            const fDist = Math.abs(frequency - targetFrequency);
+            const qDist = Math.abs(filterQ - 5.0);
+            const gDist = Math.abs(inductiveGain - 0.0);
+            
+            // Saturation overload if gain is driven too high
+            const gainDrive = inductiveGain > 6.0 ? (inductiveGain - 6.0) * 4 : 0;
+            const staticLevel = (fDist * 12) + (qDist * 8) + (gDist * 2) + gainDrive;
+            const noise = (Math.random() - 0.5) * staticLevel * 2;
+            y += Math.sin(i * 0.1 * (11 - frequency) + t) * (15 / (staticLevel + 0.1)) + noise;
           }
         } else {
           // Off: flat, dead noise line
@@ -302,11 +324,11 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
               </div>
             </div>
 
-            {/* Analog Tuning Panel */}
+            {/* Analog Complex Tuning Panel with multi-band sliders */}
             <div className="flex items-center gap-4 p-4 border rounded-[1px] bg-void" style={{ borderColor: colors.archive.grayDark }}>
               <button
                 onClick={togglePlayback}
-                className="w-12 h-12 flex items-center justify-center rounded-full border transition-transform active:scale-90 hover:bg-[#1a1815]"
+                className="w-12 h-12 flex items-center justify-center rounded-full border transition-transform active:scale-90 hover:bg-[#1a1815] shrink-0"
                 style={{
                   borderColor: isPlaying ? colors.archive.green : colors.archive.amber,
                   color: isPlaying ? colors.archive.green : colors.archive.amber,
@@ -315,21 +337,66 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
                 {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
               </button>
 
-              <div className="flex-1 space-y-2">
-                <div className="flex justify-between text-[10px]" style={{ color: colors.archive.gray }}>
-                  <span>TUNING FREQUENCY SWEEP</span>
-                  <span style={{ color: microform.halogen }}>{frequency.toFixed(1)} Hz</span>
+              <div className="flex-1 space-y-3">
+                {/* 1. Frequency Slider */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px]" style={{ color: colors.archive.gray }}>
+                    <span>CARRIER RES_FREQUENCY SWEEP</span>
+                    <span style={{ color: Math.abs(frequency - targetFrequency) < 0.06 ? colors.archive.green : microform.halogen }}>
+                      {frequency.toFixed(2)} Hz
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="10.0"
+                    step="0.05"
+                    value={frequency}
+                    disabled={!isPlaying}
+                    onChange={(e) => setFrequency(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-[#1a1a18] rounded-lg appearance-none cursor-pointer accent-[#ffaa55] disabled:opacity-30"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="1.0"
-                  max="10.0"
-                  step="0.1"
-                  value={frequency}
-                  disabled={!isPlaying}
-                  onChange={(e) => setFrequency(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-[#1a1a18] rounded-lg appearance-none cursor-pointer accent-[#ffaa55] disabled:opacity-30"
-                />
+
+                {/* 2. Bandwidth Slider */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px]" style={{ color: colors.archive.gray }}>
+                    <span>CARRIER FILTER BANDWIDTH (Q-FACTOR)</span>
+                    <span style={{ color: Math.abs(filterQ - 5.0) < 0.5 ? colors.archive.green : microform.halogen }}>
+                      {filterQ.toFixed(1)} Q
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="10.0"
+                    step="0.1"
+                    value={filterQ}
+                    disabled={!isPlaying}
+                    onChange={(e) => setFilterQ(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-[#1a1a18] rounded-lg appearance-none cursor-pointer accent-[#ffaa55] disabled:opacity-30"
+                  />
+                </div>
+
+                {/* 3. Inductive Gain Slider */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px]" style={{ color: colors.archive.gray }}>
+                    <span>INDUCTIVE COIL TRANS-GAIN</span>
+                    <span style={{ color: Math.abs(inductiveGain - 0.0) < 1.0 ? colors.archive.green : microform.halogen }}>
+                      {inductiveGain > 0 ? "+" : ""}{inductiveGain.toFixed(1)} dB
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-12.0"
+                    max="12.0"
+                    step="0.5"
+                    value={inductiveGain}
+                    disabled={!isPlaying}
+                    onChange={(e) => setInductiveGain(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-[#1a1a18] rounded-lg appearance-none cursor-pointer accent-[#ffaa55] disabled:opacity-30"
+                  />
+                </div>
               </div>
             </div>
 

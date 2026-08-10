@@ -520,7 +520,7 @@ export const EvidenceBoard: React.FC = () => {
   const { click, play } = useAudioStore();
   const { status, updateStatus } = useUIStore();
   const { addCommand } = useTerminalStore();
-  const { selectNode, setFocusNode, setViewMode, playerEdges, addPlayerEdge } = useEvidenceBoardStore();
+  const { selectNode, setFocusNode, setViewMode, playerEdges, addPlayerEdge, nodePositions, setNodePosition } = useEvidenceBoardStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -676,14 +676,18 @@ export const EvidenceBoard: React.FC = () => {
 
     // Build Polaroid Nodes
     const flowNodes = visiblePlaces.map((place, index) => {
-      const angle = (index * 2 * Math.PI) / visiblePlaces.length;
-      
-      const nodeX = place.coordinates
-        ? centerBoardX + (place.coordinates[0] - 30.0) * 12
-        : centerBoardX + orbitRadius * Math.cos(angle);
-      const nodeY = place.coordinates
-        ? centerBoardY + (51.0 - place.coordinates[1]) * 12
-        : centerBoardY + orbitRadius * Math.sin(angle);
+      let position = nodePositions[place.slug];
+      if (!position) {
+        const angle = (index * 2 * Math.PI) / visiblePlaces.length;
+        const nodeX = place.coordinates
+          ? centerBoardX + (place.coordinates[0] - 30.0) * 12
+          : centerBoardX + orbitRadius * Math.cos(angle);
+        const nodeY = place.coordinates
+          ? centerBoardY + (51.0 - place.coordinates[1]) * 12
+          : centerBoardY + orbitRadius * Math.sin(angle);
+        position = { x: nodeX, y: nodeY };
+        setNodePosition(place.slug, position);
+      }
 
       const isSelected = selectedPlaceSlug === place.slug;
       
@@ -694,7 +698,7 @@ export const EvidenceBoard: React.FC = () => {
       return {
         id: place.slug,
         type: 'polaroid' as const,
-        position: { x: nodeX, y: nodeY },
+        position: position,
         data: {
           place,
           isSelected,
@@ -718,10 +722,16 @@ export const EvidenceBoard: React.FC = () => {
         const targetX = flowNodes.find(n => n.id === place.slug)?.position.x ?? centerBoardX;
         const targetY = flowNodes.find(n => n.id === place.slug)?.position.y ?? centerBoardY;
 
+        let cardPos = nodePositions[`card-${place.slug}`];
+        if (!cardPos) {
+          cardPos = { x: targetX + 115, y: targetY + 30 };
+          setNodePosition(`card-${place.slug}`, cardPos);
+        }
+
         documentCardNodes.push({
           id: `card-${place.slug}`,
           type: 'manilaCard' as const,
-          position: { x: targetX + 115, y: targetY + 30 },
+          position: cardPos,
           data: {
             title: `Resonance Log // ${place.name.toUpperCase()}`,
             excerpt: place.resonanceNote,
@@ -742,10 +752,16 @@ export const EvidenceBoard: React.FC = () => {
 
     // Build seeded Hypothesis Nodes stacked neatly in the center grid
     const hypNodes = hypotheses.map((hyp, index) => {
+      let hypPos = nodePositions[hyp.id];
+      if (!hypPos) {
+        hypPos = { x: centerBoardX - 130, y: centerBoardY + (index * 200) - 180 };
+        setNodePosition(hyp.id, hypPos);
+      }
+
       return {
         id: hyp.id,
         type: 'hypothesis' as const,
-        position: { x: centerBoardX - 130, y: centerBoardY + (index * 200) - 180 },
+        position: hypPos,
         data: {
           title: hyp.title,
           description: hyp.description,
@@ -855,6 +871,7 @@ export const EvidenceBoard: React.FC = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStop={(evt, node) => setNodePosition(node.id, node.position)}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onConnect={onConnect}

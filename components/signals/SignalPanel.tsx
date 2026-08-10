@@ -226,9 +226,19 @@ export const SignalPanel: React.FC = () => {
 
   const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
   const [decrypterOpen, setDecrypterOpen] = useState(false);
+  const [decryptedIds, setDecryptedIds] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("vp-decrypted-signals");
+    if (saved) {
+      try {
+        setDecryptedIds(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, [decrypterOpen]); // Refreshes when decrypter closes
 
   const dust = status.dustIndex;
-  const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock);
+  const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock || decryptedIds.includes(a.id));
 
   return (
     <div className="p-6 space-y-4 overflow-y-auto h-full flex flex-col select-none">
@@ -264,7 +274,7 @@ export const SignalPanel: React.FC = () => {
       {/* Directory Index Column */}
       <div className="flex-1 overflow-y-auto space-y-3">
         {ARTIFACTS.map((item) => {
-          const isUnlocked = dust >= item.dustUnlock;
+          const isUnlocked = dust >= item.dustUnlock || decryptedIds.includes(item.id);
 
           return (
             <div
@@ -317,7 +327,16 @@ export const SignalPanel: React.FC = () => {
       </div>
 
       {/* Decrypter Modal Portal Overlay */}
-      {decrypterOpen && <DecrypterModal onClose={() => setDecrypterOpen(false)} />}
+      {decrypterOpen && <DecrypterModal onClose={() => {
+        setDecrypterOpen(false);
+        // Quick trigger refresh
+        const saved = localStorage.getItem("vp-decrypted-signals");
+        if (saved) {
+          try {
+            setDecryptedIds(JSON.parse(saved));
+          } catch (e) {}
+        }
+      }} />}
 
       {/* Signal Tuning Modal Portal Overlay */}
       {selectedSignal && <SignalModal signal={selectedSignal} onClose={() => setSelectedSignal(null)} />}

@@ -28,7 +28,7 @@ export interface Status {
   investigatedSlugs: string[];
   activeAlerts: number;
   sessionWorkDone: number; // Tracker for active grounding gate checks
-  atlasCoverage: number;     // Restored to resolve the Vercel compilation error
+  atlasCoverage: number;     // Restored to resolve compilation requirements
 }
 
 interface UIState {
@@ -73,74 +73,52 @@ export const useUIStore = create<UIState>((set, get) => ({
   setPrologueComplete: () => set({ prologueComplete: true }),
   setGuideOpen: (guideOpen) => set({ guideOpen }),
   
-  updateStatus: (newStatus) => set((s) => ({
-    status: { ...s.status, ...newStatus }
-  })),
-
+  updateStatus: (newStatus) => set((s) => ({ status: { ...s.status, ...newStatus } })),
+  
   investigatePlace: (slug) => set((s) => {
     if (s.status.investigatedSlugs.includes(slug)) {
       return s; // The Archive remembers double-dipping
     }
+    // Slower, cerebral exposure increments (Slow Burn: +2 Dust instead of +5)
     return {
       status: {
         ...s.status,
-        dustIndex: Math.min(100, s.status.dustIndex + 5),
+        dustIndex: Math.min(100, s.status.dustIndex + 2),
         investigatedSlugs: [...s.status.investigatedSlugs, slug],
         sessionWorkDone: s.status.sessionWorkDone + 1, // Log progress
-        // Increment coverage by +42.8 km² per newly mapped sector
-        atlasCoverage: s.status.atlasCoverage + 42.8, 
+        atlasCoverage: s.status.atlasCoverage + 42.8,
       },
     };
   }),
 
-  // Grounding loop: Grounding requires reference work
+  // Grounding loop: bleeding off electrostatic charge into copper vents
   ground: () => {
     const { status } = get();
-    
-    if (status.sessionWorkDone < 2 && status.dustIndex > 10) {
-      return {
-        success: false,
-        message: `BUNKER_7: Grounding failed. Calibration requires physical focus. Organize the Archive, review unread documents, or record notes inside case files to ground your perception before attempting reset.`
-      };
+    if (status.dustIndex <= 0) {
+      return { success: false, message: "BUNKER_7: No electrostatic load detected on terminal chassis contact plates." };
     }
-
     set((s) => ({
       status: {
         ...s.status,
-        dustIndex: Math.max(0, s.status.dustIndex - 20),
-        observerStability: Math.min(100, s.status.observerStability + 15),
-        sessionWorkDone: 0, // Reset the grounding charge
-      },
+        dustIndex: Math.max(0, s.status.dustIndex - 12),
+        observerStability: Math.min(100, s.status.observerStability + 5),
+      }
     }));
-
-    return {
-      success: true,
-      message: `BUNKER_7: Grounding sequence complete. Particulate levels neutralized. Observer focus aligned.`
-    };
+    return { success: true, message: `BUNKER_7: Grounding loop complete. Bled off -12% electrostatic static load into Wing C copper drains.` };
   },
 
   restoreStability: () => {
     const { status } = get();
-    
-    if (status.investigatedSlugs.length === 0) {
-      return {
-        success: false,
-        message: `BUNKER_7: Stability lock denied. You have not logged any geodetic points this session. A physical coordinate anchor is required to lock focus.`
-      };
+    if (status.observerStability >= 100) {
+      return { success: false, message: "BUNKER_7: Observer cognitive alignment is already at nominal ceiling (100%)." };
     }
-
     set((s) => ({
       status: {
         ...s.status,
-        observerStability: 100,
-        dustIndex: Math.max(0, s.status.dustIndex - 5),
-      },
+        observerStability: Math.min(100, s.status.observerStability + 15),
+      }
     }));
-
-    return {
-      success: true,
-      message: `BUNKER_7: Observer calibration reset to 100%. Neural sync: secure.`
-    };
+    return { success: true, message: "BUNKER_7: Calibration sequence complete. Focus alignment secured (+15% Stability)." };
   },
 
   examineEvidence: (evidenceId, isVerified = false) => {
@@ -150,8 +128,8 @@ export const useUIStore = create<UIState>((set, get) => ({
         return {
           status: {
             ...s.status,
-            dustIndex: Math.max(0, s.status.dustIndex - 2),
-            observerStability: Math.min(100, s.status.observerStability + 3),
+            dustIndex: Math.max(0, s.status.dustIndex - 1), // Tighter balance metrics
+            observerStability: Math.min(100, s.status.observerStability + 2),
             sessionWorkDone: s.status.sessionWorkDone + 1,
           }
         };
@@ -160,8 +138,8 @@ export const useUIStore = create<UIState>((set, get) => ({
         return {
           status: {
             ...s.status,
-            dustIndex: Math.min(100, s.status.dustIndex + 4),
-            observerStability: Math.max(0, s.status.observerStability - 3),
+            dustIndex: Math.min(100, s.status.dustIndex + 1), // Slow Burn: +1 instead of +4
+            observerStability: Math.max(0, s.status.observerStability - 1), // Gentle drain: -1 instead of -3
             sessionWorkDone: s.status.sessionWorkDone + 1,
           }
         };

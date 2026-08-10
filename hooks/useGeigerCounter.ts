@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { create } from 'zustand';
 import { useUIStore } from '@/state/uiStore';
 import { useAtlasStore } from '@/state/atlasStore';
 
@@ -10,23 +11,52 @@ interface GeigerConfig {
   volume?: number;       // Master volume of clicks (0 to 1)
 }
 
+interface GeigerStore {
+  isActive: boolean;
+  currentCpm: number;
+  uSvh: number;
+  hoveredPlaceSlug: string | null;
+  setIsActive: (active: boolean) => void;
+  setCurrentCpm: (cpm: number) => void;
+  setUSvh: (uSvh: number) => void;
+  setHoveredPlaceSlug: (slug: string | null) => void;
+}
+
+// Global Geiger Zustand store to unify AtlasMap, GeigerHUD, and useTerminalJitter
+export const useGeigerStore = create<GeigerStore>((set) => ({
+  isActive: false,
+  currentCpm: 12,
+  uSvh: 12 * 0.0057,
+  hoveredPlaceSlug: null,
+  setIsActive: (active) => set({ isActive: active }),
+  setCurrentCpm: (cpm) => set({ currentCpm: cpm, uSvh: cpm * 0.0057 }),
+  setUSvh: (uSvh) => set({ uSvh }),
+  setHoveredPlaceSlug: (slug) => set({ hoveredPlaceSlug: slug }),
+}));
+
 export function useGeigerCounter({
   baseCpm = 12,
   maxCpm = 3600,
   volume = 0.25
 }: GeigerConfig = {}) {
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const [isActive, setIsActive] = useState(false);
-  const [currentCpm, setCurrentCpm] = useState(baseCpm);
-  const [uSvh, setUSvh] = useState(baseCpm * 0.0057); // Rough conversion factor
-
+  
   const { status } = useUIStore();
   const { selectedPlaceSlug, places } = useAtlasStore();
+  const { 
+    isActive, 
+    currentCpm, 
+    uSvh, 
+    hoveredPlaceSlug, 
+    setIsActive, 
+    setCurrentCpm, 
+    setUSvh 
+  } = useGeigerStore();
 
   const nextClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPlayingRef = useRef(false);
 
-  // 1. Calculate active radiation target factor based on player environment
+  // 1. Calculate active radiation target factor based on player environment (selected or hovered)
   const getTargetCpm = useCallback((): number => {
     let multiplier = 1.0;
     
@@ -34,8 +64,11 @@ export function useGeigerCounter({
     const dustLevel = status?.dustIndex || 0;
     multiplier += (dustLevel / 100) * 8.0; // Moderate dust increases background clicks
 
-    if (selectedPlaceSlug) {
-      const activePlace = places.find(p => p.slug === selectedPlaceSlug);
+    // Prioritize hovered place, then fallback to selected place
+    const activeSlug = hoveredPlaceSlug || selectedPlaceSlug;
+
+    if (activeSlug) {
+      const activePlace = places.find(p => p.slug === activeSlug);
       if (activePlace) {
         // Danger level scales base energy [230, 245]
         const danger = activePlace.dangerLevel || 1;
@@ -59,7 +92,7 @@ export function useGeigerCounter({
 
     const calculatedCpm = Math.min(maxCpm, baseCpm * multiplier);
     return Math.max(baseCpm, calculatedCpm);
-  }, [selectedPlaceSlug, places, status?.dustIndex, baseCpm, maxCpm]);
+  }, [selectedPlaceSlug, hoveredPlaceSlug, places, status?.dustIndex, baseCpm, maxCpm]);
 
   // 2. Synthesize a single authentic high-pitched electrostatic discharge crackle
   const playGeigerClick = useCallback((ctx: AudioContext) => {
@@ -104,16 +137,13 @@ export function useGeigerCounter({
   }, [volume]);
 
   // 3. Poisson Distribution Scheduler (True Radioactive Decay Simulation)
-  // Radioactive decay is non-deterministic. A simple setInterval sounds robotic.
-  // We model a Poisson process where time between clicks is exponentially distributed:
-  // t = -ln(1 - R) / lambda, where lambda is average clicks per second.
   const scheduleNextClick = useCallback(() => {
     if (!isPlayingRef.current || !audioCtxRef.current) return;
 
     const ctx = audioCtxRef.current;
     const targetCpm = getTargetCpm();
     
-    // Update live indicators
+    // Update live indicators in store
     setCurrentCpm(Math.round(targetCpm));
     setUSvh(targetCpm * 0.0057);
 
@@ -129,7 +159,7 @@ export function useGeigerCounter({
     nextClickTimeoutRef.current = setTimeout(() => {
       scheduleNextClick();
     }, delaySeconds * 1000);
-  }, [getTargetCpm, playGeigerClick]);
+  }, [getTargetCpm, playGeigerClick, setCurrentCpm, setUSvh]);
 
   // 4. Initialize Audio Session safely
   const start = useCallback(() => {
@@ -143,7 +173,7 @@ export function useGeigerCounter({
     
     // Kickstart decay loop
     scheduleNextClick();
-  }, [scheduleNextClick]);
+  }, [scheduleNextClick, setIsActive]);
 
   // 5. Tear down timeouts and context cleanly
   const stop = useCallback(() => {
@@ -159,7 +189,7 @@ export function useGeigerCounter({
       audioCtxRef.current.close();
       audioCtxRef.current = null;
     }
-  }, []);
+  }, [setIsActive]);
 
   useEffect(() => {
     // Keep internal scheduling parameters refreshed when state details shift
@@ -168,7 +198,7 @@ export function useGeigerCounter({
       setCurrentCpm(Math.round(targetCpm));
       setUSvh(targetCpm * 0.0057);
     }
-  }, [getTargetCpm]);
+  }, [getTargetCpm, setCurrentCpm, setUSvh]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -8,7 +8,7 @@ interface TapeDegradationConfig {
 
 export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationConfig) {
   const { status } = useUIStore();
-  const dustIndex = status?.dustIndex ?? 0;
+  const dustIndex = status.dustIndex;
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -46,6 +46,7 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
       audioCtxRef.current = ctx;
 
       // Create or reuse MediaElementSource
+      // Native audio element source must only be created once per element
       if (!sourceNodeRef.current) {
         sourceNodeRef.current = ctx.createMediaElementSource(audioElement);
       }
@@ -138,6 +139,7 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
       hissGainRef.current = hissGain;
 
       // --- Node Routing Web ---
+      // Source -> Filter -> Delay -> Master Analyser -> Destination
       source.connect(filter);
       filter.connect(delay);
       delay.connect(analyser);
@@ -171,7 +173,7 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
     }
 
     wowLfoRef.current?.disconnect();
-    wowGainRef.current?.disconnect();    
+    wowGainRef.current?.disconnect();
     flutterLfoRef.current?.disconnect();
     flutterGainRef.current?.disconnect();
     humOscRef.current?.disconnect();
@@ -200,20 +202,38 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
     // Normalizing dust index from [0..100] scale
     const intensity = Math.min(1.0, dustIndex / 100);
 
-    const filterFreq = 1200 - intensity * 400; // Center shifts lower
-    const filterQ = 0.5 + intensity * 4.5;      // Band narrows under magnetic corrosion
+    // Dynamic Tape-Wear duration tracking [21, 22]
+    const playTime = audioElement ? audioElement.currentTime : 0;
+    const durationRatio = Math.min(1.0, playTime / 135.0); // Peak degradation at 2:15 limit
 
-    const wowDepth = 0.00005 + intensity * 0.00045; // Shifts between subtle drift and old tape drag
-    const wowFreq = 0.35 + intensity * 0.65;        // Pitch slows down further as magnetic tape loses grip
+    // ── 1. Tape Head Oxidation (High frequency roll-off over playtime) ──
+    const filterFreq = Math.max(250, 1200 - (intensity * 400) - (durationRatio * 350));
+    const filterQ = 0.5 + intensity * 4.5 + durationRatio * 1.5;
 
-    const flutterDepth = 0.00001 + intensity * 0.00015;
-    const flutterFreq = 14.0 - intensity * 4.0;     // Jitters with a heavier shivering warble
+    // ── 2. Thermal Motor Drag (Wow increases as reels accumulate friction) ──
+    const wowDepth = 0.00005 + (intensity * 0.00045) + (durationRatio * 0.00035);
+    const wowFreq = 0.35 + (intensity * 0.65) + (durationRatio * 0.25);
 
-    const humVolume = 0.001 + intensity * 0.015;   // Heavy AC transformer hum
-    const hissVolume = 0.012 + intensity * 0.088;  // Thick atmospheric white noise floor
+    // ── 3. High-Frequency Belt Flutters ──
+    const flutterDepth = 0.00001 + (intensity * 0.00015) + (durationRatio * 0.00008);
+    const flutterFreq = 14.0 - (intensity * 4.0) - (durationRatio * 2.0);
 
-    filterNodeRef.current?.frequency.setTargetAtTime(filterFreq, now, 0.2);
-    filterNodeRef.current?.Q.setTargetAtTime(filterQ, now, 0.2);
+    // ── 4. Progressive Oxide Hiss Accumulation ──
+    const humVolume = 0.001 + intensity * 0.015;
+    const hissVolume = 0.012 + (intensity * 0.088) + (durationRatio * 0.04);
+
+    // ── 5. Transient Belt Slips (Motor pitch sags every 40s of active tape) ──
+    const sagPeriod = 40;
+    const relativeTime = playTime % sagPeriod;
+    let sagOffset = 0;
+    if (relativeTime > 37.8) { // 2.2s mechanical slip window
+      const sagProgress = (relativeTime - 37.8) / 2.2;
+      sagOffset = Math.sin(sagProgress * Math.PI) * 0.0028 * (0.35 + intensity * 0.65);
+    }
+
+    // Apply target transitions smoothly to avoid modern digital clicks, maintaining heavy physical warmth
+    filterNodeRef.current?.frequency.setTargetAtTime(filterFreq, now, 0.25);
+    filterNodeRef.current?.Q.setTargetAtTime(filterQ, now, 0.25);
 
     wowLfoRef.current?.frequency.setTargetAtTime(wowFreq, now, 0.3);
     wowGainRef.current?.gain.setTargetAtTime(wowDepth, now, 0.2);
@@ -223,6 +243,12 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
 
     humGainRef.current?.gain.setTargetAtTime(humVolume, now, 0.4);
     hissGainRef.current?.gain.setTargetAtTime(hissVolume, now, 0.3);
+
+    // Modulate physical delay time offset to implement motor sags
+    if (delayNodeRef.current) {
+      const baseDelay = 0.005 + (durationRatio * 0.004); // Creep up as tape stretches
+      delayNodeRef.current.delayTime.setTargetAtTime(baseDelay + sagOffset, now, 0.08);
+    }
   };
 
   // 4. Update Web Audio parameters when dustIndex changes
@@ -236,13 +262,14 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
   useEffect(() => {
     if (isPlaying) {
       initAudio();
+      // Resume audio context if suspended (browser security autoplays)
       if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
         audioCtxRef.current.resume();
       }
     }
   }, [isPlaying, audioElement]);
 
-  // 6. Renders live VU Meter average amplitudes via requestAnimationFrame
+  // 6. Renders live VU Meter average amplitudes via requestAnimationFrame [21]
   useEffect(() => {
     if (!isPlaying || !analyserRef.current) return;
 
@@ -253,14 +280,19 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
     const updateVU = () => {
       analyser.getByteFrequencyData(dataArray);
 
+      // Read average amplitude across our frequency bins
       let sum = 0;
       for (let i = 0; i < bufferLength; i++) {
         sum += dataArray[i];
       }
       const average = sum / bufferLength;
 
+      // Scale and smooth out the VU needle bouncing
       const scale = average / 255; // Normalize to [0..1]
       setVuValue((prev) => prev * 0.75 + scale * 0.3); // Needle momentum simulation
+
+      // Procedural real-time motor speed and tape wear parameter sweep! [21]
+      updateParameters();
 
       animationFrameRef.current = requestAnimationFrame(updateVU);
     };
@@ -274,17 +306,24 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
     };
   }, [isPlaying]);
 
-  // ─── PROCEDURAL TAPE SCRUBBING AUDIO ENGINE ───
-  const triggerScrubSound = useCallback((direction: "ff" | "rw") => {
-    // If context is not ready yet, initialize on demand
-    if (!audioCtxRef.current) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtxRef.current = new AudioContextClass();
+  // Tear down audio nodes completely on unmount
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, []);
+
+  // 7. Procedural Tape Scrubbing scrape sound trigger
+  const triggerScrubSound = useCallback((direction: "forward" | "backward" | "delta" | "ff" | "rw" = "delta") => {
+    let ctx = audioCtxRef.current;
+    if (!ctx) {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        ctx = new AudioContextClass();
+      } catch (e) {
+        return;
       }
     }
-    const ctx = audioCtxRef.current;
-    if (!ctx) return;
 
     if (ctx.state === "suspended") {
       ctx.resume();
@@ -292,55 +331,59 @@ export function useTapeDegradation({ audioElement, isPlaying }: TapeDegradationC
 
     const now = ctx.currentTime;
 
-    // 1. Solenoid Relay Clack (Heavy metal spring thud)
-    const thudOsc = ctx.createOscillator();
-    const thudGain = ctx.createGain();
-    thudOsc.type = "triangle";
-    thudOsc.frequency.setValueAtTime(115, now);
-    thudOsc.frequency.exponentialRampToValueAtTime(35, now + 0.12);
+    // A. Create mechanical Solenoid Relay clack thud
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    clickOsc.type = "triangle";
+    clickOsc.frequency.setValueAtTime(115, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(35, now + 0.12);
 
-    thudGain.gain.setValueAtTime(0.24, now);
-    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    clickGain.gain.setValueAtTime(0.18, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
-    thudOsc.connect(thudGain);
-    thudGain.connect(ctx.destination);
-    thudOsc.start(now);
-    thudOsc.stop(now + 0.15);
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.15);
 
-    // 2. High-Passed Tape Head "Squeal" Scrape
-    const scrubNoise = ctx.createBufferSource();
-    const bufferSize = 0.08 * ctx.sampleRate; // ~80ms scrape window
+    // B. Create high-passed metallic playhead friction squeal
+    const bufferSize = ctx.sampleRate * 0.18; // Short 180ms burst
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const channelData = buffer.getChannelData(0);
+    const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      channelData[i] = Math.random() * 2 - 1;
+      data[i] = Math.random() * 2 - 1;
     }
-    scrubNoise.buffer = buffer;
 
-    const scrubFilter = ctx.createBiquadFilter();
-    scrubFilter.type = "bandpass";
-    const centerFreq = direction === "ff" ? 2800 : 1500;
-    scrubFilter.frequency.setValueAtTime(centerFreq, now);
-    scrubFilter.frequency.exponentialRampToValueAtTime(direction === "ff" ? 3800 : 700, now + 0.08);
-    scrubFilter.Q.setValueAtTime(2.2, now);
+    const noiseNode = ctx.createBufferSource();
+    noiseNode.buffer = buffer;
 
-    const scrubGain = ctx.createGain();
-    scrubGain.gain.setValueAtTime(0.08, now);
-    scrubGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    const hpFilter = ctx.createBiquadFilter();
+    hpFilter.type = "highpass";
+    hpFilter.frequency.setValueAtTime(1200, now);
 
-    scrubNoise.connect(scrubFilter);
-    scrubFilter.connect(scrubGain);
-    scrubGain.connect(ctx.destination);
+    const bpFilter = ctx.createBiquadFilter();
+    bpFilter.type = "bandpass";
+    bpFilter.Q.setValueAtTime(2.2, now);
 
-    scrubNoise.start(now);
-    scrubNoise.stop(now + 0.1);
-  }, []);
+    // Directional pitch-shifting squeal
+    const isRewind = direction === "backward" || direction === "rw";
+    const startFreq = isRewind ? 1500 : 2800;
+    const endFreq = isRewind ? 700 : 3800;
 
-  // Tear down audio nodes completely on unmount
-  useEffect(() => {
-    return () => {
-      stopAudio();
-    };
+    bpFilter.frequency.setValueAtTime(startFreq, now);
+    bpFilter.frequency.exponentialRampToValueAtTime(endFreq, now + 0.15);
+
+    const scrapeGain = ctx.createGain();
+    scrapeGain.gain.setValueAtTime(0.09, now);
+    scrapeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    noiseNode.connect(hpFilter);
+    hpFilter.connect(bpFilter);
+    bpFilter.connect(scrapeGain);
+    scrapeGain.connect(ctx.destination);
+
+    noiseNode.start(now);
+    noiseNode.stop(now + 0.2);
   }, []);
 
   return {

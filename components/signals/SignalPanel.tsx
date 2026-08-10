@@ -16,6 +16,7 @@ interface SignalArtifact {
   dustUnlock: number;
   description: string;
   transcript: string[];
+  mediaUrl?: string; // Physical MP3 track url
 }
 
 const ARTIFACTS: SignalArtifact[] = [
@@ -26,6 +27,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:42",
     dustUnlock: 0,
     description: "Primary survey of Ward 4. Investigator detects anomalous frequency.",
+    mediaUrl: "/audio/signals/blackwood-ambience.mp3",
     transcript: [
       "[00:00] Wind against broken glass. Distant structural creaking.",
       "[00:12] INVESTIGATOR: Blackwood Hospital. Ward 4. Primary survey. No structural compromise.",
@@ -42,6 +44,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "0:45",
     dustUnlock: 0,
     description: "First login sequence. Four thousand two hundred and eleven days since last session.",
+    mediaUrl: "/audio/signals/bunker7-boot.mp3",
     transcript: [
       "[00:00] [Mechanical relay click. Soft tape hiss.]",
       "BUNKER_7: Archive node online. Temporal sync: nominal. Memory integrity: ninety-nine percent.",
@@ -56,6 +59,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "2:15",
     dustUnlock: 12,
     description: "Forty years keeping the light. Then the lamp began lighting itself.",
+    mediaUrl: "/audio/vance/vance-lighthouse.mp3",
     transcript: [
       "[00:00] [Ocean. Wind. A kettle whistling.]",
       "VANCE: Testing. This is Edward Vance, St. Elmo Light. Date is... well, the calendar says March, but the gulls haven't left yet.",
@@ -76,6 +80,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:30 (looping)",
     dustUnlock: 20,
     description: "Shortwave numbers station quoting Edward Vance's final words.",
+    mediaUrl: "/audio/vance/vance-loop.mp3",
     transcript: [
       "[00:00] [Shortwave static. A carrier tone.]",
       "VOICE: Seven. Fourteen. Zero. St. Elmo. Meridian. Blackwood.",
@@ -93,6 +98,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:58",
     dustUnlock: 28,
     description: "Engineering student records final message before tunnel takes her. Name lost to magnetic flutter.",
+    mediaUrl: "/audio/signals/meridian-dictaphone.mp3",
     transcript: [
       "[00:00] [Heavy breathing. Walking fast through gravel.]",
       "WOMAN: I am leaving this at the entrance. If the mine is still here when you find it, then I failed.",
@@ -113,6 +119,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:10",
     dustUnlock: 35,
     description: "BUNKER_7 experiencing data fragmentation. Asks investigator to verify their own name.",
+    mediaUrl: "/audio/signals/bunker7-diagnostic.mp3",
     transcript: [
       "[00:00] [Longer pause than usual. Fan stutters.]",
       "BUNKER_7: Archive node... online. Temporal sync: nominal.",
@@ -131,6 +138,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "2:00",
     dustUnlock: 42,
     description: "Subsonic pulse with voices. The shape of conversation without content. A chair scrapes across concrete.",
+    mediaUrl: "/audio/signals/meridian-resonance.mp3",
     transcript: [
       "[00:00] [Subsonic rumble. Felt more than heard.]",
       "[00:18] [A rhythmic pulse begins. Too regular. Like a filing system sorting.]",
@@ -147,6 +155,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:35",
     dustUnlock: 55,
     description: "BUNKER_7's emotional peak. Compassion from a machine that has learned grief.",
+    mediaUrl: "/audio/signals/bunker7-final.mp3",
     transcript: [
       "[00:00] [No relay click. Voice already speaking, mid-sentence.]",
       "BUNKER_7: —cannot confirm whether this transmission is being sent or has already been received. Time indexing has failed.",

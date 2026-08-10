@@ -380,18 +380,19 @@ export const AtlasMap: React.FC = () => {
         playSonarPing(0.6);
       }
 
-      // 2. Resolve active sweep center (Hovered node, Cursor pos, Selected pin, or Default)
+      // 2. Resolve active sweep center (Only visible around selected pin, otherwise hidden)
+      let hasTarget = false;
       let center = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
       
-      if (hoveredPlaceSlug) {
-        const hoveredPlace = projectedPlaces.find((p) => p.slug === hoveredPlaceSlug);
-        if (hoveredPlace) center = { x: hoveredPlace.projX, y: hoveredPlace.projY };
-      } else if (mouseWorldPosRef.current) {
-        center = mouseWorldPosRef.current;
-      } else if (selectedPlaceSlug) {
+      if (selectedPlaceSlug) {
         const activePlace = projectedPlaces.find((p) => p.slug === selectedPlaceSlug);
-        if (activePlace) center = { x: activePlace.projX, y: activePlace.projY };
+        if (activePlace) {
+          center = { x: activePlace.projX, y: activePlace.projY };
+          hasTarget = true;
+        }
       }
+
+      const opacityMultiplier = hasTarget ? 1 : 0;
 
       // Update screen SVG DOM elements directly to avoid any React draw cost!
       if (sweepGroupRef.current) {
@@ -400,21 +401,23 @@ export const AtlasMap: React.FC = () => {
           "transform",
           `translate(${center.x}, ${center.y}) rotate(${degrees})`
         );
+        sweepGroupRef.current.setAttribute("opacity", (0.65 * opacityMultiplier).toString());
       }
       if (sweepOutlineRef.current) {
         sweepOutlineRef.current.setAttribute("cx", center.x.toString());
         sweepOutlineRef.current.setAttribute("cy", center.y.toString());
-        sweepOutlineRef.current.setAttribute("opacity", "0.22");
+        sweepOutlineRef.current.setAttribute("opacity", (0.22 * opacityMultiplier).toString());
       }
       if (sweepLensRef.current) {
         sweepLensRef.current.setAttribute("cx", center.x.toString());
         sweepLensRef.current.setAttribute("cy", center.y.toString());
-        sweepLensRef.current.setAttribute("opacity", "1");
+        sweepLensRef.current.setAttribute("opacity", opacityMultiplier.toString());
       }
 
       // 3. Collision checks against nearby pins inside sensor scanning bounds
-      const R_SENSOR = 600;
-      projectedPlaces.forEach((place) => {
+      if (hasTarget) {
+        const R_SENSOR = 600;
+        projectedPlaces.forEach((place) => {
         const dx = place.projX - center.x;
         const dy = place.projY - center.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -453,6 +456,7 @@ export const AtlasMap: React.FC = () => {
           }
         }
       });
+      }
 
       frameId = requestAnimationFrame(animateSweep);
     };

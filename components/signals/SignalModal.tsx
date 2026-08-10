@@ -7,7 +7,7 @@ import { X, Play, Pause, Radio, Lock, Unlock } from "lucide-react";
 import { useSignalModulator } from "@/components/atlas/useSignalModulator";
 import { useAudioStore } from "@/state/audioStore";
 
-interface SignalArtifact {
+export interface SignalArtifact {
   id: string;
   title: string;
   source: string;
@@ -15,6 +15,7 @@ interface SignalArtifact {
   dustUnlock: number;
   description: string;
   transcript: string[];
+  mediaUrl?: string; // Physical MP3 track url
 }
 
 interface SignalModalProps {
@@ -32,6 +33,7 @@ const SIGNAL_SETTINGS: Record<string, SignalAudioProfile> = {
   "blackwood-ambience": { frequency: 4.5, type: "ghostly", label: "ANOMALOUS INFRASOUND RES_4.5" },
   "bunker7-boot": { frequency: 7.0, type: "terminal", label: "B7_CORE_BUS_7.0" },
   "vance-lighthouse": { frequency: 5.8, type: "ghostly", label: "SOLSTICE_DRIFT_5.8" },
+  "vance-oradour": { frequency: 6.2, type: "ghostly", label: "ORADOUR_RES_6.2" }, // GHOSTLY resonant sweep!
   "numbers-station-7": { frequency: 8.2, type: "numbers", label: "NUMBERS_STATION_8.2" },
   "meridian-dictaphone": { frequency: 3.1, type: "ghostly", label: "CAVERN_RESONANCE_3.1" },
   "bunker7-diagnostic": { frequency: 7.3, type: "terminal", label: "B7_DIAG_BUS_7.3" },
@@ -43,8 +45,11 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
   const { play, click } = useAudioStore();
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [frequency, setFrequency] = useState(1.0); // Tuning slider from 1.0 to 10.0 Hz [336]
+  const [frequency, setFrequency] = useState(1.0); // Tuning slider from 1.0 to 10.0 Hz
   const [isLocked, setIsLocked] = useState(false);
+
+  // Audio elements references for physical narration track playback
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Get active audio configuration or fallback
   const profile = useMemo(() => {
@@ -53,7 +58,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
   const targetFrequency = profile.frequency;
 
-  // 1. Wire useSignalModulator Hook (Map 1D frequency to 3D Dial space) [1]
+  // 1. Wire useSignalModulator Hook (Map 1D frequency to 3D Dial space)
   const { start, stop, tuningAccuracy } = useSignalModulator({
     activeDials: { a: frequency * 2, b: 0, c: 0 },
     targetDials: { a: targetFrequency * 2, b: 0, c: 0 },
@@ -63,7 +68,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
     baseCarrierVolume: 0.08,
   });
 
-  // Track lock alignment criteria [338]
+  // Track lock alignment criteria
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -80,7 +85,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
     }
   }, [frequency, targetFrequency, isLocked, isPlaying, play]);
 
-  // Hook lifecycle mount / play controls
+  // Hook lifecycle mount / play controls for synth
   useEffect(() => {
     if (isPlaying) {
       start();
@@ -89,10 +94,38 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
     }
   }, [isPlaying, start, stop]);
 
+  // Manage physical voiceover play-back once carrier is locked
+  useEffect(() => {
+    if (!signal.mediaUrl) return;
+
+    if (!audioPlayerRef.current) {
+      audioPlayerRef.current = new Audio(signal.mediaUrl);
+      audioPlayerRef.current.loop = signal.id === "numbers-station-7";
+    }
+
+    const player = audioPlayerRef.current;
+
+    if (isPlaying && isLocked) {
+      player.play().catch((err) => {
+        console.warn("[Signal Audio] Voiceover playback blocked or failed:", err);
+      });
+    } else {
+      player.pause();
+    }
+
+    return () => {
+      player.pause();
+    };
+  }, [isPlaying, isLocked, signal.mediaUrl, signal.id]);
+
   // Ensure clean teardown on close
   useEffect(() => {
     return () => {
       stop();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
     };
   }, [stop]);
 
@@ -114,7 +147,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
       ctx.strokeStyle = isLocked ? colors.archive.green : microform.halogen;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.6;
 
       const t = Date.now() * 0.015;
       const count = canvas.width;
@@ -125,10 +158,36 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
         if (isPlaying) {
           if (isLocked) {
-            // Decrypted cleanly: stable, repeating sin/cos harmonic waveforms
-            y += Math.sin(i * 0.05 + t) * 12 + Math.cos(i * 0.1 - t) * 4;
+            // Decrypted cleanly: render highly distinctive waveforms depending on the locked resonance signal type
+            switch (profile.type) {
+              case "ghostly":
+                // 1. Ghostly: Low-frequency infrasound wave with eerie micro-ripples
+                y += Math.sin(i * 0.035 + t) * 16 + Math.sin(i * 0.3 - t * 2.5) * 2.5 * Math.sin(t * 0.12);
+                break;
+              case "terminal":
+                // 2. Terminal: Square-wave digital steps with subtle high-speed logic jitters
+                const square = Math.sign(Math.sin(i * 0.06 + t));
+                const jitter = Math.random() > 0.985 ? (Math.random() - 0.5) * 6 : 0;
+                y += square * 15 + jitter;
+                break;
+              case "numbers":
+                // 3. Numbers: Heavily modulated Amplitude Modulation (AM) sideband envelope
+                const envelope = Math.sin(i * 0.02 + t * 0.5) * 16;
+                const carrier = Math.sin(i * 0.38 + t * 3.5);
+                y += envelope * carrier;
+                break;
+              case "radar":
+                // 4. Radar: Rhythmic sharp sawtooth transients mimicking the 10 Hz Duga woodpecker spikes
+                const period = 35; // distance between clicks
+                const phase = (i + t * 45) % period;
+                y += phase < 3.2 ? -28 : 5; // A heavy downward electrostatic coil strike
+                break;
+              default:
+                y += Math.sin(i * 0.05 + t) * 12 + Math.cos(i * 0.1 - t) * 4;
+                break;
+            }
           } else {
-            // Tuned static: heavy erratic waves modulated by accuracy distance
+            // Tuned static: heavy erratic waves modulated by tuning distance
             const distance = Math.abs(frequency - targetFrequency);
             const noise = (Math.random() - 0.5) * distance * 22;
             y += Math.sin(i * 0.12 * (11 - frequency) + t) * (1.2 / distance) + noise;
@@ -148,7 +207,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
     draw();
     return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, frequency, targetFrequency, isLocked]);
+  }, [isPlaying, frequency, targetFrequency, isLocked, profile.type]);
 
   return (
     <AnimatePresence>

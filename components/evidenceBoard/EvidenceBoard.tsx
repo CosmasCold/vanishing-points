@@ -123,11 +123,13 @@ const PolaroidNode: React.FC<CustomNodeProps> = React.memo(({ id, data }) => {
         <div className="absolute w-[2px] h-3 bg-black/60 top-3.5 left-1.5 rotate-[15deg] blur-[0.5px]" />
       </div>
 
-      {/* Faded white-matte Polaroid sheet body */}
+      {/* Aged and stained white-matte Polaroid sheet body */}
       <div
-        className="p-3 bg-[#e8e5db] shadow-[0_12px_28px_rgba(0,0,0,0.7),_inset_0_0_12px_rgba(255,255,255,0.35)] rounded-[1px] border"
+        className="p-3 shadow-[0_14px_32px_rgba(0,0,0,0.85),_inset_0_0_16px_rgba(110,80,30,0.2)] rounded-[1px] border"
         style={{
-          borderColor: isSelected ? microform.halogen : '#b8b4a8',
+          backgroundColor: '#dfd5c0', // Yellowed, stained paper look
+          backgroundImage: 'radial-gradient(circle at top left, rgba(255,255,255,0.3) 0%, transparent 80%), radial-gradient(circle at bottom right, rgba(0,0,0,0.05) 0%, transparent 100%)',
+          borderColor: isSelected ? microform.halogen : '#a69f8c',
           width: '135px',
           height: '165px',
         }}
@@ -536,7 +538,7 @@ export const EvidenceBoard: React.FC = () => {
       targetSlugs: ['stelmo-light', 'oradour-church-crypt', 'bodie-ghost-town'],
       connectedSlugs: [],
       completed: false,
-      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY V-01\\n------------------------------------------------\\nEdward Vance kept the St. Elmo light for exactly 40 years, yet disappeared into the sealed Oradour Crypt in 1944. His signature appears in a 1962 transfer record assigned to INV_RED-7.\\n\\nCOMMON VARIABLE: YOU. THE ARCHIVE IS RECONSTRUCTING YOUR HISTORY.`
+      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY V-01\n------------------------------------------------\nEdward Vance kept the St. Elmo light for exactly 40 years, yet disappeared into the sealed Oradour Crypt in 1944. His signature appears in a 1962 transfer record assigned to INV_RED-7.\n\nCOMMON VARIABLE: YOU. THE ARCHIVE IS RECONSTRUCTING YOUR HISTORY.`
     },
     {
       id: 'hyp-02-signal',
@@ -545,7 +547,7 @@ export const EvidenceBoard: React.FC = () => {
       targetSlugs: ['mount-weather-emergency-operations-center', 'cheyenne-mountain-complex', 'raven-rock-mountain-complex'],
       connectedSlugs: [],
       completed: false,
-      contradictionText: `⚠ GEODETIC CENTROID SECURED // ANOMALY ALIGNMENT\\n------------------------------------------------\\nThe synchronized 4.5 Hz granite vibrations from all three Cold-War complexes cross precisely in an empty wheat field near Lebanon, Kansas.\\n\\nTHE GRID NULL POINT MARKER IS NOW VERIFIED AND UNLOCKED ON YOUR ATLAS.`
+      contradictionText: `⚠ GEODETIC CENTROID SECURED // ANOMALY ALIGNMENT\n------------------------------------------------\nThe synchronized 4.5 Hz granite vibrations from all three Cold-War complexes cross precisely in an empty wheat field near Lebanon, Kansas.\n\nTHE GRID NULL POINT MARKER IS NOW VERIFIED AND UNLOCKED ON YOUR ATLAS.`
     },
     {
       id: 'hyp-03-identity',
@@ -554,7 +556,7 @@ export const EvidenceBoard: React.FC = () => {
       targetSlugs: ['beelitz-surgery-basement', 'teufelsberg-echo-dome', 'byberry-state-hospital'],
       connectedSlugs: [],
       completed: false,
-      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY I-03\\n------------------------------------------------\\nArchivist INV_RED-7 completed exactly 4,211 days of service before entering the basement carrel with no keyhole. You have been sitting in their empty chair since the boot sequence.\\n\\nCOMMON VARIABLE: YOU. THERE IS NO WINDOW IN THIS BUNK.`
+      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY I-03\n------------------------------------------------\nArchivist INV_RED-7 completed exactly 4,211 days of service before entering the basement carrel with no keyhole. You have been sitting in their empty chair since the boot sequence.\n\nCOMMON VARIABLE: YOU. THERE IS NO WINDOW IN THIS BUNK.`
     }
   ]);
 
@@ -853,6 +855,8 @@ export const EvidenceBoard: React.FC = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onConnect={onConnect}
         onPaneClick={handlePaneClick}
         fitView

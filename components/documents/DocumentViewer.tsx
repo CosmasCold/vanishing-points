@@ -4,9 +4,10 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "@/state/uiStore";
 import { useDocumentStore } from "@/state/documentStore";
+import { useAudioStore } from "@/state/audioStore";
 import { colors, microform, typography, shadows } from "@/styles/theme";
 import { FileText, Eye, AlertTriangle, Sparkles, Shield, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { useAudioStore } from "@/state/audioStore";
+
 // Local dataset of sensitive declassified files described in the Master Bible
 interface DeclassifiedDocument {
   id: string;
@@ -28,7 +29,7 @@ interface DeclassifiedDocument {
 
 const DECLASSIFIED_FILES: DeclassifiedDocument[] = [
   {
-    id: "doc-arch-1962-001",
+    id: "doc-RED-7",
     title: "IA_TRANSFER_RECORD // INV_RED-7",
     source: "Archive Internal Affairs Division",
     author: "Security Director Cosmas",
@@ -93,61 +94,65 @@ const DECLASSIFIED_FILES: DeclassifiedDocument[] = [
 ];
 
 export const DocumentViewer: React.FC = () => {
-  const { activeDocument, closeDocument } = useDocumentStore();
-  const { status, booted } = useUIStore();
-  const { click } = useAudioStore();
-
-  const [localDocIdx, setLocalDocIdx] = useState(0);
+  const [activeDocIdx, setActiveDocIdx] = useState(0);
   const [scrambleTick, setScrambleTick] = useState(0);
   const [rewriteTick, setRewriteTick] = useState(false);
 
-  // Return null immediately if there is no active document to view
-  if (!activeDocument) return null;
-
+  // Subscribe directly to the global state metrics from useUIStore and useDocumentStore
+  const { status, booted } = useUIStore();
+  const { activeDocument, closeDocument } = useDocumentStore();
+  const { click } = useAudioStore();
+  
   // Safe default boundaries matching your Master Bible parameters [9]
   const dustIndex = status?.dustIndex ?? 0;
   const observerStability = status?.observerStability ?? 100;
 
-  // Check if activeDocument is one of the declassified files
-  const activeDocIdx = useMemo(() => {
-    const idx = DECLASSIFIED_FILES.findIndex(
-      (f) => f.id === activeDocument.id || activeDocument.slug.includes(f.id.replace("doc-", "").toLowerCase())
-    );
-    return idx !== -1 ? idx : null;
+  // Synchronize local activeDocIdx when activeDocument changes from global store
+  useEffect(() => {
+    if (!activeDocument) return;
+    const idx = DECLASSIFIED_FILES.findIndex(d => d.id === activeDocument.id);
+    if (idx !== -1) {
+      setActiveDocIdx(idx);
+    }
   }, [activeDocument]);
 
-  // If it is a declassified file, use the local indexing, otherwise construct a dynamic one for standard documents
-  const activeDoc: DeclassifiedDocument = useMemo(() => {
-    if (activeDocIdx !== null) {
-      return DECLASSIFIED_FILES[activeDocIdx];
-    }
+  // Construct activeDoc from special local file or standard DocumentArtifact layout fallback
+  const activeDoc = useMemo(() => {
+    if (!activeDocument) return null;
+    const special = DECLASSIFIED_FILES.find(d => d.id === activeDocument.id);
+    if (special) return special;
+
+    // Convert standard DocumentArtifact to DeclassifiedDocument format
     return {
       id: activeDocument.id,
       title: activeDocument.title,
-      source: activeDocument.source || "ARCHIVE SECTOR 7-B",
-      author: activeDocument.author || "Unknown",
-      date: activeDocument.date,
+      source: activeDocument.source || "Unknown Source",
+      author: activeDocument.author || "Unknown Author",
+      date: activeDocument.date || "Unknown Date",
       condition: activeDocument.condition || "aged",
-      paperType: (activeDocument.paperType === "thermal" || activeDocument.paperType === "typewriter") ? activeDocument.paperType : "carbon",
-      requiredDustMin: (activeDocument.tier || 0) * 15,
+      paperType: (activeDocument.paperType as any) || "typewriter",
+      requiredDustMin: 0,
       requiredDustMax: 100,
-      requiredStabMin: 40,
+      requiredStabMin: 0,
       segments: [
         {
-          isRedacted: activeDocument.corruptionLevel ? activeDocument.corruptionLevel > 0.4 : false,
+          isRedacted: false,
           text: activeDocument.content,
-          unstableTextFallback: activeDocument.corruptedContent || activeDocument.content,
+          unstableTextFallback: activeDocument.content,
         }
       ]
     };
-  }, [activeDocIdx, activeDocument]);
+  }, [activeDocument]);
+
+  // If there is no active document open, do not render the viewer overlay
+  if (!activeDocument || !activeDoc) return null;
 
   // Consensus Window evaluation gates [9]
   const isInsideDustWindow = dustIndex >= activeDoc.requiredDustMin && dustIndex <= activeDoc.requiredDustMax;
   const isInsideStabWindow = observerStability >= activeDoc.requiredStabMin;
   const isConsensusLocked = isInsideDustWindow && isInsideStabWindow;
 
-  // 1. Scramble Engine: Under high Dust overload (>65), text scrambles into logic loops
+  // 1. Scramble Engine: Under high Dust overload, text scrambles
   useEffect(() => {
     if (dustIndex <= activeDoc.requiredDustMax) return;
     const interval = setInterval(() => {
@@ -156,7 +161,7 @@ export const DocumentViewer: React.FC = () => {
     return () => clearInterval(interval);
   }, [dustIndex, activeDoc.requiredDustMax]);
 
-  // 2. Rewrite Engine: Under Stability collapse (<50%), letters rewrite themselves into existentials
+  // 2. Rewrite Engine: Under Stability collapse, letters rewrite themselves
   useEffect(() => {
     if (observerStability >= activeDoc.requiredStabMin) {
       setRewriteTick(false);
@@ -182,17 +187,11 @@ export const DocumentViewer: React.FC = () => {
 
   // Navigations between file sheets
   const handleNext = () => {
-    click();
-    setLocalDocIdx((prev) => (prev + 1) % DECLASSIFIED_FILES.length);
-    const nextDoc = DECLASSIFIED_FILES[(localDocIdx + 1) % DECLASSIFIED_FILES.length];
-    useDocumentStore.getState().openDocument(nextDoc as any);
+    setActiveDocIdx((prev) => (prev + 1) % DECLASSIFIED_FILES.length);
   };
 
   const handlePrev = () => {
-    click();
-    setLocalDocIdx((prev) => (prev - 1 + DECLASSIFIED_FILES.length) % DECLASSIFIED_FILES.length);
-    const prevDoc = DECLASSIFIED_FILES[(localDocIdx - 1 + DECLASSIFIED_FILES.length) % DECLASSIFIED_FILES.length];
-    useDocumentStore.getState().openDocument(prevDoc as any);
+    setActiveDocIdx((prev) => (prev - 1 + DECLASSIFIED_FILES.length) % DECLASSIFIED_FILES.length);
   };
 
   // Renders the specific segment of a declassified report under active state filtration
@@ -200,7 +199,7 @@ export const DocumentViewer: React.FC = () => {
     // If stability has collapsed, render the unsettling rewrite narrative
     if (!isInsideStabWindow && rewriteTick) {
       return (
-        <p
+        <span
           key={`rewrite-${idx}`}
           className="text-red-500 font-bold transition-all duration-500"
           style={{
@@ -209,14 +208,14 @@ export const DocumentViewer: React.FC = () => {
           }}
         >
           {segment.unstableTextFallback}
-        </p>
+        </span>
       );
     }
 
     // Standard unredacted text block
     if (!segment.isRedacted) {
       const displayText = dustIndex > activeDoc.requiredDustMax ? scrambleText(segment.text) : segment.text;
-      return <p key={`text-${idx}`} className="whitespace-pre-wrap">{displayText}</p>;
+      return <span key={`text-${idx}`}>{displayText}</span>;
     }
 
     // Redacted block handling:
@@ -224,11 +223,11 @@ export const DocumentViewer: React.FC = () => {
     if (isConsensusLocked) {
       const displayText = dustIndex > activeDoc.requiredDustMax ? scrambleText(segment.text) : segment.text;
       return (
-        <motion.p
+        <motion.span
           key={`redacted-unlocked-${idx}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="relative inline-block px-1 border border-amber-600/20 bg-amber-950/10 text-amber-100 font-medium transition-colors whitespace-pre-wrap"
+          className="relative inline-block px-1 border border-amber-600/20 bg-amber-950/10 text-amber-100 font-medium transition-colors"
           style={{
             color: microform.halogen,
             textShadow: `0 0 2px ${microform.halogen}50`,
@@ -242,7 +241,7 @@ export const DocumentViewer: React.FC = () => {
             transition={{ duration: 1.4, ease: "easeInOut" }}
             style={{ originX: 0 }}
           />
-        </motion.p>
+        </motion.span>
       );
     }
 
@@ -264,29 +263,19 @@ export const DocumentViewer: React.FC = () => {
     );
   };
 
+  const isSpecialDoc = DECLASSIFIED_FILES.some(d => d.id === activeDocument.id);
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 flex flex-col p-6 select-none relative font-mono text-xs overflow-hidden"
+    <div
+      className="fixed inset-0 z-30 flex flex-col select-none relative font-mono text-xs overflow-hidden"
       style={{
-        marginLeft: "3.5rem", // Align to left navigation rail
-        marginBottom: "2rem", // Align above status bar
         backgroundColor: colors.archive.black,
         color: colors.archive.grayLight,
-      }}
-      onClick={(e) => {
-        // Prevent click events inside sheet from bubbling up
-        if (e.target === e.currentTarget) {
-          click();
-          closeDocument();
-        }
       }}
     >
       {/* Interactive header panel */}
       <div
-        className="flex justify-between items-center shrink-0 border-b pb-4 mb-6"
+        className="flex justify-between items-center shrink-0 border-b pb-4 mb-6 p-6"
         style={{ borderColor: colors.archive.grayDark }}
       >
         <div className="flex items-center gap-3">
@@ -309,8 +298,8 @@ export const DocumentViewer: React.FC = () => {
             </span>
           </div>
 
-          {/* Quick Page Browsers (Only visible when browsing the master declassified files) */}
-          {activeDocIdx !== null && (
+          {/* Quick Page Browsers */}
+          {isSpecialDoc ? (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handlePrev}
@@ -320,7 +309,7 @@ export const DocumentViewer: React.FC = () => {
                 <ChevronLeft size={13} />
               </button>
               <span className="text-[10px] min-w-[3.5rem] text-center">
-                SHEET {activeDocIdx + 1} / {DECLASSIFIED_FILES.length}
+                PAGE {activeDocIdx + 1} / {DECLASSIFIED_FILES.length}
               </span>
               <button
                 onClick={handleNext}
@@ -330,23 +319,26 @@ export const DocumentViewer: React.FC = () => {
                 <ChevronRight size={13} />
               </button>
             </div>
+          ) : (
+            <div className="text-[10px] border px-3 py-1" style={{ color: colors.archive.gray, borderColor: colors.archive.grayDark }}>
+              PAGE 1 / 1
+            </div>
           )}
 
-          {/* Explicit Close Button */}
           <button
             onClick={() => {
               click();
               closeDocument();
             }}
-            className="px-3 py-1 border hover:border-red-700 transition-colors font-mono text-[9px] hover:text-red-500"
+            className="px-3 py-1 border text-stone-400 hover:border-stone-700 transition-colors"
             style={{ borderColor: colors.archive.grayDark }}
           >
-            × CLOSE RECORD
+            × CLOSE SHEET
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex gap-6 min-h-0 px-6 pb-6">
         {/* Left Side: Physical Carbon Paper Sheet Workspace */}
         <div className="flex-1 flex flex-col justify-center items-center relative min-h-0 bg-[#070503] border border-stone-900 p-8 rounded-[1px] shadow-2xl">
           {/* Desklamp halftone vignette lighting */}
@@ -358,7 +350,7 @@ export const DocumentViewer: React.FC = () => {
             }}
           />
 
-          {/* Carbon/Paper Sheet Holder */}
+          {/* Paper Sheet Holder */}
           <motion.div
             key={activeDoc.id}
             initial={{ y: 25, opacity: 0 }}
@@ -428,43 +420,23 @@ export const DocumentViewer: React.FC = () => {
               backgroundColor: "rgba(10, 8, 6, 0.96)",
             }}
           >
-            <div className="flex items-center gap-2 mb-3 text-[10px] text-stone-400 uppercase tracking-widest border-b pb-2 border-stone-800">
-              <Sparkles size={11} style={{ color: microform.halogen }} />
-              <span>COGNITIVE RESOLUTION GATES</span>
-            </div>
-
             <div className="space-y-4">
-              {/* Dust Exposure Gate */}
+              <div className="text-[10px] tracking-[0.12em] text-stone-400 uppercase border-b pb-2 border-stone-800 flex items-center gap-2">
+                <Sparkles size={11} style={{ color: colors.archive.amber }} />
+                <span>Consensus Diagnostics</span>
+              </div>
+
+              {/* Observer Dust Gate */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-stone-500">AMBIENT DUST WINDOW:</span>
-                  <span
-                    style={{
-                      color: isInsideDustWindow ? colors.archive.green : colors.archive.amber,
-                    }}
-                  >
-                    {activeDoc.requiredDustMin}-{activeDoc.requiredDustMax}
+                  <span className="text-stone-500">REQUIRED DUST THRESHOLD:</span>
+                  <span style={{ color: isInsideDustWindow ? colors.archive.green : colors.archive.amber }}>
+                    {activeDoc.requiredDustMin} - {activeDoc.requiredDustMax}
                   </span>
                 </div>
-                {/* Horizontal status slider */}
+                {/* Horizontal progress bar */}
                 <div className="h-4 w-full bg-[#0d0a08] border border-stone-900 relative flex items-center px-1">
-                  {/* Min limit bar */}
-                  <div
-                    className="absolute h-full bg-stone-800/40"
-                    style={{
-                      left: 0,
-                      width: `${activeDoc.requiredDustMin}%`,
-                    }}
-                  />
-                  {/* Max limit bar */}
-                  <div
-                    className="absolute h-full bg-stone-800/40"
-                    style={{
-                      right: 0,
-                      width: `${100 - activeDoc.requiredDustMax}%`,
-                    }}
-                  />
-                  {/* Target interval indicator */}
+                  {/* Highlight segment for required range */}
                   <div
                     className="absolute h-1.5 bg-amber-500/20"
                     style={{
@@ -493,11 +465,7 @@ export const DocumentViewer: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[10px]">
                   <span className="text-stone-500">MINIMUM OBSERVER STABILITY:</span>
-                  <span
-                    style={{
-                      color: isInsideStabWindow ? colors.archive.green : colors.archive.red,
-                    }}
-                  >
+                  <span style={{ color: isInsideStabWindow ? colors.archive.green : colors.archive.red }}>
                     {activeDoc.requiredStabMin}%
                   </span>
                 </div>
@@ -586,7 +554,7 @@ export const DocumentViewer: React.FC = () => {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

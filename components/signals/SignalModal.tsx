@@ -39,6 +39,8 @@ const SIGNAL_SETTINGS: Record<string, SignalAudioProfile> = {
   "bunker7-diagnostic": { frequency: 7.3, type: "terminal", label: "B7_DIAG_BUS_7.3" },
   "meridian-resonance": { frequency: 10.0, type: "radar", label: "DUGA_WOODPECKER_10.0" },
   "bunker7-final": { frequency: 7.9, type: "terminal", label: "B7_COMPROMISED_7.9" },
+  "gila-baseball": { frequency: 6.0, type: "ghostly", label: "SONORAN_ECHO_6.0" },
+  "teu-echo": { frequency: 6.6, type: "ghostly", label: "RADOME_SPHERE_6.6" },
 };
 
 export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => {

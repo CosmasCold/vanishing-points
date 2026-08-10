@@ -154,11 +154,83 @@ function LoadingScreen({ progress }: { progress: number }) {
    ═══════════════════════════════════════════════════════════════ */
 type BootPhase = "idle" | "degauss" | "loading" | "booting" | "exiting";
 
+
+/* ═══════════════════════════════════════════════════════════════
+   SHUTDOWN SCREEN (CRT Power-down physics collapse simulation)
+   ═══════════════════════════════════════════════════════════════ */
+function ShutdownScreen() {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    // Stage 1: Main screen collapses to vertical slit
+    const t1 = setTimeout(() => setStage(1), 800);
+    // Stage 2: Slit collapses to central phosphor dot
+    const t2 = setTimeout(() => setStage(2), 1400);
+    // Stage 3: Central dot burns out into absolute black
+    const t3 = setTimeout(() => setStage(3), 2000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
+
+  if (stage === 3) {
+    return (
+      <div 
+        className="fixed inset-0 z-50 bg-[#000000] flex flex-col items-center justify-center pointer-events-none" 
+        style={{ backgroundColor: "#000000" }}
+      />
+    );
+  }
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" 
+      style={{ backgroundColor: "#0a0908" }}
+    >
+      <motion.div
+        initial={{ scaleX: 1, scaleY: 1, opacity: 1, filter: "brightness(1) contrast(1.15)" }}
+        animate={{
+          scaleY: stage >= 1 ? 0.002 : 1,
+          scaleX: stage >= 2 ? 0.002 : 1,
+          opacity: stage >= 2 ? [1, 0.4, 0] : 1,
+          filter: stage >= 2 ? "brightness(2) contrast(1.5)" : "brightness(1) contrast(1.15)",
+        }}
+        transition={{
+          duration: 0.5,
+          ease: "easeInOut",
+        }}
+        className="w-[480px] h-[360px] bg-[#ffaa55] rounded-[2px]"
+        style={{
+          boxShadow: stage < 2 
+            ? "0 0 45px rgba(255, 170, 85, 0.85), inset 0 0 40px rgba(0,0,0,0.9)" 
+            : "0 0 15px rgba(255, 250, 240, 1)",
+          backgroundColor: stage >= 2 ? "#ffffff" : "#ffaa55",
+        }}
+      />
+    </div>
+  );
+}
+
 export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
   const markComplete = useBootStore((s) => s.markComplete);
   const setBooted = useUIStore((s) => s.setBooted);
 
   const [phase, setPhase] = useState<BootPhase>("idle");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedEnding = localStorage.getItem("vp-ending");
+      if (storedEnding === "shutdown") {
+        setPhase("shutdown" as any);
+      } else if (storedEnding === "backup") {
+        // Clear backup flag so next startup behaves normally
+        localStorage.removeItem("vp-ending");
+      }
+    }
+  }, []);
   const [loadProgress, setLoadProgress] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -423,6 +495,10 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
       if (degaussFrameId.current) cancelAnimationFrame(degaussFrameId.current);
     };
   }, []);
+
+  if (phase === ("shutdown" as any)) {
+    return <ShutdownScreen />;
+  }
 
   if (phase === "idle") {
     return (

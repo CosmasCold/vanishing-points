@@ -59,7 +59,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "2:15",
     dustUnlock: 12,
     description: "Forty years keeping the light. Then the lamp began lighting itself.",
-    mediaUrl: "/audio/vance/vance-lighthouse.mp3",
+    mediaUrl: "/audio/vance/vance-loop.mp3",
     transcript: [
       "[00:00] [Ocean. Wind. A kettle whistling.]",
       "VANCE: Testing. This is Edward Vance, St. Elmo Light. Date is... well, the calendar says March, but the gulls haven't left yet.",
@@ -80,7 +80,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:30 (looping)",
     dustUnlock: 20,
     description: "Shortwave numbers station quoting Edward Vance's final words.",
-    mediaUrl: "/audio/vance/vance-loop.mp3",
+    mediaUrl: "/audio/vance/numbers-loop.mp3",
     transcript: [
       "[00:00] [Shortwave static. A carrier tone.]",
       "VOICE: Seven. Fourteen. Zero. St. Elmo. Meridian. Blackwood.",
@@ -148,7 +148,56 @@ const ARTIFACTS: SignalArtifact[] = [
       "[01:55] [The rumble fades.]",
     ],
   },
+    {
+    id: "vance-oradour",
+    title: "Anomalous Geophone Sweep",
+    source: "Saint-Martin Crypt — Oradour-sur-Glane",
+    length: "2:08",
+    dustUnlock: 48,
+    description: "Sub-surface capture from the sealed crypt. Rhythmic bell strikes overlapping with a distant ocean tide.",
+    mediaUrl: "/audio/signals/vance-oradour.mp3",
+    transcript: [
+      "[00:00] [Sub-surface stone scraping. Thick cassette sub-hiss.]",
+      "[00:14] [A church bell tolls. It is slow, regular, and muffled by tons of soil.]",
+      "INVESTIGATOR: This is... impossible. I am standing directly above the slab. The air is dry, but the microphone is capturing the sound of pouring rain.",
+      "[00:54] [The sound of waves crashing against basalt cliffs emerges beneath the bell tolls.]",
+      "VOICE (Edward Vance, overlapping, sounding distorted as if underwater): ...the light keeps itself. I am going down to the cove now. The rain is very cold...",
+      "[01:40] [A violent high-voltage static tear. The bell strikes stop instantly. The sound of rain fades into a dry, warm hum.]",
+    ],
+  },  {
+    id: "gila-baseball",
+    title: "Geophone: Tar-Paper Slabs",
+    source: "Array 11 — Gila River Relocation Center",
+    length: "1:55",
+    dustUnlock: 16,
+    description: "Low-frequency desert wind shear. Acoustic anomalies isolated in the 600 Hz spectrum.",
+    mediaUrl: "/audio/signals/gila-baseball.mp3",
+    transcript: [
+      "[00:00] [Dry, sweeping desert wind. Steady 12 CPM background clicking.]",
+      "[00:15] [Geiger counter pings begin to accelerate, rising rapidly to 84 CPM.]",
+      "[00:32] [Beneath the static, a distant, muffled echo: a crowd cheering, a wooden baseball bat striking a ball.]",
+      "VOICE (muffled child's voice): Run. He's heading for third... get the ball...",
+      "[01:18] [A sharp wind gust swallows the voices. The Geiger counter drops back to a slow, hollow clicking.]"
+    ],
+  },
   {
+    id: "teu-echo",
+    title: "Ambient: Sphere Feedback",
+    source: "Radome 3 — Teufelsberg Intercept Station",
+    length: "1:24",
+    dustUnlock: 66,
+    description: "Fiberglass acoustic resonance. Rhythmic mechanical keystrokes recorded with no terminal nearby.",
+    mediaUrl: "/audio/signals/teu-echo.mp3",
+    transcript: [
+      "[00:00] [Deep, echoing hollow wind blowing through cracked fiberglass.]",
+      "[00:12] [The distinct, heavy sound of Strowger-relay typewriter keys typing: / a u d i t.]",
+      "[00:28] [Long pause. The sound of someone breathing softly near the microphone.]",
+      "DISTORTED WHISPER (reverberating through the sphere): /audit... /audit... I am here... why are you...",
+      "[01:05] [A low-frequency 60 Hz hum swells, vibrating the microphone membrane until it clips.]"
+    ],
+  },
+
+{
     id: "bunker7-final",
     title: "Unauthorized System Broadcast",
     source: "BUNKER_7 Core (Compromised)",

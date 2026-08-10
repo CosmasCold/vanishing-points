@@ -21,46 +21,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--archive-black);
+  background: rgba(10, 8, 6, 0.4);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #5a5854;
-  border-radius: 0;
+  background: #3a3833;
+  border-radius: 1px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7a7874;
-}
-
-/* Selection color */
-::selection {
-  background: rgba(184, 149, 106, 0.3);
-  color: #c8c4b8;
-}
-
-/* Cursor blink for terminal */
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* Subtle screen flicker */
-@keyframes flicker {
-  0% { opacity: 0.97; }
-  5% { opacity: 0.99; }
-  10% { opacity: 0.97; }
-  15% { opacity: 1; }
-  20% { opacity: 0.98; }
-  100% { opacity: 0.98; }
-}
-
-.mapboxgl-canvas {
-  opacity: 1 !important;
-  filter: none !important;
-  mix-blend-mode: normal !important;
+  background: #c9a96e;
 }

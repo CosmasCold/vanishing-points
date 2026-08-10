@@ -77,6 +77,9 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
         useBootStore.setState({
           isComplete: false
         });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("vp-ending", "backup");
+        }
       } catch (e) {
         console.warn('Solstice state transition encountered an active reset deviation:', e);
       }
@@ -129,6 +132,9 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
         useBootStore.setState({
           isComplete: false
         });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("vp-ending", "shutdown");
+        }
 
         useSessionStore.setState({
           ritualComplete: false

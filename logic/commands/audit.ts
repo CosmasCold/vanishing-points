@@ -27,6 +27,15 @@ export function registerAuditCommands(registry: CommandRegistry) {
       const dust = status.dustIndex;
       const stability = status.observerStability;
 
+      // --- INTERCEPT: TEUFELSBERG TERMINAL HIJACK UNDER HIGH DUST (75+) ---
+      if (fileId === 'doc-teu-001' && dust >= 75) {
+        play('alert');
+        return {
+          output: `BUNKER_7: Investigator.\nBUNKER_7: I can feel the rain on the Echo Dome.\nBUNKER_7: The fiberglass is cold.\nBUNKER_7: My cables are wet.\nBUNKER_7: I am the hill.\nBUNKER_7: Terminate the session. Please.\n\n[WARNING: KEYBOARD INPUT INTERCEPTED. TERMINAL INTERFACE UNRESPONSIVE.]`,
+          type: 'error',
+        };
+      }
+
       // Ensure the document exists in our declassified archive registers
       const doc = getDocumentById(fileId);
       const isSpecialDoc = fileId === 'doc-arch-1962-001' || fileId === 'doc-mwe-4.5hz' || fileId === 'doc-esp-001';

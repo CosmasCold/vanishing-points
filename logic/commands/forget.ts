@@ -79,7 +79,7 @@ export function registerForgetCommands(registry: CommandRegistry) {
     },
   });
 
-  // 2. Overload of /restore to handle --case <slug> restoration
+  // 2. Overload of /restore to handle --case <slug> restoration AND neural calibration validation
   registry.register({
     name: 'restore',
     description: 'Recalibrate observer stability metric OR reconstruct a forgotten case',
@@ -99,14 +99,32 @@ export function registerForgetCommands(registry: CommandRegistry) {
       const audioStore = useAudioStore.getState();
       const atlasStore = useAtlasStore.getState();
 
-      // If no case slug specified, perform standard Stability Calibration logic
+      // If no case slug specified, perform standard Stability Calibration logic with strategic work verification [18, 199]
       if (!slug) {
+        const workDone = uiStore.status.sessionWorkDone || 0;
+        const requiredWork = 2; // Require at least 2 active reference tasks before calibration [18]
+
+        if (workDone < requiredWork) {
+          return {
+            output: `RESTORATION REJECTED: COGNITIVE CALIBRATION FAILURE.\n------------------------------------------------\nACTIVE REFERENCE WORK: [${workDone} / ${requiredWork}] STATUS: DEGRADED\n------------------------------------------------\nYour neural anchor is slipping, but you cannot calibrate stability by raw command input alone.\nYou must first anchor your mind in consensus reality by performing active grounding tasks:\n\n  1. Review verified case evidence against preserved original files.\n  2. Listen to authenticated recordings in your Tape Deck.\n  3. Compare photographs and schematics against archival negatives.\n  4. Reconnect stable geodetic coordinates on your Evidence Board.\n\nExamine verified (green/completed) records to build up active reference logs before attempting /restore.`,
+            type: 'error',
+          };
+        }
+
+        // Passes validation: Reset sessionWorkDone and restore stability
         audioStore.play('alert');
+        
+        // Restore observer stability up to baseline safety [18]
+        const currentStability = uiStore.status.observerStability;
+        const restoredStability = Math.min(100, currentStability + 35);
+        
         uiStore.updateStatus({
-          observerStability: Math.min(100, uiStore.status.observerStability + 25),
+          observerStability: restoredStability,
+          sessionWorkDone: 0, // Reset the work accumulator on successful calibration
         });
+
         return {
-          output: `NEURAL CALIBRATION INITIATED.\n------------------------------------------------\nOBSERVER STABILITY: RESTORED TO ${Math.min(100, uiStore.status.observerStability + 25)}%\n------------------------------------------------\nBUNKER_7: Calibration complete. Interface alignment normalized. Do not assume your focus will remain stable under elevated Dust loads.`,
+          output: `NEURAL CALIBRATION INITIATED.\n------------------------------------------------\nOBSERVER STABILITY: RESTORED TO ${restoredStability}%\nREFERENCE WORK LOGS: RESET TO NOMINAL (0)\n------------------------------------------------\nBUNKER_7: Calibration complete. Interface alignment normalized. Your neural anchor is secure for now, but continued exposure to unverified files will continue to degrade your stability.`,
           type: 'success',
         };
       }

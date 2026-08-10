@@ -62,10 +62,10 @@ export const CRTOverlay: React.FC = () => {
       humOscRef.current = humOsc;
       humGainRef.current = humGain;
 
-      // B. Horizontal Sync Flyback whistle (Sub-harmonic 1575Hz to prevent ear-piercing)
+      // B. Horizontal Sync Flyback whistle (Sub-harmonic 7812.0Hz for high-voltage electrostatic pressure)
       const flybackOsc = ctx.createOscillator();
       flybackOsc.type = "sine";
-      flybackOsc.frequency.setValueAtTime(1575.0, now);
+      flybackOsc.frequency.setValueAtTime(7812.0, now); // Calibrated to perfect high-voltage sub-harmonic for lingering anxiety
 
       const flybackGain = ctx.createGain();
       flybackGain.gain.setValueAtTime(0.001, now); // Microscopic background whistle

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from 'react';
-import { useUIStore } from '@/state/uiStore';
+import { useEffect, useRef, useCallback } from "react";
+import { useUIStore } from "@/state/uiStore";
 
 interface SolenoidConfig {
   baseVolume?: number;      // Master gain offset [0..1]
@@ -10,200 +10,297 @@ interface SolenoidConfig {
 }
 
 /**
- * Custom Web Audio hook to procedurally synthesize cold-war era Strowger stepping relays,
- * copper coil inductive rises, and spring-loaded solenoid contact clicks.
- * Intercepts keyboard alphanumeric keypresses globally and modulates auditory decay,
- * metal frame resonance, and contact chatter dynamically based on Observer Dust Index [2, 5, 22].
+ * Global Keyboard Solenoid Stepping Injector Hook
+ * Implements:
+ * 1. Solenoid keystroke clacks with inductive energization pre-hum.
+ * 2. High-Dust (>=70) physical contact double-click chatter.
+ * 3. THE UNSEEN OBSERVER: Under low stability (<45%), triggers microscopic,
+ *    highly localized random acoustic scares (chair scrapes, breathing, ghost clicks)
+ *    when the investigator remains idle at their desk.
  */
-export function useRelayTypingInjector(config: SolenoidConfig = {}) {
-  const {
-    baseVolume = 0.22,
-    pitchOffset = 145, // Resonant pitch of the heavy mechanical terminal frame
-  } = config;
-
+export function useRelayTypingInjector({ baseVolume = 0.22, pitchOffset = 145 }: SolenoidConfig = {}) {
   const { status } = useUIStore();
-  const dustIndex = status?.dustIndex || 0;
+  const dustIndex = status?.dustIndex ?? 0;
+  const observerStability = status?.observerStability ?? 100;
 
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const masterGainRef = useRef<GainNode | null>(null);
+  const lastInteractionRef = useRef<number>(Date.now());
+  const observerTimerRef = useRef<any>(null);
 
-  // Initialize browser audio nodes safely on user action
-  const initAudio = useCallback(() => {
+  const initAudioCtx = useCallback(() => {
     if (audioCtxRef.current) return audioCtxRef.current;
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioCtxRef.current = new AudioContextClass();
+      return audioCtxRef.current;
+    } catch (e) {
+      return null;
+    }
+  }, []);
 
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return null;
+  // Synthesizes a physical, high-voltage clack
+  const playSolenoidClick = useCallback(() => {
+    const ctx = initAudioCtx();
+    if (!ctx) return;
 
-    const ctx = new AudioContextClass();
-    audioCtxRef.current = ctx;
-
-    const master = ctx.createGain();
-    master.gain.setValueAtTime(baseVolume, ctx.currentTime);
-    master.connect(ctx.destination);
-    masterGainRef.current = master;
-
-    return ctx;
-  }, [baseVolume]);
-
-  /**
-   * Procedurally synthesizes a physical Strowger relay cycle:
-   * 1. Electromagnetic Coil Inductive Hum (Pre-click rise)
-   * 2. Armature Impact Strike (Low-frequency frame resonance)
-   * 3. Contact Reed Snap (High-frequency spring transient)
-   * 4. High-Dust Chatter (Erratic magnetic contact bounces) [20, 22]
-   */
-  const triggerRelayClick = useCallback(() => {
-    const ctx = initAudio();
-    const master = masterGainRef.current;
-    if (!ctx || !master) return;
-
-    // Resume suspended audio context if browser flagged idle
-    if (ctx.state === 'suspended') {
+    if (ctx.state === "suspended") {
       ctx.resume();
     }
 
     const now = ctx.currentTime;
+    lastInteractionRef.current = Date.now(); // Track interaction
 
-    // Introduce dynamic thermal drift and mechanical age fluctuations based on Dust status [20]
-    const drift = (Math.random() * 20 - 10) * (1.0 + dustIndex / 50.0);
-    const framePitch = pitchOffset + drift;
+    // A. Inductive Coil Rise (0.015s pre-hum simulating coil energization)
+    const riseOsc = ctx.createOscillator();
+    const riseGain = ctx.createGain();
+    riseOsc.type = "sine";
+    riseOsc.frequency.setValueAtTime(90.0, now); // Deep low coil pre-hum
 
-    // ── STEP 1: INDUCTIVE COIL RISE ─────────────────────────────────
-    // Simulates the copper solenoid coil building an electromagnetic field [5]
-    const coilOsc = ctx.createOscillator();
-    const coilGain = ctx.createGain();
-    coilOsc.type = 'sine';
-    coilOsc.frequency.setValueAtTime(60, now); // 60Hz mains magnetic hum leakage [22]
-    
-    coilGain.gain.setValueAtTime(0.001, now);
-    coilGain.gain.exponentialRampToValueAtTime(0.06, now + 0.008);
-    coilGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    riseGain.gain.setValueAtTime(0.0, now);
+    riseGain.gain.linearRampToValueAtTime(0.18 * baseVolume, now + 0.01);
+    riseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
 
-    coilOsc.connect(coilGain);
-    coilGain.connect(master);
-    coilOsc.start(now);
-    coilOsc.stop(now + 0.02);
+    riseOsc.connect(riseGain);
+    riseGain.connect(ctx.destination);
+    riseOsc.start(now);
+    riseOsc.stop(now + 0.02);
 
-    // ── STEP 2: CHASSIS FRAME RESONANCE ─────────────────────────────
-    // Simulates the heavy iron armature striking the stop block [2]
-    const frameOsc = ctx.createOscillator();
-    const frameGain = ctx.createGain();
-    frameOsc.type = 'triangle'; // Warm, hollow wooden/cast-iron resonance
-    frameOsc.frequency.setValueAtTime(framePitch, now + 0.005);
+    // B. Main Solenoid Plunger Clack (Triggered at 12ms after pre-hum)
+    const clickTime = now + 0.012;
 
-    // Dampen the chassis resonance faster as dust particles accumulate inside hinges [20]
-    const dampingConstant = Math.max(0.012, 0.035 - (dustIndex / 100) * 0.02);
+    const clackOsc = ctx.createOscillator();
+    const clackGain = ctx.createGain();
+    clackOsc.type = "triangle";
+    clackOsc.frequency.setValueAtTime(pitchOffset, clickTime);
+    clackOsc.frequency.exponentialRampToValueAtTime(32, clickTime + 0.08);
 
-    frameGain.gain.setValueAtTime(0.001, now);
-    frameGain.gain.setValueAtTime(0.4, now + 0.005);
-    frameGain.gain.exponentialRampToValueAtTime(0.001, now + 0.005 + dampingConstant);
+    clackGain.gain.setValueAtTime(0.0, now);
+    clackGain.gain.setValueAtTime(0.35 * baseVolume, clickTime);
+    clackGain.gain.exponentialRampToValueAtTime(0.0001, clickTime + 0.08);
 
-    frameOsc.connect(frameGain);
-    frameGain.connect(master);
-    frameOsc.start(now + 0.005);
-    frameOsc.stop(now + 0.1);
+    clackOsc.connect(clackGain);
+    clackGain.connect(ctx.destination);
+    clackOsc.start(clickTime);
+    clackOsc.stop(clickTime + 0.1);
 
-    // ── STEP 3: CONTACT REED SNAP ──────────────────────────────────
-    // Simulates the sharp metallic transient pop of the physical switch reed contact
-    const bufferSize = ctx.sampleRate * 0.006; // Ultra-short 6ms contact click
-    const clickBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const bufferData = clickBuffer.getChannelData(0);
-    
+    // C. Physical strike plate transient (Noise burst for high-passed crispness)
+    const bufferSize = ctx.sampleRate * 0.006; // Sharp 6ms burst
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      bufferData[i] = Math.random() * 2 - 1; // Pure White Noise
+      output[i] = Math.random() * 2 - 1;
     }
 
-    const clickSource = ctx.createBufferSource();
-    clickSource.buffer = clickBuffer;
+    const noiseNode = ctx.createBufferSource();
+    noiseNode.buffer = noiseBuffer;
 
-    const clickFilter = ctx.createBiquadFilter();
-    clickFilter.type = 'highpass';
-    clickFilter.frequency.setValueAtTime(2400 + Math.random() * 800, now + 0.005); // High metallic snap
+    const hpFilter = ctx.createBiquadFilter();
+    hpFilter.type = "highpass";
+    hpFilter.frequency.setValueAtTime(1800, clickTime);
 
-    const clickGain = ctx.createGain();
-    clickGain.gain.setValueAtTime(0.001, now);
-    clickGain.gain.setValueAtTime(0.18, now + 0.005);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.011);
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0, now);
+    noiseGain.gain.setValueAtTime(0.24 * baseVolume, clickTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, clickTime + 0.006);
 
-    clickSource.connect(clickFilter);
-    clickFilter.connect(clickGain);
-    clickGain.connect(master);
-    clickSource.start(now + 0.005);
+    noiseNode.connect(hpFilter);
+    hpFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
 
-    // ── STEP 4: DUST CHATTER (ANOMALOUS ELECTROSTATIC MULTI-CLICKS) ──
-    // Under high Dust load, electromagnetic interference causes contacts to chatter/flicker [29, 30]
-    if (dustIndex >= 40 && Math.random() < (dustIndex / 120)) {
-      const chatterCount = Math.floor(1 + Math.random() * 2);
-      for (let c = 1; c <= chatterCount; c++) {
-        const chatterDelay = 0.018 * c + Math.random() * 0.005;
-        const chatterOsc = ctx.createOscillator();
-        const chatterGain = ctx.createGain();
+    noiseNode.start(clickTime);
+    noiseNode.stop(clickTime + 0.01);
 
-        chatterOsc.type = 'sine';
-        chatterOsc.frequency.setValueAtTime(framePitch * 1.8, now + chatterDelay);
+    // D. HIGH-DUST CONTACT CHATTER (Spring bouncing at Dust >= 70)
+    if (dustIndex >= 70) {
+      const chatterCount = Math.random() > 0.4 ? 2 : 1;
+      for (let i = 1; i <= chatterCount; i++) {
+        const chatterTime = clickTime + 0.022 * i + Math.random() * 0.015;
+        const bounceGain = ctx.createGain();
+        const bounceOsc = ctx.createOscillator();
+        
+        bounceOsc.type = "triangle";
+        bounceOsc.frequency.setValueAtTime(pitchOffset * 1.3, chatterTime);
+        bounceOsc.frequency.exponentialRampToValueAtTime(40, chatterTime + 0.03);
 
-        chatterGain.gain.setValueAtTime(0.001, now);
-        chatterGain.gain.setValueAtTime(0.15 / c, now + chatterDelay);
-        chatterGain.gain.exponentialRampToValueAtTime(0.001, now + chatterDelay + 0.008);
+        bounceGain.gain.setValueAtTime(0.0, now);
+        bounceGain.gain.setValueAtTime(0.06 * baseVolume, chatterTime);
+        bounceGain.gain.exponentialRampToValueAtTime(0.0001, chatterTime + 0.03);
 
-        chatterOsc.connect(chatterGain);
-        chatterGain.connect(master);
-        chatterOsc.start(now + chatterDelay);
-        chatterOsc.stop(now + chatterDelay + 0.02);
+        bounceOsc.connect(bounceGain);
+        bounceGain.connect(ctx.destination);
+        bounceOsc.start(chatterTime);
+        bounceOsc.stop(chatterTime + 0.04);
       }
     }
-  }, [initAudio, pitchOffset, dustIndex]);
+  }, [baseVolume, pitchOffset, dustIndex, initAudioCtx]);
 
-  // Global keyboard input event sniffer
+  // -------------------------------------------------------------
+  // THE UNSEEN OBSERVER ENGINE (Fires micro-scares during idles)
+  // -------------------------------------------------------------
+  const playObserverEvent = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === "suspended") return;
+
+    const now = ctx.currentTime;
+    const type = Math.floor(Math.random() * 3); // Pick 1 of 3 scary anomalies
+
+    // Keep master volume extremely quiet to blur reality (is it in the game or in my room?)
+    const masterVol = 0.012; 
+
+    if (type === 0) {
+      // 🔊 GHOSTLY CHAIR SCRAPE: Heavy metal scraping concrete panned wildly
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const panner = ctx.createStereoPanner();
+      const gain = ctx.createGain();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.linearRampToValueAtTime(145, now + 1.2); // Pitch-warping drag
+
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(320, now);
+      filter.Q.setValueAtTime(4.0, now);
+
+      // Pan from behind-left to far-right
+      panner.pan.setValueAtTime(-0.85, now);
+      panner.pan.linearRampToValueAtTime(0.75, now + 1.2);
+
+      gain.gain.setValueAtTime(0.0, now);
+      gain.gain.linearRampToValueAtTime(masterVol * 2.2, now + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+
+      osc.connect(filter);
+      filter.connect(panner);
+      panner.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 1.5);
+
+    } else if (type === 1) {
+      // 🔊 THE BREATH: Soft, high-passed warm breathing directly in left ear
+      const bufferSize = ctx.sampleRate * 2.0; // 2-second breath
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const bpFilter = ctx.createBiquadFilter();
+      bpFilter.type = "bandpass";
+      bpFilter.Q.setValueAtTime(1.8, now);
+      // Sweep frequency slowly back and forth to simulate respiratory flow
+      bpFilter.frequency.setValueAtTime(250, now);
+      bpFilter.frequency.exponentialRampToValueAtTime(550, now + 0.9);
+      bpFilter.frequency.exponentialRampToValueAtTime(180, now + 1.9);
+
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(-0.95, now); // Whisper right behind left shoulder
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0, now);
+      gain.gain.linearRampToValueAtTime(masterVol * 3.5, now + 0.85); // Inhale
+      gain.gain.linearRampToValueAtTime(0.0, now + 2.0); // Exhale fade
+
+      noise.connect(bpFilter);
+      bpFilter.connect(panner);
+      panner.connect(gain);
+      gain.connect(ctx.destination);
+
+      noise.start(now);
+      noise.stop(now + 2.0);
+
+    } else if (type === 2) {
+      // 🔊 GHOST CLICK: A single Strowger solenoid relay slips when hands are off keys
+      const clackOsc = ctx.createOscillator();
+      const clackGain = ctx.createGain();
+
+      clackOsc.type = "triangle";
+      clackOsc.frequency.setValueAtTime(pitchOffset * 0.85, now); // Slightly duller thud
+      clackOsc.frequency.exponentialRampToValueAtTime(28, now + 0.08);
+
+      clackGain.gain.setValueAtTime(masterVol * 2.8, now);
+      clackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+      clackOsc.connect(clackGain);
+      clackGain.connect(ctx.destination);
+
+      clackOsc.start(now);
+      clackOsc.stop(now + 0.1);
+    }
+  }, [baseVolume, pitchOffset]);
+
+  // Handle keydown monitoring
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore navigation, shortcuts, modifiers, and workspace operations
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        e.ctrlKey || 
-        e.metaKey || 
-        e.altKey || 
-        e.key === 'Control' || 
-        e.key === 'Shift' || 
-        e.key === 'Alt' || 
-        e.key === 'Meta' ||
-        e.key === 'Escape' ||
-        e.key.startsWith('Arrow') ||
-        e.key.startsWith('F') // Ignore function keys
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        ["Control", "Shift", "Alt", "Meta", "Escape"].includes(e.key) ||
+        e.key.startsWith("Arrow") ||
+        e.key.startsWith("F")
       ) {
         return;
       }
 
-      // Only click on actual textual inputs, commands, backticks, or spacebars [22]
-      if (
-        e.key.length === 1 || // Alphanumeric keys & symbols
-        e.key === 'Backspace' || 
-        e.key === 'Spacebar' || 
-        e.key === ' ' || 
-        e.key === 'Enter' ||
-        e.key === '`'
-      ) {
-        triggerRelayClick();
+      if (e.key.length === 1 || ["Backspace", "Spacebar", " ", "Enter", "Tab"].includes(e.key)) {
+        playSolenoidClick();
       }
     };
 
-    window.addEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [triggerRelayClick]);
+  }, [playSolenoidClick]);
 
-  // Handle teardown on layout unmount
+  // Handle Unseen Observer idle tracking loop
+  useEffect(() => {
+    // If investigator stability is healthy, keep the unseen observer silent
+    if (observerStability >= 45) {
+      if (observerTimerRef.current) {
+        clearInterval(observerTimerRef.current);
+        observerTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Stabilize idle ticker once every 10 seconds
+    observerTimerRef.current = setInterval(() => {
+      const now = Date.now();
+      const idleTime = now - lastInteractionRef.current;
+
+      // Only fire if the investigator has been completely idle at the desk for at least 25 seconds
+      if (idleTime > 25000) {
+        // Roll dice: once every 10 seconds of idle time, there is a 24% chance of a micro-scare
+        if (Math.random() < 0.24) {
+          playObserverEvent();
+        }
+      }
+    }, 10000);
+
+    return () => {
+      if (observerTimerRef.current) {
+        clearInterval(observerTimerRef.current);
+        observerTimerRef.current = null;
+      }
+    };
+  }, [observerStability, playObserverEvent]);
+
+  // Clean Audio Context safely on unmount
   useEffect(() => {
     return () => {
       if (audioCtxRef.current) {
-        masterGainRef.current?.disconnect();
         audioCtxRef.current.close();
+        audioCtxRef.current = null;
       }
     };
   }, []);
 
-  return {
-    triggerRelayClick,
-    audioContext: audioCtxRef.current,
-  };
+  return null;
 }

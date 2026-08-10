@@ -326,7 +326,7 @@ export const AtlasMap: React.FC = () => {
     source.start(now);
   }, []);
 
-  const playSonarPing = useCallback((volumeMultiplier = 1.0) => {
+    const playSonarPing = useCallback((volumeMultiplier = 1.0) => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     if (!sweepAudioCtxRef.current) {
@@ -339,21 +339,122 @@ export const AtlasMap: React.FC = () => {
     
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
     const gain = ctx.createGain();
     
-    osc.type = "sine";
-    // Standard low-frequency sonar hum sweep
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.6);
+    osc.type = "square"; // Mismatch to the generic sine, matches ancient Edinburgh vaults 110Hz resonance
+    osc.frequency.setValueAtTime(110.0, now);
     
-    gain.gain.setValueAtTime(0.03 * volumeMultiplier, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(220, now); // Low-pass filter to keep it deep, warm, and ominous
     
-    osc.connect(gain);
+    gain.gain.setValueAtTime(0.04 * volumeMultiplier, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85); // Lingers longer for lingering terror
+    
+    osc.connect(filter);
+    filter.connect(gain);
     gain.connect(ctx.destination);
     
     osc.start(now);
-    osc.stop(now + 0.7);
+    osc.stop(now + 0.9);
+  }, []);
+
+  const playGeophoneThud = useCallback(() => {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!sweepAudioCtxRef.current) {
+      sweepAudioCtxRef.current = new AudioContextClass();
+    }
+    const ctx = sweepAudioCtxRef.current;
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    
+    const now = ctx.currentTime;
+    
+    // 1. Deep 55 Hz thump oscillator
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(55.0, now);
+    osc.frequency.exponentialRampToValueAtTime(15, now + 0.4);
+    
+    oscGain.gain.setValueAtTime(0.38, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.55);
+    
+    // 2. Cold trail of low-frequency static decay (Geophone resonance)
+    const bufferSize = ctx.sampleRate * 1.5; // 1.5 second static trail
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const lpFilter = ctx.createBiquadFilter();
+    lpFilter.type = "lowpass";
+    lpFilter.frequency.setValueAtTime(80, now); // Super deep sub-80Hz static
+    
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.12, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    
+    noise.connect(lpFilter);
+    lpFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    
+    noise.start(now);
+    noise.stop(now + 1.3);
+  }, []);
+
+  const playInfrasound = useCallback((slug: string) => {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!sweepAudioCtxRef.current) {
+      sweepAudioCtxRef.current = new AudioContextClass();
+    }
+    const ctx = sweepAudioCtxRef.current;
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    
+    // Determine infrasound frequency [doc-mwe-4.5hz, doc-bor-001]
+    let freq = 0;
+    if (slug.includes("weather") || slug.includes("cheyenne") || slug.includes("raven") || slug.includes("null-point") || slug.includes("lebanon")) {
+      freq = 4.5;
+    } else if (slug.includes("borovsko")) {
+      freq = 18.0;
+    } else if (slug.includes("danvers")) {
+      freq = 19.0;
+    }
+    
+    if (freq === 0) return;
+    
+    const now = ctx.currentTime;
+    
+    // Create triangle wave oscillator for deep low sub-bass vibration (bone-vibrator)
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, now);
+    
+    gainNode.gain.setValueAtTime(0.0, now);
+    gainNode.gain.linearRampToValueAtTime(0.45, now + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.8); // Lingering rumble for 2.8s
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.start(now);
+    osc.stop(now + 3.0);
   }, []);
 
   /* ═══════════════════════════════════════════════════════════════
@@ -441,7 +542,8 @@ export const AtlasMap: React.FC = () => {
             if (now - clickTime > 800) {
               clickedPinsRef.current[place.slug] = now;
               
-              // Synthesize geiger tick!
+              // Synthesize geophone tectonic strike!
+              playGeophoneThud();
               playSweepClick();
               
               // Apply native DOM visual flare class
@@ -600,6 +702,7 @@ export const AtlasMap: React.FC = () => {
               const handleMarkerClick = (e: React.MouseEvent) => {
                 e.stopPropagation();
                 click();
+                playInfrasound(place.slug);
                 selectPlace(place.slug);
                 selectNode(place.slug);
                 setFocusNode(place.slug);

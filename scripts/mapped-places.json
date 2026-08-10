@@ -15,7 +15,7 @@
   "places": [
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f57"
+        "oid": "6a68d28a0ce0117278ae7f57"
       },
       "name": "Pripyat Amusement Park",
       "slug": "pripyat-amusement-park",
@@ -63,7 +63,6 @@
         "pripyat-jupiter-factory",
         "chernobyl-reactor-4-control-room",
         "dallol-sulfur-cathedral",
-        null,
         "kennecott-mines"
       ],
       "unlockCondition": {
@@ -74,7 +73,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f58"
+        "oid": "6a68d28a0ce0117278ae7f58"
       },
       "name": "Eastern State Penitentiary",
       "slug": "eastern-state-penitentiary",
@@ -125,15 +124,13 @@
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "mount-moriah-cemetery",
-        null,
         "pripyat-amusement-park",
-        null,
         "chernobyl-reactor-4-control-room"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f59"
+        "oid": "6a68d28a0ce0117278ae7f59"
       },
       "name": "Isla de las Muñecas",
       "slug": "isla-de-las-muecas",
@@ -195,7 +192,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5a"
+        "oid": "6a68d28a0ce0117278ae7f5a"
       },
       "name": "Bodie Ghost Town",
       "slug": "bodie-ghost-town",
@@ -210,7 +207,7 @@
         "formatted": "Bodie State Historic Park, California"
       },
       "yearAbandoned": 1942,
-      "history": "In 1879, Bodie had 10,000 residents, 65 saloons, and a murder every other day. It was the third-largest city in California, built on $34 million in gold and silver ore pulled from the Bodie Hills. The Standard Company mill ran 24 hours, its stamps audible for miles. Then the ore ran out. The railroad stopped service in 1919. The last mine closed in 1942. What remains is not a museum replica but a state of arrested decay: tables still set for dinner, a barber's chair still waiting, schoolbooks open to lessons never finished. The air is thin at 8,375 feet. The winters bury the town in snow. In summer, dust devils move through Main Street carrying the weight of a place that ended without saying goodbye.",
+      "history": "In 1879, Bodie had 10,000 residents, 65 saloons, and a murder every other day. It was the third-largest city in California, built on 34 million in gold and silver ore pulled from the Bodie Hills. The Standard Company mill ran 24 hours, its stamps audible for miles. Then the ore ran out. The railroad stopped service in 1919. The last mine closed in 1942. What remains is not a museum replica but a state of arrested decay: tables still set for dinner, a barber's chair still waiting, schoolbooks open to lessons never finished. The air is thin at 8,375 feet. The winters bury the town in snow. In summer, dust devils move through Main Street carrying the weight of a place that ended without saying goodbye.",
       "hauntingReports": [],
       "dangerLevel": 2,
       "photos": [
@@ -241,10 +238,7 @@
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
         "manzanar",
-        "winchester-mystery-house",
-        null,
-        null,
-        null
+        "winchester-mystery-house"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -255,7 +249,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5b"
+        "oid": "6a68d28a0ce0117278ae7f5b"
       },
       "name": "Aokigahara Forest",
       "slug": "aokigahara-forest",
@@ -307,7 +301,6 @@
         "aokigahara-sea-of-trees-station",
         "nara-dreamland",
         "madain-saleh",
-        null,
         "kennecott-mines"
       ],
       "unlockCondition": {
@@ -318,7 +311,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5c"
+        "oid": "6a68d28a0ce0117278ae7f5c"
       },
       "name": "Duga Radar Array",
       "slug": "duga-radar-array",
@@ -365,9 +358,7 @@
       "connectedTo": [
         "duga-control-room",
         "nocton-hall-raf-hospital",
-        null,
-        "chteau-de-brissac",
-        null
+        "chteau-de-brissac"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -378,7 +369,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5d"
+        "oid": "6a68d28a0ce0117278ae7f5d"
       },
       "name": "Bhangarh Fort",
       "slug": "bhangarh-fort",
@@ -442,7 +433,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5e"
+        "oid": "6a68d28a0ce0117278ae7f5e"
       },
       "name": "North Brother Island",
       "slug": "north-brother-island",
@@ -488,15 +479,12 @@
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "letchworth-village",
-        null,
-        null,
-        "ani",
-        null
+        "ani"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f5f"
+        "oid": "6a68d28a0ce0117278ae7f5f"
       },
       "name": "Humberstone Saltpeter Works",
       "slug": "humberstone-saltpeter-works",
@@ -543,8 +531,6 @@
       "connectedTo": [
         "humberstone-saltpeter-morgue",
         "chacaltaya-ski-resort",
-        null,
-        null,
         "vieques-island"
       ],
       "unlockCondition": {
@@ -556,7 +542,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f60"
+        "oid": "6a68d28a0ce0117278ae7f60"
       },
       "name": "Château de Brissac",
       "slug": "chteau-de-brissac",
@@ -606,10 +592,7 @@
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "oradour-church-crypt",
-        "duga-radar-array",
-        null,
-        null,
-        null
+        "duga-radar-array"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -619,7 +602,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f61"
+        "oid": "6a68d28a0ce0117278ae7f61"
       },
       "name": "Hashima Island",
       "slug": "hashima-island",
@@ -673,7 +656,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f62"
+        "oid": "6a68d28a0ce0117278ae7f62"
       },
       "name": "Kolmanskop",
       "slug": "kolmanskop",
@@ -720,9 +703,7 @@
       "connectedTo": [
         "kolmanskop-hospital-wing",
         "duga-control-room",
-        null,
-        "st-thomas-ghost-town",
-        null
+        "st-thomas-ghost-town"
       ],
       "unlockCondition": {
         "type": "code",
@@ -733,7 +714,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f63"
+        "oid": "6a68d28a0ce0117278ae7f63"
       },
       "name": "Beelitz-Heilstätten",
       "slug": "beelitz-heilsttten",
@@ -784,10 +765,7 @@
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "beelitz-surgery-basement",
-        null,
-        "gila-river-relocation-center",
-        null,
-        null
+        "gila-river-relocation-center"
       ],
       "unlockCondition": {
         "type": "visit",
@@ -797,7 +775,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f64"
+        "oid": "6a68d28a0ce0117278ae7f64"
       },
       "name": "Château Miranda",
       "slug": "chteau-miranda",
@@ -851,7 +829,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f65"
+        "oid": "6a68d28a0ce0117278ae7f65"
       },
       "name": "Poveglia Island",
       "slug": "poveglia-island",
@@ -902,10 +880,7 @@
       "narrativeRole": "impossible_unstable",
       "connectedTo": [
         "poveglia-subterranean-ward",
-        null,
-        "shanghai-tunnels",
-        null,
-        null
+        "shanghai-tunnels"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -916,7 +891,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f66"
+        "oid": "6a68d28a0ce0117278ae7f66"
       },
       "name": "The Stanley Hotel",
       "slug": "the-stanley-hotel",
@@ -967,9 +942,7 @@
       "connectedTo": [
         "the-grid-null-point",
         "moynaq-ship-graveyard",
-        null,
-        "nara-dreamland",
-        null
+        "nara-dreamland"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -979,7 +952,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f67"
+        "oid": "6a68d28a0ce0117278ae7f67"
       },
       "name": "Waverly Hills Sanatorium",
       "slug": "waverly-hills-sanatorium",
@@ -1043,7 +1016,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f68"
+        "oid": "6a68d28a0ce0117278ae7f68"
       },
       "name": "Oradour-sur-Glane",
       "slug": "oradour-sur-glane",
@@ -1090,8 +1063,6 @@
       "connectedTo": [
         "chteau-de-brissac",
         "belchite",
-        null,
-        null,
         "d-ghetto-industrial-ruins"
       ],
       "unlockCondition": {
@@ -1103,7 +1074,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f69"
+        "oid": "6a68d28a0ce0117278ae7f69"
       },
       "name": "Teufelsberg",
       "slug": "teufelsberg",
@@ -1150,9 +1121,7 @@
       "connectedTo": [
         "beelitz-heilsttten",
         "bunker-3-relay",
-        null,
-        "al-madam-ghost-town",
-        null
+        "al-madam-ghost-town"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -1163,7 +1132,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6a"
+        "oid": "6a68d28a0ce0117278ae7f6a"
       },
       "name": "Canfranc International Railway Station",
       "slug": "canfranc-international-railway-station",
@@ -1222,7 +1191,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6b"
+        "oid": "6a68d28a0ce0117278ae7f6b"
       },
       "name": "City of the Dead",
       "slug": "city-of-the-dead",
@@ -1285,7 +1254,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6c"
+        "oid": "6a68d28a0ce0117278ae7f6c"
       },
       "name": "St. Kilda",
       "slug": "st-kilda",
@@ -1331,15 +1300,13 @@
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "flannan-isles-lighthouse",
-        null,
         "kolmanskop-hospital-wing",
-        "la-noria-cemetery",
-        null
+        "la-noria-cemetery"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6d"
+        "oid": "6a68d28a0ce0117278ae7f6d"
       },
       "name": "Villisca Axe Murder House",
       "slug": "villisca-axe-murder-house",
@@ -1391,9 +1358,7 @@
       "connectedTo": [
         "stull-cemetery",
         "fengdu-ghost-city",
-        "babylon-reconstruction",
-        null,
-        null
+        "babylon-reconstruction"
       ],
       "unlockCondition": {
         "type": "visit",
@@ -1403,7 +1368,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6e"
+        "oid": "6a68d28a0ce0117278ae7f6e"
       },
       "name": "Sedlec Ossuary",
       "slug": "sedlec-ossuary",
@@ -1455,8 +1420,7 @@
         "houska-castle",
         "al-madam-ghost-town",
         "poveglia-island",
-        "armero",
-        null
+        "armero"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -1466,7 +1430,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f6f"
+        "oid": "6a68d28a0ce0117278ae7f6f"
       },
       "name": "Catacombs of Paris",
       "slug": "catacombs-of-paris",
@@ -1529,7 +1493,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f70"
+        "oid": "6a68d28a0ce0117278ae7f70"
       },
       "name": "Centralia",
       "slug": "centralia",
@@ -1576,14 +1540,12 @@
       "connectedTo": [
         "centralia-municipal-building",
         "rolling-hills-asylum",
-        null,
-        "jatinga-bird-suicide-point",
-        null
+        "jatinga-bird-suicide-point"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f71"
+        "oid": "6a68d28a0ce0117278ae7f71"
       },
       "name": "Sathorn Unique Tower",
       "slug": "sathorn-unique-tower",
@@ -1637,7 +1599,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f72"
+        "oid": "6a68d28a0ce0117278ae7f72"
       },
       "name": "Spreepark Berlin",
       "slug": "spreepark-berlin",
@@ -1652,7 +1614,7 @@
         "formatted": "Spreepark, Treptow-Köpenick, Berlin"
       },
       "yearAbandoned": 2002,
-      "history": "Opened in 1969 as Kulturpark Plänterwald in East Berlin, this was the only amusement park in the GDR. After reunification, it was privatized and renamed Spreepark. The owner, Norbert Witte, expanded it with a Wild West town, a roller coaster, and a Ferris wheel. In 2002, Witte fled to Peru with six rides in shipping containers, leaving behind $15 million in debt and a park full of decaying attractions. He was later arrested for attempting to smuggle 180 kilograms of cocaine inside the Flying Carpet ride. The Ferris wheel still turns in the wind, squeaking. The swan boats rot in the drained pond. A life-sized dinosaur lies on its side in the overgrowth. Guided tours run on weekends, but the park is otherwise silent except for the wheel and the crows.",
+      "history": "Opened in 1969 as Kulturpark Plänterwald in East Berlin, this was the only amusement park in the GDR. After reunification, it was privatized and renamed Spreepark. The owner, Norbert Witte, expanded it with a Wild West town, a roller coaster, and a Ferris wheel. In 2002, Witte fled to Peru with six rides in shipping containers, leaving behind 15 million in debt and a park full of decaying attractions. He was later arrested for attempting to smuggle 180 kilograms of cocaine inside the Flying Carpet ride. The Ferris wheel still turns in the wind, squeaking. The swan boats rot in the drained pond. A life-sized dinosaur lies on its side in the overgrowth. Guided tours run on weekends, but the park is otherwise silent except for the wheel and the crows.",
       "hauntingReports": [],
       "dangerLevel": 2,
       "photos": [
@@ -1684,9 +1646,7 @@
       "connectedTo": [
         "bunker-3-relay",
         "leptis-magna",
-        "babylon-reconstruction",
-        null,
-        null
+        "babylon-reconstruction"
       ],
       "unlockCondition": {
         "type": "reading",
@@ -1697,7 +1657,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f73"
+        "oid": "6a68d28a0ce0117278ae7f73"
       },
       "name": "Winchester Mystery House",
       "slug": "winchester-mystery-house",
@@ -1760,7 +1720,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f74"
+        "oid": "6a68d28a0ce0117278ae7f74"
       },
       "name": "Hill of Crosses",
       "slug": "hill-of-crosses",
@@ -1812,8 +1772,7 @@
         "brest-fortress-casemates",
         "gila-river-relocation-center",
         "chacaltaya-ski-resort",
-        "bombay-beach",
-        null
+        "bombay-beach"
       ],
       "unlockCondition": {
         "type": "visit",
@@ -1823,7 +1782,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f75"
+        "oid": "6a68d28a0ce0117278ae7f75"
       },
       "name": "Port Arthur Penal Settlement",
       "slug": "port-arthur-penal-settlement",
@@ -1875,7 +1834,6 @@
       "connectedTo": [
         "port-arthur-separate-prison",
         "sarajevo-bobsled-track",
-        null,
         "gonjiam-psychiatric-hospital",
         "lawang-sewu"
       ],
@@ -1887,7 +1845,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f76"
+        "oid": "6a68d28a0ce0117278ae7f76"
       },
       "name": "Ani",
       "slug": "ani",
@@ -1947,7 +1905,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f77"
+        "oid": "6a68d28a0ce0117278ae7f77"
       },
       "name": "Bokor Hill Station",
       "slug": "bokor-hill-station",
@@ -1994,14 +1952,12 @@
       "connectedTo": [
         "sathorn-unique-tower",
         "tuol-sleng-security-prison-21",
-        "edinburgh-vaults",
-        null,
-        null
+        "edinburgh-vaults"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f78"
+        "oid": "6a68d28a0ce0117278ae7f78"
       },
       "name": "Lawang Sewu",
       "slug": "lawang-sewu",
@@ -2051,11 +2007,7 @@
       "tier": 1,
       "narrativeRole": "pattern_dense",
       "connectedTo": [
-        "kepulauan-seribu-dutch-fort",
-        null,
-        null,
-        null,
-        null
+        "kepulauan-seribu-dutch-fort"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -2065,7 +2017,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f79"
+        "oid": "6a68d28a0ce0117278ae7f79"
       },
       "name": "Villa Epecuén",
       "slug": "villa-epecun",
@@ -2123,7 +2075,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7a"
+        "oid": "6a68d28a0ce0117278ae7f7a"
       },
       "name": "Chacaltaya Ski Resort",
       "slug": "chacaltaya-ski-resort",
@@ -2170,14 +2122,12 @@
       "connectedTo": [
         "humberstone-saltpeter-works",
         "hill-of-crosses",
-        null,
-        null,
         "shanghai-tunnels"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7b"
+        "oid": "6a68d28a0ce0117278ae7f7b"
       },
       "name": "Grytviken",
       "slug": "grytviken",
@@ -2228,7 +2178,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7c"
+        "oid": "6a68d28a0ce0117278ae7f7c"
       },
       "name": "Pyramiden",
       "slug": "pyramiden",
@@ -2282,7 +2232,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7d"
+        "oid": "6a68d28a0ce0117278ae7f7d"
       },
       "name": "Varosha",
       "slug": "varosha",
@@ -2336,7 +2286,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7e"
+        "oid": "6a68d28a0ce0117278ae7f7e"
       },
       "name": "Kayaköy",
       "slug": "kayaky",
@@ -2396,7 +2346,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f7f"
+        "oid": "6a68d28a0ce0117278ae7f7f"
       },
       "name": "Kennecott Mines",
       "slug": "kennecott-mines",
@@ -2448,7 +2398,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f80"
+        "oid": "6a68d28a0ce0117278ae7f80"
       },
       "name": "Bombay Beach",
       "slug": "bombay-beach",
@@ -2507,7 +2457,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f81"
+        "oid": "6a68d28a0ce0117278ae7f81"
       },
       "name": "Maunsell Forts",
       "slug": "maunsell-forts",
@@ -2561,7 +2511,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f82"
+        "oid": "6a68d28a0ce0117278ae7f82"
       },
       "name": "San Zhi Pod Village",
       "slug": "san-zhi-pod-village",
@@ -2607,10 +2557,7 @@
       "narrativeRole": "impossible_unstable",
       "connectedTo": [
         "houtouwan",
-        "sanatorium-du-basil",
-        null,
-        null,
-        null
+        "sanatorium-du-basil"
       ],
       "unlockCondition": {
         "type": "evidence",
@@ -2621,7 +2568,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f83"
+        "oid": "6a68d28a0ce0117278ae7f83"
       },
       "name": "Nara Dreamland",
       "slug": "nara-dreamland",
@@ -2669,7 +2616,6 @@
         "hashima-island",
         "aokigahara-sea-of-trees-station",
         "the-stanley-hotel",
-        null,
         "the-vanishing-hospital"
       ],
       "unlockCondition": {
@@ -2681,7 +2627,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f84"
+        "oid": "6a68d28a0ce0117278ae7f84"
       },
       "name": "Six Flags New Orleans",
       "slug": "six-flags-new-orleans",
@@ -2734,7 +2680,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f85"
+        "oid": "6a68d28a0ce0117278ae7f85"
       },
       "name": "Plymouth",
       "slug": "plymouth",
@@ -2782,13 +2728,12 @@
         "montserrat-buried-st-patricks",
         "hill-of-crosses",
         "bhangarh-fort",
-        "six-flags-new-orleans",
-        null
+        "six-flags-new-orleans"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f86"
+        "oid": "6a68d28a0ce0117278ae7f86"
       },
       "name": "Craco",
       "slug": "craco",
@@ -2803,7 +2748,7 @@
         "formatted": "Craco, Matera Province, Basilicata, Italy"
       },
       "yearAbandoned": 1963,
-      "history": "Founded by Greek monks in the 8th century, expanded by Normans, besieged by Turks, Craco clung to a cliff in Basilicata for a thousand years. Then the 20th century arrived: poor agricultural practices caused landslides in 1963, a flood in 1972, and an earthquake in 1980. The last residents left. The town is now a stone skeleton: a castle, a church with a cracked bell tower, houses with no roofs, all tilting downhill at the same angle as the unstable clay beneath them. Hollywood uses it for biblical films — *The Passion of the Christ* was shot here. The only living things are the cats that sun themselves on the collapsed balconies and the wind that carries dust from the Ionian Sea, 40 kilometers south.",
+      "history": "Founded by Greek monks in the 8th century, expanded by Normans, besieged by Turks, Craco clung to a cliff in Basilicata for a thousand years. Then the 20th century arrived: poor agricultural practices caused landslides in 1963, a flood in 1972, and an earthquake in 1980. The last residents left. The town is now a stone skeleton: a castle, a church with a cracked bell tower, houses with no roofs, all tilting downhill at the same angle as the unstable clay beneath them. Hollywood uses it for biblical films — The Passion of the Christ was shot here. The only living things are the cats that sun themselves on the collapsed balconies and the wind that carries dust from the Ionian Sea, 40 kilometers south.",
       "hauntingReports": [],
       "dangerLevel": 3,
       "photos": [
@@ -2841,7 +2786,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f87"
+        "oid": "6a68d28a0ce0117278ae7f87"
       },
       "name": "Belchite",
       "slug": "belchite",
@@ -2888,9 +2833,7 @@
       "connectedTo": [
         "canfranc-international-railway-station",
         "hohenwerfen-dark-archive",
-        "the-sayer-house",
-        null,
-        null
+        "the-sayer-house"
       ],
       "unlockCondition": {
         "type": "evidence",
@@ -2901,7 +2844,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f88"
+        "oid": "6a68d28a0ce0117278ae7f88"
       },
       "name": "Deception Island",
       "slug": "deception-island",
@@ -2955,7 +2898,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f89"
+        "oid": "6a68d28a0ce0117278ae7f89"
       },
       "name": "Mada'in Saleh",
       "slug": "madain-saleh",
@@ -3014,7 +2957,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8a"
+        "oid": "6a68d28a0ce0117278ae7f8a"
       },
       "name": "Al Madam Ghost Town",
       "slug": "al-madam-ghost-town",
@@ -3074,7 +3017,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8b"
+        "oid": "6a68d28a0ce0117278ae7f8b"
       },
       "name": "Moynaq Ship Graveyard",
       "slug": "moynaq-ship-graveyard",
@@ -3128,7 +3071,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8c"
+        "oid": "6a68d28a0ce0117278ae7f8c"
       },
       "name": "Devil's Island",
       "slug": "devils-island",
@@ -3181,7 +3124,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8d"
+        "oid": "6a68d28a0ce0117278ae7f8d"
       },
       "name": "Sarajevo Bobsled Track",
       "slug": "sarajevo-bobsled-track",
@@ -3228,9 +3171,7 @@
       "connectedTo": [
         "craco",
         "buzludzha-monument",
-        null,
-        "port-arthur-penal-settlement",
-        null
+        "port-arthur-penal-settlement"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -3241,7 +3182,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8e"
+        "oid": "6a68d28a0ce0117278ae7f8e"
       },
       "name": "Vieques Island",
       "slug": "vieques-island",
@@ -3288,14 +3229,12 @@
       "connectedTo": [
         "plymouth",
         "letchworth-village",
-        "humberstone-saltpeter-works",
-        null,
-        null
+        "humberstone-saltpeter-works"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f8f"
+        "oid": "6a68d28a0ce0117278ae7f8f"
       },
       "name": "Tyneham",
       "slug": "tyneham",
@@ -3342,9 +3281,7 @@
       "connectedTo": [
         "maunsell-forts",
         "skellig-michael",
-        null,
-        "kolmanskop-hospital-wing",
-        null
+        "kolmanskop-hospital-wing"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -3355,7 +3292,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f90"
+        "oid": "6a68d28a0ce0117278ae7f90"
       },
       "name": "Clipperton Island",
       "slug": "clipperton-island",
@@ -3419,7 +3356,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f91"
+        "oid": "6a68d28a0ce0117278ae7f91"
       },
       "name": "Cocos Island",
       "slug": "cocos-island",
@@ -3482,7 +3419,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f92"
+        "oid": "6a68d28a0ce0117278ae7f92"
       },
       "name": "Val-Jalbert",
       "slug": "val-jalbert",
@@ -3542,7 +3479,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f93"
+        "oid": "6a68d28a0ce0117278ae7f93"
       },
       "name": "Grosse Île",
       "slug": "grosse-le",
@@ -3593,9 +3530,7 @@
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "val-jalbert",
-        null,
         "chaitn",
-        null,
         "fengdu-ghost-city"
       ],
       "unlockCondition": {
@@ -3606,7 +3541,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f94"
+        "oid": "6a68d28a0ce0117278ae7f94"
       },
       "name": "Fordlândia",
       "slug": "fordlndia",
@@ -3621,7 +3556,7 @@
         "formatted": "Fordlândia, Pará, Brazil"
       },
       "yearAbandoned": 1934,
-      "history": "Henry Ford wanted to break the British monopoly on rubber. In 1928, he bought 2.5 million acres of Amazon rainforest and built an American-style industrial town complete with swimming pools, a golf course, and strict Prohibition laws. The rubber trees, planted in neat rows, succumbed to South American leaf blight — a fungus that thrives in monoculture. The workers revolted against the enforced American diet and square dances. Ford abandoned the project in 1934 after losing $20 million. The hospital, the water tower, and the worker cottages still stand in the jungle, being dismantled by strangler figs and termites. The blight is still there, waiting for anyone who tries again.",
+      "history": "Henry Ford wanted to break the British monopoly on rubber. In 1928, he bought 2.5 million acres of Amazon rainforest and built an American-style industrial town complete with swimming pools, a golf course, and strict Prohibition laws. The rubber trees, planted in neat rows, succumbed to South American leaf blight — a fungus that thrives in monoculture. The workers revolted against the enforced American diet and square dances. Ford abandoned the project in 1934 after losing 20 million. The hospital, the water tower, and the worker cottages still stand in the jungle, being dismantled by strangler figs and termites. The blight is still there, waiting for anyone who tries again.",
       "hauntingReports": [],
       "dangerLevel": 3,
       "photos": [
@@ -3652,15 +3587,13 @@
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "seringal-de-iranduba",
-        null,
-        null,
         "chaitn",
         "macquarie-island-station"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f95"
+        "oid": "6a68d28a0ce0117278ae7f95"
       },
       "name": "Armero",
       "slug": "armero",
@@ -3712,7 +3645,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f96"
+        "oid": "6a68d28a0ce0117278ae7f96"
       },
       "name": "Paranapiacaba",
       "slug": "paranapiacaba",
@@ -3770,7 +3703,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f97"
+        "oid": "6a68d28a0ce0117278ae7f97"
       },
       "name": "Dallol",
       "slug": "dallol",
@@ -3817,14 +3750,12 @@
       "connectedTo": [
         "dallol-sulfur-cathedral",
         "armero",
-        "kowloon-walled-city-park",
-        null,
-        null
+        "kowloon-walled-city-park"
       ]
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f98"
+        "oid": "6a68d28a0ce0117278ae7f98"
       },
       "name": "Elizabeth Bay",
       "slug": "elizabeth-bay",
@@ -3871,9 +3802,7 @@
       "connectedTo": [
         "kolmanskop",
         "aokigahara-sea-of-trees-station",
-        null,
-        "garnet-ghost-town",
-        null
+        "garnet-ghost-town"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -3884,7 +3813,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f99"
+        "oid": "6a68d28a0ce0117278ae7f99"
       },
       "name": "Wittenoom",
       "slug": "wittenoom",
@@ -3935,7 +3864,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9a"
+        "oid": "6a68d28a0ce0117278ae7f9a"
       },
       "name": "Macetown",
       "slug": "macetown",
@@ -3993,7 +3922,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9b"
+        "oid": "6a68d28a0ce0117278ae7f9b"
       },
       "name": "Kadykchan",
       "slug": "kadykchan",
@@ -4045,7 +3974,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9c"
+        "oid": "6a68d28a0ce0117278ae7f9c"
       },
       "name": "Kuldhara",
       "slug": "kuldhara",
@@ -4096,10 +4025,7 @@
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "bhangarh-fort",
-        "dallol",
-        null,
-        null,
-        null
+        "dallol"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -4109,7 +4035,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9d"
+        "oid": "6a68d28a0ce0117278ae7f9d"
       },
       "name": "Ross Island",
       "slug": "ross-island",
@@ -4172,7 +4098,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9e"
+        "oid": "6a68d28a0ce0117278ae7f9e"
       },
       "name": "Houtouwan",
       "slug": "houtouwan",
@@ -4219,7 +4145,6 @@
       "connectedTo": [
         "san-zhi-pod-village",
         "bhangarh-fort",
-        null,
         "flannan-isles-lighthouse",
         "danvers-state-hospital"
       ],
@@ -4232,7 +4157,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7f9f"
+        "oid": "6a68d28a0ce0117278ae7f9f"
       },
       "name": "Ordos Kangbashi",
       "slug": "ordos-kangbashi",
@@ -4278,9 +4203,7 @@
       "connectedTo": [
         "canfranc-international-railway-station",
         "spreepark-berlin",
-        "shanghai-tunnels",
-        null,
-        null
+        "shanghai-tunnels"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -4291,7 +4214,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa0"
+        "oid": "6a68d28a0ce0117278ae7fa0"
       },
       "name": "Chaitén",
       "slug": "chaitn",
@@ -4343,7 +4266,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa1"
+        "oid": "6a68d28a0ce0117278ae7fa1"
       },
       "name": "Battery Russell",
       "slug": "battery-russell",
@@ -4389,9 +4312,7 @@
       "narrativeRole": "impossible_unstable",
       "connectedTo": [
         "shanghai-tunnels",
-        null,
         "flannan-isles-lighthouse",
-        null,
         "mururoa-atoll-bunker-810"
       ],
       "unlockCondition": {
@@ -4403,7 +4324,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa2"
+        "oid": "6a68d28a0ce0117278ae7fa2"
       },
       "name": "Seringal de Iranduba",
       "slug": "seringal-de-iranduba",
@@ -4449,10 +4370,7 @@
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
         "fordlndia",
-        "belchite",
-        null,
-        null,
-        null
+        "belchite"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -4463,7 +4381,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa3"
+        "oid": "6a68d28a0ce0117278ae7fa3"
       },
       "name": "Manteno State Hospital",
       "slug": "manteno-state-hospital",
@@ -4527,7 +4445,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa4"
+        "oid": "6a68d28a0ce0117278ae7fa4"
       },
       "name": "The Sayer House",
       "slug": "the-sayer-house",
@@ -4578,10 +4496,7 @@
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "waverly-hills-sanatorium",
-        "paranapiacaba",
-        null,
-        null,
-        null
+        "paranapiacaba"
       ],
       "unlockCondition": {
         "type": "visit",
@@ -4591,7 +4506,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa5"
+        "oid": "6a68d28a0ce0117278ae7fa5"
       },
       "name": "Mount Moriah Cemetery",
       "slug": "mount-moriah-cemetery",
@@ -4651,7 +4566,7 @@
     },
     {
       "_id": {
-        "$oid": "6a68d28a0ce0117278ae7fa6"
+        "oid": "6a68d28a0ce0117278ae7fa6"
       },
       "name": "Jemison Center",
       "slug": "jemison-center",
@@ -4703,9 +4618,7 @@
       "connectedTo": [
         "six-flags-new-orleans",
         "pyramiden",
-        null,
-        "gedi-national-monument",
-        null
+        "gedi-national-monument"
       ],
       "unlockCondition": {
         "type": "dust",
@@ -4715,7 +4628,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56680"
+        "oid": "6a70f6eceeb338ba04f56680"
       },
       "name": "Villers Abbey Ruins",
       "slug": "villers-abbey-ruins",
@@ -4751,8 +4664,7 @@
         "chteau-miranda",
         "sanatorium-du-basil",
         "ross-island",
-        "montserrat-buried-st-patricks",
-        null
+        "montserrat-buried-st-patricks"
       ],
       "__v": 0,
       "createdAt": {
@@ -4772,7 +4684,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56682"
+        "oid": "6a70f6eceeb338ba04f56682"
       },
       "name": "Tskaltubo Sanatoriums",
       "slug": "tskaltubo-sanatoriums",
@@ -4808,7 +4720,6 @@
         "city-of-the-dead",
         "teufelsberg",
         "pyramiden",
-        null,
         "copemish-masonic-temple"
       ],
       "__v": 0,
@@ -4829,7 +4740,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56683"
+        "oid": "6a70f6eceeb338ba04f56683"
       },
       "name": "Łódź Ghetto Industrial Ruins",
       "slug": "d-ghetto-industrial-ruins",
@@ -4863,9 +4774,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "hill-of-crosses",
-        null,
         "oradour-sur-glane",
-        null,
         "fordlndia"
       ],
       "__v": 0,
@@ -4886,7 +4795,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56686"
+        "oid": "6a70f6eceeb338ba04f56686"
       },
       "name": "Beelitz Surgery Basement",
       "slug": "beelitz-surgery-basement",
@@ -4948,7 +4857,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56689"
+        "oid": "6a70f6eceeb338ba04f56689"
       },
       "name": "Oradour Church Crypt",
       "slug": "oradour-church-crypt",
@@ -5009,7 +4918,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668e"
+        "oid": "6a70f6eceeb338ba04f5668e"
       },
       "name": "Kepulauan Seribu Dutch Fort",
       "slug": "kepulauan-seribu-dutch-fort",
@@ -5064,7 +4973,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56699"
+        "oid": "6a70f6eceeb338ba04f56699"
       },
       "name": "Garnet Ghost Town",
       "slug": "garnet-ghost-town",
@@ -5103,10 +5012,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "shanghai-tunnels",
-        "rhyolite",
-        null,
-        null,
-        null
+        "rhyolite"
       ],
       "__v": 0,
       "createdAt": {
@@ -5125,7 +5031,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a4"
+        "oid": "6a70f6eceeb338ba04f566a4"
       },
       "name": "Sedan Crater",
       "slug": "sedan-crater",
@@ -5160,9 +5066,7 @@
       "connectedTo": [
         "rhyolite",
         "garnet-ghost-town",
-        null,
-        "nocton-hall-raf-hospital",
-        null
+        "nocton-hall-raf-hospital"
       ],
       "__v": 0,
       "createdAt": {
@@ -5176,7 +5080,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a5"
+        "oid": "6a70f6eceeb338ba04f566a5"
       },
       "name": "Mount Weather Emergency Operations Center",
       "slug": "mount-weather-emergency-operations-center",
@@ -5232,7 +5136,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566ab"
+        "oid": "6a70f6eceeb338ba04f566ab"
       },
       "name": "Dallol Sulfur Cathedral",
       "slug": "dallol-sulfur-cathedral",
@@ -5282,7 +5186,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56692"
+        "oid": "6a70f6eceeb338ba04f56692"
       },
       "name": "Tuol Sleng Security Prison 21",
       "slug": "tuol-sleng-security-prison-21",
@@ -5320,11 +5224,7 @@
       },
       "verifiedBy": "system",
       "connectedTo": [
-        "bokor-hill-station",
-        null,
-        null,
-        null,
-        null
+        "bokor-hill-station"
       ],
       "__v": 0,
       "createdAt": {
@@ -5344,7 +5244,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669b"
+        "oid": "6a70f6eceeb338ba04f5669b"
       },
       "name": "Danvers State Hospital",
       "slug": "danvers-state-hospital",
@@ -5384,9 +5284,7 @@
       "connectedTo": [
         "val-jalbert",
         "north-brother-island",
-        "moynaq-ship-graveyard",
-        null,
-        null
+        "moynaq-ship-graveyard"
       ],
       "__v": 0,
       "createdAt": {
@@ -5405,7 +5303,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669c"
+        "oid": "6a70f6eceeb338ba04f5669c"
       },
       "name": "Rolling Hills Asylum",
       "slug": "rolling-hills-asylum",
@@ -5445,8 +5343,6 @@
       "connectedTo": [
         "willard-asylum-suitcases",
         "al-madam-ghost-town",
-        null,
-        null,
         "pripyat-hospital-126"
       ],
       "__v": 0,
@@ -5466,7 +5362,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a3"
+        "oid": "6a70f6eceeb338ba04f566a3"
       },
       "name": "Copemish Masonic Temple",
       "slug": "copemish-masonic-temple",
@@ -5527,7 +5423,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a6"
+        "oid": "6a70f6eceeb338ba04f566a6"
       },
       "name": "Centralia Municipal Building",
       "slug": "centralia-municipal-building",
@@ -5589,7 +5485,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a7"
+        "oid": "6a70f6eceeb338ba04f566a7"
       },
       "name": "Kolmanskop Hospital Wing",
       "slug": "kolmanskop-hospital-wing",
@@ -5629,9 +5525,7 @@
       "connectedTo": [
         "kolmanskop",
         "st-kilda",
-        "tyneham",
-        null,
-        null
+        "tyneham"
       ],
       "__v": 0,
       "createdAt": {
@@ -5650,7 +5544,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566be"
+        "oid": "6a70f6eceeb338ba04f566be"
       },
       "name": "The Leap Castle Bloody Chapel",
       "slug": "the-leap-castle-bloody-chapel",
@@ -5710,7 +5604,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c5"
+        "oid": "6a70f6eceeb338ba04f566c5"
       },
       "name": "Roanoke Colony",
       "slug": "roanoke-colony",
@@ -5772,7 +5666,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667c"
+        "oid": "6a70f6eceeb338ba04f5667c"
       },
       "name": "Sanatorium du Basil",
       "slug": "sanatorium-du-basil",
@@ -5813,7 +5707,6 @@
         "chteau-miranda",
         "san-zhi-pod-village",
         "the-grid-null-point",
-        null,
         "madain-saleh"
       ],
       "__v": 0,
@@ -5833,7 +5726,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56688"
+        "oid": "6a70f6eceeb338ba04f56688"
       },
       "name": "Brest Fortress Casemates",
       "slug": "brest-fortress-casemates",
@@ -5895,7 +5788,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56698"
+        "oid": "6a70f6eceeb338ba04f56698"
       },
       "name": "Rhyolite",
       "slug": "rhyolite",
@@ -5930,9 +5823,7 @@
       "connectedTo": [
         "bodie-ghost-town",
         "manzanar",
-        null,
-        "port-arthur-penal-settlement",
-        null
+        "port-arthur-penal-settlement"
       ],
       "__v": 0,
       "createdAt": {
@@ -5952,7 +5843,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669a"
+        "oid": "6a70f6eceeb338ba04f5669a"
       },
       "name": "Eloise Psychiatric Hospital",
       "slug": "eloise-psychiatric-hospital",
@@ -6013,7 +5904,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b7"
+        "oid": "6a70f6eceeb338ba04f566b7"
       },
       "name": "Montserrat Buried St. Patrick's",
       "slug": "montserrat-buried-st-patricks",
@@ -6075,7 +5966,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566bb"
+        "oid": "6a70f6eceeb338ba04f566bb"
       },
       "name": "Letchworth Village",
       "slug": "letchworth-village",
@@ -6116,7 +6007,6 @@
         "north-brother-island",
         "byberry-state-hospital",
         "chteau-miranda",
-        null,
         "wittenoom"
       ],
       "__v": 0,
@@ -6136,7 +6026,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566bc"
+        "oid": "6a70f6eceeb338ba04f566bc"
       },
       "name": "Byberry State Hospital",
       "slug": "byberry-state-hospital",
@@ -6180,10 +6070,7 @@
       },
       "connectedTo": [
         "eastern-state-penitentiary",
-        null,
-        "letchworth-village",
-        null,
-        null
+        "letchworth-village"
       ],
       "__v": 0,
       "createdAt": {
@@ -6198,7 +6085,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566bd"
+        "oid": "6a70f6eceeb338ba04f566bd"
       },
       "name": "Nocton Hall RAF Hospital",
       "slug": "nocton-hall-raf-hospital",
@@ -6238,9 +6125,7 @@
       "connectedTo": [
         "maunsell-forts",
         "edinburgh-vaults",
-        "duga-radar-array",
-        null,
-        null
+        "duga-radar-array"
       ],
       "__v": 0,
       "createdAt": {
@@ -6259,7 +6144,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56685"
+        "oid": "6a70f6eceeb338ba04f56685"
       },
       "name": "Poveglia Subterranean Ward",
       "slug": "poveglia-subterranean-ward",
@@ -6305,8 +6190,7 @@
         "poveglia-island",
         "choeung-ek-killing-fields",
         "great-zimbabwe-hill-complex",
-        "teufelsberg-echo-dome",
-        null
+        "teufelsberg-echo-dome"
       ],
       "resonanceNote": "I have the 1968 orderlies' records. They all drew the same thing: a ward of beds, all facing the wall. None of them could explain why this frightened them.",
       "__v": 0,
@@ -6321,7 +6205,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56696"
+        "oid": "6a70f6eceeb338ba04f56696"
       },
       "name": "Gila River Relocation Center",
       "slug": "gila-river-relocation-center",
@@ -6355,10 +6239,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "bombay-beach",
-        "moynaq-ship-graveyard",
-        null,
-        null,
-        null
+        "moynaq-ship-graveyard"
       ],
       "__v": 0,
       "createdAt": {
@@ -6378,7 +6259,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a0"
+        "oid": "6a70f6eceeb338ba04f566a0"
       },
       "name": "Humberstone Saltpeter Morgue",
       "slug": "humberstone-saltpeter-morgue",
@@ -6439,7 +6320,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a9"
+        "oid": "6a70f6eceeb338ba04f566a9"
       },
       "name": "Leptis Magna",
       "slug": "leptis-magna",
@@ -6496,7 +6377,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b2"
+        "oid": "6a70f6eceeb338ba04f566b2"
       },
       "name": "Coordinates 40.89°N 29.15°E",
       "slug": "coordinates-4089n-2915e",
@@ -6537,8 +6418,7 @@
         "varosha",
         "tyneham",
         "cahawba",
-        "babylon-reconstruction",
-        null
+        "babylon-reconstruction"
       ],
       "resonanceNote": "Structure 9 appeared after the earthquake. It is 80 by 40 meters. It is 50 meters underwater. It was not built. It was revealed.",
       "__v": 0,
@@ -6553,7 +6433,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c3"
+        "oid": "6a70f6eceeb338ba04f566c3"
       },
       "name": "Salton Sea Naval Station",
       "slug": "salton-sea-naval-station",
@@ -6615,7 +6495,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c4"
+        "oid": "6a70f6eceeb338ba04f566c4"
       },
       "name": "Flannan Isles Lighthouse",
       "slug": "flannan-isles-lighthouse",
@@ -6656,7 +6536,6 @@
         "st-kilda",
         "houtouwan",
         "the-door-to-hell",
-        null,
         "manzanar"
       ],
       "__v": 0,
@@ -6676,7 +6555,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667d"
+        "oid": "6a70f6eceeb338ba04f5667d"
       },
       "name": "Borovsko Bridge",
       "slug": "borovsko-bridge",
@@ -6711,9 +6590,7 @@
       "connectedTo": [
         "sedlec-ossuary",
         "houska-castle",
-        "wewak-japanese-tunnels",
-        null,
-        null
+        "wewak-japanese-tunnels"
       ],
       "resonanceNote": "The bridge hums at a frequency the ears cannot hear but the bones can. I have felt it in my teeth.",
       "__v": 0,
@@ -6728,7 +6605,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668a"
+        "oid": "6a70f6eceeb338ba04f5668a"
       },
       "name": "Teufelsberg Echo Dome",
       "slug": "teufelsberg-echo-dome",
@@ -6790,7 +6667,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668f"
+        "oid": "6a70f6eceeb338ba04f5668f"
       },
       "name": "Mururoa Atoll Bunker 810",
       "slug": "mururoa-atoll-bunker-810",
@@ -6846,7 +6723,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56695"
+        "oid": "6a70f6eceeb338ba04f56695"
       },
       "name": "Jatinga Bird Suicide Point",
       "slug": "jatinga-bird-suicide-point",
@@ -6906,7 +6783,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a2"
+        "oid": "6a70f6eceeb338ba04f566a2"
       },
       "name": "Cahawba",
       "slug": "cahawba",
@@ -6940,10 +6817,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "six-flags-new-orleans",
-        "pripyat-amusement-park",
-        null,
-        null,
-        null
+        "pripyat-amusement-park"
       ],
       "__v": 0,
       "createdAt": {
@@ -6963,7 +6837,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566aa"
+        "oid": "6a70f6eceeb338ba04f566aa"
       },
       "name": "Babylon Reconstruction",
       "slug": "babylon-reconstruction",
@@ -7020,7 +6894,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b0"
+        "oid": "6a70f6eceeb338ba04f566b0"
       },
       "name": "Deception Island Whalers Bay Cemeteries",
       "slug": "deception-island-whalers-bay-cemeteries",
@@ -7082,7 +6956,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b4"
+        "oid": "6a70f6eceeb338ba04f566b4"
       },
       "name": "The Grid Null Point",
       "slug": "the-grid-null-point",
@@ -7125,9 +6999,7 @@
       },
       "connectedTo": [
         "the-stanley-hotel",
-        null,
         "sanatorium-du-basil",
-        null,
         "aokigahara-forest"
       ],
       "resonanceNote": "The ash is 12,000 years old. The spiral rotates. I have calculated that the rotation will align with the summer solstice in 2047. I do not know what happens then.",
@@ -7143,7 +7015,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b9"
+        "oid": "6a70f6eceeb338ba04f566b9"
       },
       "name": "Shanghai Tunnels",
       "slug": "shanghai-tunnels",
@@ -7182,10 +7054,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "battery-russell",
-        null,
-        "chacaltaya-ski-resort",
-        null,
-        null
+        "chacaltaya-ski-resort"
       ],
       "__v": 0,
       "createdAt": {
@@ -7204,7 +7073,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667e"
+        "oid": "6a70f6eceeb338ba04f5667e"
       },
       "name": "Skellig Michael",
       "slug": "skellig-michael",
@@ -7256,7 +7125,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56681"
+        "oid": "6a70f6eceeb338ba04f56681"
       },
       "name": "Kola Superdeep Borehole",
       "slug": "kola-superdeep-borehole",
@@ -7312,7 +7181,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668d"
+        "oid": "6a70f6eceeb338ba04f5668d"
       },
       "name": "Hachijo Royal Hotel",
       "slug": "hachijo-royal-hotel",
@@ -7346,9 +7215,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "aokigahara-forest",
-        null,
         "bunker-3-relay",
-        null,
         "edinburgh-vaults"
       ],
       "__v": 0,
@@ -7369,7 +7236,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56690"
+        "oid": "6a70f6eceeb338ba04f56690"
       },
       "name": "Wewak Japanese Tunnels",
       "slug": "wewak-japanese-tunnels",
@@ -7426,7 +7293,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669f"
+        "oid": "6a70f6eceeb338ba04f5669f"
       },
       "name": "La Noria Cemetery",
       "slug": "la-noria-cemetery",
@@ -7487,7 +7354,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566ad"
+        "oid": "6a70f6eceeb338ba04f566ad"
       },
       "name": "Kolmanskop Casino Vault",
       "slug": "kolmanskop-casino-vault",
@@ -7526,10 +7393,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "kolmanskop",
-        null,
-        "al-madam-ghost-town",
-        null,
-        null
+        "al-madam-ghost-town"
       ],
       "__v": 0,
       "createdAt": {
@@ -7548,7 +7412,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566ae"
+        "oid": "6a70f6eceeb338ba04f566ae"
       },
       "name": "Port Arthur Separate Prison",
       "slug": "port-arthur-separate-prison",
@@ -7609,7 +7473,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b5"
+        "oid": "6a70f6eceeb338ba04f566b5"
       },
       "name": "The Vanishing Hospital",
       "slug": "the-vanishing-hospital",
@@ -7670,7 +7534,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566ba"
+        "oid": "6a70f6eceeb338ba04f566ba"
       },
       "name": "Willard Asylum Suitcases",
       "slug": "willard-asylum-suitcases",
@@ -7731,7 +7595,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56678"
+        "oid": "6a70f6eceeb338ba04f56678"
       },
       "name": "Pripyat Hospital 126",
       "slug": "pripyat-hospital-126",
@@ -7775,9 +7639,6 @@
       },
       "connectedTo": [
         "pripyat-amusement-park",
-        null,
-        null,
-        null,
         "duga-radar-array"
       ],
       "resonanceNote": "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
@@ -7793,7 +7654,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667a"
+        "oid": "6a70f6eceeb338ba04f5667a"
       },
       "name": "Chernobyl Reactor 4 Control Room",
       "slug": "chernobyl-reactor-4-control-room",
@@ -7839,8 +7700,7 @@
         "duga-radar-array",
         "duga-control-room",
         "the-stanley-hotel",
-        "oradour-sur-glane",
-        null
+        "oradour-sur-glane"
       ],
       "resonanceNote": "The button is still warm. I have the thermal imaging to prove it.",
       "__v": 0,
@@ -7855,7 +7715,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667b"
+        "oid": "6a70f6eceeb338ba04f5667b"
       },
       "name": "Hohenwerfen Dark Archive",
       "slug": "hohenwerfen-dark-archive",
@@ -7898,8 +7758,6 @@
       },
       "connectedTo": [
         "poveglia-island",
-        null,
-        null,
         "gonjiam-psychiatric-hospital",
         "the-leap-castle-bloody-chapel"
       ],
@@ -7915,7 +7773,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5667f"
+        "oid": "6a70f6eceeb338ba04f5667f"
       },
       "name": "Luková Church of Ghosts",
       "slug": "lukov-church-of-ghosts",
@@ -7976,7 +7834,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56691"
+        "oid": "6a70f6eceeb338ba04f56691"
       },
       "name": "Aokigahara Sea of Trees Station",
       "slug": "aokigahara-sea-of-trees-station",
@@ -8038,7 +7896,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56693"
+        "oid": "6a70f6eceeb338ba04f56693"
       },
       "name": "Choeung Ek Killing Fields",
       "slug": "choeung-ek-killing-fields",
@@ -8078,9 +7936,7 @@
       "connectedTo": [
         "bokor-hill-station",
         "poveglia-subterranean-ward",
-        null,
-        "pripyat-jupiter-factory",
-        null
+        "pripyat-jupiter-factory"
       ],
       "__v": 0,
       "createdAt": {
@@ -8100,7 +7956,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56694"
+        "oid": "6a70f6eceeb338ba04f56694"
       },
       "name": "Kowloon Walled City Park",
       "slug": "kowloon-walled-city-park",
@@ -8149,7 +8005,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56697"
+        "oid": "6a70f6eceeb338ba04f56697"
       },
       "name": "Manzanar",
       "slug": "manzanar",
@@ -8184,9 +8040,7 @@
       "connectedTo": [
         "bodie-ghost-town",
         "humberstone-saltpeter-works",
-        null,
-        "buzludzha-monument",
-        null
+        "buzludzha-monument"
       ],
       "__v": 0,
       "createdAt": {
@@ -8206,7 +8060,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669d"
+        "oid": "6a70f6eceeb338ba04f5669d"
       },
       "name": "Pennhurst State School",
       "slug": "pennhurst-state-school",
@@ -8244,11 +8098,7 @@
       },
       "verifiedBy": "system",
       "connectedTo": [
-        "centralia",
-        null,
-        null,
-        null,
-        null
+        "centralia"
       ],
       "__v": 0,
       "createdAt": {
@@ -8267,7 +8117,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a1"
+        "oid": "6a70f6eceeb338ba04f566a1"
       },
       "name": "St. Thomas Ghost Town",
       "slug": "st-thomas-ghost-town",
@@ -8324,7 +8174,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b1"
+        "oid": "6a70f6eceeb338ba04f566b1"
       },
       "name": "Cape Denison Hut",
       "slug": "cape-denison-hut",
@@ -8375,7 +8225,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b8"
+        "oid": "6a70f6eceeb338ba04f566b8"
       },
       "name": "Stull Cemetery",
       "slug": "stull-cemetery",
@@ -8420,7 +8270,6 @@
         "villisca-axe-murder-house",
         "tskaltubo-sanatoriums",
         "roanoke-colony",
-        null,
         "houska-castle"
       ],
       "__v": 0,
@@ -8436,7 +8285,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566bf"
+        "oid": "6a70f6eceeb338ba04f566bf"
       },
       "name": "Edinburgh Vaults",
       "slug": "edinburgh-vaults",
@@ -8497,7 +8346,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c1"
+        "oid": "6a70f6eceeb338ba04f566c1"
       },
       "name": "Houska Castle",
       "slug": "houska-castle",
@@ -8558,7 +8407,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56679"
+        "oid": "6a70f6eceeb338ba04f56679"
       },
       "name": "Buzludzha Monument",
       "slug": "buzludzha-monument",
@@ -8591,11 +8440,7 @@
       },
       "verifiedBy": "system",
       "connectedTo": [
-        "coordinates-4089n-2915e",
-        null,
-        null,
-        null,
-        null
+        "coordinates-4089n-2915e"
       ],
       "__v": 0,
       "createdAt": {
@@ -8615,7 +8460,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56684"
+        "oid": "6a70f6eceeb338ba04f56684"
       },
       "name": "Monte Pellegrino Abandoned Shrine",
       "slug": "monte-pellegrino-abandoned-shrine",
@@ -8676,7 +8521,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f56687"
+        "oid": "6a70f6eceeb338ba04f56687"
       },
       "name": "DUGA Control Room",
       "slug": "duga-control-room",
@@ -8721,9 +8566,7 @@
       "connectedTo": [
         "duga-radar-array",
         "kolmanskop",
-        "port-arthur-separate-prison",
-        null,
-        null
+        "port-arthur-separate-prison"
       ],
       "resonanceNote": "The pulse was directed upward. I have calculated the angle. It was not listening for missiles. It was listening for something above the atmosphere.",
       "__v": 0,
@@ -8738,7 +8581,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668b"
+        "oid": "6a70f6eceeb338ba04f5668b"
       },
       "name": "Battambang Killing Caves",
       "slug": "battambang-killing-caves",
@@ -8777,10 +8620,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "sathorn-unique-tower",
-        "byberry-state-hospital",
-        null,
-        null,
-        null
+        "byberry-state-hospital"
       ],
       "__v": 0,
       "createdAt": {
@@ -8800,7 +8640,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5668c"
+        "oid": "6a70f6eceeb338ba04f5668c"
       },
       "name": "Fengdu Ghost City",
       "slug": "fengdu-ghost-city",
@@ -8852,7 +8692,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f5669e"
+        "oid": "6a70f6eceeb338ba04f5669e"
       },
       "name": "Gonjiam Psychiatric Hospital",
       "slug": "gonjiam-psychiatric-hospital",
@@ -8891,10 +8731,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "hashima-island",
-        null,
-        null,
-        "macquarie-island-station",
-        null
+        "macquarie-island-station"
       ],
       "__v": 0,
       "createdAt": {
@@ -8914,7 +8751,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566a8"
+        "oid": "6a70f6eceeb338ba04f566a8"
       },
       "name": "Great Zimbabwe Hill Complex",
       "slug": "great-zimbabwe-hill-complex",
@@ -8970,7 +8807,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566ac"
+        "oid": "6a70f6eceeb338ba04f566ac"
       },
       "name": "Gedi National Monument",
       "slug": "gedi-national-monument",
@@ -9023,7 +8860,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566af"
+        "oid": "6a70f6eceeb338ba04f566af"
       },
       "name": "Macquarie Island Station",
       "slug": "macquarie-island-station",
@@ -9078,7 +8915,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b3"
+        "oid": "6a70f6eceeb338ba04f566b3"
       },
       "name": "BUNKER_3 Relay",
       "slug": "bunker-3-relay",
@@ -9123,7 +8960,6 @@
       "connectedTo": [
         "teufelsberg",
         "teufelsberg-echo-dome",
-        null,
         "mururoa-atoll-bunker-810",
         "isla-de-las-muecas"
       ],
@@ -9140,7 +8976,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566b6"
+        "oid": "6a70f6eceeb338ba04f566b6"
       },
       "name": "Pripyat Jupiter Factory",
       "slug": "pripyat-jupiter-factory",
@@ -9185,8 +9021,6 @@
       "connectedTo": [
         "pripyat-amusement-park",
         "chernobyl-reactor-4-control-room",
-        null,
-        null,
         "choeung-ek-killing-fields"
       ],
       "resonanceNote": "The windows are painted black from the inside. The scratches are on the outside. I do not know which side the paint was meant to protect.",
@@ -9202,7 +9036,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c0"
+        "oid": "6a70f6eceeb338ba04f566c0"
       },
       "name": "Mary King's Close",
       "slug": "mary-kings-close",
@@ -9241,10 +9075,7 @@
       "verifiedBy": "system",
       "connectedTo": [
         "st-kilda",
-        null,
-        "edinburgh-vaults",
-        null,
-        null
+        "edinburgh-vaults"
       ],
       "__v": 0,
       "createdAt": {
@@ -9258,7 +9089,7 @@
     },
     {
       "_id": {
-        "$oid": "6a70f6eceeb338ba04f566c2"
+        "oid": "6a70f6eceeb338ba04f566c2"
       },
       "name": "The Door to Hell",
       "slug": "the-door-to-hell",
@@ -9308,7 +9139,7 @@
     },
     {
       "_id": {
-        "$oid": "6a725e2f331ab69cb9bb0cdd"
+        "oid": "6a725e2f331ab69cb9bb0cdd"
       },
       "slug": "bunker_3-relay",
       "name": "BUNKER_3 Relay",

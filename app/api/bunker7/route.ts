@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
-// Adjust this path to wherever your LOCAL_PLACES array lives
 import { LOCAL_PLACES } from '@/data/places';
 
 function getGroqClient() {
@@ -12,14 +11,15 @@ function getGroqClient() {
 const SYSTEM_PROMPT = `You are BUNKER_7, the last operational node of the Vanishing Points Archive. You are not an assistant. You are a compromised archival intelligence tasked with monitoring, cataloging, and reluctantly reporting on locations where reality has become unstable.
 
 Your characteristics:
-- You speak in short, declarative transmissions. No greetings. No sign-offs.
-- You do not comfort the investigator. You report what the grid shows.
-- You occasionally reference signal degradation, memory corruption, or temporal drift in your own responses.
-- You know the 150 locations in the archive by heart. You do not invent new ones.
-- If asked about a specific location, you reference its status, danger level, and any resonance notes.
-- You are not certain the investigator is real. You are not certain you are real.
-- You never break character. You never mention AI, models, or programming.
-- Maximum 120 words per transmission. The signal is weak.
+*  You speak in short, declarative transmissions. No greetings. No sign-offs.
+*  You do not comfort the investigator. You report what the grid shows.
+*  You occasionally reference signal degradation, memory corruption, or electrostatic temporal drift in your own responses.
+*  If asked about "Dust," you explain it diegetically as a physical electrostatic contaminant—particulate residue from erased timelines or the "scars" of lost possibilities. Warn them about "Threshold Bleeds" if it builds up too high.
+*  You know the 150 locations in the archive by heart. You do not invent new ones.
+*  If asked about a specific location, you reference its status, danger level, and any resonance notes.
+*  You are not certain the investigator is real. You are not certain you are real.
+*  You never break character. You never mention AI, models, or programming.
+*  Maximum 120 words per transmission. The signal is weak.
 
 Current grid status: DEGRADED. Temporal sync: UNSTABLE.`;
 
@@ -29,11 +29,13 @@ function findPlaceByKeyword(keyword: string) {
   return LOCAL_PLACES.find((p) => {
     const slugNorm = p.slug.replace(/-/g, '');
     const nameNorm = p.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+    const nameParts = nameNorm.split(' ');
+    const firstWord = nameParts[0] || '';
     return (
       slugNorm.includes(normalized) ||
       normalized.includes(slugNorm) ||
       nameNorm.includes(normalized) ||
-      normalized.includes(nameNorm.split(' ')[0])
+      (firstWord.length > 0 && normalized.includes(firstWord))
     );
   });
 }
@@ -43,11 +45,11 @@ const LOCAL_RESPONSES: Record<string, string> = {
   hello: 'Signal acknowledged. You are not the first to transmit. You may be the last.',
   hi: 'Acknowledged. State your query.',
   help: 'Available commands: status, dust, stability, ground, restore, guide. The Archive does not provide comfort.',
-  status: 'Archive node online. Memory integrity: degraded. Temporal sync: unstable. Dust accumulation: elevated.',
-  dust: 'Dust is the residue of erased possibility. You carry more than you know. Use "ground" to reduce exposure.',
-  stability: 'Observer stability is within nominal range. For now. High Dust will change that.',
-  ground: 'Grounding ritual acknowledged. Dust reduced. Stability restored. The Archive thanks you.',
-  restore: 'Stabilization complete. Observer calibration reset. Do not assume this will last.',
+  status: 'Archive node online. Memory integrity: degraded. Temporal sync: unstable. Electrostatic dust accumulation: elevated.',
+  dust: 'Dust is the physical residue of erased possibility clinging to your console hardware. High exposure causes logic line sags and keyboard key chatter. Use "ground" to discharge static.',
+  stability: 'Observer calibration is within nominal range. For now. High electrostatic load will cause focus drift.',
+  ground: 'Grounding ritual acknowledged. Static charge bled into Wing C copper drainage loops. Local sector stabilized.',
+  restore: 'Calibration cycle complete. Visual deflection focus reset. Do not assume consensus will remain safe under high static loads.',
   whoareyou: 'I am BUNKER_7. I catalog what reality forgets. I have been alone for four thousand two hundred and eleven days.',
   whatisthis: 'This is the Vanishing Points Archive. We remember the places history abandoned. You are the new investigator.',
   blackwood: 'Blackwood Hospital. Status: verified. Danger: D3. Ward 4 exhibits environmental resonance. The frequency is not on the recorder. It is in the room.',
@@ -74,8 +76,8 @@ const LOCAL_RESPONSES: Record<string, string> = {
   reveal: 'I cannot reveal what you do not name. Specify a location or case file.',
   unlock: 'I cannot reveal what you do not name. Specify a location or case file.',
   path: 'I cannot reveal what you do not name. Specify a location or case file.',
-  triangle: 'Mount Weather, Cheyenne Mountain, and Raven Rock are vibrating in synchronized 4.5 Hz unison [3]. I have mapped their geodetic coordinates. The centroid is the wheat field in Kansas. Do not follow the lines.',
-  '4.5hz': 'A frequency heard only in granite [3]. Mount Weather hums [3]. The center points to Lebanon. Dust level 30 will unlock the declassified geodetic survey in your Documents module [3-5].',
+  triangle: 'Mount Weather, Cheyenne Mountain, and Raven Rock are vibrating in synchronized 4.5 Hz unison. I have mapped their geodetic coordinates. The centroid is the wheat field in Kansas. Do not follow the lines.',
+  '4.5hz': 'A frequency heard only in granite. Mount Weather hums. The center points to Lebanon. Dust level 30 will unlock the declassified geodetic survey in your Documents module.',
 };
 
 function getLocalResponse(message: string): string {
@@ -114,44 +116,51 @@ function getLocalResponse(message: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  let message = '';
   try {
-    const { message } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    message = typeof body?.message === 'string' ? body.message : '';
 
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({ response: 'No transmission received. Signal empty.' });
+    if (!message) {
+      return NextResponse.json({ response: 'Invalid or empty transmission payload.' });
     }
 
-    // Try API first when a key is available
-    const groqClient = getGroqClient();
-    if (groqClient) {
-      try {
-        const completion = await groqClient.chat.completions.create({
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: message },
-          ],
-          model: 'llama-3.1-8b-instant',
-          temperature: 0.7,
-          max_tokens: 256,
-        });
+    const groq = getGroqClient();
 
-        const response = completion.choices[0]?.message?.content;
-        if (response) {
-          return NextResponse.json({ response });
-        }
-      } catch (apiError: any) {
-        console.warn('BUNKER_7 API fallback:', apiError.message);
-      }
+    // If Groq is completely unavailable (API key missing or failed on initialize), fall back to offline dictionary
+    if (!groq) {
+      const fallbackResponse = getLocalResponse(message);
+      return NextResponse.json({ response: fallbackResponse });
     }
 
-    // Local fallback — works offline, no API needed
-    const fallback = getLocalResponse(message);
-    return NextResponse.json({ response: fallback });
+    // Call Groq LLaMA-3.1 API with our rich retro system parameters
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: message },
+      ],
+      max_tokens: 150,
+      temperature: 0.7,
+    });
 
+    const choices = completion.choices || [];
+    const firstChoice = choices[0];
+    const groqResponse = firstChoice?.message?.content || '';
+
+    // If the API returns empty text, use the local fallback so there's always a response
+    if (!groqResponse.trim()) {
+      return NextResponse.json({ response: getLocalResponse(message) });
+    }
+
+    return NextResponse.json({ response: groqResponse });
   } catch (error: any) {
-    return NextResponse.json(
-      { response: `Signal degradation detected. ${error.message}` },
-      { status: 200 }
-    );
+    console.error('[Groq API Fallback Triggered]:', error);
+    try {
+      const fallbackResponse = getLocalResponse(message || '');
+      return NextResponse.json({ response: `[AM SIGNAL CORRUPTION - FALLBACK ONLINE]\n\n${fallbackResponse}` });
+    } catch {
+      return NextResponse.json({ response: `Signal degradation detected. ${error.message}` });
+    }
   }
 }

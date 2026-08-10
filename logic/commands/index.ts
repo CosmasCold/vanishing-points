@@ -11,15 +11,18 @@ import { registerEnvironmentCommands } from './environment';
 import { registerDailyCommands } from './daily';
 import { registerDocumentCommands } from './documents';
 
-// Import advanced Phase 4 & Phase 7 investigative systems [8]
+// Import our advanced Phase 4, Phase 2, & Phase 7 commands [6, 80, 82]
 import { registerProbeCommands } from './probe';
 import { registerDecryptCommands } from './decrypt';
 import { registerAuditCommands } from './audit';
-import { registerSolsticeCommands } from './solstice'; // Our final solstice endgame command registration module [6]
+import { registerSolsticeCommands } from './solstice';
+import { registerForgetCommands } from './forget';
+import { registerSearchCommands } from './search';
 
 /**
- * Master Registry Bootstrapper (Version 2.0)
+ * Master Registry Bootstrapper
  * Mounts all CLI commands onto the central CommandRegistry singleton.
+ * Integrates our declassified forensic searches, cognitive purges, and solstice resets.
  */
 export function initializeCommands() {
   // Classic terminal utilities
@@ -35,11 +38,13 @@ export function initializeCommands() {
   registerDailyCommands(registry);
   registerDocumentCommands(registry);
 
-  // Advanced geodetic and decryption systems
+  // Advanced investigative systems
   registerProbeCommands(registry);
   registerDecryptCommands(registry);
   registerAuditCommands(registry);
 
-  // Endgame Solstice loop handlers [6, 8]
+  // Phase 2 & Phase 7 Solstice commands
   registerSolsticeCommands(registry);
+  registerForgetCommands(registry);
+  registerSearchCommands(registry);
 }

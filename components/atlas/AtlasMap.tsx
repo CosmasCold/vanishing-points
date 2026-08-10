@@ -413,7 +413,7 @@ export const AtlasMap: React.FC = () => {
       }
 
       // 3. Collision checks against nearby pins inside sensor scanning bounds
-      const R_SENSOR = 160;
+      const R_SENSOR = 600;
       projectedPlaces.forEach((place) => {
         const dx = place.projX - center.x;
         const dy = place.projY - center.y;
@@ -538,14 +538,14 @@ export const AtlasMap: React.FC = () => {
           {/* Radar Scanner Probe Layer */}
           <circle
             ref={sweepLensRef}
-            r={160}
+            r={600}
             fill="rgba(255, 170, 85, 0.015)" // Warm ambient scan field lens
             stroke="none"
             opacity={0}
           />
           <circle
             ref={sweepOutlineRef}
-            r={160}
+            r={600}
             fill="none"
             stroke={microform.halogen}
             strokeWidth={1}
@@ -556,12 +556,12 @@ export const AtlasMap: React.FC = () => {
           <g ref={sweepGroupRef}>
             {/* Stepped Phosphor segments trailing clockwise */}
             {/* 1. Primary phosphor sweep lead line */}
-            <line x1={0} y1={0} x2={160} y2={0} stroke={microform.halogen} strokeWidth={1.8} opacity={0.65} style={{ vectorEffect: "non-scaling-stroke" }} />
+            <line x1={0} y1={0} x2={600} y2={0} stroke={microform.halogen} strokeWidth={1.8} opacity={0.65} style={{ vectorEffect: "non-scaling-stroke" }} />
             {/* 2. Secondary trail lines */}
-            <line x1={0} y1={0} x2={160 * Math.cos(-4 * Math.PI / 180)} y2={160 * Math.sin(-4 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.4} opacity={0.4} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={160 * Math.cos(-9 * Math.PI / 180)} y2={160 * Math.sin(-9 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.1} opacity={0.25} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={160 * Math.cos(-15 * Math.PI / 180)} y2={160 * Math.sin(-15 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.8} opacity={0.12} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={160 * Math.cos(-22 * Math.PI / 180)} y2={160 * Math.sin(-22 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.6} opacity={0.05} style={{ vectorEffect: "non-scaling-stroke" }} />
+            <line x1={0} y1={0} x2={600 * Math.cos(-4 * Math.PI / 180)} y2={600 * Math.sin(-4 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.4} opacity={0.4} style={{ vectorEffect: "non-scaling-stroke" }} />
+            <line x1={0} y1={0} x2={600 * Math.cos(-9 * Math.PI / 180)} y2={600 * Math.sin(-9 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.1} opacity={0.25} style={{ vectorEffect: "non-scaling-stroke" }} />
+            <line x1={0} y1={0} x2={600 * Math.cos(-15 * Math.PI / 180)} y2={600 * Math.sin(-15 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.8} opacity={0.12} style={{ vectorEffect: "non-scaling-stroke" }} />
+            <line x1={0} y1={0} x2={600 * Math.cos(-22 * Math.PI / 180)} y2={600 * Math.sin(-22 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.6} opacity={0.05} style={{ vectorEffect: "non-scaling-stroke" }} />
           </g>
 
           {/* Connection Lines (Geodetic grids/threads) - uses hardware vectorEffect */}

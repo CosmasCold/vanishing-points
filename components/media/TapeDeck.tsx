@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useUIStore } from "@/state/uiStore";
@@ -23,9 +21,12 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
   // Track tape counter (seconds-based cycle ticker)
   const [counter, setCounter] = useState(0);
 
+  // Track active scrub state (ff or rw) for spool hyper-rotation
+  const [scrubState, setScrubState] = useState<"ff" | "rw" | null>(null);
+
   const { click, play } = useAudioStore();
   const { status } = useUIStore();
-  const dustIndex = status.dustIndex;
+  const dustIndex = status?.dustIndex ?? 0;
 
   // Initialize our custom Web Audio tape degradation engine
   const [audioElementReady, setAudioElementReady] = useState<HTMLAudioElement | null>(null);
@@ -36,7 +37,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
     }
   }, [audioRef]);
 
-  const { vuValue } = useTapeDegradation({
+  const { vuValue, triggerScrubSound } = useTapeDegradation({
     audioElement: audioElementReady,
     isPlaying,
   });
@@ -84,7 +85,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
         .play()
         .then(() => {
           setIsPlaying(true);
-          play("tape"); // Trigger physical tape engagement click sound [20]
+          play("tape"); // Trigger physical tape engagement click sound
         })
         .catch((err) => {
           console.error("Audio playback blocked by browser security policy:", err);
@@ -105,17 +106,43 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
   };
 
   const handleRewind = () => {
-    play("click");
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Trigger physical tape scrubbing squeal sound!
+    if (typeof triggerScrubSound === "function") {
+      triggerScrubSound("rw");
+    } else {
+      play("click");
+    }
+
+    setScrubState("rw");
     audio.currentTime = Math.max(0, audio.currentTime - 10);
+    
+    // Smooth release of high-speed rotation
+    setTimeout(() => {
+      setScrubState(null);
+    }, 450);
   };
 
   const handleFastForward = () => {
-    play("click");
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Trigger physical tape scrubbing squeal sound!
+    if (typeof triggerScrubSound === "function") {
+      triggerScrubSound("ff");
+    } else {
+      play("click");
+    }
+
+    setScrubState("ff");
     audio.currentTime = Math.min(duration, audio.currentTime + 10);
+    
+    // Smooth release of high-speed rotation
+    setTimeout(() => {
+      setScrubState(null);
+    }, 450);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,6 +151,11 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
     const time = parseFloat(e.target.value);
     audio.currentTime = time;
     setProgress(time);
+
+    // Minor scrub scratch sound while sliding progress bar
+    if (typeof triggerScrubSound === "function" && Math.random() < 0.2) {
+      triggerScrubSound(time > progress ? "ff" : "rw");
+    }
   };
 
   // Format time display: mm:ss
@@ -133,14 +165,39 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Tape spool thickness calculation based on elapsed progress [22]
+  // Tape spool thickness calculation based on elapsed progress
   const spoolWidths = useMemo(() => {
     const ratio = progress / duration;
-    // Initial tape radius is thick on the left, thin on the right.
-    const leftRadius = 14 + (1 - ratio) * 22; // left reel empties [14..36]px
-    const rightRadius = 14 + ratio * 22;      // right reel fills [14..36]px
+    const leftRadius = 14 + (1 - ratio) * 22; // left reel empties
+    const rightRadius = 14 + ratio * 22;      // right reel fills
     return { leftRadius, rightRadius };
   }, [progress, duration]);
+
+  // Spool physical rotation dynamics
+  const getReelAnimation = () => {
+    if (scrubState === "ff") {
+      return {
+        animate: { rotate: 360 },
+        transition: { duration: 0.15, repeat: Infinity, ease: "linear" }
+      };
+    }
+    if (scrubState === "rw") {
+      return {
+        animate: { rotate: -360 },
+        transition: { duration: 0.15, repeat: Infinity, ease: "linear" }
+      };
+    }
+    if (isPlaying) {
+      return {
+        animate: { rotate: 360 },
+        transition: { duration: 1.8, repeat: Infinity, ease: "linear" }
+      };
+    }
+    return {
+      animate: { rotate: 0 },
+      transition: { duration: 0.4 }
+    };
+  };
 
   return (
     <div
@@ -158,7 +215,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
       {/* Decorative Bezel top strip */}
       <div className="flex items-center justify-between w-full pb-2 border-b shrink-0" style={{ borderColor: colors.archive.grayDark }}>
         <div className="flex items-center gap-2">
-          <span style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: "9px", letterSpacing: "0.1em" }}>
+          <span style={{ color: colors.archive.amber, fontFamily: typography.mono, fontSize: "9px", letterSpacing: "0.15em" }}>
             TAPE RECONSTRUCTION DECK
           </span>
           <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: "9px" }}>
@@ -188,8 +245,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
             className="flex flex-col items-center p-2 rounded-[2px] border relative"
             style={{
               width: "160px",
-              height: "75px",
-              backgroundColor: "#161310",
+              height: "75px",             backgroundColor: "#161310",
               borderColor: colors.archive.grayDark,
               boxShadow: "inset 0 0 10px rgba(0,0,0,0.9)",
             }}
@@ -201,12 +257,9 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
 
             {/* Scale Gauge overlay */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 160 75">
-              {/* Reference scale lines */}
               <path d="M 25 55 A 50 50 0 0 1 135 55" fill="none" stroke="#2c241d" strokeWidth="2" strokeDasharray="3, 5" />
               <path d="M 105 40 A 50 50 0 0 1 135 55" fill="none" stroke={colors.archive.red} strokeWidth="2.5" />
-              {/* dB indicators */}
-              <text x="35" y="62" fill={colors.archive.gray} style={{ fontSize: "6px", fontFamily: typography.mono }}>-20</text>
-              <text x="80" y="32" fill={colors.archive.gray} style={{ fontSize: "6px", fontFamily: typography.mono }}>0dB</text>
+              <text x="35" y="62" fill={colors.archive.gray} style={{ fontSize: "6px", fontFamily: typography.mono }}>-20</text>              <text x="80" y="32" fill={colors.archive.gray} style={{ fontSize: "6px", fontFamily: typography.mono }}>0dB</text>
               <text x="125" y="62" fill={colors.archive.red} style={{ fontSize: "6px", fontFamily: typography.mono }}>+3</text>
             </svg>
 
@@ -272,7 +325,6 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
           >
             {/* Spool A (Left Reel) */}
             <div className="relative w-16 h-16 flex items-center justify-center">
-              {/* Outer Tape Layer wrapping the spool */}
               <div
                 className="absolute rounded-full border transition-all duration-300"
                 style={{
@@ -282,15 +334,12 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
                   borderColor: "rgba(38, 30, 24, 0.9)",
                 }}
               />
-              {/* Spinning Spool Hub */}
               <motion.svg
                 className="w-12 h-12 z-10 text-stone-700"
                 viewBox="0 0 50 50"
-                animate={isPlaying ? { rotate: 360 } : {}}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                {...getReelAnimation()}
               >
                 <circle cx="25" cy="25" r="14" fill="#1b1814" stroke="#2d2620" strokeWidth="2.5" />
-                {/* Spokes/Gears */}
                 {[0, 60, 120, 180, 240, 300].map((deg) => (
                   <line
                     key={deg}
@@ -309,7 +358,6 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
 
             {/* Spool B (Right Reel) */}
             <div className="relative w-16 h-16 flex items-center justify-center">
-              {/* Outer Tape Layer wrapping the spool */}
               <div
                 className="absolute rounded-full border transition-all duration-300"
                 style={{
@@ -319,15 +367,12 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
                   borderColor: "rgba(38, 30, 24, 0.9)",
                 }}
               />
-              {/* Spinning Spool Hub */}
               <motion.svg
                 className="w-12 h-12 z-10 text-stone-700"
                 viewBox="0 0 50 50"
-                animate={isPlaying ? { rotate: 360 } : {}}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                {...getReelAnimation()}
               >
                 <circle cx="25" cy="25" r="14" fill="#1b1814" stroke="#2d2620" strokeWidth="2.5" />
-                {/* Spokes/Gears */}
                 {[0, 60, 120, 180, 240, 300].map((deg) => (
                   <line
                     key={deg}
@@ -344,7 +389,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
               </motion.svg>
             </div>
 
-            {/* Segment Counter (Retro digital LCD look) */}
+            {/* Segment Counter */}
             <div
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-2.5 py-0.5 rounded-[1px] border font-mono text-[10px]"
               style={{
@@ -358,7 +403,7 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
             </div>
           </div>
 
-          {/* Bottom trapezoid cap capstans casing */}
+          {/* Bottom trapezoid capstans */}
           <div className="flex justify-between items-center w-full px-8 text-[6px] tracking-widest text-stone-800 font-mono">
             <span>A-SIDE</span>
             <span>AUTO-REVERSE</span>
@@ -387,7 +432,6 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
       {/* Tactical Tape Keypad controls */}
       <div className="flex justify-between items-center w-full px-6 py-2 border-t" style={{ borderColor: colors.archive.grayDark }}>
         <div className="flex gap-4">
-          {/* play / pause */}
           <button
             onClick={togglePlay}
             className={`flex items-center justify-center w-10 h-10 border transition-all active:translate-y-0.5 rounded-[1px] ${
@@ -403,7 +447,6 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
             {isPlaying ? <Pause size={15} /> : <Play size={15} className="fill-current" />}
           </button>
 
-          {/* stop */}
           <button
             onClick={handleStop}
             className="flex items-center justify-center w-10 h-10 border shadow-md transition-all active:translate-y-0.5 rounded-[1px] hover:opacity-80"
@@ -418,7 +461,6 @@ export const TapeDeck: React.FC<TapeDeckProps> = ({ src, title, onClose }) => {
           </button>
         </div>
 
-        {/* Rewind & Fast Forward */}
         <div className="flex gap-4">
           <button
             onClick={handleRewind}

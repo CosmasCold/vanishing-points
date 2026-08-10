@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -7,14 +7,16 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   EdgeProps,
-  EdgeText,
-  MarkerType,
+  Connection,
+  addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
+import { useUIStore } from '@/state/uiStore';
 import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
+import { useTerminalStore } from '@/state/terminalStore';
 import { colors, typography, microform } from '@/styles/theme';
 import { Place } from '@/types/places';
 
@@ -58,7 +60,7 @@ const PolaroidNode: React.FC<CustomNodeProps> = React.memo(({ id, data }) => {
     for (let i = 0; i < id.length; i++) {
       hash = id.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return (hash % 7); // Generates constant tilt between -3deg and +3deg
+    return (hash % 7) - 3; // Generates constant tilt between -3deg and +3deg
   }, [id]);
 
   const categoryColor = useMemo(() => {
@@ -80,9 +82,31 @@ const PolaroidNode: React.FC<CustomNodeProps> = React.memo(({ id, data }) => {
         zIndex: isSelected ? 30 : 10,
       }}
     >
-      {/* Target input/output connection handles hidden beneath the pushpin */}
-      <Handle type="target" position={Position.Top} style={{ opacity: 0, top: '4px' }} />
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, bottom: '4px' }} />
+      {/* Grommet-styled connection handles visible on hover */}
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        style={{ 
+          top: '-6px', 
+          background: '#d4af37', 
+          borderColor: '#8a6d1c', 
+          width: '8px', 
+          height: '8px',
+          boxShadow: '0 0 4px rgba(212, 175, 55, 0.5)'
+        }} 
+      />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        style={{ 
+          bottom: '-6px', 
+          background: '#d4af37', 
+          borderColor: '#8a6d1c', 
+          width: '8px', 
+          height: '8px',
+          boxShadow: '0 0 4px rgba(212, 175, 55, 0.5)'
+        }} 
+      />
 
       {/* 3D Brass Pushpin with detailed dimensional casting drop-shadow */}
       <div 
@@ -208,8 +232,28 @@ const ManilaCardNode: React.FC<ManilaCardProps> = React.memo(({ id, data }) => {
         zIndex: 15,
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ opacity: 0, left: '4px' }} />
-      <Handle type="source" position={Position.Right} style={{ opacity: 0, right: '4px' }} />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        style={{ 
+          left: '-4px', 
+          background: '#d4af37', 
+          borderColor: '#8a6d1c', 
+          width: '6px', 
+          height: '6px' 
+        }} 
+      />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        style={{ 
+          right: '-4px', 
+          background: '#d4af37', 
+          borderColor: '#8a6d1c', 
+          width: '6px', 
+          height: '6px' 
+        }} 
+      />
 
       {/* Staple Pin Effect at the Top Center */}
       <div 
@@ -258,6 +302,130 @@ const ManilaCardNode: React.FC<ManilaCardProps> = React.memo(({ id, data }) => {
   );
 });
 ManilaCardNode.displayName = 'ManilaCardNode';
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM NODE TYPE C: HYPOTHESIS DEDUCTION BLOCK
+   ═══════════════════════════════════════════════════════════════ */
+
+interface HypothesisNodeProps {
+  id: string;
+  data: {
+    title: string;
+    description: string;
+    confidence: number;
+    completed: boolean;
+    connectedSlugs: string[];
+    onHover: (id: string | null) => void;
+  };
+}
+
+const HypothesisNode: React.FC<HypothesisNodeProps> = React.memo(({ id, data }) => {
+  const { title, description, confidence, completed, connectedSlugs } = data;
+
+  return (
+    <div
+      onMouseEnter={() => data.onHover(id)}
+      onMouseLeave={() => data.onHover(null)}
+      className={`relative p-4 rounded-[2px] border transition-all duration-300 ${
+        completed 
+          ? 'border-green-600 bg-stone-900/95 shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
+          : 'border-amber-600/40 bg-stone-950/95 shadow-[0_8px_32px_rgba(0,0,0,0.85)]'
+      }`}
+      style={{
+        width: '260px',
+        minHeight: '140px',
+        fontFamily: typography.mono,
+      }}
+    >
+      {/* Target handle allowing players to drag cords into the Hypothesis card */}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        style={{ 
+          left: '-6px', 
+          background: completed ? '#22c55e' : '#d97706', 
+          borderColor: completed ? '#15803d' : '#92400e', 
+          width: '10px', 
+          height: '10px',
+          boxShadow: `0 0 6px ${completed ? '#22c55e' : '#d97706'}`
+        }} 
+      />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        style={{ 
+          right: '-6px', 
+          background: completed ? '#22c55e' : '#d97706', 
+          borderColor: completed ? '#15803d' : '#92400e', 
+          width: '10px', 
+          height: '10px',
+          boxShadow: `0 0 6px ${completed ? '#22c55e' : '#d97706'}`
+        }} 
+      />
+
+      {/* Decorative brass corner brackets inside node */}
+      <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 border-t border-l opacity-30 border-stone-400" />
+      <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 border-t border-r opacity-30 border-stone-400" />
+      <div className="absolute bottom-1.5 left-1.5 w-1.5 h-1.5 border-b border-l opacity-30 border-stone-400" />
+      <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 border-b border-r opacity-30 border-stone-400" />
+
+      {/* Pinned Tack Head */}
+      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-red-800 border border-red-950 shadow-md" />
+
+      {/* Header Tag */}
+      <div className="flex justify-between items-baseline mb-2 border-b border-stone-800 pb-1.5">
+        <span className={`text-[8px] font-bold tracking-widest ${completed ? 'text-green-500' : 'text-amber-500'}`}>
+          {completed ? 'COGNITIVE HYPOTHESIS SECURED' : 'HYPOTHESIS DEDUCTION'}
+        </span>
+        <span className="text-[7px] text-stone-500">VP_7B_CONTRADICT</span>
+      </div>
+
+      {/* Title */}
+      <h3 className={`text-[10px] font-bold tracking-tight mb-1.5 ${completed ? 'text-green-400' : 'text-stone-200'}`}>
+        {title}
+      </h3>
+
+      {/* Description */}
+      <p className="text-[7.2px] text-stone-400 leading-normal mb-3 font-mono opacity-85">
+        {description}
+      </p>
+
+      {/* Connected nodes trace */}
+      {connectedSlugs.length > 0 && (
+        <div className="mb-3 border-t border-stone-900 pt-2 text-[6.8px] text-stone-500 space-y-0.5">
+          <div className="tracking-widest uppercase text-stone-600 font-bold mb-0.5">Connected Evidence:</div>
+          {connectedSlugs.map(slug => (
+            <div key={slug} className="truncate text-stone-400">
+              ● {slug.replace(/-/g, ' ').toUpperCase()}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Meter Bar */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[7.5px]">
+          <span className="text-stone-500">CONSENSUS INTEGRITY:</span>
+          <span className={`font-bold ${completed ? 'text-green-500 animate-pulse' : 'text-amber-500'}`}>
+            {confidence}% {completed && '(LOCKED)'}
+          </span>
+        </div>
+        <div className="h-2 w-full bg-stone-900 rounded-[1px] border border-stone-800 p-[1px]">
+          <div 
+            className={`h-full transition-all duration-500 rounded-[1px] ${
+              completed ? 'bg-green-600' : 'bg-amber-600'
+            }`}
+            style={{ 
+              width: `${confidence}%`,
+              boxShadow: `0 0 6px ${completed ? '#16a34a' : '#d97706'}60`
+            }} 
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+HypothesisNode.displayName = 'HypothesisNode';
 
 /* ═══════════════════════════════════════════════════════════════
    CUSTOM EDGE RENDERER: SUSPENDED RED WOOL STRING
@@ -338,6 +506,7 @@ const RedWoolStringEdge: React.FC<EdgeProps> = ({
 const nodeTypes = {
   polaroid: PolaroidNode,
   manilaCard: ManilaCardNode,
+  hypothesis: HypothesisNode,
 };
 
 const edgeTypes = {
@@ -345,38 +514,170 @@ const edgeTypes = {
 };
 
 export const EvidenceBoard: React.FC = () => {
-  const { places, selectedPlaceSlug, selectPlace } = useAtlasStore();
-  const { click } = useAudioStore();
-  const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
+  const { places, selectedPlaceSlug, selectPlace, setPlaces } = useAtlasStore();
+  const { click, play } = useAudioStore();
+  const { status, updateStatus } = useUIStore();
+  const { addCommand } = useTerminalStore();
+  const { selectNode, setFocusNode, setViewMode, playerEdges, addPlayerEdge } = useEvidenceBoardStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [focusedHypothesisId, setFocusedHypothesisId] = useState<string | null>(null);
+
+  // Sound play cache to prevent click spamming on rapid changes
+  const lastAlarmPlayRef = useRef<number>(0);
+
+  // 1. Lore-Seeded Hypotheses Local State (The Contradiction Engine)
+  const [hypotheses, setHypotheses] = useState<any[]>([
+    {
+      id: 'hyp-01-vance',
+      title: 'THE EDWARD VANCE PARADOX',
+      description: 'Is Edward Vance the keeper of St. Elmo Lighthouse, or a casualty of Oradour Crypt?',
+      targetSlugs: ['stelmo-light', 'oradour-church-crypt', 'bodie-ghost-town'],
+      connectedSlugs: [],
+      completed: false,
+      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY V-01\\n------------------------------------------------\\nEdward Vance kept the St. Elmo light for exactly 40 years, yet disappeared into the sealed Oradour Crypt in 1944. His signature appears in a 1962 transfer record assigned to INV_RED-7.\\n\\nCOMMON VARIABLE: YOU. THE ARCHIVE IS RECONSTRUCTING YOUR HISTORY.`
+    },
+    {
+      id: 'hyp-02-signal',
+      title: 'THE SPATIAL COAXIAL CENTROID',
+      description: 'Connect Mount Weather, Cheyenne Mountain, and Raven Rock Complexes to align the 4.5 Hz sub-audible vibration.',
+      targetSlugs: ['mount-weather-emergency-operations-center', 'cheyenne-mountain-complex', 'raven-rock-mountain-complex'],
+      connectedSlugs: [],
+      completed: false,
+      contradictionText: `⚠ GEODETIC CENTROID SECURED // ANOMALY ALIGNMENT\\n------------------------------------------------\\nThe synchronized 4.5 Hz granite vibrations from all three Cold-War complexes cross precisely in an empty wheat field near Lebanon, Kansas.\\n\\nTHE GRID NULL POINT MARKER IS NOW VERIFIED AND UNLOCKED ON YOUR ATLAS.`
+    },
+    {
+      id: 'hyp-03-identity',
+      title: 'THE RECURSIVE ARCHIVIST INDEX',
+      description: 'Evaluate Beelitz Surgery, Teufelsberg Echo Dome, and Byberry State Hospital to trace INV_RED-7\'s carrel transfer.',
+      targetSlugs: ['beelitz-surgery-basement', 'teufelsberg-echo-dome', 'byberry-state-hospital'],
+      connectedSlugs: [],
+      completed: false,
+      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY I-03\\n------------------------------------------------\\nArchivist INV_RED-7 completed exactly 4,211 days of service before entering the basement carrel with no keyhole. You have been sitting in their empty chair since the boot sequence.\\n\\nCOMMON VARIABLE: YOU. THERE IS NO WINDOW IN THIS BUNK.`
+    }
+  ]);
 
   // Filter: Progressive Disclosure Loop (Quiet board philosophy)
-  // Nodes only appear on the board once they have been verified, whispered, or sealed [5]
   const visiblePlaces = useMemo(() => {
     return places.filter(
       (place) => place.status && ['verified', 'whispered', 'sealed', 'mirage'].includes(place.status)
     );
   }, [places]);
 
+  // Interactive edge drawing connection listener
+  const onConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return;
+
+    // Check if target is a hypothesis node
+    const isHypTarget = connection.target.startsWith('hyp-');
+    
+    if (isHypTarget) {
+      const hypId = connection.target;
+      const sourcePlaceSlug = connection.source;
+
+      // Click sound on hook connection
+      click();
+
+      setHypotheses(prev => {
+        return prev.map(hyp => {
+          if (hyp.id === hypId) {
+            // Prevent duplicate attachments to the same hypothesis node
+            if (hyp.connectedSlugs.includes(sourcePlaceSlug)) return hyp;
+
+            const updatedSlugs = [...hyp.connectedSlugs, sourcePlaceSlug];
+            
+            // Calculate real-time Confidence Metric
+            const correctConnections = updatedSlugs.filter(slug => hyp.targetSlugs.includes(slug));
+            const baseConfidence = Math.round((correctConnections.length / hyp.targetSlugs.length) * 100);
+            
+            // Apply Red Herring Penalty if incorrect locations are connected!
+            const incorrectCount = updatedSlugs.length - correctConnections.length;
+            const finalConfidence = Math.max(0, baseConfidence - (incorrectCount * 20));
+
+            // Evaluate lock status on complete target validation
+            const isCompleted = correctConnections.length === hyp.targetSlugs.length && finalConfidence >= 100;
+
+            if (isCompleted && !hyp.completed) {
+              // Secure sounding cascades
+              play('alert');
+              
+              // Print the chilling contradiction text directly into your terminal console!
+              addCommand({
+                id: `hyp-unlocked-${hyp.id}-${Date.now()}`,
+                input: `/audit --hypothesis ${hyp.id.toUpperCase()}`,
+                output: hyp.contradictionText,
+                timestamp: Date.now(),
+                type: 'warning'
+              });
+
+              // Apply geodetic unlocking side-effects for Centroid Hypotheses
+              if (hypId === 'hyp-02-signal') {
+                const updatedPlaces = places.map(p => {
+                  if (p.slug === 'the-grid-null-point') {
+                    return { ...p, status: 'verified' as const };
+                  }
+                  return p;
+                });
+                // Force update on Atlas Stores
+                setPlaces(updatedPlaces);
+              }
+
+              // Award +10 Stability and increase Dust Index on anomalous unredaction
+              updateStatus({
+                observerStability: Math.min(100, status.observerStability + 10),
+                dustIndex: Math.min(100, status.dustIndex + 8)
+              });
+            } else {
+              // Intermittent typing thuds
+              play('type');
+            }
+
+            return {
+              ...hyp,
+              connectedSlugs: updatedSlugs,
+              confidence: finalConfidence,
+              completed: isCompleted
+            };
+          }
+          return hyp;
+        });
+      });
+
+      // Commit player edges to store
+      addPlayerEdge({
+        id: `edge-${connection.source}-${connection.target}`,
+        source: connection.source,
+        target: connection.target,
+        type: 'suspected'
+      });
+
+    } else {
+      // Standard suspected connection drawn between individual places
+      click();
+      addPlayerEdge({
+        id: `edge-${connection.source}-${connection.target}`,
+        source: connection.source,
+        target: connection.target,
+        type: 'suspected'
+      });
+    }
+  }, [click, play, addPlayerEdge, addCommand, places, setPlaces, updateStatus, status.observerStability, status.dustIndex]);
+
   // Synchronize and seed coordinates dynamically into the React Flow Canvas
   useEffect(() => {
     if (visiblePlaces.length === 0) return;
 
-    // Generate physical map grids on a circular orbit to prevent spatial overlap chaos
-    const totalNodes = visiblePlaces.length;
     const centerBoardX = 400;
-    const centerBoardY = 300;
-    const orbitRadius = 180; // Distance of node orbiting anchors
+    const centerBoardY = 320;
+    const orbitRadius = 240;
 
-    // Build Polaroid and Card Nodes
+    // Build Polaroid Nodes
     const flowNodes = visiblePlaces.map((place, index) => {
-      const angle = (index * 2 * Math.PI) / totalNodes;
+      const angle = (index * 2 * Math.PI) / visiblePlaces.length;
       
-      // Node position is mapped deterministic based on coordinates when available
       const nodeX = place.coordinates
-        ? centerBoardX + (place.coordinates[0] - 30.0) * 12 // Scale coordinates appropriately
+        ? centerBoardX + (place.coordinates[0] - 30.0) * 12
         : centerBoardX + orbitRadius * Math.cos(angle);
       const nodeY = place.coordinates
         ? centerBoardY + (51.0 - place.coordinates[1]) * 12
@@ -408,18 +709,17 @@ export const EvidenceBoard: React.FC = () => {
       };
     });
 
-    // Generate Manila Document Card Nodes orbiting around their place anchors
+    // Build Document Cards
     const documentCardNodes: any[] = [];
     visiblePlaces.forEach((place) => {
       if (place.resonanceNote) {
-        // Position Card 90px below its respective polaroid node
         const targetX = flowNodes.find(n => n.id === place.slug)?.position.x ?? centerBoardX;
         const targetY = flowNodes.find(n => n.id === place.slug)?.position.y ?? centerBoardY;
 
         documentCardNodes.push({
           id: `card-${place.slug}`,
           type: 'manilaCard' as const,
-          position: { x: targetX + 110, y: targetY + 35 },
+          position: { x: targetX + 115, y: targetY + 30 },
           data: {
             title: `Resonance Log // ${place.name.toUpperCase()}`,
             excerpt: place.resonanceNote,
@@ -438,15 +738,31 @@ export const EvidenceBoard: React.FC = () => {
       }
     });
 
-    setNodes([...flowNodes, ...documentCardNodes]);
+    // Build seeded Hypothesis Nodes stacked neatly in the center grid
+    const hypNodes = hypotheses.map((hyp, index) => {
+      return {
+        id: hyp.id,
+        type: 'hypothesis' as const,
+        position: { x: centerBoardX - 130, y: centerBoardY + (index * 200) - 180 },
+        data: {
+          title: hyp.title,
+          description: hyp.description,
+          confidence: hyp.confidence || 0,
+          completed: hyp.completed,
+          connectedSlugs: hyp.connectedSlugs,
+          onHover: (id: string | null) => setFocusedHypothesisId(id)
+        }
+      };
+    });
 
-    // Build Wool Edge connections natively using global geodetic ties [94, 99]
+    setNodes([...flowNodes, ...documentCardNodes, ...hypNodes]);
+
+    // Build Edge strings
     const flowEdges: any[] = [];
     visiblePlaces.forEach((place) => {
       if (!place.connectedTo) return;
 
       place.connectedTo.forEach((targetSlug) => {
-        // Ensure destination target actually is resolved on board
         const targetExists = visiblePlaces.some((p) => p.slug === targetSlug);
         if (!targetExists) return;
 
@@ -461,12 +777,11 @@ export const EvidenceBoard: React.FC = () => {
           type: 'wool',
           style: {
             opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.85,
-            stroke: isHighlighted ? '#c11b17' : '#801811', // Glowing red yarn when clicked
+            stroke: isHighlighted ? '#c11b17' : '#801811',
           },
         });
       });
 
-      // Thread string between Polaroid and its relative Manila index card
       if (place.resonanceNote) {
         const isHighlighted = selectedPlaceSlug === place.slug;
         flowEdges.push({
@@ -476,14 +791,42 @@ export const EvidenceBoard: React.FC = () => {
           type: 'wool',
           style: {
             opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.65,
-            stroke: isHighlighted ? '#bf9f62' : '#5a4632', // Manila paper yarn uses golden/tan hemp string
+            stroke: isHighlighted ? '#bf9f62' : '#5a4632',
           },
         });
       }
     });
 
+    // Feed player suspects and connections
+    playerEdges.forEach((edge: any) => {
+      // Only render valid targets
+      const sourceExists = [...flowNodes, ...hypNodes].some(n => n.id === edge.source);
+      const targetExists = [...flowNodes, ...hypNodes].some(n => n.id === edge.target);
+      if (!sourceExists || !targetExists) return;
+
+      const isHighlighted = selectedPlaceSlug
+        ? (edge.source === selectedPlaceSlug || edge.target === selectedPlaceSlug || edge.target === `card-${selectedPlaceSlug}`)
+        : false;
+
+      const isHypEdge = edge.target.startsWith('hyp-');
+
+      flowEdges.push({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: 'wool',
+        style: {
+          opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.75,
+          stroke: isHypEdge 
+            ? (isHighlighted ? '#eab308' : '#854d0e') // Suspended golden twine for hypotheses
+            : (isHighlighted ? '#eab308' : '#92400e'),
+          strokeDasharray: isHypEdge ? 'none' : '3, 6', // Player connections are frayed twine
+        }
+      });
+    });
+
     setEdges(flowEdges);
-  }, [visiblePlaces, selectedPlaceSlug, selectPlace, selectNode, setFocusNode, setViewMode, click, setNodes, setEdges]);
+  }, [visiblePlaces, selectedPlaceSlug, selectPlace, selectNode, setFocusNode, setViewMode, click, setNodes, setEdges, hypotheses, playerEdges]);
 
   // Click handler to deselect node on board background click
   const handlePaneClick = useCallback(() => {
@@ -510,8 +853,7 @@ export const EvidenceBoard: React.FC = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        onConnect={onConnect}
         onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.15 }}
@@ -560,7 +902,8 @@ export const EvidenceBoard: React.FC = () => {
         <div className="opacity-60 space-y-0.5">
           <div>NODES PINNED: {visiblePlaces.length} UNIT(S)</div>
           <div>ACTIVE THREADS: {edges.length} CONNECTION(S)</div>
-          <div>STABILITY LEVEL: NOMINAL</div>
+          <div>ACTIVE HYPOTHESES: {hypotheses.filter(h => !h.completed).length} DISCOVERED</div>
+          <div>CONSENSUS FAILURE WARNINGS: {hypotheses.filter(h => h.completed).length} RECONSTRUCTED</div>
         </div>
       </div>
     </div>

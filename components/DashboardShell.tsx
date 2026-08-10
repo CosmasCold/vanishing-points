@@ -297,6 +297,31 @@ export const DashboardShell: React.FC = () => {
   const { activeInvestigationId } = useInvestigationStore();
   const { places } = useAtlasStore();
   const { activeMedia, closeMedia } = useMediaStore();
+  const { play } = useAudioStore();
+
+  // Trigger custom atmospheric audio state transitions when switching modules
+  useEffect(() => {
+    if (!booted || !isComplete) return;
+    
+    // Play physical chassis relay switch thud on tab change
+    switch (activeModule) {
+      case 'inbox':
+        play('type');
+        break;
+      case 'atlas':
+        play('click');
+        break;
+      case 'signals':
+        play('alert');
+        break;
+      case 'evidence':
+        play('tape');
+        break;
+      default:
+        play('click');
+        break;
+    }
+  }, [activeModule, booted, isComplete, play]);
 
   // Guard: If booting sequence has not completed, keep dashboard hidden
   if (!booted || !isComplete) return null;

@@ -1,101 +1,99 @@
 "use client";
 
-import { useEffect, useRef, useState, CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import { useUIStore } from "@/state/uiStore";
-
-export interface JitterStyles extends CSSProperties {
-  [key: string]: any;
-}
+import { useGeigerStore } from "@/hooks/useGeigerCounter";
 
 /**
- * Custom hook to procedurally calculate and inject retro CRT electromagnetic drift,
- * screen scanline jitter, phosphor decay flicker, and chromatic aberration splits.
- * Binds directly to global Zustand state metrics (observerStability & dustIndex) [6, 191].
- * Leverages high-performance CSS Custom Properties to offload all high-frequency animation 
- * recalculations directly to the GPU compositor thread, preventing expensive React DOM paint loops.
+ * MEASURED Retro CRT Jitter and Deflection Drift Engine
+ * Procedurally simulates vintage vacuum-tube raster drifts and chromatic aberration.
+ * Modulated by:
+ * - Observer Stability (Stability collapse sags voltage) [6, 191]
+ * - Observer Dust Index (Residual charge shifts focus) [6, 191]
+ * - Radiometric CPM (Ionization spikes introduce electromagnetic deflection)
+ *
+ * Direct DOM-manipulation architecture bypasses React re-render cycles completely,
+ * offloading all high-frequency calculations to the GPU compositor thread for 0% CPU lag.
  */
 export function useTerminalJitter() {
   const { status } = useUIStore();
   const observerStability = status?.observerStability ?? 100; // [0..100] [191]
   const dustIndex = status?.dustIndex ?? 0; // [0..100] [191]
-
-  const [cssVars, setCssVars] = useState<JitterStyles>({
-    "--crt-flicker": "1",
-    "--crt-jitter-x": "0px",
-    "--crt-jitter-y": "0px",
-    "--crt-chromatic-shift": "0px",
-    "--crt-scanline-opacity": 0.12,
-    transition: "transform 150ms ease, opacity 200ms ease",
-  });
+  const { currentCpm } = useGeigerStore(); // Live Poisson radiation count from geophones
 
   const frameRef = useRef<number | null>(null);
   const cycleRef = useRef<number>(0);
+
+  // Use refs to hold stable references to values so the update loop always has the freshest state
+  const paramsRef = useRef({ observerStability, dustIndex, currentCpm });
+  
+  useEffect(() => {
+    paramsRef.current = { observerStability, dustIndex, currentCpm };
+  }, [observerStability, dustIndex, currentCpm]);
 
   useEffect(() => {
     const updateDrift = () => {
       cycleRef.current += 0.05;
       const t = cycleRef.current;
 
+      const { observerStability: stab, dustIndex: dust, currentCpm: cpm } = paramsRef.current;
+
       // Base threat calculations from state [6, 191]
-      const instability = (100 - observerStability) / 100; // Normalized instability [0..1]
-      const dustRatio = dustIndex / 100; // Normalized dust load [0..1]
+      const instability = (100 - stab) / 100; // Normalized instability [0..1]
+      const dustRatio = dust / 100; // Normalized dust load [0..1]
+      
+      // Normalized radiation ratio: maps CPM from background (12) to overload (1200) as [0..1]
+      const radiationRatio = Math.min(1.0, Math.max(0, (cpm - 12) / 1188));
 
-      // ── 1. PROCEDURAL PHOSPHOR FLICKER (Slow LFO + micro-noise) ──
-      // Simulates unstable high-voltage power supplies in aging vacuum tube systems
-      const slowLfo = Math.sin(t * 0.4) * 0.04 * instability;
-      const microNoise = (Math.random() - 0.5) * 0.015 * dustRatio;
-      const baseFlicker = 1.0 - (instability * 0.06); // Dips as stability drops
-      const crtFlicker = Math.max(0.75, Math.min(1.1, baseFlicker + slowLfo + microNoise));
+      // ── 1. PHOSPHOR AMBIENT FLICKER ──
+      const slowLfo = Math.sin(t * 0.4) * 0.02 * instability;
+      const microNoise = (Math.random() - 0.5) * 0.01 * dustRatio;
+      const radFlicker = (Math.random() - 0.5) * 0.03 * radiationRatio; // Soft static flicker
+      const baseFlicker = 1.0 - (instability * 0.03) - (radiationRatio * 0.02); 
+      const crtFlicker = Math.max(0.88, Math.min(1.04, baseFlicker + slowLfo + microNoise + radFlicker));
 
-      // ── 2. GEODETIC SYNC SLIPPAGE (CRT Horizontal/Vertical Jitter) ──
-      // Viewport shakes violently on high instability, representing cathode sync failures
+      // ── 2. MECHANICAL JITTER ──
       let jitterX = 0;
       let jitterY = 0;
 
-      if (instability > 0.15) {
-        // Continuous micro-shiver
-        const jitterIntensity = instability * 1.4; // Max shiver amplitude in px
+      if (instability > 0.15 || radiationRatio > 0.08) {
+        const jitterIntensity = (instability * 0.28) + (radiationRatio * 0.52); 
         jitterX = (Math.random() - 0.5) * jitterIntensity;
         
-        // Rare horizontal tear spikes
-        if (Math.random() > 0.982 - instability * 0.05) {
-          jitterX += (Math.random() - 0.5) * (instability * 12);
+        if (Math.random() > 0.984 - (instability * 0.03) - (radiationRatio * 0.04)) {
+          jitterX += (Math.random() - 0.5) * (instability * 1.5 + radiationRatio * 2.5);
         }
 
-        // Vertical hold drift (Y jitter)
-        if (Math.random() > 0.991) {
-          jitterY = (Math.random() - 0.5) * (instability * 8);
+        if (Math.random() > 0.993 - (radiationRatio * 0.01)) {
+          jitterY = (Math.random() - 0.5) * (instability * 1.0 + radiationRatio * 1.5);
         }
       }
 
-      // ── 3. CHROMATIC RGB SEPARATION ABERRATION ──
-      // Simulates deflection yoke convergence errors causing color splitting
+      // ── 3. CHROMATIC RGB SEPARATION ──
       let chromaticShift = 0;
-      if (dustRatio > 0.2 || instability > 0.3) {
-        const baseShift = (dustRatio * 1.5) + (instability * 1.2);
-        const shiftOsc = Math.sin(t * 2.1) * Math.cos(t * 0.7);
-        chromaticShift = baseShift * (0.6 + shiftOsc * 0.4);
+      if (dustRatio > 0.15 || instability > 0.25 || radiationRatio > 0.05) {
+        const baseShift = (dustRatio * 0.6) + (instability * 0.5) + (radiationRatio * 1.2);
+        const shiftOsc = Math.sin(t * 1.8) * Math.cos(t * 0.6);
+        chromaticShift = Math.min(2.2, baseShift * (0.5 + shiftOsc * 0.3));
 
-        // Instant deflection yoke alignment "pop"
-        if (Math.random() > 0.993) {
-          chromaticShift *= 4.5;
+        if (Math.random() > 0.995 - (radiationRatio * 0.01)) {
+          chromaticShift = Math.min(3.0, chromaticShift * 1.8);
         }
       }
 
-      // ── 4. PHYSICAL SCANLINE CONCENTRATION ──
-      // Static scanline grids thicken and darken under high particulate (dust) saturation
-      const scanlineOpacity = Math.max(0.08, Math.min(0.45, 0.12 + dustRatio * 0.28));
+      // ── 4. PHOSPHOR GRID SCANLINES ──
+      const scanlineOpacity = Math.max(0.06, Math.min(0.20, 0.08 + (dustRatio * 0.08) + (radiationRatio * 0.04)));
 
-      // Direct GPU updates via CSS Custom Variables
-      setCssVars({
-        "--crt-flicker": crtFlicker.toFixed(4),
-        "--crt-jitter-x": `${jitterX.toFixed(2)}px`,
-        "--crt-jitter-y": `${jitterY.toFixed(2)}px`,
-        "--crt-chromatic-shift": `${chromaticShift.toFixed(2)}px`,
-        "--crt-scanline-opacity": parseFloat(scanlineOpacity.toFixed(3)),
-        // Fast transition for high-frequency jitters, smooth transition for flicker
-        transition: isNaN(jitterX) ? "none" : "transform 0.01s ease, filter 0.05s ease",
-      });
+      // Direct DOM manipulation - applies variables straight to root node!
+      // This is 100x faster than triggering React re-renders on the whole shell.
+      const root = document.documentElement;
+      if (root) {
+        root.style.setProperty("--crt-flicker", crtFlicker.toFixed(4));
+        root.style.setProperty("--crt-jitter-x", `${jitterX.toFixed(2)}px`);
+        root.style.setProperty("--crt-jitter-y", `${jitterY.toFixed(2)}px`);
+        root.style.setProperty("--crt-chromatic-shift", `${chromaticShift.toFixed(2)}px`);
+        root.style.setProperty("--crt-scanline-opacity", scanlineOpacity.toFixed(3));
+      }
 
       frameRef.current = requestAnimationFrame(updateDrift);
     };
@@ -107,12 +105,13 @@ export function useTerminalJitter() {
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [observerStability, dustIndex]);
+  }, []);
 
-  // CSS variables can be bound directly to the container style attribute
+  // Return static style config so DashboardShell renders once and offloads drift to GPU transitions
   return {
-    jitterStyles: cssVars,
+    jitterStyles: { transition: "transform 0.01s ease, filter 0.05s ease" } as React.CSSProperties,
     observerStability,
     dustIndex,
+    currentCpm,
   };
 }

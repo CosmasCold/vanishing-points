@@ -52,7 +52,7 @@ export const CRTOverlay: React.FC = () => {
       humFilter.frequency.setValueAtTime(150, now); // Retain deep heavy magnetic cabinet growl
 
       const humGain = ctx.createGain();
-      humGain.gain.setValueAtTime(0.005, now); // Faint baseline hum
+      humGain.gain.setValueAtTime(0.001, now); // Mixed low-volume baseline hum // Faint baseline hum
 
       humOsc.connect(humFilter);
       humFilter.connect(humGain);
@@ -68,7 +68,7 @@ export const CRTOverlay: React.FC = () => {
       flybackOsc.frequency.setValueAtTime(7812.0, now); // Calibrated to perfect high-voltage sub-harmonic for lingering anxiety
 
       const flybackGain = ctx.createGain();
-      flybackGain.gain.setValueAtTime(0.001, now); // Microscopic background whistle
+      flybackGain.gain.setValueAtTime(0.0001, now); // Super-subtle high frequency pressure whistle // Microscopic background whistle
 
       flybackOsc.connect(flybackGain);
       flybackGain.connect(ctx.destination);
@@ -107,8 +107,8 @@ export const CRTOverlay: React.FC = () => {
     const now = ctx.currentTime;
 
     // Scale gains and slip modulations with EMI levels
-    const targetHumVol = 0.005 + emiRatio * 0.055;       // Transformer hum growls louder
-    const targetFlybackVol = 0.001 + emiRatio * 0.009;   // Flyback whistle cuts through
+    const targetHumVol = 0.001 + emiRatio * 0.015; // Balanced low-frequency growl       // Transformer hum growls louder
+    const targetFlybackVol = 0.0001 + emiRatio * 0.002; // Balanced flyback whistle   // Flyback whistle cuts through
     const targetSlipDepth = emiRatio * 32.0;            // Up to 32Hz of raw pitch drift & click slips
     const targetSlipSpeed = 0.85 + emiRatio * 18.0;     // Jitter increases under load
 

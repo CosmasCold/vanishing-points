@@ -7,8 +7,6 @@ import { useBootStore } from '@/state/bootStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useMediaStore } from '@/state/mediaStore';
-import { useArtifactStore } from '@/state/artifactStore';
-import { useDocumentStore } from '@/state/documentStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useRelayTypingInjector } from '@/hooks/useRelayTypingInjector'; // Global keystroke solenoid feedback
 import { useTerminalJitter } from '@/hooks/useTerminalJitter'; // Screen scanline jitter & hold drift engine [28]
@@ -30,6 +28,7 @@ import { ImpossibleChangeToast } from './ImpossibleChangeToast';
 import { GuideOverlay } from './GuideOverlay';
 import { PrologueOverlay } from './PrologueOverlay';
 import { useAudioStore } from '@/state/audioStore';
+import { InvestigationsPanel } from './investigation/InvestigationsPanel';
 import { SignalPanel } from './signals/SignalPanel';
 import { DocumentArchive } from './documents/DocumentArchive';
 import { ResearchPanel } from './research/ResearchPanel';
@@ -299,10 +298,6 @@ export const DashboardShell: React.FC = () => {
   const { activeInvestigationId } = useInvestigationStore();
   const { places } = useAtlasStore();
   const { activeMedia, closeMedia } = useMediaStore();
-  const { activeArtifact } = useArtifactStore();
-  const { activeDocument } = useDocumentStore();
-
-  const shouldHideFloatingHUDs = !!activeArtifact || !!activeDocument || !!activeMedia || activeModule === 'evidence';
   const { play } = useAudioStore();
 
   // Trigger custom atmospheric audio state transitions when switching modules
@@ -422,6 +417,12 @@ export const DashboardShell: React.FC = () => {
           </ModulePanel>
         </ArchiveErrorBoundary>
 
+        <ArchiveErrorBoundary moduleName="Investigations Subsystem">
+          <ModulePanel moduleId="investigations" title="ACTIVE INVESTIGATIONS">
+            <InvestigationsPanel />
+          </ModulePanel>
+        </ArchiveErrorBoundary>
+
         <ArchiveErrorBoundary moduleName="Shortwave Signal Center">
           <ModulePanel moduleId="signals" title="SIGNAL INTERCEPTS">
             <SignalPanel />
@@ -482,8 +483,6 @@ export const DashboardShell: React.FC = () => {
           className="absolute top-4 right-4 z-20 flex flex-col gap-3 pointer-events-auto transition-all duration-300"
           style={{
             transform: activeInvestigationId ? 'translateY(4rem) scale(0.95)' : 'translateY(0) scale(1)',
-            opacity: shouldHideFloatingHUDs ? 0 : 1,
-            pointerEvents: shouldHideFloatingHUDs ? 'none' : 'auto',
           }}
         >
           <ArchiveErrorBoundary moduleName="Radiometric Geiger Sensor">

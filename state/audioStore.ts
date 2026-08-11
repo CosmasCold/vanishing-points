@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type SoundType = 'click' | 'type' | 'return' | 'tape' | 'crt' | 'alert' | 'ambient' | 'error' | 'success';
+type SoundType = 'click' | 'type' | 'return' | 'tape' | 'crt' | 'alert' | 'ambient' | 'error';
 
 interface AudioState {
   muted: boolean;
@@ -76,7 +76,7 @@ function playDreadClick() {
   const riseGain = ctx.createGain();
   riseOsc.type = "sine";
   riseOsc.frequency.setValueAtTime(50, now);
-  riseGain.gain.setValueAtTime(0.04, now);
+  riseGain.gain.setValueAtTime(0.02, now); // Crisp pre-charge coil
   riseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.012);
   riseOsc.connect(riseGain);
   riseGain.connect(ctx.destination);
@@ -85,8 +85,8 @@ function playDreadClick() {
 
   // B. Armature impact strike (High-frequency spring snap)
   setTimeout(() => {
-    playTone(950, 0.018, 'square', 0.025);
-    playTone(180, 0.045, 'triangle', 0.035); // Hollow wood/metal thud resonance
+    playTone(950, 0.018, 'square', 0.012); // Crisp spring snap
+    playTone(180, 0.045, 'triangle', 0.018); // Soft wood/metal hollow thud // Hollow wood/metal thud resonance
   }, 4);
 }
 
@@ -149,7 +149,7 @@ function startAmbientHum() {
   ambientGain = ctx.createGain();
   ambientOsc.type = 'triangle'; // Warm triangle instead of sterile sine
   ambientOsc.frequency.setValueAtTime(60.0, ctx.currentTime);
-  ambientGain.gain.setValueAtTime(0.006, ctx.currentTime);
+  ambientGain.gain.setValueAtTime(0.002, ctx.currentTime); // Lower baseline
 
   const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
@@ -160,7 +160,7 @@ function startAmbientHum() {
   noiseSrc.buffer = noiseBuffer;
   noiseSrc.loop = true;
   const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.003, ctx.currentTime);
+  noiseGain.gain.setValueAtTime(0.001, ctx.currentTime); // Lower pink noise floor
 
   ambientOsc.connect(ambientGain);
   noiseSrc.connect(noiseGain);
@@ -256,10 +256,6 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         break;
       case 'alert':
         playTone(395, 0.35, 'triangle', 0.045); // Heavy alarm bell
-        break;
-      case 'success':
-        playTone(587.33, 0.15, 'sine', 0.04); // D5
-        setTimeout(() => playTone(880, 0.25, 'sine', 0.04), 100); // A5 validation chimes
         break;
     }
   },

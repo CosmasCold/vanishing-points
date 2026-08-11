@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useArtifactStore } from '@/state/artifactStore';
 import { useAudioStore } from '@/state/audioStore';
@@ -19,7 +19,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Info,
-  X 
+  X,
+  AlertTriangle
 } from 'lucide-react';
 
 export const ArtifactViewer: React.FC = () => {
@@ -36,6 +37,8 @@ export const ArtifactViewer: React.FC = () => {
     setLampMode,
     inspectMarking,
   } = useArtifactStore();
+  
+  const am = activeMarking as any;
   
   const { click, play } = useAudioStore();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +81,39 @@ export const ArtifactViewer: React.FC = () => {
       default:
         return '#ffaa55'; // Standard Halogen
     }
+  };
+
+  // Helper to determine if a marking's physical alignment is currently locked
+  const getMarkingLockStatus = (m: any) => {
+    const rot = rotation % 360;
+    const normRot = rot < 0 ? rot + 360 : rot;
+    
+    if (m.id === 'mark-coils') {
+      const rotOk = normRot >= 165 && normRot <= 195;
+      const zoomOk = zoom >= 1.5;
+      return { ok: rotOk && zoomOk, targetRot: 180, targetZoom: 1.5 };
+    }
+    if (m.id === 'mark-fractures') {
+      const rotOk = normRot >= 75 && normRot <= 105;
+      const zoomOk = zoom >= 1.8;
+      return { ok: rotOk && zoomOk, targetRot: 90, targetZoom: 1.8 };
+    }
+    if (m.id === 'mark-hands') {
+      const rotOk = normRot >= 255 && normRot <= 285;
+      const zoomOk = zoom >= 2.0;
+      return { ok: rotOk && zoomOk, targetRot: 270, targetZoom: 2.0 };
+    }
+    if (m.id === 'mark-fibers') {
+      const rotOk = normRot >= 345 || normRot <= 15;
+      const zoomOk = zoom >= 1.8;
+      return { ok: rotOk && zoomOk, targetRot: 0, targetZoom: 1.8 };
+    }
+    if (m.id === 'mark-weights') {
+      const rotOk = normRot >= 105 && normRot <= 135;
+      const zoomOk = zoom >= 2.0;
+      return { ok: rotOk && zoomOk, targetRot: 120, targetZoom: 2.0 };
+    }
+    return { ok: true, targetRot: 0, targetZoom: 1.0 };
   };
 
   // Render our gorgeous procedurally animated vector-SVGs of actual artifacts!
@@ -264,11 +300,8 @@ export const ArtifactViewer: React.FC = () => {
                   return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1" />;
                 })}
                 {/* Melted fused hands locked at 1:23:45 */}
-                {/* Hour hand (facing 1 o'clock: approx 30 deg) */}
                 <line x1="50" y1="52" x2="58" y2="40" strokeWidth="2.2" />
-                {/* Minute hand (facing 5 o'clock: approx 150 deg) */}
                 <line x1="50" y1="52" x2="62" y2="68" strokeWidth="1.6" />
-                {/* Second hand (fused squiggly path facing 9 o'clock) */}
                 <path d="M 50 52 Q 44 54 38 48 T 29 52" fill="none" strokeWidth="0.8" />
               </g>
 
@@ -296,14 +329,114 @@ export const ArtifactViewer: React.FC = () => {
               )}
             </svg>
           )}
+
+          {activeArtifact.id === 'art-asbestos' && (
+            // 🧪 4. Wittenoom Blue Crocidolite Fiber (art-asbestos) Detailed Vector
+            <svg viewBox="0 0 100 100" className="w-56 h-56">
+              {/* Sealed Glass containment jar */}
+              <rect x="30" y="20" width="40" height="60" rx="4" fill="rgba(255,255,255,0.03)" stroke="#71717a" strokeWidth="1" />
+              {/* Metal Screw Cap */}
+              <rect x="36" y="14" width="28" height="6" fill="#3f3f46" stroke="#27272a" strokeWidth="0.8" />
+              <line x1="36" y1="17" x2="64" y2="17" stroke="#18181b" strokeWidth="0.5" />
+
+              {/* Bundle of blue fibrous mineral spikes */}
+              <g opacity={lampMode === 'magnify' ? 0.95 : 0.75}>
+                {/* Spikes branching outwards */}
+                <path d="M 50 65 L 52 35 L 53 28" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+                <path d="M 50 65 L 42 38 L 38 32" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M 50 65 L 58 40 L 63 34" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M 50 65 L 34 46" fill="none" stroke="#1d4ed8" strokeWidth="1" strokeLinecap="round" />
+                <path d="M 50 65 L 66 48" fill="none" stroke="#2563eb" strokeWidth="1" strokeLinecap="round" />
+                {/* Fibrous asbestos texture dust clouds around base */}
+                <ellipse cx="50" cy="65" rx="14" ry="7" fill="#1e3a8a" opacity="0.3" filter="blur(1px)" />
+              </g>
+
+              {/* Measure Overlays */}
+              {lampMode === 'measure' && (
+                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
+                  <line x1="22" y1="20" x2="22" y2="80" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
+                  <line x1="20" y1="20" x2="24" y2="20" stroke="#34d399" strokeWidth="0.4" />
+                  <line x1="20" y1="80" x2="24" y2="80" stroke="#34d399" strokeWidth="0.4" />
+                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">6.0 cm</text>
+                  
+                  <line x1="30" y1="86" x2="70" y2="86" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
+                  <line x1="30" y1="84" x2="30" y2="88" stroke="#34d399" strokeWidth="0.4" />
+                  <line x1="70" y1="84" x2="70" y2="88" stroke="#34d399" strokeWidth="0.4" />
+                  <text x="50" y="91" textAnchor="middle">3.0 cm</text>
+                </g>
+              )}
+
+              {/* UV Mode glowing unredacted declassification stamps */}
+              {lampMode === 'uv' && (
+                <g className="animate-pulse">
+                  {/* Glowing neon-blue stamps on jar underside base */}
+                  <rect x="32" y="68" width="36" height="10" fill="none" stroke="#38bdf8" strokeWidth="0.8" strokeDasharray="1,2" opacity="0.75" />
+                  <text x="50" y="73" fill="#38bdf8" style={{ fontFamily: typography.mono, fontSize: '3.2px', fontWeight: 'bold' }} textAnchor="middle">W-22.14 S, 118.33 E</text>
+                  <text x="50" y="77" fill="#0284c7" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">DEGAZETTED STAMP</text>
+                </g>
+              )}
+            </svg>
+          )}
+
+          {activeArtifact.id === 'art-scale' && (
+            // ⚖️ 5. Humberstone Brass Organ Weight (art-scale) Detailed Vector
+            <svg viewBox="0 0 100 100" className="w-56 h-56">
+              {/* Cylindrical weight block */}
+              <rect x="30" y="25" width="40" height="50" rx="1.5" fill="#854d0e" stroke="#a16207" strokeWidth="1.5" />
+              <ellipse cx="50" cy="25" rx="20" ry="6" fill="#a16207" stroke="#ca8a04" strokeWidth="0.8" />
+              
+              {/* Round top handle knob */}
+              <path d="M 44 25 C 44 14, 56 14, 56 25 Z" fill="#854d0e" stroke="#713f12" strokeWidth="1" />
+              <circle cx="50" cy="15" r="4.5" fill="#ca8a04" stroke="#a16207" strokeWidth="0.8" />
+
+              {/* Corrosion pits and oxidized green spots (representing desert morgue dampness) */}
+              <g opacity="0.8">
+                <circle cx="36" cy="38" r="1.5" fill="#065f46" opacity="0.8" /> {/* Malachite green corrosion */}
+                <circle cx="38" cy="39" r="1" fill="#047857" opacity="0.7" />
+                <circle cx="63" cy="54" r="1.8" fill="#14532d" opacity="0.7" />
+                <circle cx="58" cy="62" r="1.2" fill="#065f46" opacity="0.8" />
+                {/* Engraving lines around the perimeter */}
+                <line x1="30" y1="45" x2="70" y2="45" stroke="#451a03" strokeWidth="1.2" opacity="0.6" />
+                <line x1="30" y1="48" x2="70" y2="48" stroke="#451a03" strokeWidth="0.8" opacity="0.6" />
+              </g>
+
+              {/* Measure Overlays */}
+              {lampMode === 'measure' && (
+                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
+                  <line x1="22" y1="25" x2="22" y2="75" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
+                  <line x1="20" y1="25" x2="24" y2="25" stroke="#34d399" strokeWidth="0.4" />
+                  <line x1="20" y1="75" x2="24" y2="75" stroke="#34d399" strokeWidth="0.4" />
+                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">5.0 cm</text>
+                  
+                  <line x1="30" y1="81" x2="70" y2="81" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
+                  <line x1="30" y1="79" x2="30" y2="83" stroke="#34d399" strokeWidth="0.4" />
+                  <line x1="70" y1="79" x2="70" y2="83" stroke="#34d399" strokeWidth="0.4" />
+                  <text x="50" y="86" textAnchor="middle">4.0 cm</text>
+                </g>
+              )}
+
+              {/* UV Mode glowing coordinate stamp on base edge */}
+              {lampMode === 'uv' && (
+                <g className="animate-pulse">
+                  {/* Glowing green calibration coordinates on lower body */}
+                  <rect x="33" y="58" width="34" height="12" fill="none" stroke="#22c55e" strokeWidth="0.8" strokeDasharray="1,1" opacity="0.8" />
+                  <text x="50" y="63" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-20.2085 S</text>
+                  <text x="50" y="67" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-69.7945 W</text>
+                  <text x="50" y="72" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '2px', fontWeight: 'bold' }} textAnchor="middle">HUMBERSTONE</text>
+                </g>
+              )}
+            </svg>
+          )}
         </motion.div>
 
         {/* Dynamic active marking anchor bullseye */}
-        {activeArtifact.markings.map((m) => {
+        {activeArtifact.markings.map((m: any) => {
           const isSelected = activeMarking?.id === m.id;
-          const isMarkingRevealed = !m.requiresUV || lampMode === 'uv';
+          const isLampOk = !m.requiresUV || lampMode === 'uv';
+          const { ok: isAlignmentOk } = getMarkingLockStatus(m);
 
-          if (!isMarkingRevealed) return null;
+          // Only show the interactive bullseye if both lamp and physical alignment constraints are met!
+          if (!isLampOk || !isAlignmentOk) return null;
 
           return (
             <div
@@ -315,8 +448,8 @@ export const ArtifactViewer: React.FC = () => {
               }}
               className="absolute w-4 h-4 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300"
               style={{
-                left: `calc(${(m as any).coordinates.x}% - 8px)`,
-                top: `calc(${(m as any).coordinates.y}% - 8px)`,
+                left: `calc(${m.coordinates.x}% - 8px)`,
+                top: `calc(${m.coordinates.y}% - 8px)`,
                 border: `1.2px solid ${isSelected ? getLampColor() : 'rgba(255,255,255,0.22)'}`,
                 backgroundColor: isSelected ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)',
                 boxShadow: isSelected ? `0 0 8px ${getLampColor()}` : 'none',
@@ -526,7 +659,7 @@ export const ArtifactViewer: React.FC = () => {
                     className="space-y-2 text-[10.5px] leading-relaxed"
                   >
                     <div className="flex justify-between items-baseline border-b pb-1 border-stone-900">
-                      <span className="font-bold text-white uppercase">{(activeMarking as any).label}</span>
+                      <span className="font-bold text-white uppercase">{am.label}</span>
                       <span className="text-[8px] px-1 bg-[#1a1613] text-[#bf9f62] uppercase rounded-[1px] font-bold">
                         {activeMarking.location}
                       </span>
@@ -536,23 +669,49 @@ export const ArtifactViewer: React.FC = () => {
                     {/* Clue transcription block */}
                     <div className="p-2 border border-amber-900/25 bg-amber-950/5 text-[#bf9f62] rounded-[1px] font-mono text-[9px] leading-normal border-t mt-2">
                       <div className="font-bold text-[7.5px] uppercase opacity-65 mb-1">Decoded Transcript:</div>
-                      {(activeMarking as any).clueText}
+                      {am.clueText}
                     </div>
                   </motion.div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-1.5 opacity-40 text-center py-6">
-                    <Sparkles size={16} className="text-stone-600 animate-pulse" />
-                    <span className="text-[9px] text-stone-500 uppercase tracking-widest max-w-[180px]">
-                      {lampMode === 'uv' 
-                        ? "Inspect active markings (glowing coordinates) to decode insciptions"
-                        : "Toggle UV Mode or scan for points on the artifact core"
+                  <div className="flex flex-col justify-start gap-2.5 py-2">
+                    {/* List each marking as either locked or resolved */}
+                    {activeArtifact.markings.map((m: any) => {
+                      const { ok: isAligned, targetRot, targetZoom } = getMarkingLockStatus(m);
+                      const isLampOk = !m.requiresUV || lampMode === 'uv';
+
+                      if (isAligned && isLampOk) {
+                        return (
+                          <div key={`hint-${m.id}`} className="p-2 border border-green-900/30 bg-green-950/5 text-green-500 rounded-[1px] text-[10px]">
+                            <div className="font-bold uppercase mb-0.5">● MARKING ALIGNED</div>
+                            <div>Click the glowing indicator on the artifact to decode.</div>
+                          </div>
+                        );
                       }
-                    </span>
+
+                      return (
+                        <div key={`hint-${m.id}`} className="p-2.5 border border-red-950/40 bg-red-950/5 text-stone-400 rounded-[1px] text-[10px] space-y-1">
+                          <div className="font-bold text-red-500 uppercase flex items-center gap-1">
+                            <AlertTriangle size={11} />
+                            <span>ANOMALY DETECTED but UNRESOLVED</span>
+                          </div>
+                          <p className="text-stone-500 text-[9px] leading-normal">
+                            Object scanning matrices indicate a micro-marking is buried here. You must calibrate alignment parameters to resolve:
+                          </p>
+                          <div className="font-mono text-[8.5px] text-amber-600/70 pl-2 space-y-0.5 border-l border-amber-900/30">
+                            <div>• ROTATION TARGET: {targetRot}° (Current: {Math.round(rotation % 360)}°)</div>
+                            <div>• RESOLUTION: {targetZoom}x (Current: {zoom.toFixed(2)}x)</div>
+                            <div>• LIGHTING: {m.requiresUV ? "UV BLACKLIGHT" : "ANY"} (Current: {lampMode.toUpperCase()})</div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             </div>
+
           </div>
+
         </div>
       </motion.div>
     </AnimatePresence>

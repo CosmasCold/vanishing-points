@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { useUIStore } from './uiStore';
 
 export interface InboxItem {
@@ -18,7 +19,6 @@ interface SessionState {
   availableCases: string[];
   completedToday: string[];
   ritualComplete: boolean;
-
   initializeSession: () => void;
   markInboxRead: (id: string) => void;
   acceptCase: (slug: string) => void;
@@ -36,7 +36,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
 
   // System baseline
   items.push({
-    id: `sync-${Date.now()}`,
+    id: `sync-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     type: 'system',
     title: 'Archive Synchronized',
     body: `Remote nodes checked. Local cache verified. Session ${sessionCount} initiated.`,
@@ -46,7 +46,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
 
   // Synchronized 4.5 Hz Geodetic Alert
   items.push({
-    id: `signal-intercept-4.5hz-${Date.now()}`,
+    id: `signal-intercept-4.5hz-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     type: 'alert',
     title: 'SIGNAL INTERCEPT: Centroid Active',
     body: 'WARNING: Subsonic carrier wave at 4.5 Hz detected across Blue Ridge geophones. Extreme spatial folding measured along Kansas 7-B solstice vector. Physical coordinates: collapsing. Center of the triangle is active. Do not follow the lines.',
@@ -57,7 +57,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
   // Dust warnings
   if (dust >= 30) {
     items.push({
-      id: 'dust-warning',
+      id: `dust-warning-${Date.now()}`,
       type: 'alert',
       title: 'Dust Accumulation Warning',
       body: `Observer Dust index at ${dust}. Stability monitoring recommended. Limit exposure to unverified documents.`,
@@ -68,7 +68,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
 
   if (dust >= 50) {
     items.push({
-      id: 'dust-critical',
+      id: `dust-critical-${Date.now()}`,
       type: 'alert',
       title: 'CRITICAL: Reality Consensus',
       body: 'Multiple valid histories detected in local sector. Do not trust uncorroborated observations.',
@@ -101,7 +101,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
       id: 'b7-concern',
       type: 'message',
       title: 'BUNKER_7: Concern',
-      body: 'Your Dust accumulation rate exceeds institutional guidelines. I am required to inform you that continued exposure is... [TRANSMISSION DEGRADED] ...your choice.',
+      body: 'Your Dust accumulation rate exceeds guidelines. I am required to inform you that continued exposure is... [TRANSMISSION DEGRADED] ...your choice.',
       timestamp: now,
       read: false,
     });
@@ -152,7 +152,7 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
   const shuffled = [...noises].sort(() => Math.random() - 0.5);
   for (let i = 0; i < noiseCount; i++) {
     items.push({
-      id: `noise-${i}-${Date.now()}`,
+      id: `noise-${i}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: 'report',
       title: shuffled[i].title,
       body: shuffled[i].body,
@@ -164,58 +164,69 @@ function generateInbox(sessionCount: number, dust: number): InboxItem[] {
   return items;
 }
 
-export const useSessionStore = create<SessionState>((set, get) => ({
-  sessionCount: 0,
-  lastSessionDate: null,
-  inboxItems: [],
-  availableCases: [],
-  completedToday: [],
-  ritualComplete: false,
-
-  initializeSession: () => {
-    const today = new Date().toISOString().split('T')[0];
-    const current = get();
-
-    if (current.lastSessionDate === today) {
-      set({ ritualComplete: false });
-      return;
-    }
-
-    const newCount = current.sessionCount + 1;
-    const dust = useUIStore.getState().status.dustIndex;
-    const items = generateInbox(newCount, dust);
-
-    set({
-      sessionCount: newCount,
-      lastSessionDate: today,
-      inboxItems: items,
-      availableCases: [],
-      completedToday: [],
-      ritualComplete: false,
-    });
-  },
-
-  markInboxRead: (id) =>
-    set((s) => ({
-      inboxItems: s.inboxItems.map((item) =>
-        item.id === id ? { ...item, read: true } : item
-      ),
-    })),
-
-  acceptCase: (slug) =>
-    set((s) => ({
-      availableCases: s.availableCases.filter((c) => c !== slug),
-    })),
-
-  completeRitual: () => set({ ritualComplete: true }),
-
-  resetSession: () =>
-    set({
+export const useSessionStore = create<SessionState>()(
+  persist(
+    (set, get) => ({
       sessionCount: 0,
       lastSessionDate: null,
       inboxItems: [],
       availableCases: [],
       completedToday: [],
       ritualComplete: false,
+
+      initializeSession: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const current = get();
+
+        // Only initialize once per calendar day or if sessionCount is 0
+        if (current.lastSessionDate === today && current.sessionCount > 0) return;
+
+        const newSessionCount = current.sessionCount + 1;
+        const dust = useUIStore.getState().status.dustIndex;
+        const inbox = generateInbox(newSessionCount, dust);
+
+        set({
+          sessionCount: newSessionCount,
+          lastSessionDate: today,
+          inboxItems: inbox,
+          ritualComplete: false,
+        });
+      },
+
+      markInboxRead: (id) =>
+        set((s) => ({
+          inboxItems: s.inboxItems.map((item) =>
+            item.id === id ? { ...item, read: true } : item
+          ),
+        })),
+
+      acceptCase: (slug) =>
+        set((s) => ({
+          availableCases: s.availableCases.filter((c) => c !== slug),
+        })),
+
+      completeRitual: () => set({ ritualComplete: true }),
+
+      resetSession: () =>
+        set({
+          sessionCount: 0,
+          lastSessionDate: null,
+          inboxItems: [],
+          availableCases: [],
+          completedToday: [],
+          ritualComplete: false,
+        }),
     }),
-}));
+    {
+      name: 'vp-session-state',
+      partialize: (state) => ({
+        sessionCount: state.sessionCount,
+        lastSessionDate: state.lastSessionDate,
+        inboxItems: state.inboxItems,
+        availableCases: state.availableCases,
+        completedToday: state.completedToday,
+        ritualComplete: state.ritualComplete,
+      }),
+    }
+  )
+);

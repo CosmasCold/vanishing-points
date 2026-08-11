@@ -38,6 +38,7 @@ export const ArtifactViewer: React.FC = () => {
     inspectMarking,
   } = useArtifactStore();
   
+  const am = activeMarking as any;
   const { click, play } = useAudioStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -428,7 +429,7 @@ export const ArtifactViewer: React.FC = () => {
         </motion.div>
 
         {/* Dynamic active marking anchor bullseye */}
-        {activeArtifact.markings.map((m) => {
+        {activeArtifact.markings.map((m: any) => {
           const isSelected = activeMarking?.id === m.id;
           const isLampOk = !m.requiresUV || lampMode === 'uv';
           const { ok: isAlignmentOk } = getMarkingLockStatus(m);
@@ -574,9 +575,10 @@ export const ArtifactViewer: React.FC = () => {
             {/* Spectral Lamp Mode Selectors */}
             <div className="space-y-2 shrink-0">
               <div className="text-[9px] tracking-[0.15em] font-bold text-stone-500 uppercase">Analyzer Lamp Mode</div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: 'standard', label: 'STANDARD', icon: Eye },
+                  { id: 'magnify', label: 'MAGNIFY', icon: ZoomIn },
                   { id: 'uv', label: 'UV BLACKLIGHT', icon: Sparkles },
                   { id: 'measure', label: 'MEASURE', icon: Ruler },
                 ].map((mode) => {
@@ -650,29 +652,29 @@ export const ArtifactViewer: React.FC = () => {
               >
                 {activeMarking ? (
                   <motion.div
-                    key={activeMarking.id}
+                    key={am.id}
                     initial={{ opacity: 0, y: 3 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-2 text-[10.5px] leading-relaxed"
                   >
                     <div className="flex justify-between items-baseline border-b pb-1 border-stone-900">
-                      <span className="font-bold text-white uppercase">{activeMarking.label}</span>
+                      <span className="font-bold text-white uppercase">{am.label}</span>
                       <span className="text-[8px] px-1 bg-[#1a1613] text-[#bf9f62] uppercase rounded-[1px] font-bold">
-                        {activeMarking.location}
+                        {am.location}
                       </span>
                     </div>
-                    <p style={{ color: colors.archive.grayLight }}>{activeMarking.description}</p>
+                    <p style={{ color: colors.archive.grayLight }}>{am.description}</p>
                     
                     {/* Clue transcription block */}
                     <div className="p-2 border border-amber-900/25 bg-amber-950/5 text-[#bf9f62] rounded-[1px] font-mono text-[9px] leading-normal border-t mt-2">
                       <div className="font-bold text-[7.5px] uppercase opacity-65 mb-1">Decoded Transcript:</div>
-                      {activeMarking.clueText}
+                      {am.clueText}
                     </div>
                   </motion.div>
                 ) : (
                   <div className="flex flex-col justify-start gap-2.5 py-2">
                     {/* List each marking as either locked or resolved */}
-                    {activeArtifact.markings.map((m) => {
+                    {activeArtifact.markings.map((m: any) => {
                       const { ok: isAligned, targetRot, targetZoom } = getMarkingLockStatus(m);
                       const isLampOk = !m.requiresUV || lampMode === 'uv';
 

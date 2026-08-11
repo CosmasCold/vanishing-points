@@ -1,10 +1,9 @@
-"use client";
-
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as THREE from 'three';
 import { useArtifactStore } from '@/state/artifactStore';
 import { useAudioStore } from '@/state/audioStore';
-import { colors, typography, spacing, microform } from '@/styles/theme';
+import { colors, typography, spacing } from '@/styles/theme';
 import { 
   RotateCw, 
   RotateCcw, 
@@ -14,15 +13,556 @@ import {
   Sparkles, 
   Cylinder,
   Ruler, 
-  Scale, 
   Eye, 
-  ChevronLeft, 
-  ChevronRight, 
   Info,
-  X,
   AlertTriangle
 } from 'lucide-react';
 
+/* ═══════════════════════════════════════════════════════════════
+   HIGH-FIDELITY PROCEDURAL THREE.JS SPECIMEN RENDERER
+   Generates photorealistic PBR materials without loading external files.
+   ═══════════════════════════════════════════════════════════════ */
+interface ThreeRendererProps {
+  id: string;
+  rotation: number;
+  zoom: number;
+  lampMode: string;
+  className?: string;
+}
+
+const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
+  id,
+  rotation,
+  zoom,
+  lampMode,
+  className
+}) => {
+  const [glSupported, setGlSupported] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const uvMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const standardMaterialRef = useRef<THREE.Material | null>(null);
+  const measurementGroupRef = useRef<THREE.Group | null>(null);
+
+  // Synchronize state props into a non-reactive ref to eliminate re-compilation leaks
+  const stateRef = useRef({ rotation, zoom, lampMode });
+  useEffect(() => {
+    stateRef.current = { rotation, zoom, lampMode };
+  }, [rotation, zoom, lampMode]);
+
+  // Procedurally generate a high-frequency normal and roughness map
+  const textures = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+
+    const size = 512;
+    
+    // 1. Granite Texture (Kola Core Segment)
+    const graniteCanvas = document.createElement('canvas');
+    graniteCanvas.width = size;
+    graniteCanvas.height = size;
+    const gCtx = graniteCanvas.getContext('2d')!;
+    
+    // 2. Normal Map Canvas
+    const normalCanvas = document.createElement('canvas');
+    normalCanvas.width = size;
+    normalCanvas.height = size;
+    const nCtx = normalCanvas.getContext('2d')!;
+
+    // 3. Roughness Canvas
+    const roughCanvas = document.createElement('canvas');
+    roughCanvas.width = size;
+    roughCanvas.height = size;
+    const rCtx = roughCanvas.getContext('2d')!;
+
+    const imgData = gCtx.createImageData(size, size);
+    const normData = nCtx.createImageData(size, size);
+    const roughData = rCtx.createImageData(size, size);
+
+    // Generate procedural Perlin-like cellular noise
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const idx = (y * size + x) * 4;
+        
+        // Octave 1: Base low-frequency rock grain
+        const n1 = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.5 + 0.5;
+        // Octave 2: Mid-frequency mineral veins
+        const n2 = Math.sin(x * 0.25 + n1 * 4) * Math.cos(y * 0.25) * 0.25 + 0.5;
+        // Octave 3: High-frequency granite crystal flecks
+        const val3 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const n3 = (val3 - Math.floor(val3)) || Math.random();
+
+        const noiseVal = Math.min(1.0, Math.max(0.0, n1 * 0.5 + n2 * 0.35 + (n3 > 0.94 ? 0.45 : 0)));
+
+        // Diffuse mapping
+        if (id === 'art-core') {
+          // Dark basalt/granite mineral blend
+          const r = Math.floor(25 + noiseVal * 32);
+          const g = Math.floor(22 + noiseVal * 28);
+          const b = Math.floor(18 + noiseVal * 24);
+          imgData.data[idx] = r;
+          imgData.data[idx+1] = g;
+          imgData.data[idx+2] = b;
+        } else if (id === 'art-solenoid') {
+          // Dark, heavily oxidized copper wire
+          const r = Math.floor(65 + noiseVal * 45);
+          const g = Math.floor(26 + noiseVal * 15);
+          const b = Math.floor(12 + noiseVal * 8);
+          imgData.data[idx] = r;
+          imgData.data[idx+1] = g;
+          imgData.data[idx+2] = b;
+        } else {
+          // Tarnished, melted silver casing
+          const val = Math.floor(110 + noiseVal * 45);
+          imgData.data[idx] = val;
+          imgData.data[idx+1] = val;
+          imgData.data[idx+2] = val + 4;
+        }
+        imgData.data[idx+3] = 255;
+
+        // Roughness mapping (crystalline spots are ultra-glossy, basalt is dull)
+        const isFleck = n3 > 0.94;
+        roughData.data[idx] = isFleck ? 25 : Math.floor(120 + (1 - noiseVal) * 85);
+        roughData.data[idx+1] = roughData.data[idx];
+        roughData.data[idx+2] = roughData.data[idx];
+        roughData.data[idx+3] = 255;
+      }
+    }
+
+    gCtx.putImageData(imgData, 0, 0);
+    rCtx.putImageData(roughData, 0, 0);
+
+    // Sobel Filter to generate physically correct normal maps from height gradients
+    for (let y = 1; y < size - 1; y++) {
+      for (let x = 1; x < size - 1; x++) {
+        const getVal = (px: number, py: number) => {
+          const idx = (py * size + px) * 4;
+          return roughData.data[idx] / 255; // Use roughness height density
+        };
+
+        // Sobel kernels
+        const dX = (
+          -1 * getVal(x-1, y-1) + 1 * getVal(x+1, y-1) +
+          -2 * getVal(x-1, y)   + 2 * getVal(x+1, y) +
+          -1 * getVal(x-1, y+1) + 1 * getVal(x+1, y+1)
+        );
+
+        const dY = (
+          -1 * getVal(x-1, y-1) - 2 * getVal(x, y-1) - 1 * getVal(x+1, y-1) +
+          1 * getVal(x-1, y+1) + 2 * getVal(x, y+1) + 1 * getVal(x+1, y+1)
+        );
+
+        // Calculate unit normal vector
+        const normalVector = new THREE.Vector3(-dX * 4.0, -dY * 4.0, 1.0).normalize();
+
+        const idx = (y * size + x) * 4;
+        // Map [-1..1] to [0..255] RGB normal colors
+        normData.data[idx] = Math.floor((normalVector.x * 0.5 + 0.5) * 255);
+        normData.data[idx+1] = Math.floor((normalVector.y * 0.5 + 0.5) * 255);
+        normData.data[idx+2] = Math.floor((normalVector.z * 0.5 + 0.5) * 255);
+        normData.data[idx+3] = 255;
+      }
+    }
+    nCtx.putImageData(normData, 0, 0);
+
+    // Convert canvases to Three.js high-performance textures
+    const diffuseTex = new THREE.CanvasTexture(graniteCanvas);
+    const normalTex = new THREE.CanvasTexture(normalCanvas);
+    const roughTex = new THREE.CanvasTexture(roughCanvas);
+
+    diffuseTex.wrapS = THREE.RepeatWrapping;
+    diffuseTex.wrapT = THREE.RepeatWrapping;
+    normalTex.wrapS = THREE.RepeatWrapping;
+    normalTex.wrapT = THREE.RepeatWrapping;
+    roughTex.wrapS = THREE.RepeatWrapping;
+    roughTex.wrapT = THREE.RepeatWrapping;
+
+    return { diffuse: diffuseTex, normal: normalTex, roughness: roughTex };
+  }, [id]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !textures) return;
+
+    // 1. Initialize stable Three.js context
+    const width = container.clientWidth || 320;
+    const height = container.clientHeight || 320;
+
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.z = 8;
+    cameraRef.current = camera;
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    } catch (e) {
+      setGlSupported(false);
+      return;
+    }
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Wipe previous canvas blocks safely to prevent duplicate attachments
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    const group = new THREE.Group();
+    scene.add(group);
+    groupRef.current = group;
+
+    // 2. Setup Hyper-Realistic Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0x0e0d0c, 0.65);
+    scene.add(ambientLight);
+
+    // Bright radial Halogen lamp spot light
+    const keyLight = new THREE.SpotLight(0xffea9d, 4.2);
+    keyLight.position.set(3, 4, 5);
+    keyLight.angle = Math.PI / 6;
+    keyLight.penumbra = 0.8;
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.bias = -0.001;
+    scene.add(keyLight);
+
+    // Cold fluorescent fill light representing the computer terminal's backglow
+    const fillLight = new THREE.DirectionalLight(0x7ba0b8, 1.25);
+    fillLight.position.set(-4, -2, 2);
+    scene.add(fillLight);
+
+    // Warm tungsten bounce light representing the desk lamp reflection
+    const bounceLight = new THREE.DirectionalLight(0xffaa55, 0.55);
+    bounceLight.position.set(0, -4, -1);
+    scene.add(bounceLight);
+
+    // 3. Compile Specimen Geometry & Advanced PBR Material
+    let geometry: THREE.BufferGeometry;
+    let material: THREE.Material;
+
+    if (id === 'art-core') {
+      // Hyper-detailed granite cylinder borehole core
+      geometry = new THREE.CylinderGeometry(0.85, 0.85, 2.5, 48, 24);
+      
+      // Procedurally deform the cylinder vertices to make it look organically weathered and chipped
+      const posAttr = geometry.attributes.position;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        // Avoid modifying the flat top/bottom end caps
+        if (Math.abs(v.y) < 1.2) {
+          const angle = Math.atan2(v.z, v.x);
+          // Jagged basalt fractures scrawled directly on geometry vertices
+          const noise = Math.sin(v.y * 12.0) * Math.cos(angle * 8.0) * 0.015 +
+                        Math.sin(v.y * 42.0) * Math.sin(angle * 18.0) * 0.004;
+          v.x += Math.cos(angle) * noise;
+          v.z += Math.sin(angle) * noise;
+          posAttr.setXYZ(i, v.x, v.y, v.z);
+        }
+      }
+      geometry.computeVertexNormals();
+
+      material = new THREE.MeshStandardMaterial({
+        map: textures.diffuse,
+        normalMap: textures.normal,
+        roughnessMap: textures.roughness,
+        normalScale: new THREE.Vector2(1.2, 1.2),
+        metalness: 0.12,
+        roughness: 1.0,
+      });
+
+    } else if (id === 'art-solenoid') {
+      // 3D Telegraph electromagnetic solenoid core with coiled copper wire
+      geometry = new THREE.Group() as any;
+      const groupGeom = group as any;
+
+      // Brass casing block
+      const bracketGeom = new THREE.BoxGeometry(1.3, 1.8, 1.3);
+      const bracketMat = new THREE.MeshStandardMaterial({
+        color: 0x4f3f26,
+        roughness: 0.32,
+        metalness: 0.85,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.3, 0.3),
+      });
+      const bracketMesh = new THREE.Mesh(bracketGeom, bracketMat);
+      bracketMesh.castShadow = true;
+      bracketMesh.receiveShadow = true;
+      groupGeom.add(bracketMesh);
+
+      // Core spool cylinders
+      const spoolGeom = new THREE.CylinderGeometry(0.48, 0.48, 1.4, 32);
+      const spoolMat = new THREE.MeshStandardMaterial({
+        map: textures.diffuse,
+        normalMap: textures.normal,
+        roughnessMap: textures.roughness,
+        metalness: 0.95,
+        roughness: 0.15,
+      });
+      const spoolMesh = new THREE.Mesh(spoolGeom, spoolMat);
+      spoolMesh.position.set(0, 0, 0);
+      spoolMesh.castShadow = true;
+      spoolMesh.receiveShadow = true;
+      groupGeom.add(spoolMesh);
+
+      // High-voltage arc blast scorch marks overlay
+      const blastGeom = new THREE.SphereGeometry(0.55, 32, 16);
+      const blastMat = new THREE.MeshStandardMaterial({
+        color: 0x0a0502,
+        roughness: 0.98,
+        metalness: 0.0,
+        transparent: true,
+        opacity: 0.85,
+      });
+      const blastMesh = new THREE.Mesh(blastGeom, blastMat);
+      blastMesh.position.set(0, 0, 0.35);
+      groupGeom.add(blastMesh);
+
+      material = bracketMat; // Ref for cleanup
+
+    } else if (id === 'art-watch') {
+      // Charred, melted silver pocketwatch casing
+      geometry = new THREE.SphereGeometry(1.0, 32, 24);
+      geometry.scale(1.0, 1.0, 0.28); // Flatten into a pocketwatch pouch shape
+      
+      // Melt and scorch vertices
+      const posAttr = geometry.attributes.position;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        // Warp bottom half of watch casing to represent catastrophic heat melt
+        if (v.y < 0) {
+          v.y *= 1.15;
+          v.x += Math.sin(v.y * 4.0) * 0.12;
+          posAttr.setXYZ(i, v.x, v.y, v.z);
+        }
+      }
+      geometry.computeVertexNormals();
+
+      material = new THREE.MeshStandardMaterial({
+        color: 0x5a5a60,
+        metalness: 0.95,
+        roughness: 0.22,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.65, 0.65),
+      });
+
+    } else if (id === 'art-asbestos') {
+      // Wittenoom blue asbestos fiber inside a thick clear glass jar
+      geometry = new THREE.CylinderGeometry(0.72, 0.72, 1.8, 32);
+      const jarMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.04,
+        metalness: 0.1,
+        transmission: 0.92, // Hyper-realistic glass light refraction
+        thickness: 0.15,
+        ior: 1.5,
+      });
+      material = jarMat;
+
+      const jarMesh = new THREE.Mesh(geometry, jarMat);
+      group.add(jarMesh);
+
+      // Procedural asbestos needles block inside jar
+      const needleMat = new THREE.MeshStandardMaterial({
+        color: 0x1d4ed8,
+        roughness: 0.75,
+        metalness: 0.2,
+      });
+
+      for (let i = 0; i < 28; i++) {
+        const needleGeom = new THREE.CylinderGeometry(0.015, 0.015, 1.1, 8);
+        const needleMesh = new THREE.Mesh(needleGeom, needleMat);
+        needleMesh.rotation.set(
+          Math.random() * 0.45,
+          Math.random() * Math.PI,
+          Math.random() * 0.45
+        );
+        needleMesh.position.set(
+          (Math.random() - 0.5) * 0.15,
+          (Math.random() - 0.5) * 0.25,
+          (Math.random() - 0.5) * 0.15
+        );
+        group.add(needleMesh);
+      }
+
+    } else {
+      // Humberstone saltpeter morgue scale weight (Oxidized dark brass)
+      geometry = new THREE.CylinderGeometry(0.7, 0.75, 1.2, 32);
+      material = new THREE.MeshStandardMaterial({
+        color: 0x4a3a1e,
+        roughness: 0.52,
+        metalness: 0.72,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.5, 0.5),
+      });
+    }
+
+    if (id !== 'art-solenoid' && id !== 'art-asbestos') {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    }
+
+    standardMaterialRef.current = material;
+
+    // 4. Glowing Fluorescent UV Ink Layer
+    // Overlay mesh that sits 0.02 units proud of the standard object
+    if (id === 'art-core') {
+      const uvGeom = new THREE.CylinderGeometry(0.86, 0.86, 2.52, 48, 1);
+      const uvMat = new THREE.MeshBasicMaterial({
+        color: 0x22d3ee,
+        transparent: true,
+        opacity: 0.0, // Faded in on UV mode
+        blending: THREE.AdditiveBlending,
+      });
+      const uvMesh = new THREE.Mesh(uvGeom, uvMat);
+      group.add(uvMesh);
+      uvMaterialRef.current = uvMat;
+    }
+
+    // 5. Active Geodetic Caliper Laser scan lines
+    const mGroup = new THREE.Group();
+    measurementGroupRef.current = mGroup;
+    scene.add(mGroup);
+
+    // Laser plane 1
+    const laser1Geom = new THREE.BoxGeometry(3.5, 0.015, 3.5);
+    const laserMat = new THREE.MeshBasicMaterial({
+      color: 0x34d399,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+    });
+    const laser1 = new THREE.Mesh(laser1Geom, laserMat);
+    laser1.position.y = 0.5;
+    mGroup.add(laser1);
+
+    // 6. Handle active component resizing & rendering frame loops
+    let animationId: number;
+    let clock = new THREE.Clock();
+
+    const render = () => {
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+
+      // Smooth mechanical glide towards standard targets
+      if (groupRef.current) {
+        const current = stateRef.current;
+        // Linear interpolation mapping rotation/zoom targets exactly
+        const targetRotRad = (current.rotation * Math.PI) / 180;
+        groupRef.current.rotation.y += (targetRotRad - groupRef.current.rotation.y) * 0.12;
+        
+        const targetScale = current.zoom;
+        groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.12));
+      }
+
+      // Procedural floating camera breathing cycle [1]
+      camera.position.x = Math.sin(elapsed * 0.45) * 0.08;
+      camera.position.y = Math.cos(elapsed * 0.3) * 0.06;
+      camera.lookAt(scene.position);
+
+      const currentLampMode = stateRef.current.lampMode;
+      // Modulate laser beam positions under measure mode
+      if (currentLampMode === 'measure') {
+        laser1.position.y = Math.sin(elapsed * 1.8) * 0.85;
+      }
+
+      renderer.render(scene, camera);
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    // 7. Cleanup WebGL bindings safely on unmount to prevent dismount crashes
+    return () => {
+      cancelAnimationFrame(animationId);
+      if (geometry && typeof (geometry as any).dispose === 'function') {
+        (geometry as any).dispose();
+      }
+      if (material && typeof (material as any).dispose === 'function') {
+        (material as any).dispose();
+      }
+      if (textures) {
+        textures.diffuse?.dispose();
+        textures.normal?.dispose();
+        textures.roughness?.dispose();
+      }
+      renderer?.dispose();
+    };
+  }, [id, textures]);
+
+  // Adjust material parameters dynamically under different lighting spectrum filters
+  useEffect(() => {
+    if (!rendererRef.current || !standardMaterialRef.current) return;
+
+    const isUvActive = lampMode === 'uv';
+    const isMeasureActive = lampMode === 'measure';
+
+    // 1. Modulate standard material properties to accommodate UV dark spectrums
+    const mat = standardMaterialRef.current as any;
+    if (mat.color) {
+      if (isUvActive) {
+        mat.color.setHex(0x101528); // Saturated deep co-axial indigo glow
+        if (mat.roughness !== undefined) mat.roughness = 0.85;
+        if (mat.metalness !== undefined) mat.metalness = 0.05;
+      } else {
+        // Restore standard tungsten palette
+        if (id === 'art-core') mat.color.setHex(0x3d3730);
+        else if (id === 'art-solenoid') mat.color.setHex(0x4f3f26);
+        else if (id === 'art-watch') mat.color.setHex(0x5a5a60);
+        
+        if (mat.roughness !== undefined) mat.roughness = id === 'art-watch' ? 0.22 : 0.52;
+        if (mat.metalness !== undefined) mat.metalness = id === 'art-core' ? 0.12 : 0.85;
+      }
+    }
+
+    // 2. Fade in/out fluorescent UV ink textures
+    if (uvMaterialRef.current) {
+      uvMaterialRef.current.opacity = isUvActive ? 0.95 : 0.0;
+    }
+
+    // 3. Fade in/out caliper lasers
+    if (measurementGroupRef.current) {
+      measurementGroupRef.current.traverse((child: any) => {
+        if (child.material) {
+          child.material.opacity = isMeasureActive ? 0.35 : 0.0;
+        }
+      });
+    }
+
+  }, [lampMode, id]);
+
+  if (!glSupported) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center text-stone-500">
+        WebGL accelerated environment failed to load.
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      ref={containerRef} 
+      className={`${className} w-full h-full`}
+      style={{ minWidth: 0, minHeight: 0 }}
+    />
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
 export const ArtifactViewer: React.FC = () => {
   const {
     activeArtifact,
@@ -54,33 +594,6 @@ export const ArtifactViewer: React.FC = () => {
   }, [activeArtifact, adjustZoom]);
 
   if (!activeArtifact) return null;
-
-  // Determine lamp indicator styling
-  const getLampLabel = () => {
-    switch (lampMode) {
-      case 'uv':
-        return 'ULTRAVIOLET CO-AXIAL FLUX';
-      case 'magnify':
-        return 'MICROSCOPIC FOCUSING LENS';
-      case 'measure':
-        return 'GEODETIC CALIPER SPEC';
-      default:
-        return 'STANDARD RADIAL ILLUMINATION';
-    }
-  };
-
-  const getLampColor = () => {
-    switch (lampMode) {
-      case 'uv':
-        return '#818cf8'; // Neon purple/blue glow
-      case 'magnify':
-        return '#fef08a'; // Focused warm light
-      case 'measure':
-        return '#34d399'; // Green laser lines
-      default:
-        return '#ffaa55'; // Standard Halogen
-    }
-  };
 
   // Helper to determine if a marking's physical alignment is currently locked
   const getMarkingLockStatus = (m: any) => {
@@ -115,11 +628,31 @@ export const ArtifactViewer: React.FC = () => {
     return { ok: true, targetRot: 0, targetZoom: 1.0 };
   };
 
+  // Determine lamp indicator styling
+  const getLampLabel = () => {
+    switch (lampMode) {
+      case 'uv':
+        return 'ULTRAVIOLET CO-AXIAL FLUX';
+      case 'measure':
+        return 'GEODETIC CALIPER SPEC';
+      default:
+        return 'STANDARD RADIAL ILLUMINATION';
+    }
+  };
+
+  const getLampColor = () => {
+    switch (lampMode) {
+      case 'uv':
+        return '#818cf8'; // Neon purple/blue glow
+      case 'measure':
+        return '#34d399'; // Green laser lines
+      default:
+        return '#ffaa55'; // Standard Halogen
+    }
+  };
+
   // Render our gorgeous procedurally animated vector-SVGs of actual artifacts!
   const renderArtifactGraphic = () => {
-    const scaleFactor = zoom;
-    const rotateAngle = rotation;
-
     return (
       <div 
         className="relative w-72 h-72 flex items-center justify-center border border-stone-900 bg-[#070503]"
@@ -127,306 +660,14 @@ export const ArtifactViewer: React.FC = () => {
           boxShadow: 'inset 0 0 40px rgba(0,0,0,0.95)',
         }}
       >
-        {/* Dynamic Halogen/UV Lens beam overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none transition-all duration-300"
-          style={{
-            background: lampMode === 'uv' 
-              ? 'radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 50%, transparent 100%)'
-              : lampMode === 'magnify'
-              ? 'radial-gradient(circle at center, rgba(254, 240, 138, 0.05) 0%, transparent 70%)'
-              : 'none'
-          }}
+        {/* Render our gorgeous, high-fidelity WebGL 3D Specimen Scanner */}
+        <ThreeSpecimenRenderer
+          id={activeArtifact.id}
+          rotation={rotation}
+          zoom={zoom}
+          lampMode={lampMode}
+          className="absolute inset-0 z-0"
         />
-
-        <motion.div
-          animate={{ rotate: rotateAngle }}
-          transition={{ type: "spring", stiffness: 85, damping: 14 }}
-          style={{ scale: scaleFactor }}
-          className="w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
-        >
-          {activeArtifact.id === 'art-solenoid' && (
-            // 🌀 1. Fused Solenoid Core (M-11A) Detailed Vector
-            <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Brass Base Bracket frame */}
-              <rect x="25" y="15" width="50" height="70" rx="3" fill="#3a2f1d" stroke="#52432d" strokeWidth="1.5" />
-              <rect x="29" y="19" width="42" height="62" rx="1.5" fill="#211a10" stroke="#322a1b" strokeWidth="1" />
-              
-              {/* Copper spool core posts */}
-              <line x1="38" y1="20" x2="38" y2="80" stroke="#120e0a" strokeWidth="4" />
-              <line x1="62" y1="20" x2="62" y2="80" stroke="#120e0a" strokeWidth="4" />
-
-              {/* Heavily wrapped copper wire loops block */}
-              <g opacity={lampMode === 'magnify' ? 0.95 : 0.85}>
-                <rect x="35" y="26" width="30" height="48" rx="1" fill="#78341a" stroke="#4a1a0b" strokeWidth="1" />
-                {/* Individual copper coils shine lines */}
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <line 
-                    key={i} 
-                    x1="36" 
-                    y1={28 + i * 4} 
-                    x2="64" 
-                    y2={28 + i * 4} 
-                    stroke={lampMode === 'magnify' ? '#b45309' : '#854d0e'} 
-                    strokeWidth="2.5" 
-                  />
-                ))}
-                {/* Burn marks & melted/fused center spot */}
-                <ellipse cx="50" cy="50" rx="12" ry="8" fill="#1c0f0a" opacity="0.82" style={{ mixBlendMode: 'multiply' }} />
-                <path d="M 42 48 Q 45 44 48 52 T 58 46" fill="none" stroke="#0a0502" strokeWidth="1.8" />
-              </g>
-
-              {/* Screws and terminals */}
-              <circle cx="50" cy="20" r="3" fill="#52432d" stroke="#1c160e" strokeWidth="0.8" />
-              <line x1="48" y1="20" x2="52" y2="20" stroke="#1c160e" strokeWidth="0.8" />
-              <circle cx="50" cy="80" r="3" fill="#52432d" stroke="#1c160e" strokeWidth="0.8" />
-              <line x1="48" y1="80" x2="52" y2="80" stroke="#1c160e" strokeWidth="0.8" />
-
-              {/* Measure Overlays */}
-              {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="20" y1="15" x2="20" y2="85" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="18" y1="15" x2="22" y2="15" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="18" y1="85" x2="22" y2="85" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="14" y="52" textAnchor="middle" transform="rotate(-90 14 52)">4.0 cm</text>
-                  
-                  <line x1="25" y1="90" x2="75" y2="90" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="25" y1="88" x2="25" y2="92" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="75" y1="88" x2="75" y2="92" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="95" textAnchor="middle">2.0 cm</text>
-                </g>
-              )}
-
-              {/* Glowing Inscriptions under UV Mode */}
-              {lampMode === 'uv' && (
-                <g className="animate-pulse">
-                  {/* Glowing vector code directly on the copper wraps */}
-                  <rect x="33" y="38" width="34" height="24" fill="none" stroke="#6366f1" strokeWidth="0.8" strokeDasharray="1, 1" />
-                  <text x="50" y="47" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.5px', fontWeight: 'bold' }} textAnchor="middle">38.000° N</text>
-                  <text x="50" y="52" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.5px', fontWeight: 'bold' }} textAnchor="middle">97.000° W</text>
-                  <text x="50" y="57" fill="#c084fc" style={{ fontFamily: typography.mono, fontSize: '2.5px' }} textAnchor="middle">SOLSTICE AXIS</text>
-                </g>
-              )}
-            </svg>
-          )}
-
-          {activeArtifact.id === 'art-core' && (
-            // 🪨 2. Kola Core Segment (Borehole-12) Detailed Vector
-            <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Cylindrical Granite core segment */}
-              <path d="M 35 15 C 35 10, 65 10, 65 15 L 65 85 C 65 90, 35 90, 35 85 Z" fill="#2d2a26" stroke="#47413c" strokeWidth="1.5" />
-              <ellipse cx="50" cy="15" rx="15" ry="5" fill="#3d3731" stroke="#47413c" strokeWidth="0.8" />
-
-              {/* Granite textures and quartz sparkling points */}
-              <path d="M 37 25 Q 42 22 47 28 T 57 23 T 63 32" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              <path d="M 36 50 Q 45 46 52 54 T 61 48 T 64 58" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              <path d="M 38 75 Q 43 78 48 72 T 58 76 T 62 70" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              
-              {/* Quartz crystalline sparkles (small circles) */}
-              <circle cx="43" cy="35" r="1.5" fill="#854d0e" opacity="0.4" />
-              <circle cx="58" cy="42" r="1.2" fill="#52525b" opacity="0.6" />
-              <circle cx="47" cy="65" r="1.8" fill="#a1a1aa" opacity="0.4" />
-              <circle cx="52" cy="78" r="1" fill="#854d0e" opacity="0.5" />
-
-              {/* Stress fracture splits */}
-              <path d="M 50 15 L 50 35 L 53 45" fill="none" stroke="#0f0e0c" strokeWidth="1.2" />
-              <path d="M 42 55 L 44 68 L 41 85" fill="none" stroke="#0f0e0c" strokeWidth="1.2" />
-
-              {/* Measure Overlays */}
-              {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="25" y1="15" x2="25" y2="85" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="23" y1="15" x2="27" y2="15" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="23" y1="85" x2="27" y2="85" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="19" y="52" textAnchor="middle" transform="rotate(-90 19 52)">12.0 cm</text>
-                  
-                  <line x1="35" y1="92" x2="65" y2="92" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="35" y1="90" x2="35" y2="94" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="65" y1="90" x2="65" y2="94" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="97" textAnchor="middle">3.0 cm</text>
-                </g>
-              )}
-
-              {/* UV Mode glowing seismic resonance sine wave */}
-              {lampMode === 'uv' && (
-                <g className="animate-pulse">
-                  {/* Perfect sinusoidal wave etched along the granite core */}
-                  <path 
-                    d={Array.from({ length: 40 }).map((_, i) => {
-                      const y = 20 + i * 1.6;
-                      const x = 50 + Math.sin(y * 0.4) * 8;
-                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                    }).join(' ')}
-                    fill="none" 
-                    stroke="#22d3ee" 
-                    strokeWidth="1.2" 
-                    opacity="0.85" 
-                  />
-                  <text x="50" y="52" fill="#22d3ee" style={{ fontFamily: typography.mono, fontSize: '4.5px', fontWeight: 'bold', textShadow: '0 0 3px #06b6d4' }} textAnchor="middle">4.5 Hz</text>
-                </g>
-              )}
-            </svg>
-          )}
-
-          {activeArtifact.id === 'art-watch' && (
-            // 🕰️ 3. Melted Silver Pocketwatch Detailed Vector
-            <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Outer casing chain bracket */}
-              <circle cx="50" cy="12" r="6" fill="none" stroke="#52525b" strokeWidth="1.5" />
-              <rect x="47" y="16" width="6" height="6" fill="#3f3f46" stroke="#27272a" strokeWidth="1" />
-
-              {/* Main Circular watch body casing */}
-              <circle cx="50" cy="52" r="32" fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-              <circle cx="50" cy="52" r="28" fill="#111113" stroke="#27272a" strokeWidth="1" />
-              
-              {/* Scorched & warped silver casing outline */}
-              <path d="M 22 40 Q 15 52 24 64 T 48 82 T 78 68 T 76 44 T 54 22 Z" fill="#27272a" opacity="0.3" stroke="#52525b" strokeWidth="1.2" />
-
-              {/* Clouded, bubbled melted glass face */}
-              <ellipse cx="50" cy="52" rx="25" ry="25" fill="#27272a" opacity="0.25" />
-              <circle cx="42" cy="46" r="3" fill="#3f3f46" opacity="0.4" />
-              <circle cx="56" cy="58" r="4.5" fill="#3f3f46" opacity="0.3" />
-
-              {/* Charred hands and watch dial lines */}
-              <g opacity="0.6" stroke="#09090b" strokeLinecap="round">
-                {/* 12-hour dial tick lines */}
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const angle = (i * 30 * Math.PI) / 180;
-                  const x1 = 50 + Math.cos(angle) * 21;
-                  const y1 = 52 + Math.sin(angle) * 21;
-                  const x2 = 50 + Math.cos(angle) * 24;
-                  const y2 = 52 + Math.sin(angle) * 24;
-                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1" />;
-                })}
-                {/* Melted fused hands locked at 1:23:45 */}
-                <line x1="50" y1="52" x2="58" y2="40" strokeWidth="2.2" />
-                <line x1="50" y1="52" x2="62" y2="68" strokeWidth="1.6" />
-                <path d="M 50 52 Q 44 54 38 48 T 29 52" fill="none" strokeWidth="0.8" />
-              </g>
-
-              {/* Measure Overlays */}
-              {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="14" y1="52" x2="86" y2="52" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="14" y1="49" x2="14" y2="55" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="86" y1="49" x2="86" y2="55" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="46" textAnchor="middle">5.0 cm</text>
-                </g>
-              )}
-
-              {/* Glowing locked hands under UV mode */}
-              {lampMode === 'uv' && (
-                <g className="animate-pulse">
-                  {/* Neon green phosphorus dials and hands glowing in darkness */}
-                  <circle cx="50" cy="52" r="26" fill="none" stroke="#22c55e" strokeWidth="1.2" strokeDasharray="2, 6" opacity="0.65" />
-                  {/* Glowing hands locked at exactly 1:23:45 */}
-                  <line x1="50" y1="52" x2="58" y2="40" stroke="#4ade80" strokeWidth="2.8" />
-                  <line x1="50" y1="52" x2="62" y2="68" stroke="#4ade80" strokeWidth="2.2" />
-                  <text x="50" y="32" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '4px', fontWeight: 'bold' }} textAnchor="middle">01:23:45 AM</text>
-                  <text x="50" y="76" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '3px' }} textAnchor="middle">REACTOR_4 LOCK</text>
-                </g>
-              )}
-            </svg>
-          )}
-
-          {activeArtifact.id === 'art-asbestos' && (
-            // 🧪 4. Wittenoom Blue Crocidolite Fiber (art-asbestos) Detailed Vector
-            <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Sealed Glass containment jar */}
-              <rect x="30" y="20" width="40" height="60" rx="4" fill="rgba(255,255,255,0.03)" stroke="#71717a" strokeWidth="1" />
-              {/* Metal Screw Cap */}
-              <rect x="36" y="14" width="28" height="6" fill="#3f3f46" stroke="#27272a" strokeWidth="0.8" />
-              <line x1="36" y1="17" x2="64" y2="17" stroke="#18181b" strokeWidth="0.5" />
-
-              {/* Bundle of blue fibrous mineral spikes */}
-              <g opacity={lampMode === 'magnify' ? 0.95 : 0.75}>
-                {/* Spikes branching outwards */}
-                <path d="M 50 65 L 52 35 L 53 28" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
-                <path d="M 50 65 L 42 38 L 38 32" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 50 65 L 58 40 L 63 34" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 50 65 L 34 46" fill="none" stroke="#1d4ed8" strokeWidth="1" strokeLinecap="round" />
-                <path d="M 50 65 L 66 48" fill="none" stroke="#2563eb" strokeWidth="1" strokeLinecap="round" />
-                {/* Fibrous asbestos texture dust clouds around base */}
-                <ellipse cx="50" cy="65" rx="14" ry="7" fill="#1e3a8a" opacity="0.3" filter="blur(1px)" />
-              </g>
-
-              {/* Measure Overlays */}
-              {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="22" y1="20" x2="22" y2="80" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="20" y1="20" x2="24" y2="20" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="20" y1="80" x2="24" y2="80" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">6.0 cm</text>
-                  
-                  <line x1="30" y1="86" x2="70" y2="86" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="30" y1="84" x2="30" y2="88" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="70" y1="84" x2="70" y2="88" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="91" textAnchor="middle">3.0 cm</text>
-                </g>
-              )}
-
-              {/* UV Mode glowing unredacted declassification stamps */}
-              {lampMode === 'uv' && (
-                <g className="animate-pulse">
-                  {/* Glowing neon-blue stamps on jar underside base */}
-                  <rect x="32" y="68" width="36" height="10" fill="none" stroke="#38bdf8" strokeWidth="0.8" strokeDasharray="1,2" opacity="0.75" />
-                  <text x="50" y="73" fill="#38bdf8" style={{ fontFamily: typography.mono, fontSize: '3.2px', fontWeight: 'bold' }} textAnchor="middle">W-22.14 S, 118.33 E</text>
-                  <text x="50" y="77" fill="#0284c7" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">DEGAZETTED STAMP</text>
-                </g>
-              )}
-            </svg>
-          )}
-
-          {activeArtifact.id === 'art-scale' && (
-            // ⚖️ 5. Humberstone Brass Organ Weight (art-scale) Detailed Vector
-            <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Cylindrical weight block */}
-              <rect x="30" y="25" width="40" height="50" rx="1.5" fill="#854d0e" stroke="#a16207" strokeWidth="1.5" />
-              <ellipse cx="50" cy="25" rx="20" ry="6" fill="#a16207" stroke="#ca8a04" strokeWidth="0.8" />
-              
-              {/* Round top handle knob */}
-              <path d="M 44 25 C 44 14, 56 14, 56 25 Z" fill="#854d0e" stroke="#713f12" strokeWidth="1" />
-              <circle cx="50" cy="15" r="4.5" fill="#ca8a04" stroke="#a16207" strokeWidth="0.8" />
-
-              {/* Corrosion pits and oxidized green spots (representing desert morgue dampness) */}
-              <g opacity="0.8">
-                <circle cx="36" cy="38" r="1.5" fill="#065f46" opacity="0.8" /> {/* Malachite green corrosion */}
-                <circle cx="38" cy="39" r="1" fill="#047857" opacity="0.7" />
-                <circle cx="63" cy="54" r="1.8" fill="#14532d" opacity="0.7" />
-                <circle cx="58" cy="62" r="1.2" fill="#065f46" opacity="0.8" />
-                {/* Engraving lines around the perimeter */}
-                <line x1="30" y1="45" x2="70" y2="45" stroke="#451a03" strokeWidth="1.2" opacity="0.6" />
-                <line x1="30" y1="48" x2="70" y2="48" stroke="#451a03" strokeWidth="0.8" opacity="0.6" />
-              </g>
-
-              {/* Measure Overlays */}
-              {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="22" y1="25" x2="22" y2="75" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="20" y1="25" x2="24" y2="25" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="20" y1="75" x2="24" y2="75" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">5.0 cm</text>
-                  
-                  <line x1="30" y1="81" x2="70" y2="81" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="30" y1="79" x2="30" y2="83" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="70" y1="79" x2="70" y2="83" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="86" textAnchor="middle">4.0 cm</text>
-                </g>
-              )}
-
-              {/* UV Mode glowing coordinate stamp on base edge */}
-              {lampMode === 'uv' && (
-                <g className="animate-pulse">
-                  {/* Glowing green calibration coordinates on lower body */}
-                  <rect x="33" y="58" width="34" height="12" fill="none" stroke="#22c55e" strokeWidth="0.8" strokeDasharray="1,1" opacity="0.8" />
-                  <text x="50" y="63" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-20.2085 S</text>
-                  <text x="50" y="67" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-69.7945 W</text>
-                  <text x="50" y="72" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '2px', fontWeight: 'bold' }} textAnchor="middle">HUMBERSTONE</text>
-                </g>
-              )}
-            </svg>
-          )}
-        </motion.div>
 
         {/* Dynamic active marking anchor bullseye */}
         {activeArtifact.markings.map((m: any) => {
@@ -445,7 +686,7 @@ export const ArtifactViewer: React.FC = () => {
                 click();
                 inspectMarking(isSelected ? null : m);
               }}
-              className="absolute w-4 h-4 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300"
+              className="absolute w-4 h-4 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 z-10"
               style={{
                 left: `calc(${m.coordinates.x}% - 8px)`,
                 top: `calc(${m.coordinates.y}% - 8px)`,
@@ -461,6 +702,7 @@ export const ArtifactViewer: React.FC = () => {
             </div>
           );
         })}
+
       </div>
     );
   };
@@ -514,8 +756,7 @@ export const ArtifactViewer: React.FC = () => {
         </div>
 
         {/* Main Content Splits */}
-        <div className="flex-1 flex min-h-0 divide-x" style={{ borderColor: colors.archive.grayDark }} onClick={(e) => e.stopPropagation()}>
-          
+        <div className="flex-1 flex min-h-0 divide-x" style={{ borderColor: colors.archive.grayDark }} onClick={(e) => e.stopPropagation()}>\n          
           {/* LEFT COLUMN: Visual Magnifier Table */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 bg-[#050403] relative">
             
@@ -575,11 +816,10 @@ export const ArtifactViewer: React.FC = () => {
             {/* Spectral Lamp Mode Selectors */}
             <div className="space-y-2 shrink-0">
               <div className="text-[9px] tracking-[0.15em] font-bold text-stone-500 uppercase">Analyzer Lamp Mode</div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { id: 'standard', label: 'STANDARD', icon: Eye },
-                  { id: 'magnify', label: 'MAGNIFY', icon: ZoomIn },
-                  { id: 'uv', label: 'UV BLACKLIGHT', icon: Sparkles },
+                  { id: 'uv', label: 'UV LIGHT', icon: Sparkles },
                   { id: 'measure', label: 'MEASURE', icon: Ruler },
                 ].map((mode) => {
                   const Icon = mode.icon;
@@ -592,7 +832,7 @@ export const ArtifactViewer: React.FC = () => {
                         play('click');
                         setLampMode(mode.id as any);
                       }}
-                      className="p-2.5 border text-left rounded-[1px] flex flex-col gap-1 transition-all active:scale-98"
+                      className="p-2 border rounded-[1px] flex flex-col gap-1 items-center text-center justify-center transition-all active:scale-98"
                       style={{
                         borderColor: isSelected ? getLampColor() : colors.archive.grayDark,
                         backgroundColor: isSelected ? 'rgba(20, 18, 16, 0.4)' : colors.archive.black,
@@ -674,7 +914,7 @@ export const ArtifactViewer: React.FC = () => {
                 ) : (
                   <div className="flex flex-col justify-start gap-2.5 py-2">
                     {/* List each marking as either locked or resolved */}
-                    {activeArtifact.markings.map((m: any) => {
+                    {activeArtifact.markings.map((m) => {
                       const { ok: isAligned, targetRot, targetZoom } = getMarkingLockStatus(m);
                       const isLampOk = !m.requiresUV || lampMode === 'uv';
 
@@ -699,7 +939,7 @@ export const ArtifactViewer: React.FC = () => {
                           <div className="font-mono text-[8.5px] text-amber-600/70 pl-2 space-y-0.5 border-l border-amber-900/30">
                             <div>• ROTATION TARGET: {targetRot}° (Current: {Math.round(rotation % 360)}°)</div>
                             <div>• RESOLUTION: {targetZoom}x (Current: {zoom.toFixed(2)}x)</div>
-                            <div>• LIGHTING: {m.requiresUV ? "UV BLACKLIGHT" : "ANY"} (Current: {lampMode.toUpperCase()})</div>
+                            <div>• LIGHTING: {m.requiresUV ? "UV BLACKLIGHT" : "ANY"} (Current: {getLampLabel()})</div>
                           </div>
                         </div>
                       );
@@ -708,9 +948,7 @@ export const ArtifactViewer: React.FC = () => {
                 )}
               </div>
             </div>
-
           </div>
-
         </div>
       </motion.div>
     </AnimatePresence>

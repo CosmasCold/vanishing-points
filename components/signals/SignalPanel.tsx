@@ -80,7 +80,7 @@ const ARTIFACTS: SignalArtifact[] = [
     length: "1:30 (looping)",
     dustUnlock: 20,
     description: "Shortwave numbers station quoting Edward Vance's final words.",
-    mediaUrl: "/audio/vance/numbers-loop.mp3",
+    mediaUrl: "/audio/signals/numbers-loop.mp3",
     transcript: [
       "[00:00] [Shortwave static. A carrier tone.]",
       "VOICE: Seven. Fourteen. Zero. St. Elmo. Meridian. Blackwood.",

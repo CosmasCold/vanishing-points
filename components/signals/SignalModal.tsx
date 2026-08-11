@@ -256,7 +256,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl border flex flex-col rounded-[2px]"
+          className="w-full max-w-2xl border flex flex-col rounded-[2px] modal-chassis"
           style={{
             borderColor: colors.archive.grayDark,
             backgroundColor: colors.archive.black,

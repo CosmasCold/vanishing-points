@@ -219,11 +219,11 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     groupRef.current = group;
 
     // 2. Setup Hyper-Realistic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0x0e0d0c, 0.65);
+    const ambientLight = new THREE.AmbientLight(0x8c867a, 1.6);
     scene.add(ambientLight);
 
     // Bright radial Halogen lamp spot light
-    const keyLight = new THREE.SpotLight(0xffea9d, 4.2);
+    const keyLight = new THREE.SpotLight(0xfff5cb, 6.5);
     keyLight.position.set(3, 4, 5);
     keyLight.angle = Math.PI / 6;
     keyLight.penumbra = 0.8;
@@ -234,12 +234,12 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     scene.add(keyLight);
 
     // Cold fluorescent fill light representing the computer terminal's backglow
-    const fillLight = new THREE.DirectionalLight(0x7ba0b8, 1.25);
+    const fillLight = new THREE.DirectionalLight(0xa5c5d8, 2.2);
     fillLight.position.set(-4, -2, 2);
     scene.add(fillLight);
 
     // Warm tungsten bounce light representing the desk lamp reflection
-    const bounceLight = new THREE.DirectionalLight(0xffaa55, 0.55);
+    const bounceLight = new THREE.DirectionalLight(0xffbf80, 1.25);
     bounceLight.position.set(0, -4, -1);
     scene.add(bounceLight);
 
@@ -286,7 +286,7 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       // Brass casing block
       const bracketGeom = new THREE.BoxGeometry(1.3, 1.8, 1.3);
       const bracketMat = new THREE.MeshStandardMaterial({
-        color: 0x4f3f26,
+        color: 0x876f4e,
         roughness: 0.32,
         metalness: 0.85,
         normalMap: textures.normal,
@@ -347,7 +347,7 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       geometry.computeVertexNormals();
 
       material = new THREE.MeshStandardMaterial({
-        color: 0x5a5a60,
+        color: 0x9c9ca3,
         metalness: 0.95,
         roughness: 0.22,
         normalMap: textures.normal,
@@ -399,7 +399,7 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       // Humberstone saltpeter morgue scale weight (Oxidized dark brass)
       geometry = new THREE.CylinderGeometry(0.7, 0.75, 1.2, 32);
       material = new THREE.MeshStandardMaterial({
-        color: 0x4a3a1e,
+        color: 0x7a633c,
         roughness: 0.52,
         metalness: 0.72,
         normalMap: textures.normal,
@@ -518,9 +518,9 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
         if (mat.metalness !== undefined) mat.metalness = 0.05;
       } else {
         // Restore standard tungsten palette
-        if (id === 'art-core') mat.color.setHex(0x3d3730);
-        else if (id === 'art-solenoid') mat.color.setHex(0x4f3f26);
-        else if (id === 'art-watch') mat.color.setHex(0x5a5a60);
+        if (id === 'art-core') mat.color.setHex(0x6d5e53);
+        else if (id === 'art-solenoid') mat.color.setHex(0x876f4e);
+        else if (id === 'art-watch') mat.color.setHex(0x9c9ca3);
         
         if (mat.roughness !== undefined) mat.roughness = id === 'art-watch' ? 0.22 : 0.52;
         if (mat.metalness !== undefined) mat.metalness = id === 'art-core' ? 0.12 : 0.85;

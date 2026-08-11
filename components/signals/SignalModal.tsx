@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colors, typography, microform } from "@/styles/theme";
-import { X, Play, Pause, Radio, Lock, Unlock, RotateCcw } from "lucide-react";
+import { X, Play, Pause, Radio, Lock, Unlock } from "lucide-react";
 import { useSignalModulator } from "@/components/atlas/useSignalModulator";
 import { useAudioStore } from "@/state/audioStore";
 
@@ -149,14 +149,15 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
   const togglePlayback = () => {
     click();
-    const player = audioPlayerRef.current;
-    if (player && player.ended) {
-      player.currentTime = 0;
-    }
     setIsPlaying((prev) => !prev);
   };
 
   // Canvas visual rendering oscillator
+  const stateRef = useRef({ isPlaying, frequency, targetFrequency, isLocked, profileType: profile.type });
+  useEffect(() => {
+    stateRef.current = { isPlaying, frequency, targetFrequency, isLocked, profileType: profile.type };
+  }, [isPlaying, frequency, targetFrequency, isLocked, profile.type]);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -166,9 +167,15 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
     let frameId: number;
     const draw = () => {
+      const current = stateRef.current;
+      const playing = current.isPlaying;
+      const freq = current.frequency;
+      const locked = current.isLocked;
+      const profType = current.profileType;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      ctx.strokeStyle = isLocked ? colors.archive.green : microform.halogen;
+      ctx.strokeStyle = locked ? colors.archive.green : microform.halogen;
       ctx.lineWidth = 1.6;
 
       const t = Date.now() * 0.015;
@@ -178,10 +185,10 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
         const x = i;
         let y = canvas.height / 2;
 
-        if (isPlaying) {
-          if (isLocked) {
+        if (playing) {
+          if (locked) {
             // Decrypted cleanly: render highly distinctive waveforms depending on the locked resonance signal type
-            switch (profile.type) {
+            switch (profType) {
               case "ghostly":
                 // 1. Ghostly: Low-frequency infrasound wave with eerie micro-ripples
                 y += Math.sin(i * 0.035 + t) * 16 + Math.sin(i * 0.3 - t * 2.5) * 2.5 * Math.sin(t * 0.12);
@@ -210,7 +217,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
             }
           } else {
             // Tuned static: heavy erratic waves modulated by tuning distance
-            const fDist = Math.abs(frequency - targetFrequency);
+            const fDist = Math.abs(freq - targetFrequency);
             const qDist = Math.abs(filterQ - 5.0);
             const gDist = Math.abs(inductiveGain - 0.0);
             
@@ -218,7 +225,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
             const gainDrive = inductiveGain > 6.0 ? (inductiveGain - 6.0) * 4 : 0;
             const staticLevel = (fDist * 12) + (qDist * 8) + (gDist * 2) + gainDrive;
             const noise = (Math.random() - 0.5) * staticLevel * 2;
-            y += Math.sin(i * 0.1 * (11 - frequency) + t) * (15 / (staticLevel + 0.1)) + noise;
+            y += Math.sin(i * 0.1 * (11 - freq) + t) * (15 / (staticLevel + 0.1)) + noise;
           }
         } else {
           // Off: flat, dead noise line
@@ -235,7 +242,7 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
     draw();
     return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, frequency, targetFrequency, isLocked, profile.type]);
+  }, [filterQ, inductiveGain, targetFrequency]);
 
   return (
     <AnimatePresence>
@@ -430,19 +437,6 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
                       {line}
                     </motion.div>
                   ))}
-                  <button
-                    onClick={() => {
-                      if (audioPlayerRef.current) {
-                        audioPlayerRef.current.currentTime = 0;
-                        audioPlayerRef.current.play().catch(() => {});
-                        setIsPlaying(true);
-                        click();
-                      }
-                    }}
-                    className="px-2 py-1 border border-stone-850 hover:border-amber-700 font-mono text-[9px] text-[#bf9f62] tracking-widest mt-2.5 uppercase flex items-center gap-1.5 transition-colors bg-stone-950/40"
-                  >
-                    <RotateCcw size={10} /> REPLAY TRANSMISSION
-                  </button>
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center gap-1 opacity-50 py-4">

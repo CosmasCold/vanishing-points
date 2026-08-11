@@ -45,6 +45,11 @@ const WebGLSpecimenRenderer: React.FC<WebGLRendererProps> = ({
   const [glSupported, setGlSupported] = useState(true);
 
   const lampModeNum = lampMode === 'uv' ? 2 : lampMode === 'magnify' ? 1 : lampMode === 'measure' ? 3 : 0;
+
+  const stateRef = useRef({ rotation, zoom, lampModeNum });
+  useEffect(() => {
+    stateRef.current = { rotation, zoom, lampModeNum };
+  }, [rotation, zoom, lampModeNum]);
   const artifactType = id === 'art-solenoid' ? 0 : id === 'art-core' ? 1 : id === 'art-watch' ? 2 : id === 'art-asbestos' ? 3 : 4;
 
   useEffect(() => {
@@ -342,21 +347,23 @@ const WebGLSpecimenRenderer: React.FC<WebGLRendererProps> = ({
     let startTime = Date.now();
 
     const render = () => {
-      if (!canvas) return;
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
+      const c = canvasRef.current;
+      if (!c) return;
+      const width = c.clientWidth;
+      const height = c.clientHeight;
+      if (c.width !== width || c.height !== height) {
+        c.width = width;
+        c.height = height;
         gl.viewport(0, 0, width, height);
       }
 
       const elapsed = (Date.now() - startTime) / 1000;
       gl.uniform2f(uResolution, canvas.width, canvas.height);
       gl.uniform1f(uTime, elapsed);
-      gl.uniform1f(uRotation, (rotation * Math.PI) / 180);
-      gl.uniform1f(uZoom, zoom);
-      gl.uniform1i(uLampMode, lampModeNum);
+      const current = stateRef.current;
+      gl.uniform1f(uRotation, (current.rotation * Math.PI) / 180);
+      gl.uniform1f(uZoom, current.zoom);
+      gl.uniform1i(uLampMode, current.lampModeNum);
       gl.uniform1i(uArtifactType, artifactType);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -372,7 +379,7 @@ const WebGLSpecimenRenderer: React.FC<WebGLRendererProps> = ({
       gl.deleteShader(fs);
       gl.deleteProgram(program);
     };
-  }, [id, rotation, zoom, lampMode, lampModeNum, artifactType]);
+  }, [id, artifactType]);
 
   if (!glSupported) {
     return null;

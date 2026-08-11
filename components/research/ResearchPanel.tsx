@@ -101,6 +101,11 @@ export const ResearchPanel: React.FC = () => {
   const stabilityLevel = stability >= STABILITY_THRESHOLDS.NOMINAL ? 'NOMINAL' : stability >= STABILITY_THRESHOLDS.STABLE ? 'STABLE' : stability >= STABILITY_THRESHOLDS.DEGRADED ? 'DEGRADED' : stability >= STABILITY_THRESHOLDS.CRITICAL ? 'CRITICAL' : 'UNSTABLE';
 
   // 1. Interactive Spectrometer Canvas Animation Loop
+  const stateRef = useRef({ frequency, amplitude, dust });
+  useEffect(() => {
+    stateRef.current = { frequency, amplitude, dust };
+  }, [frequency, amplitude, dust]);
+
   useEffect(() => {
     if (activeTab !== 'spectrometer') return;
 
@@ -110,14 +115,8 @@ export const ResearchPanel: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Check lock-on requirements (Tuning frequency near 4.5Hz and amplitude >= 50 under high dust)
-    const isTuned = Math.abs(frequency - 4.5) < 0.2;
-    const isAmpOk = amplitude >= 40 && amplitude <= 70;
-    const locked = isTuned && isAmpOk;
-    setLockAligned(locked);
-
     let particles: { x: number; y: number; speed: number; size: number; phase: number }[] = [];
-    const pCount = 50 + dust * 2; // Particle density increases with Dust!
+    const pCount = 50 + stateRef.current.dust * 2; // Particle density based on initial Dust
 
     for (let i = 0; i < pCount; i++) {
       particles.push({
@@ -131,7 +130,17 @@ export const ResearchPanel: React.FC = () => {
 
     let cycle = 0;
     const render = () => {
-      cycle += 0.05 * (frequency / 4.5);
+      const current = stateRef.current;
+      const freq = current.frequency;
+      const amp = current.amplitude;
+
+      // Check lock-on requirements in real-time inside the render loop!
+      const isTuned = Math.abs(freq - 4.5) < 0.2;
+      const isAmpOk = amp >= 40 && amp <= 70;
+      const locked = isTuned && isAmpOk;
+      setLockAligned(locked);
+
+      cycle += 0.05 * (freq / 4.5);
       
       ctx.fillStyle = 'rgba(7, 5, 3, 0.15)'; // Decay tail
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -153,7 +162,7 @@ export const ResearchPanel: React.FC = () => {
       }
 
       // Draw central scanning laser beam
-      const laserY = canvas.height / 2 + Math.sin(cycle) * (canvas.height / 4) * (amplitude / 40);
+      const laserY = canvas.height / 2 + Math.sin(cycle) * (canvas.height / 4) * (amp / 40);
       ctx.strokeStyle = locked ? 'rgba(99, 102, 241, 0.22)' : 'rgba(201, 169, 110, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -163,7 +172,7 @@ export const ResearchPanel: React.FC = () => {
 
       // Render active dust particles
       particles.forEach((p) => {
-        p.y -= p.speed * (frequency / 3.0);
+        p.y -= p.speed * (freq / 3.0);
         p.x += Math.sin(cycle + p.phase) * 0.15;
 
         if (p.y < 0) p.y = canvas.height;
@@ -207,7 +216,7 @@ export const ResearchPanel: React.FC = () => {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [activeTab, frequency, amplitude, dust]);
+  }, [activeTab]);
 
   const handleTabChange = (tab: any) => {
     click();

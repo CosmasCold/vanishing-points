@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useGeigerStore } from "@/hooks/useGeigerCounter";
+import { useUIStore } from "@/state/uiStore";
 import { colors, microform } from "@/styles/theme";
 
 /**
@@ -12,12 +13,19 @@ import { colors, microform } from "@/styles/theme";
  * 3. Electromagnetic radiation-induced screen flicker, jitter, and vertical sync slips
  * 4. Procedural Web Audio horizontal flyback sweep whistle & 60Hz mains transformer hum
  *    that experiences audible pitch-warping "sync slips" under high radioactive CPM load.
+ * 5. Integrated Story-Grounded Particulate Dust Layer (Canvas 2D):
+ *    Spawns thin, organic ashen fibers and microscopic jagged ash specks that catch 
+ *    the phosphor screen's co-axial ultraviolet flare. Density and flutter scale dynamically 
+ *    with the investigator's active Dust Index.
  */
 export const CRTOverlay: React.FC = () => {
-  const { currentCpm, isActive } = useGeigerStore();
+  const { currentCpm } = useGeigerStore();
+  const { status } = useUIStore();
+  const dust = status?.dustIndex ?? 0;
 
   const [flickerClass, setFlickerClass] = useState("");
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const dustCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Audio Nodes Refs
   const humOscRef = useRef<OscillatorNode | null>(null);
@@ -52,7 +60,7 @@ export const CRTOverlay: React.FC = () => {
       humFilter.frequency.setValueAtTime(150, now); // Retain deep heavy magnetic cabinet growl
 
       const humGain = ctx.createGain();
-      humGain.gain.setValueAtTime(0.001, now); // Mixed low-volume baseline hum // Faint baseline hum
+      humGain.gain.setValueAtTime(0.001, now); // Baseline ground hum
 
       humOsc.connect(humFilter);
       humFilter.connect(humGain);
@@ -65,10 +73,10 @@ export const CRTOverlay: React.FC = () => {
       // B. Horizontal Sync Flyback whistle (Sub-harmonic 7812.0Hz for high-voltage electrostatic pressure)
       const flybackOsc = ctx.createOscillator();
       flybackOsc.type = "sine";
-      flybackOsc.frequency.setValueAtTime(7812.0, now); // Calibrated to perfect high-voltage sub-harmonic for lingering anxiety
+      flybackOsc.frequency.setValueAtTime(7812.0, now);
 
       const flybackGain = ctx.createGain();
-      flybackGain.gain.setValueAtTime(0.0001, now); // Super-subtle high frequency pressure whistle // Microscopic background whistle
+      flybackGain.gain.setValueAtTime(0.0001, now); // Subtle background whistle
 
       flybackOsc.connect(flybackGain);
       flybackGain.connect(ctx.destination);
@@ -80,13 +88,12 @@ export const CRTOverlay: React.FC = () => {
       // C. Electromagnetic Slip LFO (Modulates sweep frequency to simulate sync sags)
       const slipLfo = ctx.createOscillator();
       slipLfo.type = "sawtooth";
-      slipLfo.frequency.setValueAtTime(0.85, now); // Low frequency pulse
+      slipLfo.frequency.setValueAtTime(0.85, now);
 
       const slipGain = ctx.createGain();
-      slipGain.gain.setValueAtTime(0.0, now); // Starts at zero
+      slipGain.gain.setValueAtTime(0.0, now);
 
       slipLfo.connect(slipGain);
-      // Connect LFO directly to flyback and hum frequencies for pitch-slippage warp!
       slipGain.connect(flybackOsc.frequency);
       slipGain.connect(humOsc.frequency);
       slipLfo.start(now);
@@ -106,11 +113,10 @@ export const CRTOverlay: React.FC = () => {
 
     const now = ctx.currentTime;
 
-    // Scale gains and slip modulations with EMI levels
-    const targetHumVol = 0.001 + emiRatio * 0.015; // Balanced low-frequency growl       // Transformer hum growls louder
-    const targetFlybackVol = 0.0001 + emiRatio * 0.002; // Balanced flyback whistle   // Flyback whistle cuts through
-    const targetSlipDepth = emiRatio * 32.0;            // Up to 32Hz of raw pitch drift & click slips
-    const targetSlipSpeed = 0.85 + emiRatio * 18.0;     // Jitter increases under load
+    const targetHumVol = 0.001 + emiRatio * 0.015; 
+    const targetFlybackVol = 0.0001 + emiRatio * 0.002; 
+    const targetSlipDepth = emiRatio * 32.0;            
+    const targetSlipSpeed = 0.85 + emiRatio * 18.0;     
 
     humGainRef.current?.gain.setTargetAtTime(targetHumVol, now, 0.2);
     flybackGainRef.current?.gain.setTargetAtTime(targetFlybackVol, now, 0.15);
@@ -127,7 +133,6 @@ export const CRTOverlay: React.FC = () => {
     }
 
     const interval = setInterval(() => {
-      // Procedurally trigger severe chromatic sync sags as radiation rises
       const rand = Math.random();
       if (rand > 0.985 - emiRatio * 0.15) {
         setFlickerClass("sync-slipping");
@@ -160,7 +165,6 @@ export const CRTOverlay: React.FC = () => {
       window.removeEventListener("click", handleActivate);
       window.removeEventListener("keydown", handleActivate);
       
-      // Tear down synthesized oscillators safely on unmount
       try {
         humOscRef.current?.stop();
         flybackOscRef.current?.stop();
@@ -180,6 +184,124 @@ export const CRTOverlay: React.FC = () => {
     };
   }, []);
 
+  // 6. Real-Time Electrostatic Dust Particulates Loop (Modulated by active Dust Index)
+  useEffect(() => {
+    const canvas = dustCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    interface Particulate {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      length: number;
+      thickness: number;
+      angle: number;
+      angularSpeed: number;
+      opacity: number;
+      type: "fiber" | "ash";
+      points?: { dx: number; dy: number }[];
+    }
+
+    const particulates: Particulate[] = [];
+    // Base 15 particles, scaling up to 100 as Dust Index climbs to 100%
+    const particleCount = 15 + Math.floor(dust * 0.85);
+
+    for (let i = 0; i < particleCount; i++) {
+      const type = Math.random() > 0.45 ? "ash" : "fiber";
+      const p: Particulate = {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() * 0.08) + 0.03, // Weighted lazy falling
+        length: type === "fiber" ? 5 + Math.random() * 10 : 1 + Math.random() * 2.5,
+        thickness: type === "fiber" ? 0.45 : 1.3,
+        angle: Math.random() * Math.PI * 2,
+        angularSpeed: (Math.random() - 0.5) * 0.005,
+        opacity: 0.015 + Math.random() * 0.075, // Ghostly, transparent fibers
+        type,
+      };
+
+      if (type === "ash") {
+        const sides = 3 + Math.floor(Math.random() * 3);
+        p.points = [];
+        for (let s = 0; s < sides; s++) {
+          const a = (s / sides) * Math.PI * 2;
+          const r = 0.5 + Math.random() * 1.5;
+          p.points.push({ dx: Math.cos(a) * r, dy: Math.sin(a) * r });
+        }
+      }
+      particulates.push(p);
+    }
+
+    const renderDust = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particulates.forEach((p) => {
+        // Particles drift and flutter, influenced by electromagnetic static level
+        const wobbleFactor = 0.06 + (dust / 100) * 0.12;
+        p.y += p.vy * (1 + (dust / 100) * 0.5); // Fall slightly faster as timeline sags
+        p.x += p.vx + Math.sin(Date.now() * 0.0008 + p.angle) * wobbleFactor;
+        p.angle += p.angularSpeed * (1 + emiRatio * 2.0); // Spin faster under EMI spikes
+
+        // Wrap around boundaries
+        if (p.y > canvas.height) {
+          p.y = -15;
+          p.x = Math.random() * canvas.width;
+        }
+        if (p.x < -15) p.x = canvas.width + 15;
+        if (p.x > canvas.width + 15) p.x = -15;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+
+        // Render co-axial UV neon phosphor glows
+        ctx.strokeStyle = `rgba(129, 140, 248, ${p.opacity})`;
+        ctx.fillStyle = `rgba(129, 140, 248, ${p.opacity * 0.65})`;
+        ctx.lineWidth = p.thickness;
+
+        if (p.type === "fiber") {
+          ctx.beginPath();
+          ctx.moveTo(-p.length / 2, 0);
+          ctx.quadraticCurveTo(0, Math.sin(p.angle) * 2.2, p.length / 2, 0);
+          ctx.stroke();
+        } else if (p.points) {
+          ctx.beginPath();
+          ctx.moveTo(p.points[0].dx, p.points[0].dy);
+          for (let s = 1; s < p.points.length; s++) {
+            ctx.lineTo(p.points[s].dx, p.points[s].dy);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      });
+
+      animationFrameId = requestAnimationFrame(renderDust);
+    };
+
+    renderDust();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [dust, emiRatio]);
+
   return (
     <>
       {/* 1. Global CRT Screen Container featuring SVG Pincushion Distortion Filter */}
@@ -187,7 +309,6 @@ export const CRTOverlay: React.FC = () => {
         className={`pointer-events-none fixed inset-0 z-50 overflow-hidden ${flickerClass}`}
         style={{
           boxShadow: "inset 0 0 80px rgba(0,0,0,0.85), inset 0 0 20px rgba(0,0,0,0.95)",
-          // CSS spherical lens overlay & desklamp reflection grid
           backgroundImage: `
             radial-gradient(circle at 50% 50%, transparent 40%, rgba(5,4,3,0.3) 100%),
             linear-gradient(135deg, rgba(255,170,85,0.015) 0%, rgba(255,170,85,0.005) 50%, transparent 50.1%)
@@ -231,18 +352,24 @@ export const CRTOverlay: React.FC = () => {
             animation: `crt-ambient-flicker ${0.18 + (1 - emiRatio) * 0.12}s infinite alternate ease-in-out`,
           }}
         />
+
+        {/* 5. Procedural Information Dust Canvas (Overlaid on scanline raster grid) */}
+        <canvas
+          ref={dustCanvasRef}
+          className="pointer-events-none absolute inset-0 z-30 opacity-70"
+          style={{ mixBlendMode: "screen" }}
+        />
       </div>
 
-      {/* 5. Custom SVG Displacement Filter to Render Real Glass curvature */}
+      {/* 6. Custom SVG Displacement Filter to Render Real Glass curvature */}
       <svg className="absolute w-0 h-0 pointer-events-none" style={{ visibility: "hidden" }} aria-hidden="true">
         <defs>
           <filter id="crt-lens-curvature">
-            {/* Standard barrel pincushion displacement map */}
             <feTurbulence type="fractalNoise" baseFrequency="0.005" numOctaves="1" result="noise" />
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={2.2 + emiRatio * 4.8} // Screen warps physically as radiation saturates
+              scale={2.2 + emiRatio * 4.8} 
               xChannelSelector="R"
               yChannelSelector="G"
             />
@@ -250,7 +377,7 @@ export const CRTOverlay: React.FC = () => {
         </defs>
       </svg>
 
-      {/* 6. Embedded Style Sheet for CRT electromagnetic animation sags & slips */}
+      {/* 7. Embedded Style Sheet for CRT electromagnetic sags, slips, and scanlines */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @keyframes crt-ambient-flicker {

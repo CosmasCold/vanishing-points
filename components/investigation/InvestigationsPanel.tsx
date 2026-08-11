@@ -8,6 +8,23 @@ import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, microform } from '@/styles/theme';
 import { BookOpen, AlertTriangle, ShieldAlert, FolderLock, FileDigit } from 'lucide-react';
 
+// 13 Authoritative Core Case Slugs (Layer A) to isolate and prevent list clutter
+const CORE_CASE_SLUGS = new Set([
+  'eastern-state-penitentiary',
+  'pripyat-amusement-park',
+  'pripyat-hospital-126',
+  'chernobyl-reactor-4-control-room',
+  'isla-de-las-muecas',
+  'bodie-ghost-town',
+  'aokigahara-forest',
+  'the-grid-null-point',
+  'the-vanishing-hospital',
+  'borovsko-bridge',
+  'st-kilda',
+  'teufelsberg-echo-dome',
+  'byberry-state-hospital'
+]);
+
 export const InvestigationsPanel: React.FC = () => {
   const { places } = useAtlasStore();
   const { evidence, notes, openInvestigation } = useInvestigationStore();
@@ -16,9 +33,9 @@ export const InvestigationsPanel: React.FC = () => {
 
   const dustIndex = status.dustIndex;
 
-  // Classify places based on their progression status & tier
+  // Classify places based on their progression status & tier — showing ONLY Layer A cases
   const classifiedCases = useMemo(() => {
-    return places.map((place) => {
+    return places.filter(place => CORE_CASE_SLUGS.has(place.slug)).map((place) => {
       // Evaluate lock status based on Dust Index threshold or specific conditions
       let isLocked = false;
       let lockReason = '';

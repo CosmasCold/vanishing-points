@@ -7,6 +7,8 @@ import { useBootStore } from '@/state/bootStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useMediaStore } from '@/state/mediaStore';
+import { useArtifactStore } from '@/state/artifactStore';
+import { useDocumentStore } from '@/state/documentStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useRelayTypingInjector } from '@/hooks/useRelayTypingInjector'; // Global keystroke solenoid feedback
 import { useTerminalJitter } from '@/hooks/useTerminalJitter'; // Screen scanline jitter & hold drift engine [28]
@@ -17,7 +19,6 @@ import { Terminal } from './Terminal';
 import { ModulePanel } from './ModulePanel';
 import { AtlasMap } from './atlas/AtlasMap';
 import { AtlasPanel } from './atlas/AtlasPanel';
-import { InvestigationsPanel } from './investigation/InvestigationsPanel';
 import { InvestigationView } from './investigation/InvestigationView';
 import { EvidenceBoard } from './evidenceBoard/EvidenceBoard';
 import { MediaViewer } from './media/MediaViewer';
@@ -298,6 +299,35 @@ export const DashboardShell: React.FC = () => {
   const { activeInvestigationId } = useInvestigationStore();
   const { places } = useAtlasStore();
   const { activeMedia, closeMedia } = useMediaStore();
+  const { activeArtifact } = useArtifactStore();
+  const { activeDocument } = useDocumentStore();
+
+  const shouldHideFloatingHUDs = !!activeArtifact || !!activeDocument || !!activeMedia || activeModule === 'evidence';
+  const { play } = useAudioStore();
+
+  // Trigger custom atmospheric audio state transitions when switching modules
+  useEffect(() => {
+    if (!booted || !isComplete) return;
+    
+    // Play physical chassis relay switch thud on tab change
+    switch (activeModule) {
+      case 'inbox':
+        play('type');
+        break;
+      case 'atlas':
+        play('click');
+        break;
+      case 'signals':
+        play('alert');
+        break;
+      case 'evidence':
+        play('tape');
+        break;
+      default:
+        play('click');
+        break;
+    }
+  }, [activeModule, booted, isComplete, play]);
 
   // Guard: If booting sequence has not completed, keep dashboard hidden
   if (!booted || !isComplete) return null;
@@ -392,12 +422,6 @@ export const DashboardShell: React.FC = () => {
           </ModulePanel>
         </ArchiveErrorBoundary>
 
-        <ArchiveErrorBoundary moduleName="Archival Cases Subsystem">
-          <ModulePanel moduleId="investigations" title="ARCHIVAL CASES">
-            <InvestigationsPanel />
-          </ModulePanel>
-        </ArchiveErrorBoundary>
-
         <ArchiveErrorBoundary moduleName="Shortwave Signal Center">
           <ModulePanel moduleId="signals" title="SIGNAL INTERCEPTS">
             <SignalPanel />
@@ -458,6 +482,8 @@ export const DashboardShell: React.FC = () => {
           className="absolute top-4 right-4 z-20 flex flex-col gap-3 pointer-events-auto transition-all duration-300"
           style={{
             transform: activeInvestigationId ? 'translateY(4rem) scale(0.95)' : 'translateY(0) scale(1)',
+            opacity: shouldHideFloatingHUDs ? 0 : 1,
+            pointerEvents: shouldHideFloatingHUDs ? 'none' : 'auto',
           }}
         >
           <ArchiveErrorBoundary moduleName="Radiometric Geiger Sensor">

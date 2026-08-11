@@ -625,6 +625,44 @@ export const EvidenceBoard: React.FC = () => {
                 setPlaces(updatedPlaces);
               }
 
+              // Apply progression unlocking rewards for Vance Paradox
+              if (hypId === 'hyp-01-vance') {
+                try {
+                  // Direct bypass: Unlock Edward Vance final and shortwave intercepts
+                  const saved = localStorage.getItem('vp-decrypted-signals');
+                  let decrypted = [];
+                  if (saved) {
+                    try { decrypted = JSON.parse(saved); } catch(e) {}
+                  }
+                  if (!decrypted.includes('vance-lighthouse')) decrypted.push('vance-lighthouse');
+                  if (!decrypted.includes('numbers-station-7')) decrypted.push('numbers-station-7');
+                  if (!decrypted.includes('vance-oradour')) decrypted.push('vance-oradour');
+                  localStorage.setItem('vp-decrypted-signals', JSON.stringify(decrypted));
+
+                  // Push custom FEMA intercept notification
+                  const sessionSaved = localStorage.getItem('vp-session-state') || '{}';
+                  localStorage.setItem('vp-session-state', sessionSaved);
+                } catch(e) {
+                  console.warn('Vance Paradox rewards write-out deviation:', e);
+                }
+              }
+
+              // Apply side-effects for the Recursive Archivist Index
+              if (hypId === 'hyp-03-identity') {
+                try {
+                  // Auto-unlock doc-RED-7 IA transfer record
+                  const savedDocs = localStorage.getItem('vp-unlocked-documents') || '[]';
+                  let docs = [];
+                  try { docs = JSON.parse(savedDocs); } catch(e) {}
+                  if (!docs.includes('doc-RED-7')) {
+                    docs.push('doc-RED-7');
+                    localStorage.setItem('vp-unlocked-documents', JSON.stringify(docs));
+                  }
+                } catch(e) {
+                  console.warn('Archivist Index rewards write-out deviation:', e);
+                }
+              }
+
               // Award +10 Stability and increase Dust Index on anomalous unredaction
               updateStatus({
                 observerStability: Math.min(100, status.observerStability + 10),

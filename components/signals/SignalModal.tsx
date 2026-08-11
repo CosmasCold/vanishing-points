@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colors, typography, microform } from "@/styles/theme";
-import { X, Play, Pause, Radio, Lock, Unlock } from "lucide-react";
+import { X, Play, Pause, Radio, Lock, Unlock, RotateCcw } from "lucide-react";
 import { useSignalModulator } from "@/components/atlas/useSignalModulator";
 import { useAudioStore } from "@/state/audioStore";
 
@@ -149,6 +149,10 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
   const togglePlayback = () => {
     click();
+    const player = audioPlayerRef.current;
+    if (player && player.ended) {
+      player.currentTime = 0;
+    }
     setIsPlaying((prev) => !prev);
   };
 
@@ -426,6 +430,19 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
                       {line}
                     </motion.div>
                   ))}
+                  <button
+                    onClick={() => {
+                      if (audioPlayerRef.current) {
+                        audioPlayerRef.current.currentTime = 0;
+                        audioPlayerRef.current.play().catch(() => {});
+                        setIsPlaying(true);
+                        click();
+                      }
+                    }}
+                    className="px-2 py-1 border border-stone-850 hover:border-amber-700 font-mono text-[9px] text-[#bf9f62] tracking-widest mt-2.5 uppercase flex items-center gap-1.5 transition-colors bg-stone-950/40"
+                  >
+                    <RotateCcw size={10} /> REPLAY TRANSMISSION
+                  </button>
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center gap-1 opacity-50 py-4">

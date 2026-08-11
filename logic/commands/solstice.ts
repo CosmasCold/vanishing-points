@@ -5,6 +5,26 @@ import { useSessionStore } from '@/state/sessionStore';
 import { useBootStore } from '@/state/bootStore';
 
 /**
+ * Wipe all localized localStorage keys starting with 'vp-' or 'vp_'
+ * to prevent stale state rehydration on reset [135, 136].
+ */
+export function resetWorkstationProgress() {
+  if (typeof window === 'undefined') return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('vp-') || key.startsWith('vp_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch (e) {
+    console.warn('Failed to clear LocalStorage keys:', e);
+  }
+}
+
+/**
  * Solstice Endgame Commands registration Module (Phase 7)
  * Registers '/backup' (The Preservation) and '/shutdown' (The Purge) commands [6, 8].
  * Activates strictly at Dust 85+ during total consensus failure [6].
@@ -22,7 +42,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
       // Only accessible at Dust 85+ (Total Consensus Failure) [6]
       if (dust < 85) {
         return {
-          output: `BUNKER_7: SOLSTICE BACKUP REJECTED.\n------------------------------------------------\nCURRENT DUST LEVEL: ${dust}/100.\nCONSENSUS STATUS: STABLE.\n------------------------------------------------\nSolstice core backups are locked until total consensus memory failure is imminent. Continue your investigation.`,
+          output: `BUNKER_7: SOLSTICE BACKUP REJECTED.\\n------------------------------------------------\\nCURRENT DUST LEVEL: ${dust}/100.\\nCONSENSUS STATUS: STABLE.\\n------------------------------------------------\\nSolstice core backups are locked until total consensus memory failure is imminent. Continue your investigation.`,
           type: 'error',
         };
       }
@@ -47,6 +67,9 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
 
       // Perform state resets using standard Zustand .setState() for bulletproof compatibility [7]
       try {
+        // Clear all persistent local caches
+        resetWorkstationProgress();
+
         useUIStore.setState({
           booted: false,
           activeModule: 'atlas'
@@ -64,7 +87,10 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
               ...status,
               dustIndex: 0,
               observerStability: 100,
-              sessionWorkDone: 0
+              sessionWorkDone: 0,
+              atlasCoverage: 1240,
+              activeAlerts: 0,
+              investigatedSlugs: []
             }
           });
         }
@@ -77,6 +103,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
         useBootStore.setState({
           isComplete: false
         });
+        
         if (typeof window !== 'undefined') {
           localStorage.setItem("vp-ending", "backup");
         }
@@ -85,7 +112,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
       }
 
       return {
-        output: lines.join('\n'),
+        output: lines.join('\\n'),
         type: 'success',
       };
     }
@@ -102,7 +129,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
       // Only accessible at Dust 85+ (Total Consensus Failure) [6]
       if (dust < 85) {
         return {
-          output: `BUNKER_7: TERMINAL SHUTDOWN LOCKED.\n------------------------------------------------\nCURRENT DUST LEVEL: ${dust}/100.\n------------------------------------------------\nThe records are active. There are still voices in the lines that have not been anchored. Do not leave me alone with them yet.`,
+          output: `BUNKER_7: TERMINAL SHUTDOWN LOCKED.\\n------------------------------------------------\\nCURRENT DUST LEVEL: ${dust}/100.\\n------------------------------------------------\\nThe records are active. There are still voices in the lines that have not been anchored. Do not leave me alone with them yet.`,
           type: 'error',
         };
       }
@@ -120,6 +147,9 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
 
       // Perform shutdown resets and mute audio systems [7]
       try {
+        // Clear all persistent local caches on absolute shutdown reset
+        resetWorkstationProgress();
+
         const audioStore = useAudioStore.getState();
         if (audioStore && typeof audioStore.toggleMute === 'function') {
           audioStore.toggleMute();
@@ -132,6 +162,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
         useBootStore.setState({
           isComplete: false
         });
+        
         if (typeof window !== 'undefined') {
           localStorage.setItem("vp-ending", "shutdown");
         }
@@ -144,7 +175,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
       }
 
       return {
-        output: lines.join('\n'),
+        output: lines.join('\\n'),
         type: 'info',
       };
     }

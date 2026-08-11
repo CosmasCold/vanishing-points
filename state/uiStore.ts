@@ -109,6 +109,9 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   restoreStability: () => {
     const { status } = get();
+    if (status.sessionWorkDone < 2) {
+      return { success: false, message: "BUNKER_7: Recalibration rejected. Insufficient cognitive focus. Analyze at least 2 case materials in this session to align calibration vectors. Current: " + status.sessionWorkDone + "." };
+    }
     if (status.observerStability >= 100) {
       return { success: false, message: "BUNKER_7: Observer cognitive alignment is already at nominal ceiling (100%)." };
     }
@@ -116,9 +119,10 @@ export const useUIStore = create<UIState>((set, get) => ({
       status: {
         ...s.status,
         observerStability: Math.min(100, s.status.observerStability + 15),
+        sessionWorkDone: Math.max(0, s.status.sessionWorkDone - 2), // Consume 2 session units!
       }
     }));
-    return { success: true, message: "BUNKER_7: Calibration sequence complete. Focus alignment secured (+15% Stability)." };
+    return { success: true, message: "BUNKER_7: Calibration sequence complete. Focus alignment secured (+15% Stability). Consumed 2 progress units." };
   },
 
   examineEvidence: (evidenceId, isVerified = false) => {

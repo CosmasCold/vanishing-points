@@ -221,7 +221,7 @@ export function useSignalModulator({
 
     // Carrier payload whistles louder and clarifies pitch as dials align
     const targetCarrierVol = isUnlocked
-      ? baseCarrierVolume
+      ? 0.0
       : isProcessing
       ? baseCarrierVolume * 0.4 // Muffled hum during decryption bursts
       : baseCarrierVolume * Math.pow(tuningAccuracy, 4); // Exp curve makes tuning narrow & tactile

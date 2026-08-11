@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type SoundType = 'click' | 'type' | 'return' | 'tape' | 'crt' | 'alert' | 'ambient' | 'error';
+type SoundType = 'click' | 'type' | 'return' | 'tape' | 'crt' | 'alert' | 'ambient' | 'error' | 'success';
 
 interface AudioState {
   muted: boolean;
@@ -256,6 +256,10 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         break;
       case 'alert':
         playTone(395, 0.35, 'triangle', 0.045); // Heavy alarm bell
+        break;
+      case 'success':
+        playTone(587.33, 0.15, 'sine', 0.04); // D5
+        setTimeout(() => playTone(880, 0.25, 'sine', 0.04), 100); // A5 validation chimes
         break;
     }
   },

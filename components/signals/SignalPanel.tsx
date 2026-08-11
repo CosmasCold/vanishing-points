@@ -218,6 +218,69 @@ const ARTIFACTS: SignalArtifact[] = [
       "BUNKER_7: I am sorry I cannot be certain that I ever told you that before.",
     ],
   },
+  {
+    "id": "wittenoom-radio",
+    "title": "Air Intercept: Wittenoom Erasure",
+    "source": "Field Recorder \u2014 Wittenoom Blue Mine",
+    "length": "1:40",
+    "dustUnlock": 10,
+    "description": "Static sweep across the Western Australia land directories. Whispered coordinates emerge.",
+    "mediaUrl": "/audio/signals/wittenoom-radio.mp3",
+    "transcript": [
+      "[00:00] [Wind over dry spinifex grass. Sand hitting microphone.]",
+      "[00:15] UNIDENTIFIED: There's nothing on the signboards anymore. They've painted over the mileage.",
+      "[00:32] [Static rise. Faint Morse code tapping at 10 Hz.]",
+      "[00:44] VOICE (distorted): Wittenoom... Wittenoom... Blue asbestos dust inside your lungs. Do not follow the signboards. The town has been unwritten."
+    ]
+  },
+  {
+    "id": "bhangarh-shrine",
+    "title": "Geophone Intercept: Bhangarh Ruins",
+    "source": "ASI Survey Kit \u2014 Princess Ratnavati Tower",
+    "length": "2:10",
+    "dustUnlock": 22,
+    "description": "Sub-surface audio captured after sunset inside the forbidden fort perimeter.",
+    "mediaUrl": "/audio/signals/bhangarh-shrine.mp3",
+    "transcript": [
+      "[00:00] [Acoustic feedback. Sound of stone walls breathing.]",
+      "[00:18] [Faint, echoing classical sarangi strings playing out of tune.]",
+      "[00:45] VOICE (gasping): The sun is setting... we must leave the gates before dusk. The roofs are sliding down... the mortar is wet.",
+      "[01:22] [Rhythmic click of metal bangles overlapping with wind.]",
+      "[01:54] [A heavy stone collapse. Then sudden, absolute silence.]"
+    ]
+  },
+  {
+    "id": "willard-suitcases",
+    "title": "Attic Recording: Willard Suitcases",
+    "source": "Archival Research Team \u2014 Willard Asylum",
+    "length": "1:50",
+    "dustUnlock": 52,
+    "description": "Microphone left overnight inside the vacant administration building attic.",
+    "mediaUrl": "/audio/signals/willard-suitcases.mp3",
+    "transcript": [
+      "[00:00] [Soft tape hiss. Heavy moisture dripping on attic floor boards.]",
+      "[00:14] [A single latch clicks open. Then another. Symmetrical footsteps.]",
+      "[00:35] VOICE (grieving): They left 427 of us in the attic. We are still packed. We never left. The Bibles are wet.",
+      "[01:05] [A sound of duplicate suitcases sliding across dust.]",
+      "[01:28] VOICE: Scribe Vale... why did you write my name in pencil? The pencil is still in the drawer."
+    ]
+  },
+  {
+    "id": "poveglia-tower",
+    "title": "Hydrophone Capture: Venetian Lagoon",
+    "source": "Venice Coastal Guard Unit 12",
+    "length": "2:04",
+    "dustUnlock": 72,
+    "description": "Underwater acoustic array focused on Poveglia Island sub-basement walls.",
+    "mediaUrl": "/audio/signals/poveglia-tower.mp3",
+    "transcript": [
+      "[00:00] [Deep sub-surface marine hum. Water lapping against stone piers.]",
+      "[00:15] [Sequences of three knocking knocks: thud, thud, thud. Repeating.]",
+      "[00:38] [The bell tower tolling begins, muffled by tons of water, matching the knocking frequency.]",
+      "[01:05] CHORUS (overlapping whispers): Ward X is bricked up... twelve beds, all facing the wall. Do not look behind the plaster. The soil is ash.",
+      "[01:45] [Water rising rapidly. High-frequency click of rusted iron chains.]"
+    ]
+  }
 ];
 
 export const SignalPanel: React.FC = () => {
@@ -226,19 +289,9 @@ export const SignalPanel: React.FC = () => {
 
   const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
   const [decrypterOpen, setDecrypterOpen] = useState(false);
-  const [decryptedIds, setDecryptedIds] = useState<string[]>([]);
-
-  React.useEffect(() => {
-    const saved = localStorage.getItem("vp-decrypted-signals");
-    if (saved) {
-      try {
-        setDecryptedIds(JSON.parse(saved));
-      } catch (e) {}
-    }
-  }, [decrypterOpen]); // Refreshes when decrypter closes
 
   const dust = status.dustIndex;
-  const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock || decryptedIds.includes(a.id));
+  const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock);
 
   return (
     <div className="p-6 space-y-4 overflow-y-auto h-full flex flex-col select-none">
@@ -274,7 +327,7 @@ export const SignalPanel: React.FC = () => {
       {/* Directory Index Column */}
       <div className="flex-1 overflow-y-auto space-y-3">
         {ARTIFACTS.map((item) => {
-          const isUnlocked = dust >= item.dustUnlock || decryptedIds.includes(item.id);
+          const isUnlocked = dust >= item.dustUnlock;
 
           return (
             <div
@@ -327,16 +380,7 @@ export const SignalPanel: React.FC = () => {
       </div>
 
       {/* Decrypter Modal Portal Overlay */}
-      {decrypterOpen && <DecrypterModal onClose={() => {
-        setDecrypterOpen(false);
-        // Quick trigger refresh
-        const saved = localStorage.getItem("vp-decrypted-signals");
-        if (saved) {
-          try {
-            setDecryptedIds(JSON.parse(saved));
-          } catch (e) {}
-        }
-      }} />}
+      {decrypterOpen && <DecrypterModal onClose={() => setDecrypterOpen(false)} />}
 
       {/* Signal Tuning Modal Portal Overlay */}
       {selectedSignal && <SignalModal signal={selectedSignal} onClose={() => setSelectedSignal(null)} />}

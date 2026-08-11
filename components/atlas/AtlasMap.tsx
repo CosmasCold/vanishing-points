@@ -10,11 +10,7 @@ import { project, WORLD_SIZE } from "./mercator";
 import worldMapData from "./world-map.json";
 
 // Typed representation of the pre-projected geographic data
-interface CountryGeo {
-  name: string;
-  code: string;
-  path: string;
-}
+interface CountryGeo { name: string; code: string; path: string; }
 
 /* ═══════════════════════════════════════════════════════════════
    OPTIMIZED SUB-COMPONENTS (Memoized to prevent React paint cost)
@@ -68,11 +64,14 @@ GraticulesLayer.displayName = "GraticulesLayer";
 
 export const AtlasMap: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapContentRef = useRef<SVGGElement>(null); // DOM-direct ref to completely eliminate React re-render lag
   const dragStart = useRef({ x: 0, y: 0 });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  
+
   // Transform state: x/y pan in pixels, k is scale factor (zoom level)
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.15 });
+  const transformRef = useRef({ x: 0, y: 0, k: 0.15 }); // Mutable ref for 60 FPS DOM updates without state trigger
+  
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [hoveredPlaceSlug, setHoveredPlaceSlug] = useState<string | null>(null);
@@ -89,6 +88,14 @@ export const AtlasMap: React.FC = () => {
   const sweepGroupRef = useRef<SVGGElement>(null);
   const sweepAudioCtxRef = useRef<AudioContext | null>(null);
   const clickedPinsRef = useRef<Record<string, number>>({});
+
+  // Synchronize mutable ref with React state
+  useEffect(() => {
+    transformRef.current = transform;
+    if (mapContentRef.current) {
+      mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
+    }
+  }, [transform]);
 
   // 1. Measure and track container size dynamically (using ResizeObserver)
   useEffect(() => {
@@ -127,106 +134,120 @@ export const AtlasMap: React.FC = () => {
     if (!place || !place.coordinates) return;
 
     const [longitude, latitude] = place.coordinates;
-    const { x: targetX, y: targetY } = project(longitude, latitude);
+    const { x: projX, y: projY } = project(longitude, latitude);
 
-    // Zoom level 4.5 gives deep focus with context intact [97]
-    const targetK = 4.5;
-    const targetXPixel = dimensions.width / 2 - targetX * targetK;
-    const targetYPixel = dimensions.height / 2 - targetY * targetK;
+    // Target scale for zoom focusing on active coordinate
+    const targetK = 0.85;
+    const targetX = dimensions.width / 2 - projX * targetK;
+    const targetY = dimensions.height / 2 - projY * targetK;
 
-    setIsAnimating(true);
-    setTransform({ x: targetXPixel, y: targetYPixel, k: targetK });
-
-    const timer = setTimeout(() => setIsAnimating(false), 800);
-    return () => clearTimeout(timer);
+    setTransform({ x: targetX, y: targetY, k: targetK });
   }, [selectedPlaceSlug, places, dimensions.width, dimensions.height]);
 
   // 4. Drag and Pan Event Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isAnimating) return;
     setIsDragging(true);
-    dragStart.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+    dragStart.current = { 
+      x: e.clientX - transformRef.current.x, 
+      y: e.clientY - transformRef.current.y 
+    };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    const container = containerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      // Map to world coordinates (under current map pan/zoom!)
-      const worldX = (mouseX - transform.x) / transform.k;
-      const worldY = (mouseY - transform.y) / transform.k;
-      mouseWorldPosRef.current = { x: worldX, y: worldY };
-    }
+    if (!containerRef.current) return;
+    
+    // Calculate world position of cursor for radar intersection scanner
+    const bounds = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - bounds.left;
+    const mouseY = e.clientY - bounds.top;
+
+    const currentX = transformRef.current.x;
+    const currentY = transformRef.current.y;
+    const currentK = transformRef.current.k;
+
+    mouseWorldPosRef.current = {
+      x: (mouseX - currentX) / currentK,
+      y: (mouseY - currentY) / currentK,
+    };
 
     if (!isDragging) return;
-    const x = e.clientX - dragStart.current.x;
-    const y = e.clientY - dragStart.current.y;
-    setTransform((prev) => ({ ...prev, x, y }));
+
+    // Apply high-performance DOM-direct translation (0ms React lag!)
+    const dragX = e.clientX - dragStart.current.x;
+    const dragY = e.clientY - dragStart.current.y;
+
+    transformRef.current.x = dragX;
+    transformRef.current.y = dragY;
+
+    if (mapContentRef.current) {
+      mapContentRef.current.style.transform = `translate(${dragX}px, ${dragY}px) scale(${currentK})`;
+    }
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    // Write the final transform offset coordinates back to React state ONCE on release!
+    setTransform({ x: transformRef.current.x, y: transformRef.current.y, k: transformRef.current.k });
+  };
 
-  // 5. Wheel Zoom Event Handler (Zoom toward cursor) [94]
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (isAnimating) return;
+    if (!containerRef.current || isAnimating) return;
+    
+    const bounds = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - bounds.left;
+    const mouseY = e.clientY - bounds.top;
 
-    const container = containerRef.current;
-    if (!container) return;
+    const currentX = transformRef.current.x;
+    const currentY = transformRef.current.y;
+    const currentK = transformRef.current.k;
 
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
+    // Zoom speed clamping
     const zoomFactor = 1.15;
-    const direction = e.deltaY < 0 ? 1 : -1;
-    const nextScale = direction > 0
-      ? Math.min(30, transform.k * zoomFactor)
-      : Math.max(dimensions.width / WORLD_SIZE * 0.8, transform.k / zoomFactor);
+    const nextK = e.deltaY < 0 
+      ? Math.min(4.0, currentK * zoomFactor) 
+      : Math.max(0.08, currentK / zoomFactor);
 
-    // Zooming toward the mouse cursor rather than always toward the center [94]
-    const mouseWorldX = (mouseX - transform.x) / transform.k;
-    const mouseWorldY = (mouseY - transform.y) / transform.k;
+    // Zoom centered relative to mouse cursor coordinate
+    const nextX = mouseX - ((mouseX - currentX) / currentK) * nextK;
+    const nextY = mouseY - ((mouseY - currentY) / currentK) * nextK;
 
-    const nextX = mouseX - mouseWorldX * nextScale;
-    const nextY = mouseY - mouseWorldY * nextScale;
-
-    setTransform({ x: nextX, y: nextY, k: nextScale });
+    setTransform({ x: nextX, y: nextY, k: nextK });
   };
 
-  // Double click to reset world view
-  const handleDoubleClick = () => {
-    setIsAnimating(true);
-    setTransform(getFitTransform());
-    selectPlace(null);
-    setTimeout(() => setIsAnimating(false), 800);
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (!containerRef.current || isAnimating) return;
+    click();
+    
+    // Smoothly fly back to standard fit-to-viewport bounds
+    const fit = getFitTransform();
+    setTransform(fit);
   };
 
   // 6. Procedural Graticules (Latitude & Longitude grid lines) [99]
   const graticules = useMemo(() => {
     const paths: string[] = [];
+    const step = 15; // Grid interval in degrees
     
-    // Longitude lines (every 30 degrees)
-    for (let lng = -180; lng <= 180; lng += 30) {
-      const coords: string[] = [];
-      for (let lat = -80; lat <= 80; lat += 10) {
-        const { x, y } = project(lng, lat);
-        coords.push(`${coords.length === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`);
+    // Latitude parallels
+    for (let lat = -75; lat <= 75; lat += step) {
+      let path = "";
+      for (let lon = -180; lon <= 180; lon += 5) {
+        const { x, y } = project(lon, lat);
+        path += `${path === "" ? "M" : "L"} ${x} ${y}`;
       }
-      paths.push(coords.join(" "));
+      paths.push(path);
     }
-    
-    // Latitude lines (every 20 degrees)
-    for (let lat = -80; lat <= 80; lat += 20) {
-      const coords: string[] = [];
-      for (let lng = -180; lng <= 180; lng += 10) {
-        const { x, y } = project(lng, lat);
-        coords.push(`${coords.length === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`);
+
+    // Longitude meridians
+    for (let lon = -180; lon <= 180; lon += step) {
+      let path = "";
+      for (let lat = -75; lat <= 75; lat += 5) {
+        const { x, y } = project(lon, lat);
+        path += `${path === "" ? "M" : "L"} ${x} ${y}`;
       }
-      paths.push(coords.join(" "));
+      paths.push(path);
     }
     return paths;
   }, []);
@@ -237,11 +258,7 @@ export const AtlasMap: React.FC = () => {
       if (!place.coordinates) return null;
       const [longitude, latitude] = place.coordinates;
       const { x, y } = project(longitude, latitude);
-      return {
-        ...place,
-        projX: x,
-        projY: y,
-      };
+      return { ...place, projX: x, projY: y, };
     }).filter((p): p is NonNullable<typeof p> => p !== null);
   }, [places]);
 
@@ -286,287 +303,131 @@ export const AtlasMap: React.FC = () => {
   /* ═══════════════════════════════════════════════════════════════
      RADAR AUDIO SYNTHESIZERS (Self-Contained Web Audio Pipeline)
      ═══════════════════════════════════════════════════════════════ */
-
   const playSweepClick = useCallback(() => {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    
-    if (!sweepAudioCtxRef.current) {
-      sweepAudioCtxRef.current = new AudioContextClass();
-    }
-    const ctx = sweepAudioCtxRef.current;
-    if (ctx.state === "suspended") {
-      ctx.resume();
-    }
-    
-    const now = ctx.currentTime;
-    const bufferSize = 0.004 * ctx.sampleRate; // ~4ms click
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    
-    const filter = ctx.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.setValueAtTime(2000, now);
-    
-    const gain = ctx.createGain();
-    // Procedural volume variation for authentic physical scatter
-    gain.gain.setValueAtTime(0.08 * (0.7 + Math.random() * 0.3), now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.003);
-    
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    
-    source.start(now);
-  }, []);
+    if (typeof window === "undefined") return;
+    const ctx = sweepAudioCtxRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+    sweepAudioCtxRef.current = ctx;
 
-    const playSonarPing = useCallback((volumeMultiplier = 1.0) => {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!sweepAudioCtxRef.current) {
-      sweepAudioCtxRef.current = new AudioContextClass();
-    }
-    const ctx = sweepAudioCtxRef.current;
-    if (ctx.state === "suspended") {
-      ctx.resume();
-    }
-    
+    if (ctx.state === "suspended") ctx.resume();
+
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
-    const filter = ctx.createBiquadFilter();
     const gain = ctx.createGain();
-    
-    osc.type = "square"; // Mismatch to the generic sine, matches ancient Edinburgh vaults 110Hz resonance
-    osc.frequency.setValueAtTime(110.0, now);
-    
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(220, now); // Low-pass filter to keep it deep, warm, and ominous
-    
-    gain.gain.setValueAtTime(0.04 * volumeMultiplier, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85); // Lingers longer for lingering terror
-    
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.start(now);
-    osc.stop(now + 0.9);
-  }, []);
 
-  const playGeophoneThud = useCallback(() => {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!sweepAudioCtxRef.current) {
-      sweepAudioCtxRef.current = new AudioContextClass();
-    }
-    const ctx = sweepAudioCtxRef.current;
-    if (ctx.state === "suspended") {
-      ctx.resume();
-    }
-    
-    const now = ctx.currentTime;
-    
-    // 1. Deep 55 Hz thump oscillator
-    const osc = ctx.createOscillator();
-    const oscGain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(55.0, now);
-    osc.frequency.exponentialRampToValueAtTime(15, now + 0.4);
-    
-    oscGain.gain.setValueAtTime(0.38, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-    
-    osc.connect(oscGain);
-    oscGain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(15, now + 0.08);
+
+    gain.gain.setValueAtTime(0.015, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.55);
-    
-    // 2. Cold trail of low-frequency static decay (Geophone resonance)
-    const bufferSize = ctx.sampleRate * 1.5; // 1.5 second static trail
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    
-    const lpFilter = ctx.createBiquadFilter();
-    lpFilter.type = "lowpass";
-    lpFilter.frequency.setValueAtTime(80, now); // Super deep sub-80Hz static
-    
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.12, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-    
-    noise.connect(lpFilter);
-    lpFilter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    
-    noise.start(now);
-    noise.stop(now + 1.3);
+    osc.stop(now + 0.1);
   }, []);
 
-  const playInfrasound = useCallback((slug: string) => {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!sweepAudioCtxRef.current) {
-      sweepAudioCtxRef.current = new AudioContextClass();
-    }
-    const ctx = sweepAudioCtxRef.current;
-    if (ctx.state === "suspended") {
-      ctx.resume();
-    }
-    
-    // Determine infrasound frequency [doc-mwe-4.5hz, doc-bor-001]
-    let freq = 0;
-    if (slug.includes("weather") || slug.includes("cheyenne") || slug.includes("raven") || slug.includes("null-point") || slug.includes("lebanon")) {
-      freq = 4.5;
-    } else if (slug.includes("borovsko")) {
-      freq = 18.0;
-    } else if (slug.includes("danvers")) {
-      freq = 19.0;
-    }
-    
-    if (freq === 0) return;
-    
+  const playSonarPing = useCallback((placeName: string) => {
+    if (typeof window === "undefined") return;
+    const ctx = sweepAudioCtxRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+    sweepAudioCtxRef.current = ctx;
+
+    if (ctx.state === "suspended") ctx.resume();
+
     const now = ctx.currentTime;
-    
-    // Create triangle wave oscillator for deep low sub-bass vibration (bone-vibrator)
     const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, now);
-    
-    gainNode.gain.setValueAtTime(0.0, now);
-    gainNode.gain.linearRampToValueAtTime(0.45, now + 0.1);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.8); // Lingering rumble for 2.8s
-    
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
+    const gain = ctx.createGain();
+
+    // High, chilling echo ping
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1450, now);
+    osc.frequency.exponentialRampToValueAtTime(440, now + 1.2);
+
+    gain.gain.setValueAtTime(0.02, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 3.0);
+    osc.stop(now + 1.3);
   }, []);
 
   /* ═══════════════════════════════════════════════════════════════
-     HARDWARE ACCELERATED SWEPING ENGINE & INTERSECTION CORRELATOR
+     HARDWARE ACCELERATED SWEEPING ENGINE & INTERSECTION CORRELATOR
      ═══════════════════════════════════════════════════════════════ */
-
   useEffect(() => {
     let frameId: number;
     let lastTime = Date.now();
 
     const animateSweep = () => {
       const now = Date.now();
-      const dt = (now - lastTime) / 1000;
+      const delta = (now - lastTime) / 1000;
       lastTime = now;
 
-      // 1. Advance sweep angle
-      // Standard rotation: 1 full rotation (2 * PI) every 3.5 seconds
-      const speed = (2 * Math.PI) / 3.5;
-      const prevAngle = sweepAngleRef.current;
-      sweepAngleRef.current = (sweepAngleRef.current + speed * dt) % (2 * Math.PI);
+      // Sweep rotates smoothly at 1.5 rad/sec (approx 85 deg/sec)
+      sweepAngleRef.current = (sweepAngleRef.current + delta * 1.5) % (Math.PI * 2);
 
-      // Track full cycle sonar ping at 0 degrees crossing
-      if (prevAngle > sweepAngleRef.current) {
-        playSonarPing(0.6);
-      }
-
-      // 2. Resolve active sweep center (Only visible around selected pin, otherwise hidden)
-      let hasTarget = false;
-      let center = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
-      
-      if (selectedPlaceSlug) {
-        const activePlace = projectedPlaces.find((p) => p.slug === selectedPlaceSlug);
-        if (activePlace) {
-          center = { x: activePlace.projX, y: activePlace.projY };
-          hasTarget = true;
-        }
-      }
-
-      const opacityMultiplier = hasTarget ? 1 : 0;
-
-      // Update screen SVG DOM elements directly to avoid any React draw cost!
+      // DOM-direct rotation of the SVG radar group (0% React paint overhead!)
       if (sweepGroupRef.current) {
-        const degrees = (sweepAngleRef.current * 180) / Math.PI;
-        sweepGroupRef.current.setAttribute(
-          "transform",
-          `translate(${center.x}, ${center.y}) rotate(${degrees})`
-        );
-        sweepGroupRef.current.setAttribute("opacity", (0.65 * opacityMultiplier).toString());
-      }
-      if (sweepOutlineRef.current) {
-        sweepOutlineRef.current.setAttribute("cx", center.x.toString());
-        sweepOutlineRef.current.setAttribute("cy", center.y.toString());
-        sweepOutlineRef.current.setAttribute("opacity", (0.22 * opacityMultiplier).toString());
-      }
-      if (sweepLensRef.current) {
-        sweepLensRef.current.setAttribute("cx", center.x.toString());
-        sweepLensRef.current.setAttribute("cy", center.y.toString());
-        sweepLensRef.current.setAttribute("opacity", opacityMultiplier.toString());
+        sweepGroupRef.current.setAttribute("transform", `rotate(${(sweepAngleRef.current * 180) / Math.PI} 50 50)`);
       }
 
-      // 3. Collision checks against nearby pins inside sensor scanning bounds
-      if (hasTarget) {
-        const R_SENSOR = 600;
+      // Handle geodetic pin intersects in real-time
+      if (mouseWorldPosRef.current && sweepOutlineRef.current && sweepLensRef.current) {
+        const mx = mouseWorldPosRef.current.x;
+        const my = mouseWorldPosRef.current.y;
+
+        // Position sweep outline and translucent lens around coordinates
+        sweepOutlineRef.current.setAttribute("cx", mx.toString());
+        sweepOutlineRef.current.setAttribute("cy", my.toString());
+        sweepLensRef.current.setAttribute("cx", mx.toString());
+        sweepLensRef.current.setAttribute("cy", my.toString());
+
+        // Scan all pins for proximity intersection
         projectedPlaces.forEach((place) => {
-        const dx = place.projX - center.x;
-        const dy = place.projY - center.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+          const dx = place.projX - mx;
+          const dy = place.projY - my;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance <= R_SENSOR) {
-          // Calculate polar coordinates of pin relative to scan origin
-          let pinAngle = Math.atan2(dy, dx);
-          if (pinAngle < 0) pinAngle += 2 * Math.PI;
+          // Radar active beam radius = 280 units in projected coordinates
+          if (dist < 280) {
+            const angleToPin = Math.atan2(dy, dx);
+            const normAngleToPin = angleToPin < 0 ? angleToPin + Math.PI * 2 : angleToPin;
+            const angularDiff = Math.abs(sweepAngleRef.current - normAngleToPin);
 
-          // Normalize relative angular offset to detect sweep crossover
-          let diff = pinAngle - prevAngle;
-          while (diff < -Math.PI) diff += 2 * Math.PI;
-          while (diff > Math.PI) diff -= 2 * Math.PI;
+            // If swept beam intersects pin's angular wedge (within 4 degrees tolerance)
+            if (angularDiff < 0.07) {
+              const lastPlayed = clickedPinsRef.current[place.slug] || 0;
+              if (now - lastPlayed > 2200) { // Squelch threshold limit
+                clickedPinsRef.current[place.slug] = now;
+                
+                // Play geophone sweep click audio
+                playSweepClick();
 
-          const step = speed * dt;
-          const isCrossing = diff >= 0 && diff <= step + 0.01;
+                // If hovered, sound the deep sonar ping!
+                if (hoveredPlaceSlug === place.slug || selectedPlaceSlug === place.slug) {
+                  playSonarPing(place.name);
+                }
 
-          if (isCrossing) {
-            const clickTime = clickedPinsRef.current[place.slug] || 0;
-            // Prevent rapid multi-ticks on the exact same frame step
-            if (now - clickTime > 800) {
-              clickedPinsRef.current[place.slug] = now;
-              
-              // Synthesize geophone tectonic strike!
-              playGeophoneThud();
-              playSweepClick();
-              
-              // Apply native DOM visual flare class
-              const markerEl = containerRef.current?.querySelector(`[data-slug="${place.slug}"]`);
-              if (markerEl) {
-                markerEl.classList.add("radar-pinged");
-                setTimeout(() => {
-                  markerEl.classList.remove("radar-pinged");
-                }, 600);
+                // Procedurally trigger vector flare animations
+                const pinEl = document.getElementById(`pin-${place.slug}`);
+                if (pinEl) {
+                  pinEl.classList.remove("radar-pinged");
+                  // Trigger DOM reflow to re-fire SVG keyframe
+                  void pinEl.offsetWidth; 
+                  pinEl.classList.add("radar-pinged");
+                }
               }
             }
           }
-        }
-      });
+        });
       }
 
       frameId = requestAnimationFrame(animateSweep);
     };
 
     frameId = requestAnimationFrame(animateSweep);
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
+    return () => cancelAnimationFrame(frameId);
   }, [projectedPlaces, selectedPlaceSlug, hoveredPlaceSlug, playSweepClick, playSonarPing]);
 
   // Clean up audio on hook unmount
@@ -601,244 +462,197 @@ export const AtlasMap: React.FC = () => {
       }}
     >
       {/* CSS stylesheet embedding for procedural non-React phosphor flaring */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes radar-flare {
-          0% { transform: scale(1); filter: brightness(1.8); }
-          50% { transform: scale(1.35); filter: brightness(2.6) drop-shadow(0 0 6px currentColor); }
-          100% { transform: scale(1); filter: brightness(1); }
-        }
-        .radar-pinged {
-          animation: radar-flare 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes radar-flare {
+            0% { transform: scale(1); filter: brightness(1.8); }
+            50% { transform: scale(1.35); filter: brightness(2.6) drop-shadow(0 0 6px currentColor); }
+            100% { transform: scale(1); filter: brightness(1); }
+          }
+          .radar-pinged {
+            animation: radar-flare 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+          }
+        `
+      }} />
 
-      {/* Visual Overlay: Vignette & Desklamp lighting glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(ellipse at 30% 20%, rgba(255, 170, 85, 0.05) 0%, transparent 60%),
-            radial-gradient(circle at center, transparent 35%, rgba(10, 8, 6, 0.8) 100%)
-          `,
-          zIndex: 4,
-        }}
-      />
-
-      {/* Main SVG Map Canvas */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: "auto" }}
-      >
-        <g
-          style={{
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`,
-            transition: isAnimating ? "transform 800ms cubic-bezier(0.25, 1, 0.5, 1)" : "none",
-          }}
-        >
-          {/* Subtle ocean grid lines (graticules Layer - fully cached) */}
-          <GraticulesLayer graticules={graticules} />
-
-          {/* Map Base Layer: High-fidelity simplified country paths (natively memoized) */}
+      {/* SVG Canvas Root */}
+      <svg className="w-full h-full" style={{ imageRendering: "pixelated" }}>
+        {/* Dynamic content layer grouped under optimized transform ref */}
+        <g ref={mapContentRef} style={{ transformOrigin: "0px 0px" }}>
+          
+          {/* Static Country Boundaries Base Layer */}
           <CountryBaseLayer />
 
-          {/* Radar Scanner Probe Layer */}
-          <circle
-            ref={sweepLensRef}
-            r={600}
-            fill="rgba(255, 170, 85, 0.015)" // Warm ambient scan field lens
-            stroke="none"
-            opacity={0}
-          />
-          <circle
-            ref={sweepOutlineRef}
-            r={600}
-            fill="none"
-            stroke={microform.halogen}
-            strokeWidth={1}
-            strokeDasharray="3, 9"
-            opacity={0}
-            style={{ vectorEffect: "non-scaling-stroke" }}
-          />
-          <g ref={sweepGroupRef}>
-            {/* Stepped Phosphor segments trailing clockwise */}
-            {/* 1. Primary phosphor sweep lead line */}
-            <line x1={0} y1={0} x2={600} y2={0} stroke={microform.halogen} strokeWidth={1.8} opacity={0.65} style={{ vectorEffect: "non-scaling-stroke" }} />
-            {/* 2. Secondary trail lines */}
-            <line x1={0} y1={0} x2={600 * Math.cos(-4 * Math.PI / 180)} y2={600 * Math.sin(-4 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.4} opacity={0.4} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={600 * Math.cos(-9 * Math.PI / 180)} y2={600 * Math.sin(-9 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={1.1} opacity={0.25} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={600 * Math.cos(-15 * Math.PI / 180)} y2={600 * Math.sin(-15 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.8} opacity={0.12} style={{ vectorEffect: "non-scaling-stroke" }} />
-            <line x1={0} y1={0} x2={600 * Math.cos(-22 * Math.PI / 180)} y2={600 * Math.sin(-22 * Math.PI / 180)} stroke={microform.halogen} strokeWidth={0.6} opacity={0.05} style={{ vectorEffect: "non-scaling-stroke" }} />
-          </g>
+          {/* Graticules Grid lines */}
+          <GraticulesLayer graticules={graticules} />
 
-          {/* Connection Lines (Geodetic grids/threads) - uses hardware vectorEffect */}
+          {/* Geodetic Coaxial Thread connections */}
           <g>
-            {projectedConnections.map((conn) => (
+            {projectedConnections.map((line) => (
               <line
-                key={conn.key}
-                x1={conn.x1}
-                y1={conn.y1}
-                x2={conn.x2}
-                y2={conn.y2}
-                stroke={microform.halogen}
-                strokeWidth={1}
-                opacity={0.06}
-                strokeDasharray="5, 5"
-                style={{ vectorEffect: "non-scaling-stroke" }}
+                key={line.key}
+                x1={line.x1}
+                y1={line.y1}
+                x2={line.x2}
+                y2={line.y2}
+                stroke={colors.archive.amberDim}
+                strokeWidth={0.85}
+                opacity={0.35}
+                strokeDasharray="2, 6"
               />
             ))}
           </g>
 
-          {/* Place Markers Layer [95] */}
+          {/* Map Pins and Labels Layer */}
           <g>
             {projectedPlaces.map((place) => {
+              const color = getStatusColor(place);
               const isSelected = selectedPlaceSlug === place.slug;
               const isHovered = hoveredPlaceSlug === place.slug;
-              const statusColor = getStatusColor(place);
-
-              // Responsive scaling: keeps pixel dimensions crisp at any scale [95]
-              const baseScale = isSelected ? 1.4 : isHovered ? 1.25 : 1.0;
-              const markerScale = baseScale / transform.k;
-
-              const handleMarkerClick = (e: React.MouseEvent) => {
-                e.stopPropagation();
-                click();
-                playInfrasound(place.slug);
-                selectPlace(place.slug);
-                selectNode(place.slug);
-                setFocusNode(place.slug);
-                setViewMode("focus");
-              };
-
+              
               return (
-                <g
-                  key={`marker-${place.slug}`}
-                  data-slug={place.slug} // Anchors the DOM-Direct visual flare lookup!
-                  transform={`translate(${place.projX}, ${place.projY}) scale(${markerScale})`}
-                  onClick={handleMarkerClick}
+                <g 
+                  key={`group-${place.slug}`}
                   onMouseEnter={() => setHoveredPlaceSlug(place.slug)}
                   onMouseLeave={() => setHoveredPlaceSlug(null)}
-                  className="cursor-pointer"
-                  style={{
-                    transition: isAnimating ? "none" : "transform 0.15s ease",
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    click();
+                    selectPlace(place.slug);
                   }}
+                  className="cursor-pointer"
                 >
-                  {/* Outer glow ring (larger for selected) */}
-                  <circle
-                    r={isSelected ? 10 : 8}
-                    fill="rgba(10, 8, 6, 0.85)"
-                    stroke={microform.halogen}
-                    strokeWidth={1.1}
-                    style={{
-                      filter: `drop-shadow(0 0 ${isSelected ? "6px" : "3px"} ${statusColor})`,
-                    }}
-                  />
-                  {/* Status core center dot */}
-                  <circle
-                    r={isSelected ? 4 : 3}
-                    fill={statusColor}
-                    style={{
-                      filter: `drop-shadow(0 0 3px ${statusColor})`,
-                    }}
-                  />
-
-                  {/* Floating tooltip on hover (scaled down so it reads correctly) */}
-                  {isHovered && (
-                    <g transform={`translate(0, -18) scale(${1 / baseScale})`}>
-                      <rect
-                        x={-55}
-                        y={-14}
-                        width={110}
-                        height={18}
-                        fill="rgba(15, 12, 10, 0.95)"
-                        stroke={microform.halogen}
-                        strokeWidth={0.8}
-                        rx={1}
+                  {/* Coaxial focus concentric circle guides */}
+                  {(isSelected || isHovered) && (
+                    <>
+                      <circle
+                        cx={place.projX}
+                        cy={place.projY}
+                        r={22 / transformRef.current.k}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={0.5}
+                        opacity={0.3}
+                        strokeDasharray="2, 2"
                       />
-                      <text
-                        x={0}
-                        y={-2}
-                        textAnchor="middle"
-                        fill={colors.archive.white}
-                        style={{
-                          fontFamily: typography.mono,
-                          fontSize: "7.5px",
-                          letterSpacing: "0.03em",
-                        }}
-                      >
-                        {place.name.length > 20
-                          ? `${place.name.substring(0, 18)}...`
-                          : place.name}
-                      </text>
-                    </g>
+                      <circle
+                        cx={place.projX}
+                        cy={place.projY}
+                        r={45 / transformRef.current.k}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={0.3}
+                        opacity={0.15}
+                      />
+                    </>
+                  )}
+
+                  {/* Physical Radar Scanner Pin Core */}
+                  <g 
+                    id={`pin-${place.slug}`} 
+                    transformOrigin={`${place.projX}px ${place.projY}px`}
+                  >
+                    <circle
+                      cx={place.projX}
+                      cy={place.projY}
+                      r={isSelected ? 6 / transformRef.current.k : 3.5 / transformRef.current.k}
+                      fill={color}
+                      stroke={isSelected ? "#fff" : "none"}
+                      strokeWidth={isSelected ? 1.2 / transformRef.current.k : 0}
+                      style={{
+                        filter: isSelected || isHovered ? `drop-shadow(0 0 4px ${color})` : "none",
+                        transition: "r 120ms ease, fill 120ms ease",
+                      }}
+                    />
+                  </g>
+
+                  {/* Monospace coordinate name labeling text (scaled procedurally to lock sizes) */}
+                  {(isSelected || isHovered || transformRef.current.k > 0.45) && (
+                    <text
+                      x={place.projX}
+                      y={place.projY - (isSelected ? 10 / transformRef.current.k : 7 / transformRef.current.k)}
+                      textAnchor="middle"
+                      fill={isSelected ? colors.archive.white : isHovered ? colors.archive.white : colors.archive.grayLight}
+                      style={{
+                        fontFamily: typography.mono,
+                        fontSize: `${Math.max(6.5, Math.min(14, 10 / transformRef.current.k))}px`,
+                        letterSpacing: "0.08em",
+                        fontWeight: isSelected ? "bold" : "normal",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {place.name.toUpperCase()}
+                    </text>
                   )}
                 </g>
               );
             })}
           </g>
+
+          {/* Active sweeping lens indicator group overlay */}
+          <g>
+            <circle
+              ref={sweepOutlineRef}
+              cx="0"
+              cy="0"
+              r={280}
+              fill="none"
+              stroke={colors.archive.amber}
+              strokeWidth={0.8}
+              opacity={0.06}
+              pointerEvents="none"
+            />
+            <circle
+              ref={sweepLensRef}
+              cx="0"
+              cy="0"
+              r={280}
+              fill="url(#radar-sweeper-radial)"
+              pointerEvents="none"
+              opacity={0.4}
+              style={{ mixBlendMode: "screen" }}
+            />
+            <g ref={sweepGroupRef} pointerEvents="none">
+              {/* Pie-shaped swept beam sector path */}
+              <path
+                d="M 0 0 L 280 0 A 280 280 0 0 1 242.4 140 Z"
+                fill="url(#radar-sweeper-beam)"
+                opacity={0.12}
+                style={{ mixBlendMode: "screen" }}
+              />
+              {/* Sharp flyback leading line */}
+              <line
+                x1="0"
+                y1="0"
+                x2="280"
+                y2="0"
+                stroke={microform.halogen}
+                strokeWidth={1.2}
+                opacity={0.45}
+              />
+            </g>
+          </g>
+
         </g>
       </svg>
 
-      {/* Decorative Corner Brackets & Outbox framing [100] */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          border: `1px solid ${microform.mahogany}`,
-          boxShadow: `inset 0 0 0 4px rgba(26, 17, 10, 0.05)`,
-          zIndex: 5,
-        }}
-      >
-        {/* Top-Left Bracket */}
-        <div
-          className="absolute top-3 left-3 w-4 h-4 border-t border-l pointer-events-none"
-          style={{ borderColor: microform.halogen, opacity: 0.3 }}
-        />
-        {/* Top-Right Bracket */}
-        <div
-          className="absolute top-3 right-3 w-4 h-4 border-t border-r pointer-events-none"
-          style={{ borderColor: microform.halogen, opacity: 0.3 }}
-        />
-        {/* Bottom-Left Bracket */}
-        <div
-          className="absolute bottom-3 left-3 w-4 h-4 border-b border-l pointer-events-none"
-          style={{ borderColor: microform.halogen, opacity: 0.3 }}
-        />
-        {/* Bottom-Right Bracket */}
-        <div
-          className="absolute bottom-3 right-3 w-4 h-4 border-b border-r pointer-events-none"
-          style={{ borderColor: microform.halogen, opacity: 0.3 }}
-        />
-
-        {/* Legend Panel (Classified Overlay style) */}
-        <div
-          className="absolute bottom-5 right-5 p-3 border font-mono text-[9px] tracking-wider pointer-events-auto"
-          style={{
-            borderColor: colors.archive.grayDark,
-            backgroundColor: "rgba(10, 8, 6, 0.95)",
-            boxShadow: shadows.paper,
-            color: colors.archive.grayLight,
-          }}
-        >
-          <div style={{ color: microform.halogen, fontWeight: "bold", marginBottom: "4px" }}>
-            GEODETIC ATLAS INDEX
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50% ", background: colors.archive.green }} />
-            VERIFIED NO-DRIFT
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50% ", background: colors.archive.red }} />
-            SEALED SECTOR
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50% ", background: colors.archive.blue }} />
-            WHISPERED ECHO
-          </div>
-          <div className="flex items-center gap-2">
-            <span style={{ display: "inline-block", width: "5px", height: "5px", borderRadius: "50% ", background: microform.halogen }} />
-            MIRAGE CORRELATION
-          </div>
-        </div>
-      </div>
+      {/* SVG Definitions mapping filters and sweeping gradients */}
+      <svg className="w-0 h-0 absolute">
+        <defs>
+          <linearGradient id="radar-sweeper-beam" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={microform.halogen} stopOpacity="1" />
+            <stop offset="35%" stopColor={microform.halogen} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={microform.halogen} stopOpacity="0" />
+          </linearGradient>
+          <radialGradient id="radar-sweeper-radial" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="85%" stopColor="transparent" stopOpacity="0" />
+            <stop offset="97%" stopColor={colors.archive.amber} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={microform.halogen} stopOpacity="0.22" />
+          </radialGradient>
+        </defs>
+      </svg>
     </div>
   );
 };

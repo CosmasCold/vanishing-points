@@ -18,7 +18,7 @@ body {
 
 /* Force global readability scaling for low-voltage monospaces - NO !important on font-size to allow precise custom overrides! */
 .font-mono, pre, code, input, textarea {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
 }
 

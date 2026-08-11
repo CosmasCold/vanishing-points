@@ -17,6 +17,7 @@ import { Terminal } from './Terminal';
 import { ModulePanel } from './ModulePanel';
 import { AtlasMap } from './atlas/AtlasMap';
 import { AtlasPanel } from './atlas/AtlasPanel';
+import { InvestigationsPanel } from './investigation/InvestigationsPanel';
 import { InvestigationView } from './investigation/InvestigationView';
 import { EvidenceBoard } from './evidenceBoard/EvidenceBoard';
 import { MediaViewer } from './media/MediaViewer';
@@ -28,7 +29,6 @@ import { ImpossibleChangeToast } from './ImpossibleChangeToast';
 import { GuideOverlay } from './GuideOverlay';
 import { PrologueOverlay } from './PrologueOverlay';
 import { useAudioStore } from '@/state/audioStore';
-import { InvestigationsPanel } from './investigation/InvestigationsPanel';
 import { SignalPanel } from './signals/SignalPanel';
 import { DocumentArchive } from './documents/DocumentArchive';
 import { ResearchPanel } from './research/ResearchPanel';
@@ -298,31 +298,6 @@ export const DashboardShell: React.FC = () => {
   const { activeInvestigationId } = useInvestigationStore();
   const { places } = useAtlasStore();
   const { activeMedia, closeMedia } = useMediaStore();
-  const { play } = useAudioStore();
-
-  // Trigger custom atmospheric audio state transitions when switching modules
-  useEffect(() => {
-    if (!booted || !isComplete) return;
-    
-    // Play physical chassis relay switch thud on tab change
-    switch (activeModule) {
-      case 'inbox':
-        play('type');
-        break;
-      case 'atlas':
-        play('click');
-        break;
-      case 'signals':
-        play('alert');
-        break;
-      case 'evidence':
-        play('tape');
-        break;
-      default:
-        play('click');
-        break;
-    }
-  }, [activeModule, booted, isComplete, play]);
 
   // Guard: If booting sequence has not completed, keep dashboard hidden
   if (!booted || !isComplete) return null;
@@ -417,8 +392,8 @@ export const DashboardShell: React.FC = () => {
           </ModulePanel>
         </ArchiveErrorBoundary>
 
-        <ArchiveErrorBoundary moduleName="Investigations Subsystem">
-          <ModulePanel moduleId="investigations" title="ACTIVE INVESTIGATIONS">
+        <ArchiveErrorBoundary moduleName="Archival Cases Subsystem">
+          <ModulePanel moduleId="investigations" title="ARCHIVAL CASES">
             <InvestigationsPanel />
           </ModulePanel>
         </ArchiveErrorBoundary>
@@ -479,20 +454,25 @@ export const DashboardShell: React.FC = () => {
         </AnimatePresence>
 
         {/* Floating Instrumental Sensor HUD Stack: Geiger HUD + Strowger Stepper Dial */}
-        <div 
-          className="absolute top-4 right-4 z-20 flex flex-col gap-3 pointer-events-auto transition-all duration-300"
-          style={{
-            transform: activeInvestigationId ? 'translateY(4rem) scale(0.95)' : 'translateY(0) scale(1)',
-          }}
-        >
-          <ArchiveErrorBoundary moduleName="Radiometric Geiger Sensor">
-            <GeigerHUD />
-          </ArchiveErrorBoundary>
+        <AnimatePresence>
+          {activeModule === 'atlas' && !activeInvestigationId && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="absolute top-4 right-4 z-20 flex flex-col gap-3 pointer-events-auto"
+            >
+              <ArchiveErrorBoundary moduleName="Radiometric Geiger Sensor">
+                <GeigerHUD />
+              </ArchiveErrorBoundary>
 
-          <ArchiveErrorBoundary moduleName="Strowger Stepper Mechanical Dial">
-            <StrowgerStepper />
-          </ArchiveErrorBoundary>
-        </div>
+              <ArchiveErrorBoundary moduleName="Strowger Stepper Mechanical Dial">
+                <StrowgerStepper />
+              </ArchiveErrorBoundary>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ─── ROOT LEVEL POPUPS, TAPE DECKS & SYSTEM HUDs ─── */}

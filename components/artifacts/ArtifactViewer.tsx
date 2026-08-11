@@ -147,171 +147,272 @@ export const ArtifactViewer: React.FC = () => {
           className="w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
         >
           {activeArtifact.id === 'art-solenoid' && (
-            // 🌀 1. Fused Solenoid Core (M-11A) Detailed Vector
+            // 🌀 1. Fused Solenoid Core (M-11A) High-Fidelity Realistic Vector
             <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Brass Base Bracket frame */}
-              <rect x="25" y="15" width="50" height="70" rx="3" fill="#3a2f1d" stroke="#52432d" strokeWidth="1.5" />
-              <rect x="29" y="19" width="42" height="62" rx="1.5" fill="#211a10" stroke="#322a1b" strokeWidth="1" />
-              
-              {/* Copper spool core posts */}
-              <line x1="38" y1="20" x2="38" y2="80" stroke="#120e0a" strokeWidth="4" />
-              <line x1="62" y1="20" x2="62" y2="80" stroke="#120e0a" strokeWidth="4" />
+              <defs>
+                <linearGradient id="brass-bracket-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#2e2417" />
+                  <stop offset="35%" stopColor="#4f3f26" />
+                  <stop offset="50%" stopColor="#a3804e" />
+                  <stop offset="65%" stopColor="#4f3f26" />
+                  <stop offset="100%" stopColor="#1e160a" />
+                </linearGradient>
+                <linearGradient id="brass-cap-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#1e160a" />
+                  <stop offset="50%" stopColor="#a3804e" />
+                  <stop offset="100%" stopColor="#1e160a" />
+                </linearGradient>
+                <linearGradient id="copper-winding-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#421a0c" />
+                  <stop offset="25%" stopColor="#873516" />
+                  <stop offset="50%" stopColor="#d95d32" />
+                  <stop offset="75%" stopColor="#873516" />
+                  <stop offset="100%" stopColor="#2d0e04" />
+                </linearGradient>
+                <radialGradient id="burn-center-grad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#050302" stopOpacity="0.95" />
+                  <stop offset="60%" stopColor="#1b120c" stopOpacity="0.75" />
+                  <stop offset="100%" stopColor="#3d2a1c" stopOpacity="0" />
+                </radialGradient>
+              </defs>
 
-              {/* Heavily wrapped copper wire loops block */}
-              <g opacity={lampMode === 'magnify' ? 0.95 : 0.85}>
-                <rect x="35" y="26" width="30" height="48" rx="1" fill="#78341a" stroke="#4a1a0b" strokeWidth="1" />
-                {/* Individual copper coils shine lines */}
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <line 
-                    key={i} 
-                    x1="36" 
-                    y1={28 + i * 4} 
-                    x2="64" 
-                    y2={28 + i * 4} 
-                    stroke={lampMode === 'magnify' ? '#b45309' : '#854d0e'} 
-                    strokeWidth="2.5" 
-                  />
-                ))}
-                {/* Burn marks & melted/fused center spot */}
-                <ellipse cx="50" cy="50" rx="12" ry="8" fill="#1c0f0a" opacity="0.82" style={{ mixBlendMode: 'multiply' }} />
-                <path d="M 42 48 Q 45 44 48 52 T 58 46" fill="none" stroke="#0a0502" strokeWidth="1.8" />
+              {/* Brass Base Bracket frame with metallic sheen */}
+              <rect x="23" y="13" width="54" height="74" rx="4" fill="url(#brass-bracket-grad)" stroke="#1a140b" strokeWidth="1.8" />
+              <rect x="28" y="18" width="44" height="64" rx="2" fill="#0f0b07" stroke="#2c1e13" strokeWidth="1.2" />
+
+              {/* Core steel cylinders */}
+              <rect x="36" y="20" width="6" height="60" fill="url(#brass-cap-grad)" stroke="#111" />
+              <rect x="58" y="20" width="6" height="60" fill="url(#brass-cap-grad)" stroke="#111" />
+
+              {/* Copper spool core - multi-layered coils */}
+              <g opacity={lampMode === 'magnify' ? 0.98 : 0.88}>
+                {/* Spool backing body */}
+                <rect x="33" y="24" width="34" height="52" rx="1.5" fill="#2d130a" stroke="#120603" strokeWidth="1" />
+                
+                {/* Individual Copper Coils - Draw 18 thin loops with individual lighting */}
+                {Array.from({ length: 18 }).map((_, i) => {
+                  const yPos = 26 + i * 2.7;
+                  return (
+                    <g key={`wire-${i}`}>
+                      <rect 
+                        x="34" 
+                        y={yPos} 
+                        width="32" 
+                        height="2.3" 
+                        rx="0.4"
+                        fill="url(#copper-winding-grad)" 
+                        stroke="#1a0a04" 
+                        strokeWidth="0.3" 
+                      />
+                      {/* High-voltage electrical scorching overlay on individual wires */}
+                      {i >= 7 && i <= 12 && (
+                        <rect x="34" y={yPos} width="32" height="2.3" fill="#120602" opacity="0.45" style={{ mixBlendMode: 'multiply' }} />
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Major High-Voltage Arc Burn Center Blast */}
+                <ellipse cx="50" cy="52" rx="15" ry="11" fill="url(#burn-center-grad)" />
+                {/* Fractured/Melted center terminal bridge */}
+                <path d="M 40 50 C 43 47, 47 55, 52 49 S 57 53, 60 51" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M 40 50 C 43 47, 47 55, 52 49 S 57 53, 60 51" fill="none" stroke="#22d3ee" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" className="animate-pulse" />
               </g>
 
-              {/* Screws and terminals */}
-              <circle cx="50" cy="20" r="3" fill="#52432d" stroke="#1c160e" strokeWidth="0.8" />
-              <line x1="48" y1="20" x2="52" y2="20" stroke="#1c160e" strokeWidth="0.8" />
-              <circle cx="50" cy="80" r="3" fill="#52432d" stroke="#1c160e" strokeWidth="0.8" />
-              <line x1="48" y1="80" x2="52" y2="80" stroke="#1c160e" strokeWidth="0.8" />
+              {/* Heavy machine terminal screws & solder contacts */}
+              <circle cx="50" cy="18" r="4.5" fill="url(#brass-cap-grad)" stroke="#150f09" strokeWidth="1" />
+              <line x1="47" y1="18" x2="53" y2="18" stroke="#111" strokeWidth="1.2" />
+              
+              <circle cx="50" cy="82" r="4.5" fill="url(#brass-cap-grad)" stroke="#150f09" strokeWidth="1" />
+              <line x1="47" y1="82" x2="53" y2="82" stroke="#111" strokeWidth="1.2" />
 
-              {/* Measure Overlays */}
+              {/* Caliper Measure Overlays */}
               {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="20" y1="15" x2="20" y2="85" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="18" y1="15" x2="22" y2="15" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="18" y1="85" x2="22" y2="85" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="14" y="52" textAnchor="middle" transform="rotate(-90 14 52)">4.0 cm</text>
+                <g className="text-[#34d399] opacity-80 font-mono animate-pulse" style={{ fontSize: '4.5px' }}>
+                  <line x1="16" y1="13" x2="16" y2="87" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="13" y1="13" x2="19" y2="13" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="13" y1="87" x2="19" y2="87" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="11" y="50" textAnchor="middle" transform="rotate(-90 11 50)" fill="#34d399" fontWeight="bold">4.0 cm</text>
                   
-                  <line x1="25" y1="90" x2="75" y2="90" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="25" y1="88" x2="25" y2="92" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="75" y1="88" x2="75" y2="92" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="95" textAnchor="middle">2.0 cm</text>
+                  <line x1="23" y1="92" x2="77" y2="92" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="23" y1="89" x2="23" y2="95" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="77" y1="89" x2="77" y2="95" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="50" y="97" textAnchor="middle" fill="#34d399" fontWeight="bold">2.0 cm</text>
                 </g>
               )}
 
-              {/* Glowing Inscriptions under UV Mode */}
+              {/* Glowing Coordinates under UV Mode */}
               {lampMode === 'uv' && (
                 <g className="animate-pulse">
-                  {/* Glowing vector code directly on the copper wraps */}
-                  <rect x="33" y="38" width="34" height="24" fill="none" stroke="#6366f1" strokeWidth="0.8" strokeDasharray="1, 1" />
-                  <text x="50" y="47" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.5px', fontWeight: 'bold' }} textAnchor="middle">38.000° N</text>
-                  <text x="50" y="52" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.5px', fontWeight: 'bold' }} textAnchor="middle">97.000° W</text>
-                  <text x="50" y="57" fill="#c084fc" style={{ fontFamily: typography.mono, fontSize: '2.5px' }} textAnchor="middle">SOLSTICE AXIS</text>
+                  <rect x="31" y="36" width="38" height="28" fill="none" stroke="#6366f1" strokeWidth="0.8" strokeDasharray="1, 2" opacity="0.65" />
+                  <text x="50" y="44" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.6px', fontWeight: 'bold', textShadow: '0 0 3px #6366f1' }} textAnchor="middle">38.000° N</text>
+                  <text x="50" y="50" fill="#818cf8" style={{ fontFamily: typography.mono, fontSize: '3.6px', fontWeight: 'bold', textShadow: '0 0 3px #6366f1' }} textAnchor="middle">97.000° W</text>
+                  <text x="50" y="56" fill="#c084fc" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">SOLSTICE CENTROID</text>
+                  <circle cx="50" cy="50" r="1" fill="#f43f5e" />
                 </g>
               )}
             </svg>
           )}
 
           {activeArtifact.id === 'art-core' && (
-            // 🪨 2. Kola Core Segment (Borehole-12) Detailed Vector
+            // 🪨 2. Kola Core Segment (Borehole-12) Ultra-Realistic Granular Vector
             <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Cylindrical Granite core segment */}
-              <path d="M 35 15 C 35 10, 65 10, 65 15 L 65 85 C 65 90, 35 90, 35 85 Z" fill="#2d2a26" stroke="#47413c" strokeWidth="1.5" />
-              <ellipse cx="50" cy="15" rx="15" ry="5" fill="#3d3731" stroke="#47413c" strokeWidth="0.8" />
+              <defs>
+                <filter id="granite-noise" x="0%" y="0%" width="100%" height="100%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" result="noise" />
+                  <feColorMatrix type="matrix" values="0 0 0 0 0.15  0 0 0 0 0.15  0 0 0 0 0.15  0.85 0 0 0 0" in="noise" result="coloredNoise" />
+                  <feComposite operator="in" in2="SourceGraphic" result="composite" />
+                  <feBlend mode="multiply" in="SourceGraphic" in2="composite" />
+                </filter>
+                <linearGradient id="granite-shading" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#181614" />
+                  <stop offset="30%" stopColor="#3d3730" />
+                  <stop offset="65%" stopColor="#544c43" />
+                  <stop offset="85%" stopColor="#3d3730" />
+                  <stop offset="100%" stopColor="#151311" />
+                </linearGradient>
+              </defs>
 
-              {/* Granite textures and quartz sparkling points */}
-              <path d="M 37 25 Q 42 22 47 28 T 57 23 T 63 32" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              <path d="M 36 50 Q 45 46 52 54 T 61 48 T 64 58" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              <path d="M 38 75 Q 43 78 48 72 T 58 76 T 62 70" fill="none" stroke="#1d1b18" strokeWidth="0.8" opacity="0.6" />
-              
-              {/* Quartz crystalline sparkles (small circles) */}
-              <circle cx="43" cy="35" r="1.5" fill="#854d0e" opacity="0.4" />
-              <circle cx="58" cy="42" r="1.2" fill="#52525b" opacity="0.6" />
-              <circle cx="47" cy="65" r="1.8" fill="#a1a1aa" opacity="0.4" />
-              <circle cx="52" cy="78" r="1" fill="#854d0e" opacity="0.5" />
+              {/* Cylindrical Granite core segment with granular noise filter */}
+              <g filter="url(#granite-noise)">
+                <path d="M 33 16 C 33 11, 67 10, 67 16 L 67 84 C 67 89, 33 89, 33 84 Z" fill="url(#granite-shading)" stroke="#221e1b" strokeWidth="1.8" />
+                <ellipse cx="50" cy="16" rx="17" ry="5.5" fill="#4d443c" stroke="#221e1b" strokeWidth="0.8" />
+              </g>
 
-              {/* Stress fracture splits */}
-              <path d="M 50 15 L 50 35 L 53 45" fill="none" stroke="#0f0e0c" strokeWidth="1.2" />
-              <path d="M 42 55 L 44 68 L 41 85" fill="none" stroke="#0f0e0c" strokeWidth="1.2" />
+              {/* Jagged, deep stress fracture splits with offset specular highlights */}
+              <g stroke="#090807" strokeLinecap="round" fill="none">
+                <path d="M 50 16 L 48 30 L 53 44 L 51 52" strokeWidth="1.5" />
+                <path d="M 48 16 L 44 26 L 41 33" strokeWidth="1" opacity="0.75" />
+                <path d="M 41 58 L 45 68 L 42 78 L 43 85" strokeWidth="1.5" />
+                <path d="M 60 40 L 56 48 L 59 62" strokeWidth="1.1" opacity="0.85" />
+              </g>
+              {/* SPECULAR HIGHLIGHTS ON CRACKS FOR 3D DEPTH */}
+              <g stroke="rgba(255,255,255,0.08)" strokeLinecap="round" fill="none" transform="translate(0.5, 0.5)">
+                <path d="M 50 16 L 48 30 L 53 44 L 51 52" strokeWidth="0.5" />
+                <path d="M 41 58 L 45 68 L 42 78 L 43 85" strokeWidth="0.5" />
+              </g>
+
+              {/* Quartz crystalline sparkles (four-point glowing stars) */}
+              <g fill="#fff" opacity="0.7" className="animate-pulse">
+                {/* Star 1 */}
+                <path d="M 42 28 Q 42 30 44 30 Q 42 30 42 32 Q 42 30 40 30 Q 42 30 42 28 Z" fill="#edd0a4" />
+                {/* Star 2 */}
+                <path d="M 58 42 Q 58 44 60 44 Q 58 44 58 46 Q 58 44 56 44 Q 58 44 58 42 Z" fill="#dfd0ca" />
+                {/* Star 3 */}
+                <path d="M 38 68 Q 38 70 40 70 Q 38 70 38 72 Q 38 70 36 70 Q 38 70 38 68 Z" fill="#edd0a4" />
+                {/* Star 4 */}
+                <path d="M 54 75 Q 54 77 56 77 Q 54 77 54 79 Q 54 77 52 77 Q 54 77 54 75 Z" fill="#dfd0ca" />
+              </g>
 
               {/* Measure Overlays */}
               {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="25" y1="15" x2="25" y2="85" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="23" y1="15" x2="27" y2="15" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="23" y1="85" x2="27" y2="85" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="19" y="52" textAnchor="middle" transform="rotate(-90 19 52)">12.0 cm</text>
+                <g className="text-[#34d399] opacity-80 font-mono animate-pulse" style={{ fontSize: '4.5px' }}>
+                  <line x1="23" y1="16" x2="23" y2="84" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="20" y1="16" x2="26" y2="16" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="20" y1="84" x2="26" y2="84" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="18" y="50" textAnchor="middle" transform="rotate(-90 18 50)" fill="#34d399" fontWeight="bold">12.0 cm</text>
                   
-                  <line x1="35" y1="92" x2="65" y2="92" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="35" y1="90" x2="35" y2="94" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="65" y1="90" x2="65" y2="94" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="97" textAnchor="middle">3.0 cm</text>
+                  <line x1="33" y1="91" x2="67" y2="91" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="33" y1="88" x2="33" y2="94" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="67" y1="88" x2="67" y2="94" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="50" y="96" textAnchor="middle" fill="#34d399" fontWeight="bold">3.0 cm</text>
                 </g>
               )}
 
               {/* UV Mode glowing seismic resonance sine wave */}
               {lampMode === 'uv' && (
                 <g className="animate-pulse">
-                  {/* Perfect sinusoidal wave etched along the granite core */}
+                  {/* Glowing, neon cyan seismic resonance loops directly along the granite axis */}
                   <path 
-                    d={Array.from({ length: 40 }).map((_, i) => {
-                      const y = 20 + i * 1.6;
-                      const x = 50 + Math.sin(y * 0.4) * 8;
+                    d={Array.from({ length: 44 }).map((_, i) => {
+                      const y = 18 + i * 1.5;
+                      const x = 50 + Math.sin(y * 0.45) * 7.5;
                       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
                     }).join(' ')}
                     fill="none" 
                     stroke="#22d3ee" 
-                    strokeWidth="1.2" 
-                    opacity="0.85" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round"
+                    style={{ filter: 'drop-shadow(0 0 3px #06b6d4)' }}
                   />
-                  <text x="50" y="52" fill="#22d3ee" style={{ fontFamily: typography.mono, fontSize: '4.5px', fontWeight: 'bold', textShadow: '0 0 3px #06b6d4' }} textAnchor="middle">4.5 Hz</text>
+                  <text x="50" y="52" fill="#22d3ee" style={{ fontFamily: typography.mono, fontSize: '4.6px', fontWeight: 'bold', textShadow: '0 0 4px #06b6d4' }} textAnchor="middle">4.5 Hz</text>
+                  <text x="50" y="57" fill="#0891b2" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">KOLA ANOMALY // 12,262 M</text>
                 </g>
               )}
             </svg>
           )}
 
           {activeArtifact.id === 'art-watch' && (
-            // 🕰️ 3. Melted Silver Pocketwatch Detailed Vector
+            // 🕰️ 3. Melted Silver Pocketwatch Detailed 3D Vector
             <svg viewBox="0 0 100 100" className="w-56 h-56">
+              <defs>
+                <linearGradient id="silver-case-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#4b5563" />
+                  <stop offset="30%" stopColor="#9ca3af" />
+                  <stop offset="50%" stopColor="#f3f4f6" />
+                  <stop offset="70%" stopColor="#9ca3af" />
+                  <stop offset="100%" stopColor="#374151" />
+                </linearGradient>
+                <radialGradient id="scorched-glass" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
+                  <stop offset="45%" stopColor="rgba(245,158,11,0.05)" stopOpacity="0.1" />
+                  <stop offset="85%" stopColor="#180f0a" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#050302" stopOpacity="0.95" />
+                </radialGradient>
+              </defs>
+
               {/* Outer casing chain bracket */}
-              <circle cx="50" cy="12" r="6" fill="none" stroke="#52525b" strokeWidth="1.5" />
-              <rect x="47" y="16" width="6" height="6" fill="#3f3f46" stroke="#27272a" strokeWidth="1" />
+              <circle cx="50" cy="11" r="7" fill="none" stroke="url(#silver-case-grad)" strokeWidth="1.8" />
+              <rect x="46" y="16" width="8" height="6" fill="#4b5563" stroke="#1f2937" strokeWidth="1.1" />
 
-              {/* Main Circular watch body casing */}
-              <circle cx="50" cy="52" r="32" fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-              <circle cx="50" cy="52" r="28" fill="#111113" stroke="#27272a" strokeWidth="1" />
-              
-              {/* Scorched & warped silver casing outline */}
-              <path d="M 22 40 Q 15 52 24 64 T 48 82 T 78 68 T 76 44 T 54 22 Z" fill="#27272a" opacity="0.3" stroke="#52525b" strokeWidth="1.2" />
+              {/* Main Watch Casing - Blistered, warped silhouette (non-symmetrical path) */}
+              <path 
+                d="M 50 19 C 71 19, 83 31, 81 52 C 79 73, 67 85, 48 83 C 29 81, 17 69, 19 48 C 21 27, 29 19, 50 19 Z" 
+                fill="url(#silver-case-grad)" 
+                stroke="#111827" 
+                strokeWidth="2.2" 
+                style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.8))' }}
+              />
 
-              {/* Clouded, bubbled melted glass face */}
-              <ellipse cx="50" cy="52" rx="25" ry="25" fill="#27272a" opacity="0.25" />
-              <circle cx="42" cy="46" r="3" fill="#3f3f46" opacity="0.4" />
-              <circle cx="56" cy="58" r="4.5" fill="#3f3f46" opacity="0.3" />
+              {/* Bubbled, melted inner bezel dial */}
+              <circle cx="50" cy="51" r="27" fill="#0c0a09" stroke="#1f2937" strokeWidth="1.2" />
 
-              {/* Charred hands and watch dial lines */}
-              <g opacity="0.6" stroke="#09090b" strokeLinecap="round">
+              {/* Roman indices & ticks - charred soot overlay */}
+              <g opacity="0.65" stroke="#111" strokeWidth="0.8" strokeLinecap="round">
                 {/* 12-hour dial tick lines */}
                 {Array.from({ length: 12 }).map((_, i) => {
                   const angle = (i * 30 * Math.PI) / 180;
-                  const x1 = 50 + Math.cos(angle) * 21;
-                  const y1 = 52 + Math.sin(angle) * 21;
-                  const x2 = 50 + Math.cos(angle) * 24;
-                  const y2 = 52 + Math.sin(angle) * 24;
-                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1" />;
+                  const x1 = 50 + Math.cos(angle) * 20;
+                  const y1 = 51 + Math.sin(angle) * 20;
+                  const x2 = 50 + Math.cos(angle) * 23;
+                  const y2 = 51 + Math.sin(angle) * 23;
+                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />;
                 })}
-                {/* Melted fused hands locked at 1:23:45 */}
-                <line x1="50" y1="52" x2="58" y2="40" strokeWidth="2.2" />
-                <line x1="50" y1="52" x2="62" y2="68" strokeWidth="1.6" />
-                <path d="M 50 52 Q 44 54 38 48 T 29 52" fill="none" strokeWidth="0.8" />
+                {/* Warped melted hands locked at 1:23:45 */}
+                {/* Hour Hand */}
+                <line x1="50" y1="51" x2="59" y2="38" strokeWidth="2.5" stroke="#000" />
+                {/* Minute Hand */}
+                <line x1="50" y1="51" x2="63" y2="67" strokeWidth="1.8" stroke="#000" />
+                {/* Second Hand */}
+                <path d="M 50 51 Q 45 54, 39 46 T 27 50" fill="none" strokeWidth="1.0" stroke="#000" />
               </g>
+
+              {/* Clouded, bubbled melted glass dome layer */}
+              <path 
+                d="M 50 24 C 67 24, 76 34, 76 51 C 76 68, 67 78, 50 78 C 33 78, 24 68, 24 51 C 24 34, 33 24, 50 24 Z" 
+                fill="url(#scorched-glass)" 
+                style={{ mixBlendMode: 'screen' }} 
+              />
+              <circle cx="39" cy="42" r="4.5" fill="rgba(255,255,255,0.18)" opacity="0.5" filter="blur(0.8px)" />
+              <ellipse cx="61" cy="62" rx="6" ry="3" transform="rotate(-30 61 62)" fill="rgba(255,255,255,0.12)" opacity="0.4" />
 
               {/* Measure Overlays */}
               {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="14" y1="52" x2="86" y2="52" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="14" y1="49" x2="14" y2="55" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="86" y1="49" x2="86" y2="55" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="46" textAnchor="middle">5.0 cm</text>
+                <g className="text-[#34d399] opacity-80 font-mono animate-pulse" style={{ fontSize: '4.5px' }}>
+                  <line x1="12" y1="51" x2="88" y2="51" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="12" y1="48" x2="12" y2="54" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="88" y1="48" x2="88" y2="54" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="50" y="45" textAnchor="middle" fill="#34d399" fontWeight="bold">5.0 cm</text>
                 </g>
               )}
 
@@ -319,99 +420,146 @@ export const ArtifactViewer: React.FC = () => {
               {lampMode === 'uv' && (
                 <g className="animate-pulse">
                   {/* Neon green phosphorus dials and hands glowing in darkness */}
-                  <circle cx="50" cy="52" r="26" fill="none" stroke="#22c55e" strokeWidth="1.2" strokeDasharray="2, 6" opacity="0.65" />
+                  <circle cx="50" cy="51" r="25" fill="none" stroke="#22c55e" strokeWidth="1.2" strokeDasharray="2, 5" opacity="0.75" />
                   {/* Glowing hands locked at exactly 1:23:45 */}
-                  <line x1="50" y1="52" x2="58" y2="40" stroke="#4ade80" strokeWidth="2.8" />
-                  <line x1="50" y1="52" x2="62" y2="68" stroke="#4ade80" strokeWidth="2.2" />
-                  <text x="50" y="32" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '4px', fontWeight: 'bold' }} textAnchor="middle">01:23:45 AM</text>
-                  <text x="50" y="76" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '3px' }} textAnchor="middle">REACTOR_4 LOCK</text>
+                  <line x1="50" y1="51" x2="59" y2="38" stroke="#4ade80" strokeWidth="2.8" style={{ filter: 'drop-shadow(0 0 3px #22c55e)' }} />
+                  <line x1="50" y1="51" x2="63" y2="67" stroke="#4ade80" strokeWidth="2.2" style={{ filter: 'drop-shadow(0 0 3px #22c55e)' }} />
+                  <text x="50" y="32" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '4.2px', fontWeight: 'bold', textShadow: '0 0 4px #22c55e' }} textAnchor="middle">01:23:45 AM</text>
+                  <text x="50" y="74" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '3px', fontWeight: 'bold' }} textAnchor="middle">REACTOR_4 CRITICAL_LOCK</text>
                 </g>
               )}
             </svg>
           )}
 
           {activeArtifact.id === 'art-asbestos' && (
-            // 🧪 4. Wittenoom Blue Crocidolite Fiber (art-asbestos) Detailed Vector
+            // 🧪 4. Wittenoom Blue Crocidolite Fiber (art-asbestos) High-Performance Real Vector
             <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Sealed Glass containment jar */}
-              <rect x="30" y="20" width="40" height="60" rx="4" fill="rgba(255,255,255,0.03)" stroke="#71717a" strokeWidth="1" />
-              {/* Metal Screw Cap */}
-              <rect x="36" y="14" width="28" height="6" fill="#3f3f46" stroke="#27272a" strokeWidth="0.8" />
-              <line x1="36" y1="17" x2="64" y2="17" stroke="#18181b" strokeWidth="0.5" />
+              <defs>
+                <linearGradient id="metal-cap-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#374151" />
+                  <stop offset="35%" stopColor="#6b7280" />
+                  <stop offset="50%" stopColor="#d1d5db" />
+                  <stop offset="75%" stopColor="#4b5563" />
+                  <stop offset="100%" stopColor="#1f2937" />
+                </linearGradient>
+                <linearGradient id="jar-body-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.08)" />
+                  <stop offset="15%" stopColor="rgba(255,255,255,0.01)" />
+                  <stop offset="85%" stopColor="rgba(255,255,255,0.01)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
+                </linearGradient>
+              </defs>
 
-              {/* Bundle of blue fibrous mineral spikes */}
-              <g opacity={lampMode === 'magnify' ? 0.95 : 0.75}>
-                {/* Spikes branching outwards */}
-                <path d="M 50 65 L 52 35 L 53 28" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
-                <path d="M 50 65 L 42 38 L 38 32" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 50 65 L 58 40 L 63 34" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 50 65 L 34 46" fill="none" stroke="#1d4ed8" strokeWidth="1" strokeLinecap="round" />
-                <path d="M 50 65 L 66 48" fill="none" stroke="#2563eb" strokeWidth="1" strokeLinecap="round" />
-                {/* Fibrous asbestos texture dust clouds around base */}
-                <ellipse cx="50" cy="65" rx="14" ry="7" fill="#1e3a8a" opacity="0.3" filter="blur(1px)" />
+              {/* Sealed Glass containment jar - thick walls */}
+              <rect x="28" y="19" width="44" height="62" rx="5" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.8" />
+              <rect x="30" y="21" width="40" height="58" rx="4" fill="url(#jar-body-grad)" stroke="#4b5563" strokeWidth="0.8" />
+              {/* Metal Screw Cap with threads */}
+              <rect x="35" y="13" width="30" height="7" rx="1" fill="url(#metal-cap-grad)" stroke="#111827" strokeWidth="1" />
+              <line x1="35" y1="16.5" x2="65" y2="16.5" stroke="#1f2937" strokeWidth="0.8" />
+
+              {/* Dense, organic branches of cobalt-blue crocidolite needle fibers */}
+              <g opacity={lampMode === 'magnify' ? 0.98 : 0.8}>
+                {/* Microscopic fiber threads - dozens of fine lines radiating from center */}
+                {Array.from({ length: 32 }).map((_, i) => {
+                  const angle = ((i * 11.25) * Math.PI) / 180;
+                  const length = 15 + (i % 3) * 6;
+                  const x2 = 50 + Math.cos(angle) * length;
+                  const y2 = 56 + Math.sin(angle) * length;
+                  return (
+                    <line 
+                      key={`fiber-${i}`}
+                      x1="50" 
+                      y1="56" 
+                      x2={x2} 
+                      y2={y2} 
+                      stroke={i % 2 === 0 ? "#3b82f6" : "#1d4ed8"} 
+                      strokeWidth={i % 3 === 0 ? "1.2" : "0.6"} 
+                      strokeLinecap="round"
+                    />
+                  );
+                })}
+                {/* Fibrous blue particulate cloud around base */}
+                <ellipse cx="50" cy="56" rx="16" ry="8" fill="#1e40af" opacity="0.4" filter="blur(1.5px)" />
               </g>
 
               {/* Measure Overlays */}
               {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="22" y1="20" x2="22" y2="80" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="20" y1="20" x2="24" y2="20" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="20" y1="80" x2="24" y2="80" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">6.0 cm</text>
+                <g className="text-[#34d399] opacity-80 font-mono animate-pulse" style={{ fontSize: '4.5px' }}>
+                  <line x1="21" y1="19" x2="21" y2="81" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="18" y1="19" x2="24" y2="19" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="18" y1="81" x2="24" y2="81" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="16" y="50" textAnchor="middle" transform="rotate(-90 16 50)" fill="#34d399" fontWeight="bold">6.0 cm</text>
                   
-                  <line x1="30" y1="86" x2="70" y2="86" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="30" y1="84" x2="30" y2="88" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="70" y1="84" x2="70" y2="88" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="91" textAnchor="middle">3.0 cm</text>
+                  <line x1="28" y1="86" x2="72" y2="86" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="28" y1="83" x2="28" y2="89" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="72" y1="83" x2="72" y2="89" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="50" y="91" textAnchor="middle" fill="#34d399" fontWeight="bold">3.0 cm</text>
                 </g>
               )}
 
               {/* UV Mode glowing unredacted declassification stamps */}
               {lampMode === 'uv' && (
                 <g className="animate-pulse">
-                  {/* Glowing neon-blue stamps on jar underside base */}
-                  <rect x="32" y="68" width="36" height="10" fill="none" stroke="#38bdf8" strokeWidth="0.8" strokeDasharray="1,2" opacity="0.75" />
-                  <text x="50" y="73" fill="#38bdf8" style={{ fontFamily: typography.mono, fontSize: '3.2px', fontWeight: 'bold' }} textAnchor="middle">W-22.14 S, 118.33 E</text>
-                  <text x="50" y="77" fill="#0284c7" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">DEGAZETTED STAMP</text>
+                  <rect x="32" y="66" width="36" height="11" fill="none" stroke="#38bdf8" strokeWidth="0.8" strokeDasharray="1,1" opacity="0.8" />
+                  <text x="50" y="71" fill="#38bdf8" style={{ fontFamily: typography.mono, fontSize: '3.0px', fontWeight: 'bold', textShadow: '0 0 3px #0284c7' }} textAnchor="middle">W-22.14 S, 118.33 E</text>
+                  <text x="50" y="75" fill="#0284c7" style={{ fontFamily: typography.mono, fontSize: '2.5px', fontWeight: 'bold' }} textAnchor="middle">DEGAZETTED UNWRITTEN</text>
                 </g>
               )}
             </svg>
           )}
 
           {activeArtifact.id === 'art-scale' && (
-            // ⚖️ 5. Humberstone Brass Organ Weight (art-scale) Detailed Vector
+            // ⚖️ 5. Humberstone Brass Organ Weight (art-scale) Professional Vector
             <svg viewBox="0 0 100 100" className="w-56 h-56">
-              {/* Cylindrical weight block */}
-              <rect x="30" y="25" width="40" height="50" rx="1.5" fill="#854d0e" stroke="#a16207" strokeWidth="1.5" />
-              <ellipse cx="50" cy="25" rx="20" ry="6" fill="#a16207" stroke="#ca8a04" strokeWidth="0.8" />
-              
-              {/* Round top handle knob */}
-              <path d="M 44 25 C 44 14, 56 14, 56 25 Z" fill="#854d0e" stroke="#713f12" strokeWidth="1" />
-              <circle cx="50" cy="15" r="4.5" fill="#ca8a04" stroke="#a16207" strokeWidth="0.8" />
+              <defs>
+                <linearGradient id="oxidized-brass" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#451a03" />
+                  <stop offset="25%" stopColor="#713f12" />
+                  <stop offset="50%" stopColor="#ca8a04" />
+                  <stop offset="75%" stopColor="#854d0e" />
+                  <stop offset="100%" stopColor="#2c1a04" />
+                </linearGradient>
+                <linearGradient id="verdigris-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#047857" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#065f46" stopOpacity="0.4" />
+                </linearGradient>
+              </defs>
 
-              {/* Corrosion pits and oxidized green spots (representing desert morgue dampness) */}
-              <g opacity="0.8">
-                <circle cx="36" cy="38" r="1.5" fill="#065f46" opacity="0.8" /> {/* Malachite green corrosion */}
-                <circle cx="38" cy="39" r="1" fill="#047857" opacity="0.7" />
-                <circle cx="63" cy="54" r="1.8" fill="#14532d" opacity="0.7" />
-                <circle cx="58" cy="62" r="1.2" fill="#065f46" opacity="0.8" />
-                {/* Engraving lines around the perimeter */}
-                <line x1="30" y1="45" x2="70" y2="45" stroke="#451a03" strokeWidth="1.2" opacity="0.6" />
-                <line x1="30" y1="48" x2="70" y2="48" stroke="#451a03" strokeWidth="0.8" opacity="0.6" />
+              {/* Cylindrical Weight block with oxidized metallic gradients */}
+              <rect x="29" y="24" width="42" height="52" rx="2" fill="url(#oxidized-brass)" stroke="#451a03" strokeWidth="1.8" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.7))' }} />
+              <ellipse cx="50" cy="24" rx="21" ry="6.5" fill="#a16207" stroke="#ca8a04" strokeWidth="0.8" />
+              
+              {/* Molded top grip handle knob */}
+              <path d="M 43 24 C 43 13, 57 13, 57 24 Z" fill="url(#oxidized-brass)" stroke="#451a03" strokeWidth="1.2" />
+              <circle cx="50" cy="14" r="5" fill="#ca8a04" stroke="#854d0e" strokeWidth="0.8" />
+
+              {/* Advanced Verdigris Patina Bloits & Pits */}
+              <g opacity="0.85">
+                {/* Scattered green copper-carbonate corrosion growths */}
+                <circle cx="34" cy="38" r="2.2" fill="url(#verdigris-grad)" stroke="#022c22" strokeWidth="0.3" />
+                <circle cx="36" cy="39" r="1.2" fill="#047857" />
+                <circle cx="64" cy="52" r="2.6" fill="url(#verdigris-grad)" stroke="#022c22" strokeWidth="0.3" />
+                <circle cx="62" cy="51" r="1.5" fill="#059669" />
+                <circle cx="58" cy="65" r="1.8" fill="url(#verdigris-grad)" />
+                <circle cx="38" cy="68" r="1.5" fill="#047857" />
+                
+                {/* Horizontal weight calibration ring grooves */}
+                <line x1="29" y1="44" x2="71" y2="44" stroke="#2c1a04" strokeWidth="1.5" opacity="0.75" />
+                <line x1="29" y1="47" x2="71" y2="47" stroke="#2c1a04" strokeWidth="0.8" opacity="0.75" />
               </g>
 
               {/* Measure Overlays */}
               {lampMode === 'measure' && (
-                <g className="text-[#34d399] opacity-75 font-mono" style={{ fontSize: '4.5px' }}>
-                  <line x1="22" y1="25" x2="22" y2="75" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="20" y1="25" x2="24" y2="25" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="20" y1="75" x2="24" y2="75" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="17" y="50" textAnchor="middle" transform="rotate(-90 17 50)">5.0 cm</text>
+                <g className="text-[#34d399] opacity-80 font-mono animate-pulse" style={{ fontSize: '4.5px' }}>
+                  <line x1="21" y1="24" x2="21" y2="76" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="18" y1="24" x2="24" y2="24" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="18" y1="76" x2="24" y2="76" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="16" y="50" textAnchor="middle" transform="rotate(-90 16 50)" fill="#34d399" fontWeight="bold">5.0 cm</text>
                   
-                  <line x1="30" y1="81" x2="70" y2="81" stroke="#34d399" strokeWidth="0.4" strokeDasharray="1,1" />
-                  <line x1="30" y1="79" x2="30" y2="83" stroke="#34d399" strokeWidth="0.4" />
-                  <line x1="70" y1="79" x2="70" y2="83" stroke="#34d399" strokeWidth="0.4" />
-                  <text x="50" y="86" textAnchor="middle">4.0 cm</text>
+                  <line x1="29" y1="81" x2="71" y2="81" stroke="#34d399" strokeWidth="0.5" strokeDasharray="1.5,1.5" />
+                  <line x1="29" y1="78" x2="29" y2="84" stroke="#34d399" strokeWidth="0.6" />
+                  <line x1="71" y1="78" x2="71" y2="84" stroke="#34d399" strokeWidth="0.6" />
+                  <text x="50" y="86" textAnchor="middle" fill="#34d399" fontWeight="bold">4.0 cm</text>
                 </g>
               )}
 
@@ -422,13 +570,13 @@ export const ArtifactViewer: React.FC = () => {
                   <rect x="33" y="58" width="34" height="12" fill="none" stroke="#22c55e" strokeWidth="0.8" strokeDasharray="1,1" opacity="0.8" />
                   <text x="50" y="63" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-20.2085 S</text>
                   <text x="50" y="67" fill="#4ade80" style={{ fontFamily: typography.mono, fontSize: '2.8px', fontWeight: 'bold' }} textAnchor="middle">-69.7945 W</text>
-                  <text x="50" y="72" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '2px', fontWeight: 'bold' }} textAnchor="middle">HUMBERSTONE</text>
+                  <text x="50" y="72" fill="#10b981" style={{ fontFamily: typography.mono, fontSize: '2px', fontWeight: 'bold' }} textAnchor="middle">HUMBERSTONE CAL_STAMP</text>
                 </g>
               )}
             </svg>
           )}
         </motion.div>
-
+        
         {/* Dynamic active marking anchor bullseye */}
         {activeArtifact.markings.map((m: any) => {
           const isSelected = activeMarking?.id === m.id;

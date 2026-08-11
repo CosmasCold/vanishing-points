@@ -1,10 +1,9 @@
-"use client";
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as THREE from 'three';
 import { useArtifactStore } from '@/state/artifactStore';
 import { useAudioStore } from '@/state/audioStore';
-import { colors, typography, spacing, microform } from '@/styles/theme';
+import { colors, typography, spacing } from '@/styles/theme';
 import { 
   RotateCw, 
   RotateCcw, 
@@ -14,19 +13,15 @@ import {
   Sparkles, 
   Cylinder,
   Ruler, 
-  Scale, 
   Eye, 
-  ChevronLeft, 
-  ChevronRight, 
-  Info,
-  X 
+  Info 
 } from 'lucide-react';
 
-
 /* ═══════════════════════════════════════════════════════════════
-   HIGH-FIDELITY WEBGL 3D RAYMARCHING SPECIMEN RENDERER
+   HIGH-FIDELITY PROCEDURAL THREE.JS SPECIMEN RENDERER
+   Generates photorealistic PBR materials without loading external files.
    ═══════════════════════════════════════════════════════════════ */
-interface WebGLRendererProps {
+interface ThreeRendererProps {
   id: string;
   rotation: number;
   zoom: number;
@@ -34,368 +29,526 @@ interface WebGLRendererProps {
   className?: string;
 }
 
-const WebGLSpecimenRenderer: React.FC<WebGLRendererProps> = ({
+const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
   id,
   rotation,
   zoom,
   lampMode,
   className
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [glSupported, setGlSupported] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const uvMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const standardMaterialRef = useRef<THREE.Material | null>(null);
+  const measurementGroupRef = useRef<THREE.Group | null>(null);
 
-  const lampModeNum = lampMode === 'uv' ? 2 : lampMode === 'magnify' ? 1 : lampMode === 'measure' ? 3 : 0;
+  // Procedurally generate a high-frequency normal and roughness map
+  const textures = useMemo(() => {
+    if (typeof window === 'undefined') return null;
 
-  const stateRef = useRef({ rotation, zoom, lampModeNum });
-  useEffect(() => {
-    stateRef.current = { rotation, zoom, lampModeNum };
-  }, [rotation, zoom, lampModeNum]);
-  const artifactType = id === 'art-solenoid' ? 0 : id === 'art-core' ? 1 : id === 'art-watch' ? 2 : id === 'art-asbestos' ? 3 : 4;
+    const size = 512;
+    
+    // 1. Granite Texture (Kola Core Segment)
+    const graniteCanvas = document.createElement('canvas');
+    graniteCanvas.width = size;
+    graniteCanvas.height = size;
+    const gCtx = graniteCanvas.getContext('2d')!;
+    
+    // 2. Normal Map Canvas
+    const normalCanvas = document.createElement('canvas');
+    normalCanvas.width = size;
+    normalCanvas.height = size;
+    const nCtx = normalCanvas.getContext('2d')!;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // 3. Roughness Canvas
+    const roughCanvas = document.createElement('canvas');
+    roughCanvas.width = size;
+    roughCanvas.height = size;
+    const rCtx = roughCanvas.getContext('2d')!;
 
-    const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as any;
-    if (!gl) {
-      setGlSupported(false);
-      return;
-    }
+    const imgData = gCtx.createImageData(size, size);
+    const normData = nCtx.createImageData(size, size);
+    const roughData = rCtx.createImageData(size, size);
 
-    const vsSource = `
-      attribute vec2 position;
-      varying vec2 v_uv;
-      void main() {
-        v_uv = position * 0.5 + 0.5;
-        gl_Position = vec4(position, 0.0, 1.0);
-      }
-    `;
+    // Generate procedural Perlin-like cellular noise
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const idx = (y * size + x) * 4;
+        
+        // Octave 1: Base low-frequency rock grain
+        const n1 = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.5 + 0.5;
+        // Octave 2: Mid-frequency mineral veins
+        const n2 = Math.sin(x * 0.25 + n1 * 4) * Math.cos(y * 0.25) * 0.25 + 0.5;
+        // Octave 3: High-frequency granite crystal flecks
+        const val3 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const n3 = (val3 - Math.floor(val3)) || Math.random();
 
-    const fsSource = `
-      precision mediump float;
-      varying vec2 v_uv;
+        const noiseVal = Math.min(1.0, Math.max(0.0, n1 * 0.5 + n2 * 0.35 + (n3 > 0.94 ? 0.45 : 0)));
 
-      uniform vec2 u_resolution;
-      uniform float u_time;
-      uniform float u_rotation;
-      uniform float u_zoom;
-      uniform int u_lamp_mode;
-      uniform int u_artifact_type;
-
-      vec3 rotateY(vec3 p, float a) {
-        float c = cos(a), s = sin(a);
-        return vec3(p.x * c - p.z * s, p.y, p.x * s + p.z * c);
-      }
-      vec3 rotateX(vec3 p, float a) {
-        float c = cos(a), s = sin(a);
-        return vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
-      }
-
-      float sdCylinder(vec3 p, float r, float h) {
-        vec2 d = abs(vec2(length(p.xz), p.y)) - vec2(r, h);
-        return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
-      }
-      float sdTorus(vec3 p, vec2 t) {
-        vec2 q = vec2(length(p.xz) - t.x, p.y);
-        return length(q) - t.y;
-      }
-      float sdSphere(vec3 p, float r) {
-        return length(p) - r;
-      }
-      float sdBox(vec3 p, vec3 b) {
-        vec3 d = abs(p) - b;
-        return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
-      }
-
-      float opRep(float p, float c) {
-        return mod(p + 0.5 * c, c) - 0.5 * c;
-      }
-
-      float hash3(vec3 p) {
-        return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453123);
-      }
-
-      float map(vec3 p, out int mat) {
-        mat = 0;
-        p /= u_zoom;
-        p = rotateY(p, u_rotation);
-        p = rotateX(p, 0.35);
-
-        if (u_artifact_type == 0) {
-          float d_bracket = sdBox(p, vec3(0.5, 0.8, 0.5)) - 0.05;
-          vec3 p_coil = p;
-          p_coil.y = opRep(p_coil.y, 0.12);
-          float d_coils = sdTorus(p_coil, vec2(0.42, 0.045));
-          float d_sol = min(d_bracket, d_coils);
-          mat = (d_sol == d_coils) ? 1 : 0;
-          return d_sol * u_zoom;
-        } else if (u_artifact_type == 1) {
-          float d_cyl = sdCylinder(p, 0.52, 1.3);
-          float crack_noise = sin(p.y * 12.0) * cos(p.x * 12.0) * 0.015;
-          d_cyl += crack_noise;
-          mat = 2;
-          return d_cyl * u_zoom;
-        } else if (u_artifact_type == 2) {
-          float d_case = sdCylinder(p, 0.72, 0.14) - 0.05;
-          float d_loop = sdTorus(rotateX(p - vec3(0.0, 0.85, 0.0), 1.57), vec2(0.15, 0.03));
-          float d_watch = min(d_case, d_loop);
-          mat = 3;
-          return d_watch * u_zoom;
-        } else if (u_artifact_type == 3) {
-          float d_jar = sdCylinder(p, 0.6, 1.1) - 0.02;
-          float d_needles = 100.0;
-          for (int i = 0; i < 5; i++) {
-            float angle = float(i) * 1.25;
-            vec3 p_needle = rotateY(rotateX(p, angle * 0.2), angle);
-            float d_n = sdCylinder(p_needle, 0.018, 0.85);
-            d_needles = min(d_needles, d_n);
-          }
-          float d_tot = min(d_jar, d_needles);
-          mat = (d_tot == d_jar) ? 4 : 5;
-          return d_tot * u_zoom;
+        // Diffuse mapping
+        if (id === 'art-core') {
+          // Dark basalt/granite mineral blend
+          const r = Math.floor(25 + noiseVal * 32);
+          const g = Math.floor(22 + noiseVal * 28);
+          const b = Math.floor(18 + noiseVal * 24);
+          imgData.data[idx] = r;
+          imgData.data[idx+1] = g;
+          imgData.data[idx+2] = b;
+        } else if (id === 'art-solenoid') {
+          // Dark, heavily oxidized copper wire
+          const r = Math.floor(65 + noiseVal * 45);
+          const g = Math.floor(26 + noiseVal * 15);
+          const b = Math.floor(12 + noiseVal * 8);
+          imgData.data[idx] = r;
+          imgData.data[idx+1] = g;
+          imgData.data[idx+2] = b;
         } else {
-          float d_body = sdCylinder(p - vec3(0.0, -0.2, 0.0), 0.55, 0.75) - 0.02;
-          float d_neck = sdCylinder(p - vec3(0.0, 0.62, 0.0), 0.12, 0.15);
-          float d_knob = sdSphere(p - vec3(0.0, 0.85, 0.0), 0.24);
-          float d_weight = min(d_body, min(d_neck, d_knob));
-          mat = 6;
-          return d_weight * u_zoom;
+          // Tarnished, melted silver casing
+          const val = Math.floor(110 + noiseVal * 45);
+          imgData.data[idx] = val;
+          imgData.data[idx+1] = val;
+          imgData.data[idx+2] = val + 4;
         }
+        imgData.data[idx+3] = 255;
+
+        // Roughness mapping (crystalline spots are ultra-glossy, basalt is dull)
+        const isFleck = n3 > 0.94;
+        roughData.data[idx] = isFleck ? 25 : Math.floor(120 + (1 - noiseVal) * 85);
+        roughData.data[idx+1] = roughData.data[idx];
+        roughData.data[idx+2] = roughData.data[idx];
+        roughData.data[idx+3] = 255;
       }
+    }
 
-      vec3 getNormal(vec3 p) {
-        int mat;
-        vec2 e = vec2(0.001, 0.0);
-        return normalize(vec3(
-          map(p + e.xyy, mat) - map(p - e.xyy, mat),
-          map(p + e.yxy, mat) - map(p - e.yxy, mat),
-          map(p + e.yyx, mat) - map(p - e.yyx, mat)
-        ));
+    gCtx.putImageData(imgData, 0, 0);
+    rCtx.putImageData(roughData, 0, 0);
+
+    // Sobel Filter to generate physically correct normal maps from height gradients
+    for (let y = 1; y < size - 1; y++) {
+      for (let x = 1; x < size - 1; x++) {
+        const getVal = (px: number, py: number) => {
+          const idx = (py * size + px) * 4;
+          return roughData.data[idx] / 255; // Use roughness height density
+        };
+
+        // Sobel kernels
+        const dX = (
+          -1 * getVal(x-1, y-1) + 1 * getVal(x+1, y-1) +
+          -2 * getVal(x-1, y)   + 2 * getVal(x+1, y) +
+          -1 * getVal(x-1, y+1) + 1 * getVal(x+1, y+1)
+        );
+
+        const dY = (
+          -1 * getVal(x-1, y-1) - 2 * getVal(x, y-1) - 1 * getVal(x+1, y-1) +
+          1 * getVal(x-1, y+1) + 2 * getVal(x, y+1) + 1 * getVal(x+1, y+1)
+        );
+
+        // Calculate unit normal vector
+        const normalVector = new THREE.Vector3(-dX * 4.0, -dY * 4.0, 1.0).normalize();
+
+        const idx = (y * size + x) * 4;
+        // Map [-1..1] to [0..255] RGB normal colors
+        normData.data[idx] = Math.floor((normalVector.x * 0.5 + 0.5) * 255);
+        normData.data[idx+1] = Math.floor((normalVector.y * 0.5 + 0.5) * 255);
+        normData.data[idx+2] = Math.floor((normalVector.z * 0.5 + 0.5) * 255);
+        normData.data[idx+3] = 255;
       }
+    }
+    nCtx.putImageData(normData, 0, 0);
 
-      void main() {
-        vec2 uv = v_uv - 0.5;
-        uv.x *= u_resolution.x / u_resolution.y;
+    // Convert canvases to Three.js high-performance textures
+    const diffuseTex = new THREE.CanvasTexture(graniteCanvas);
+    const normalTex = new THREE.CanvasTexture(normalCanvas);
+    const roughTex = new THREE.CanvasTexture(roughCanvas);
 
-        vec3 ro = vec3(0.0, 0.0, 3.8);
-        vec3 rd = normalize(vec3(uv, -1.0));
+    diffuseTex.wrapS = THREE.RepeatWrapping;
+    diffuseTex.wrapT = THREE.RepeatWrapping;
+    normalTex.wrapS = THREE.RepeatWrapping;
+    normalTex.wrapT = THREE.RepeatWrapping;
+    roughTex.wrapS = THREE.RepeatWrapping;
+    roughTex.wrapT = THREE.RepeatWrapping;
 
-        float t = 0.0;
-        int mat = -1;
-        bool hit = false;
-        vec3 p;
+    return { diffuse: diffuseTex, normal: normalTex, roughness: roughTex };
+  }, [id]);
 
-        for (int i = 0; i < 48; i++) {
-          p = ro + rd * t;
-          float d = map(p, mat);
-          if (d < 0.001) {
-            hit = true;
-            break;
-          }
-          t += d;
-          if (t > 8.0) break;
-        }
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !textures) return;
 
-        vec3 final_color = vec3(0.02, 0.015, 0.012);
+    // 1. Initialize stable Three.js context
+    const width = container.clientWidth || 320;
+    const height = container.clientHeight || 320;
 
-        if (hit) {
-          vec3 n = getNormal(p);
-          vec3 light_dir = normalize(vec3(1.0, 1.2, 1.0));
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
 
-          float diff = max(0.12, dot(n, light_dir));
-          float spec = pow(max(0.0, dot(reflect(-light_dir, n), -rd)), 16.0);
-          float rim = pow(1.0 - max(0.0, dot(n, -rd)), 4.0);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.z = 8;
+    cameraRef.current = camera;
 
-          vec3 base_color = vec3(0.4, 0.3, 0.15);
-          float metallicity = 0.65;
-          float roughness = 0.3;
-
-          if (mat == 1) {
-            base_color = vec3(0.72, 0.32, 0.14);
-            metallicity = 0.85;
-            roughness = 0.2;
-          } else if (mat == 2) {
-            float noise = hash3(floor(p / u_zoom * 40.0));
-            base_color = mix(vec3(0.24, 0.21, 0.18), vec3(0.38, 0.34, 0.30), noise);
-            metallicity = 0.0;
-            roughness = 0.85;
-          } else if (mat == 3) {
-            base_color = vec3(0.55, 0.55, 0.58);
-            metallicity = 0.95;
-            roughness = 0.15;
-          } else if (mat == 4) {
-            base_color = vec3(0.12, 0.18, 0.22);
-            metallicity = 0.1;
-            roughness = 0.05;
-          } else if (mat == 5) {
-            base_color = vec3(0.14, 0.38, 0.84);
-            metallicity = 0.4;
-            roughness = 0.7;
-          } else if (mat == 6) {
-            float patina = hash3(floor(p / u_zoom * 22.0));
-            base_color = mix(vec3(0.48, 0.36, 0.15), vec3(0.04, 0.35, 0.25), step(0.82, patina));
-            metallicity = 0.5;
-            roughness = 0.5;
-          }
-
-          vec3 shadow_mask = mix(vec3(0.32, 0.28, 0.24), vec3(1.0), diff);
-          vec3 diffuse_layer = base_color * diff;
-          vec3 specular_layer = vec3(spec * metallicity);
-          vec3 rim_layer = vec3(rim * 0.18) * getNormal(p).y;
-
-          final_color = diffuse_layer * shadow_mask + specular_layer + rim_layer;
-
-          if (u_lamp_mode == 1) {
-            final_color = final_color * vec3(1.2, 1.15, 0.9) * 1.35;
-          } 
-          else if (u_lamp_mode == 2) {
-            float glow_pulse = 0.85 + sin(u_time * 2.8) * 0.15;
-            
-            if (u_artifact_type == 0) {
-              float is_inscr = step(abs(p.y), 0.25) * step(abs(p.x), 0.18);
-              vec3 uv_glow = vec3(0.2, 0.3, 1.0) * glow_pulse * 4.2;
-              final_color = mix(final_color * 0.3, uv_glow, is_inscr);
-            } 
-            else if (u_artifact_type == 1) {
-              float wave = step(abs(p.x - sin(p.y * 14.0) * 0.24), 0.035);
-              vec3 uv_glow = vec3(0.0, 0.95, 0.85) * glow_pulse * 3.8;
-              final_color = mix(final_color * 0.35, uv_glow, wave);
-            } 
-            else if (u_artifact_type == 2) {
-              float clock_glow = step(length(p.xy), 0.4) * step(0.3, length(p.xy));
-              vec3 uv_glow = vec3(0.1, 0.95, 0.2) * glow_pulse * 3.5;
-              final_color = mix(final_color * 0.3, uv_glow, clock_glow);
-            }
-            else if (u_artifact_type == 3) {
-              float stamp_glow = step(abs(p.y + 0.4), 0.15) * step(abs(p.x), 0.35);
-              vec3 uv_glow = vec3(0.1, 0.6, 1.0) * glow_pulse * 4.0;
-              final_color = mix(final_color * 0.3, uv_glow, stamp_glow);
-            }
-            else if (u_artifact_type == 4) {
-              float stamp_glow = step(abs(p.y), 0.18) * step(abs(p.x), 0.32);
-              vec3 uv_glow = vec3(0.1, 0.92, 0.35) * glow_pulse * 3.8;
-              final_color = mix(final_color * 0.3, uv_glow, stamp_glow);
-            }
-          }
-          else if (u_lamp_mode == 3) {
-            float grid_y = step(abs(mod(p.y, 0.3) - 0.015), 0.012);
-            vec3 laser_glow = vec3(0.1, 0.9, 0.45) * 1.5;
-            final_color = mix(final_color, laser_glow, grid_y);
-          }
-        }
-
-        gl_FragColor = vec4(final_color, 1.0);
-      }
-    `;
-
-    const compileShader = (source: string, type: number) => {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        gl.deleteShader(shader);
-        return null;
-      }
-      return shader;
-    };
-
-    const vs = compileShader(vsSource, gl.VERTEX_SHADER);
-    const fs = compileShader(fsSource, gl.FRAGMENT_SHADER);
-    if (!vs || !fs) {
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    } catch (e) {
       setGlSupported(false);
       return;
     }
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Wipe previous canvas blocks safely to prevent duplicate attachments
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      setGlSupported(false);
-      return;
+    const group = new THREE.Group();
+    scene.add(group);
+    groupRef.current = group;
+
+    // 2. Setup Hyper-Realistic Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0x0e0d0c, 0.65);
+    scene.add(ambientLight);
+
+    // Bright radial Halogen lamp spot light
+    const keyLight = new THREE.SpotLight(0xffea9d, 4.2);
+    keyLight.position.set(3, 4, 5);
+    keyLight.angle = Math.PI / 6;
+    keyLight.penumbra = 0.8;
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.bias = -0.001;
+    scene.add(keyLight);
+
+    // Cold fluorescent fill light representing the computer terminal's backglow
+    const fillLight = new THREE.DirectionalLight(0x7ba0b8, 1.25);
+    fillLight.position.set(-4, -2, 2);
+    scene.add(fillLight);
+
+    // Warm tungsten bounce light representing the desk lamp reflection
+    const bounceLight = new THREE.DirectionalLight(0xffaa55, 0.55);
+    bounceLight.position.set(0, -4, -1);
+    scene.add(bounceLight);
+
+    // 3. Compile Specimen Geometry & Advanced PBR Material
+    let geometry: THREE.BufferGeometry;
+    let material: THREE.Material;
+
+    if (id === 'art-core') {
+      // Hyper-detailed granite cylinder borehole core
+      geometry = new THREE.CylinderGeometry(0.85, 0.85, 2.5, 48, 24);
+      
+      // Procedurally deform the cylinder vertices to make it look organically weathered and chipped
+      const posAttr = geometry.attributes.position;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        // Avoid modifying the flat top/bottom end caps
+        if (Math.abs(v.y) < 1.2) {
+          const angle = Math.atan2(v.z, v.x);
+          // Jagged basalt fractures scrawled directly on geometry vertices
+          const noise = Math.sin(v.y * 12.0) * Math.cos(angle * 8.0) * 0.015 +
+                        Math.sin(v.y * 42.0) * Math.sin(angle * 18.0) * 0.004;
+          v.x += Math.cos(angle) * noise;
+          v.z += Math.sin(angle) * noise;
+          posAttr.setXYZ(i, v.x, v.y, v.z);
+        }
+      }
+      geometry.computeVertexNormals();
+
+      material = new THREE.MeshStandardMaterial({
+        map: textures.diffuse,
+        normalMap: textures.normal,
+        roughnessMap: textures.roughness,
+        normalScale: new THREE.Vector2(1.2, 1.2),
+        metalness: 0.12,
+        roughness: 1.0,
+      });
+
+    } else if (id === 'art-solenoid') {
+      // 3D Telegraph electromagnetic solenoid core with coiled copper wire
+      geometry = new THREE.Group() as any;
+      const groupGeom = group as any;
+
+      // Brass casing block
+      const bracketGeom = new THREE.BoxGeometry(1.3, 1.8, 1.3);
+      const bracketMat = new THREE.MeshStandardMaterial({
+        color: 0x4f3f26,
+        roughness: 0.32,
+        metalness: 0.85,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.3, 0.3),
+      });
+      const bracketMesh = new THREE.Mesh(bracketGeom, bracketMat);
+      bracketMesh.castShadow = true;
+      bracketMesh.receiveShadow = true;
+      groupGeom.add(bracketMesh);
+
+      // Core spool cylinders
+      const spoolGeom = new THREE.CylinderGeometry(0.48, 0.48, 1.4, 32);
+      const spoolMat = new THREE.MeshStandardMaterial({
+        map: textures.diffuse,
+        normalMap: textures.normal,
+        roughnessMap: textures.roughness,
+        metalness: 0.95,
+        roughness: 0.15,
+      });
+      const spoolMesh = new THREE.Mesh(spoolGeom, spoolMat);
+      spoolMesh.position.set(0, 0, 0);
+      spoolMesh.castShadow = true;
+      spoolMesh.receiveShadow = true;
+      groupGeom.add(spoolMesh);
+
+      // High-voltage arc blast scorch marks overlay
+      const blastGeom = new THREE.SphereGeometry(0.55, 32, 16);
+      const blastMat = new THREE.MeshStandardMaterial({
+        color: 0x0a0502,
+        roughness: 0.98,
+        metalness: 0.0,
+        transparent: true,
+        opacity: 0.85,
+      });
+      const blastMesh = new THREE.Mesh(blastGeom, blastMat);
+      blastMesh.position.set(0, 0, 0.35);
+      groupGeom.add(blastMesh);
+
+      material = bracketMat; // Ref for cleanup
+
+    } else if (id === 'art-watch') {
+      // Charred, melted silver pocketwatch casing
+      geometry = new THREE.SphereGeometry(1.0, 32, 24);
+      geometry.scale(1.0, 1.0, 0.28); // Flatten into a pocketwatch pouch shape
+      
+      // Melt and scorch vertices
+      const posAttr = geometry.attributes.position;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        // Warp bottom half of watch casing to represent catastrophic heat melt
+        if (v.y < 0) {
+          v.y *= 1.15;
+          v.x += Math.sin(v.y * 4.0) * 0.12;
+          posAttr.setXYZ(i, v.x, v.y, v.z);
+        }
+      }
+      geometry.computeVertexNormals();
+
+      material = new THREE.MeshStandardMaterial({
+        color: 0x5a5a60,
+        metalness: 0.95,
+        roughness: 0.22,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.65, 0.65),
+      });
+
+    } else if (id === 'art-asbestos') {
+      // Wittenoom blue asbestos fiber inside a thick clear glass jar
+      geometry = new THREE.CylinderGeometry(0.72, 0.72, 1.8, 32);
+      const jarMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.04,
+        metalness: 0.1,
+        transmission: 0.92, // Hyper-realistic glass light refraction
+        thickness: 0.15,
+        ior: 1.5,
+      });
+      material = jarMat;
+
+      const jarMesh = new THREE.Mesh(geometry, jarMat);
+      group.add(jarMesh);
+
+      // Procedural asbestos needles block inside jar
+      const needleMat = new THREE.MeshStandardMaterial({
+        color: 0x1d4ed8,
+        roughness: 0.75,
+        metalness: 0.2,
+      });
+
+      for (let i = 0; i < 28; i++) {
+        const needleGeom = new THREE.CylinderGeometry(0.015, 0.015, 1.1, 8);
+        const needleMesh = new THREE.Mesh(needleGeom, needleMat);
+        needleMesh.rotation.set(
+          Math.random() * 0.45,
+          Math.random() * Math.PI,
+          Math.random() * 0.45
+        );
+        needleMesh.position.set(
+          (Math.random() - 0.5) * 0.15,
+          (Math.random() - 0.5) * 0.25,
+          (Math.random() - 0.5) * 0.15
+        );
+        group.add(needleMesh);
+      }
+
+    } else {
+      // Humberstone saltpeter morgue scale weight (Oxidized dark brass)
+      geometry = new THREE.CylinderGeometry(0.7, 0.75, 1.2, 32);
+      material = new THREE.MeshStandardMaterial({
+        color: 0x4a3a1e,
+        roughness: 0.52,
+        metalness: 0.72,
+        normalMap: textures.normal,
+        normalScale: new THREE.Vector2(0.5, 0.5),
+      });
     }
 
-    gl.useProgram(program);
+    if (id !== 'art-solenoid' && id !== 'art-asbestos') {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    }
 
-    const vertices = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ]);
+    standardMaterialRef.current = material;
 
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    // 4. Glowing Fluorescent UV Ink Layer
+    // Overlay mesh that sits 0.02 units proud of the standard object
+    if (id === 'art-core') {
+      const uvGeom = new THREE.CylinderGeometry(0.86, 0.86, 2.52, 48, 1);
+      const uvMat = new THREE.MeshBasicMaterial({
+        color: 0x22d3ee,
+        transparent: true,
+        opacity: 0.0, // Faded in on UV mode
+        blending: THREE.AdditiveBlending,
+      });
+      const uvMesh = new THREE.Mesh(uvGeom, uvMat);
+      group.add(uvMesh);
+      uvMaterialRef.current = uvMat;
+    }
 
-    const posAttr = gl.getAttribLocation(program, 'position');
-    gl.enableVertexAttribArray(posAttr);
-    gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+    // 5. Active Geodetic Caliper Laser scan lines
+    const mGroup = new THREE.Group();
+    measurementGroupRef.current = mGroup;
+    scene.add(mGroup);
 
-    const uResolution = gl.getUniformLocation(program, 'u_resolution');
-    const uTime = gl.getUniformLocation(program, 'u_time');
-    const uRotation = gl.getUniformLocation(program, 'u_rotation');
-    const uZoom = gl.getUniformLocation(program, 'u_zoom');
-    const uLampMode = gl.getUniformLocation(program, 'u_lamp_mode');
-    const uArtifactType = gl.getUniformLocation(program, 'u_artifact_type');
+    // Laser plane 1
+    const laser1Geom = new THREE.BoxGeometry(3.5, 0.015, 3.5);
+    const laserMat = new THREE.MeshBasicMaterial({
+      color: 0x34d399,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+    });
+    const laser1 = new THREE.Mesh(laser1Geom, laserMat);
+    laser1.position.y = 0.5;
+    mGroup.add(laser1);
 
-    let animationFrameId: number;
-    let startTime = Date.now();
+    // 6. Handle active component resizing & rendering frame loops
+    let animationId: number;
+    let clock = new THREE.Clock();
 
     const render = () => {
-      const c = canvasRef.current;
-      if (!c) return;
-      const width = c.clientWidth;
-      const height = c.clientHeight;
-      if (c.width !== width || c.height !== height) {
-        c.width = width;
-        c.height = height;
-        gl.viewport(0, 0, width, height);
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+
+      // Smooth mechanical glide towards standard targets
+      if (groupRef.current) {
+        // Linear interpolation mapping rotation/zoom targets exactly
+        const targetRotRad = (rotation * Math.PI) / 180;
+        groupRef.current.rotation.y += (targetRotRad - groupRef.current.rotation.y) * 0.12;
+        
+        const targetScale = zoom;
+        groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.12));
       }
 
-      const elapsed = (Date.now() - startTime) / 1000;
-      gl.uniform2f(uResolution, canvas.width, canvas.height);
-      gl.uniform1f(uTime, elapsed);
-      const current = stateRef.current;
-      gl.uniform1f(uRotation, (current.rotation * Math.PI) / 180);
-      gl.uniform1f(uZoom, current.zoom);
-      gl.uniform1i(uLampMode, current.lampModeNum);
-      gl.uniform1i(uArtifactType, artifactType);
+      // Procedural floating camera breathing cycle [1]
+      camera.position.x = Math.sin(elapsed * 0.45) * 0.08;
+      camera.position.y = Math.cos(elapsed * 0.3) * 0.06;
+      camera.lookAt(scene.position);
 
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
+      // Modulate laser beam positions under measure mode
+      if (lampMode === 'measure') {
+        laser1.position.y = Math.sin(elapsed * 1.8) * 0.85;
+      }
+
+      renderer.render(scene, camera);
+      animationId = requestAnimationFrame(render);
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    render();
 
+    // 7. Cleanup WebGL bindings on unmount
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteBuffer(buffer);
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
-      gl.deleteProgram(program);
+      cancelAnimationFrame(animationId);
+      geometry?.dispose();
+      material?.dispose();
+      textures.diffuse.dispose();
+      textures.normal.dispose();
+      textures.roughness.dispose();
+      renderer.dispose();
     };
-  }, [id, artifactType]);
+  }, [id, textures]);
+
+  // Adjust material parameters dynamically under different lighting spectrum filters
+  useEffect(() => {
+    if (!rendererRef.current || !standardMaterialRef.current) return;
+
+    const rootStyle = document.documentElement.style;
+    const isUvActive = lampMode === 'uv';
+    const isMeasureActive = lampMode === 'measure';
+
+    // 1. Modulate standard material properties to accommodate UV dark spectrums
+    const mat = standardMaterialRef.current as any;
+    if (mat.color) {
+      if (isUvActive) {
+        mat.color.setHex(0x101528); // Saturated deep co-axial indigo glow
+        if (mat.roughness !== undefined) mat.roughness = 0.85;
+        if (mat.metalness !== undefined) mat.metalness = 0.05;
+      } else {
+        // Restore standard tungsten palette
+        if (id === 'art-core') mat.color.setHex(0x3d3730);
+        else if (id === 'art-solenoid') mat.color.setHex(0x4f3f26);
+        else if (id === 'art-watch') mat.color.setHex(0x5a5a60);
+        
+        if (mat.roughness !== undefined) mat.roughness = id === 'art-watch' ? 0.22 : 0.52;
+        if (mat.metalness !== undefined) mat.metalness = id === 'art-core' ? 0.12 : 0.85;
+      }
+    }
+
+    // 2. Fade in/out fluorescent UV ink textures
+    if (uvMaterialRef.current) {
+      uvMaterialRef.current.opacity = isUvActive ? 0.95 : 0.0;
+    }
+
+    // 3. Fade in/out caliper lasers
+    if (measurementGroupRef.current) {
+      measurementGroupRef.current.traverse((child: any) => {
+        if (child.material) {
+          child.material.opacity = isMeasureActive ? 0.35 : 0.0;
+        }
+      });
+    }
+
+  }, [lampMode, id]);
 
   if (!glSupported) {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center text-stone-500">
+        WebGL accelerated environment failed to load.
+      </div>
+    );
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`${className} w-full h-full border border-stone-900 shadow-inner`}
-      style={{
-        boxShadow: 'inset 0 0 32px rgba(0,0,0,0.95)',
-        backgroundColor: '#070503'
-      }}
+    <div 
+      ref={containerRef} 
+      className={`${className} w-full h-full`}
+      style={{ minWidth: 0, minHeight: 0 }}
     />
   );
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
 export const ArtifactViewer: React.FC = () => {
   const {
     activeArtifact,
@@ -411,8 +564,8 @@ export const ArtifactViewer: React.FC = () => {
     inspectMarking,
   } = useArtifactStore();
   
-    const am = activeMarking as any;
-const { click, play } = useAudioStore();
+  const am = activeMarking as any;
+  const { click, play } = useAudioStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -461,7 +614,6 @@ const { click, play } = useAudioStore();
     return { ok: true, targetRot: 0, targetZoom: 1.0 };
   };
 
-
   // Determine lamp indicator styling
   const getLampLabel = () => {
     switch (lampMode) {
@@ -491,9 +643,6 @@ const { click, play } = useAudioStore();
 
   // Render our gorgeous procedurally animated vector-SVGs of actual artifacts!
   const renderArtifactGraphic = () => {
-    const scaleFactor = zoom;
-    const rotateAngle = rotation;
-
     return (
       <div 
         className="relative w-72 h-72 flex items-center justify-center border border-stone-900 bg-[#070503]"
@@ -501,9 +650,8 @@ const { click, play } = useAudioStore();
           boxShadow: 'inset 0 0 40px rgba(0,0,0,0.95)',
         }}
       >
-
         {/* Render our gorgeous, high-fidelity WebGL 3D Specimen Scanner */}
-        <WebGLSpecimenRenderer
+        <ThreeSpecimenRenderer
           id={activeArtifact.id}
           rotation={rotation}
           zoom={zoom}
@@ -568,8 +716,7 @@ const { click, play } = useAudioStore();
           className="flex items-center justify-between px-6 h-12 border-b shrink-0" 
           style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
           onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center gap-3">
+        >\n          <div className="flex items-center gap-3">
             <Cylinder size={14} style={{ color: colors.archive.amber }} />
             <div>
               <div className="text-[8.5px] uppercase tracking-widest" style={{ color: colors.archive.gray }}>Anomalous Object Inspection Suite</div>
@@ -721,7 +868,7 @@ const { click, play } = useAudioStore();
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-600">SOURCE SITE</span>
-                  <span className="font-bold text-white truncate max-w-[130px]" title={activeArtifact.origin}>{activeArtifact.origin}</span>
+                  <span className="font-bold text-white truncate max-w-[130px]\" title={activeArtifact.origin}>{activeArtifact.origin}</span>
                 </div>
               </div>
             </div>
@@ -760,7 +907,7 @@ const { click, play } = useAudioStore();
                     <Sparkles size={16} className="text-stone-600 animate-pulse" />
                     <span className="text-[9px] text-stone-500 uppercase tracking-widest max-w-[180px]">
                       {lampMode === 'uv' 
-                        ? "Inspect active markings (glowing coordinates) to decode insciptions"
+                        ? "Inspect active markings (glowing coordinates) to decode inscriptions"
                         : "Toggle UV Mode or scan for points on the artifact core"
                       }
                     </span>

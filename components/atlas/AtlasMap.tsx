@@ -59,7 +59,7 @@ const GraticulesLayer: React.FC<{ graticules: string[] }> = React.memo(({ gratic
 GraticulesLayer.displayName = "GraticulesLayer";
 
 /* ═══════════════════════════════════════════════════════════════
-   MASTER COMPONENT WITH RADAR PROBE SCANNER
+   MASTER COMPONENT (PERFORMANCE OPTIMIZED, RADAR SCANNER DELETED)
    ═══════════════════════════════════════════════════════════════ */
 
 export const AtlasMap: React.FC = () => {
@@ -79,15 +79,6 @@ export const AtlasMap: React.FC = () => {
   const { places, selectPlace, selectedPlaceSlug } = useAtlasStore();
   const { click } = useAudioStore();
   const { selectNode, setFocusNode, setViewMode } = useEvidenceBoardStore();
-
-  // Radar refs for DOM-direct hardware-accelerated animations
-  const sweepAngleRef = useRef(0);
-  const mouseWorldPosRef = useRef<{ x: number; y: number } | null>(null);
-  const sweepOutlineRef = useRef<SVGCircleElement>(null);
-  const sweepLensRef = useRef<SVGCircleElement>(null);
-  const sweepGroupRef = useRef<SVGGElement>(null);
-  const sweepAudioCtxRef = useRef<AudioContext | null>(null);
-  const clickedPinsRef = useRef<Record<string, number>>({});
 
   // Synchronize mutable ref with React state
   useEffect(() => {
@@ -155,27 +146,12 @@ export const AtlasMap: React.FC = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    
-    // Calculate world position of cursor for radar intersection scanner
-    const bounds = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - bounds.left;
-    const mouseY = e.clientY - bounds.top;
-
-    const currentX = transformRef.current.x;
-    const currentY = transformRef.current.y;
-    const currentK = transformRef.current.k;
-
-    mouseWorldPosRef.current = {
-      x: (mouseX - currentX) / currentK,
-      y: (mouseY - currentY) / currentK,
-    };
-
     if (!isDragging) return;
 
     // Apply high-performance DOM-direct translation (0ms React lag!)
     const dragX = e.clientX - dragStart.current.x;
     const dragY = e.clientY - dragStart.current.y;
+    const currentK = transformRef.current.k;
 
     transformRef.current.x = dragX;
     transformRef.current.y = dragY;
@@ -225,7 +201,7 @@ export const AtlasMap: React.FC = () => {
     setTransform(fit);
   };
 
-  // 6. Procedural Graticules (Latitude & Longitude grid lines) [99]
+  // 5. Procedural Graticules (Latitude & Longitude grid lines) [99]
   const graticules = useMemo(() => {
     const paths: string[] = [];
     const step = 15; // Grid interval in degrees
@@ -252,7 +228,7 @@ export const AtlasMap: React.FC = () => {
     return paths;
   }, []);
 
-  // 7. Pre-project and cache places coordinates to completely prevent trig calls on pan frames
+  // 6. Pre-project and cache places coordinates to prevent trig calls on pan frames
   const projectedPlaces = useMemo(() => {
     return places.map((place) => {
       if (!place.coordinates) return null;
@@ -262,7 +238,7 @@ export const AtlasMap: React.FC = () => {
     }).filter((p): p is NonNullable<typeof p> => p !== null);
   }, [places]);
 
-  // 8. Pre-project static geodetic thread connections
+  // 7. Pre-project static geodetic thread connections
   const projectedConnections = useMemo(() => {
     const lines: { key: string; x1: number; y1: number; x2: number; y2: number }[] = [];
     projectedPlaces.forEach((place) => {
@@ -282,7 +258,7 @@ export const AtlasMap: React.FC = () => {
     return lines;
   }, [projectedPlaces]);
 
-  // 9. Map Place status colors to theme
+  // 8. Map Place status colors to theme
   const getStatusColor = useCallback((place: Place): string => {
     switch (place.status) {
       case "sealed":
@@ -300,156 +276,13 @@ export const AtlasMap: React.FC = () => {
     }
   }, []);
 
-  /* ═══════════════════════════════════════════════════════════════
-     RADAR AUDIO SYNTHESIZERS (Self-Contained Web Audio Pipeline)
-     ═══════════════════════════════════════════════════════════════ */
-  const playSweepClick = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const ctx = sweepAudioCtxRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
-    sweepAudioCtxRef.current = ctx;
-
-    if (ctx.state === "suspended") ctx.resume();
-
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(15, now + 0.08);
-
-    gain.gain.setValueAtTime(0.015, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.1);
-  }, []);
-
-  const playSonarPing = useCallback((placeName: string) => {
-    if (typeof window === "undefined") return;
-    const ctx = sweepAudioCtxRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
-    sweepAudioCtxRef.current = ctx;
-
-    if (ctx.state === "suspended") ctx.resume();
-
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // High, chilling echo ping
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(1450, now);
-    osc.frequency.exponentialRampToValueAtTime(440, now + 1.2);
-
-    gain.gain.setValueAtTime(0.02, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 1.3);
-  }, []);
-
-  /* ═══════════════════════════════════════════════════════════════
-     HARDWARE ACCELERATED SWEEPING ENGINE & INTERSECTION CORRELATOR
-     ═══════════════════════════════════════════════════════════════ */
-  useEffect(() => {
-    let frameId: number;
-    let lastTime = Date.now();
-
-    const animateSweep = () => {
-      const now = Date.now();
-      const delta = (now - lastTime) / 1000;
-      lastTime = now;
-
-      // Sweep rotates smoothly at 1.5 rad/sec (approx 85 deg/sec)
-      sweepAngleRef.current = (sweepAngleRef.current + delta * 1.5) % (Math.PI * 2);
-
-      // DOM-direct rotation of the SVG radar group (0% React paint overhead!)
-      if (sweepGroupRef.current) {
-        sweepGroupRef.current.setAttribute("transform", `rotate(${(sweepAngleRef.current * 180) / Math.PI} 50 50)`);
-      }
-
-      // Handle geodetic pin intersects in real-time
-      if (mouseWorldPosRef.current && sweepOutlineRef.current && sweepLensRef.current) {
-        const mx = mouseWorldPosRef.current.x;
-        const my = mouseWorldPosRef.current.y;
-
-        // Position sweep outline and translucent lens around coordinates
-        sweepOutlineRef.current.setAttribute("cx", mx.toString());
-        sweepOutlineRef.current.setAttribute("cy", my.toString());
-        sweepLensRef.current.setAttribute("cx", mx.toString());
-        sweepLensRef.current.setAttribute("cy", my.toString());
-
-        // Scan all pins for proximity intersection
-        projectedPlaces.forEach((place) => {
-          const dx = place.projX - mx;
-          const dy = place.projY - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          // Radar active beam radius = 280 units in projected coordinates
-          if (dist < 280) {
-            const angleToPin = Math.atan2(dy, dx);
-            const normAngleToPin = angleToPin < 0 ? angleToPin + Math.PI * 2 : angleToPin;
-            const angularDiff = Math.abs(sweepAngleRef.current - normAngleToPin);
-
-            // If swept beam intersects pin's angular wedge (within 4 degrees tolerance)
-            if (angularDiff < 0.07) {
-              const lastPlayed = clickedPinsRef.current[place.slug] || 0;
-              if (now - lastPlayed > 2200) { // Squelch threshold limit
-                clickedPinsRef.current[place.slug] = now;
-                
-                // Play geophone sweep click audio
-                playSweepClick();
-
-                // If hovered, sound the deep sonar ping!
-                if (hoveredPlaceSlug === place.slug || selectedPlaceSlug === place.slug) {
-                  playSonarPing(place.name);
-                }
-
-                // Procedurally trigger vector flare animations
-                const pinEl = document.getElementById(`pin-${place.slug}`);
-                if (pinEl) {
-                  pinEl.classList.remove("radar-pinged");
-                  // Trigger DOM reflow to re-fire SVG keyframe
-                  void pinEl.offsetWidth; 
-                  pinEl.classList.add("radar-pinged");
-                }
-              }
-            }
-          }
-        });
-      }
-
-      frameId = requestAnimationFrame(animateSweep);
-    };
-
-    frameId = requestAnimationFrame(animateSweep);
-    return () => cancelAnimationFrame(frameId);
-  }, [projectedPlaces, selectedPlaceSlug, hoveredPlaceSlug, playSweepClick, playSonarPing]);
-
-  // Clean up audio on hook unmount
-  useEffect(() => {
-    return () => {
-      if (sweepAudioCtxRef.current) {
-        sweepAudioCtxRef.current.close();
-        sweepAudioCtxRef.current = null;
-      }
-    };
-  }, []);
-
   return (
     <div
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={() => {
-        handleMouseUp();
-        mouseWorldPosRef.current = null;
-      }}
+      onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
       onDoubleClick={handleDoubleClick}
       className={`absolute inset-0 select-none overflow-hidden ${
@@ -461,20 +294,6 @@ export const AtlasMap: React.FC = () => {
         minHeight: 0,
       }}
     >
-      {/* CSS stylesheet embedding for procedural non-React phosphor flaring */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes radar-flare {
-            0% { transform: scale(1); filter: brightness(1.8); }
-            50% { transform: scale(1.35); filter: brightness(2.6) drop-shadow(0 0 6px currentColor); }
-            100% { transform: scale(1); filter: brightness(1); }
-          }
-          .radar-pinged {
-            animation: radar-flare 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-          }
-        `
-      }} />
-
       {/* SVG Canvas Root */}
       <svg className="w-full h-full" style={{ imageRendering: "pixelated" }}>
         {/* Dynamic content layer grouped under optimized transform ref */}
@@ -547,7 +366,7 @@ export const AtlasMap: React.FC = () => {
                     </>
                   )}
 
-                  {/* Physical Radar Scanner Pin Core */}
+                  {/* Physical Map Pin Core */}
                   <g 
                     id={`pin-${place.slug}`} 
                     transformOrigin={`${place.projX}px ${place.projY}px`}
@@ -590,68 +409,7 @@ export const AtlasMap: React.FC = () => {
             })}
           </g>
 
-          {/* Active sweeping lens indicator group overlay */}
-          <g>
-            <circle
-              ref={sweepOutlineRef}
-              cx="0"
-              cy="0"
-              r={280}
-              fill="none"
-              stroke={colors.archive.amber}
-              strokeWidth={0.8}
-              opacity={0.06}
-              pointerEvents="none"
-            />
-            <circle
-              ref={sweepLensRef}
-              cx="0"
-              cy="0"
-              r={280}
-              fill="url(#radar-sweeper-radial)"
-              pointerEvents="none"
-              opacity={0.4}
-              style={{ mixBlendMode: "screen" }}
-            />
-            <g ref={sweepGroupRef} pointerEvents="none">
-              {/* Pie-shaped swept beam sector path */}
-              <path
-                d="M 0 0 L 280 0 A 280 280 0 0 1 242.4 140 Z"
-                fill="url(#radar-sweeper-beam)"
-                opacity={0.12}
-                style={{ mixBlendMode: "screen" }}
-              />
-              {/* Sharp flyback leading line */}
-              <line
-                x1="0"
-                y1="0"
-                x2="280"
-                y2="0"
-                stroke={microform.halogen}
-                strokeWidth={1.2}
-                opacity={0.45}
-              />
-            </g>
-          </g>
-
         </g>
-      </svg>
-
-      {/* SVG Definitions mapping filters and sweeping gradients */}
-      <svg className="w-0 h-0 absolute">
-        <defs>
-          <linearGradient id="radar-sweeper-beam" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={microform.halogen} stopOpacity="1" />
-            <stop offset="35%" stopColor={microform.halogen} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={microform.halogen} stopOpacity="0" />
-          </linearGradient>
-          <radialGradient id="radar-sweeper-radial" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="transparent" />
-            <stop offset="85%" stopColor="transparent" stopOpacity="0" />
-            <stop offset="97%" stopColor={colors.archive.amber} stopOpacity="0.08" />
-            <stop offset="100%" stopColor={microform.halogen} stopOpacity="0.22" />
-          </radialGradient>
-        </defs>
       </svg>
     </div>
   );

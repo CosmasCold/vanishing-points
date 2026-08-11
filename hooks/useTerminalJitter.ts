@@ -5,11 +5,11 @@ import { useUIStore } from "@/state/uiStore";
 import { useGeigerStore } from "@/hooks/useGeigerCounter";
 
 /**
- * MEASURED Retro CRT Jitter and Deflection Drift Engine
+ * HIGH-PERFORMANCE DOM-DIRECT CRT Jitter and Deflection Drift Engine
  * Procedurally simulates vintage vacuum-tube raster drifts and chromatic aberration.
  * Modulated by:
- * - Observer Stability (Stability collapse sags voltage) [6, 191]
- * - Observer Dust Index (Residual charge shifts focus) [6, 191]
+ * - Observer Stability (Stability collapse sags voltage)
+ * - Observer Dust Index (Residual charge shifts focus)
  * - Radiometric CPM (Ionization spikes introduce electromagnetic deflection)
  *
  * Direct DOM-manipulation architecture bypasses React re-render cycles completely,
@@ -17,16 +17,14 @@ import { useGeigerStore } from "@/hooks/useGeigerCounter";
  */
 export function useTerminalJitter() {
   const { status } = useUIStore();
-  const observerStability = status?.observerStability ?? 100; // [0..100] [191]
-  const dustIndex = status?.dustIndex ?? 0; // [0..100] [191]
-  const { currentCpm } = useGeigerStore(); // Live Poisson radiation count from geophones
+  const observerStability = status?.observerStability ?? 100;
+  const dustIndex = status?.dustIndex ?? 0;
+  const { currentCpm } = useGeigerStore();
 
   const frameRef = useRef<number | null>(null);
   const cycleRef = useRef<number>(0);
-
-  // Use refs to hold stable references to values so the update loop always has the freshest state
   const paramsRef = useRef({ observerStability, dustIndex, currentCpm });
-  
+
   useEffect(() => {
     paramsRef.current = { observerStability, dustIndex, currentCpm };
   }, [observerStability, dustIndex, currentCpm]);
@@ -38,18 +36,16 @@ export function useTerminalJitter() {
 
       const { observerStability: stab, dustIndex: dust, currentCpm: cpm } = paramsRef.current;
 
-      // Base threat calculations from state [6, 191]
-      const instability = (100 - stab) / 100; // Normalized instability [0..1]
-      const dustRatio = dust / 100; // Normalized dust load [0..1]
-      
-      // Normalized radiation ratio: maps CPM from background (12) to overload (1200) as [0..1]
+      // Base threat calculations
+      const instability = (100 - stab) / 100;
+      const dustRatio = dust / 100;
       const radiationRatio = Math.min(1.0, Math.max(0, (cpm - 12) / 1188));
 
       // ── 1. PHOSPHOR AMBIENT FLICKER ──
       const slowLfo = Math.sin(t * 0.4) * 0.02 * instability;
       const microNoise = (Math.random() - 0.5) * 0.01 * dustRatio;
-      const radFlicker = (Math.random() - 0.5) * 0.03 * radiationRatio; // Soft static flicker
-      const baseFlicker = 1.0 - (instability * 0.03) - (radiationRatio * 0.02); 
+      const radFlicker = (Math.random() - 0.5) * 0.03 * radiationRatio;
+      const baseFlicker = 1.0 - (instability * 0.03) - (radiationRatio * 0.02);
       const crtFlicker = Math.max(0.88, Math.min(1.04, baseFlicker + slowLfo + microNoise + radFlicker));
 
       // ── 2. MECHANICAL JITTER ──
@@ -57,9 +53,9 @@ export function useTerminalJitter() {
       let jitterY = 0;
 
       if (instability > 0.15 || radiationRatio > 0.08) {
-        const jitterIntensity = (instability * 0.28) + (radiationRatio * 0.52); 
+        const jitterIntensity = (instability * 0.28) + (radiationRatio * 0.52);
         jitterX = (Math.random() - 0.5) * jitterIntensity;
-        
+
         if (Math.random() > 0.984 - (instability * 0.03) - (radiationRatio * 0.04)) {
           jitterX += (Math.random() - 0.5) * (instability * 1.5 + radiationRatio * 2.5);
         }
@@ -69,7 +65,7 @@ export function useTerminalJitter() {
         }
       }
 
-      // ── 3. CHROMATIC RGB SEPARATION ──
+      // ── 3. CHROMATIC RGB SEPARATION ABERRATION ──
       let chromaticShift = 0;
       if (dustRatio > 0.15 || instability > 0.25 || radiationRatio > 0.05) {
         const baseShift = (dustRatio * 0.6) + (instability * 0.5) + (radiationRatio * 1.2);
@@ -84,15 +80,14 @@ export function useTerminalJitter() {
       // ── 4. PHOSPHOR GRID SCANLINES ──
       const scanlineOpacity = Math.max(0.06, Math.min(0.20, 0.08 + (dustRatio * 0.08) + (radiationRatio * 0.04)));
 
-      // Direct DOM manipulation - applies variables straight to root node!
-      // This is 100x faster than triggering React re-renders on the whole shell.
-      const root = document.documentElement;
-      if (root) {
-        root.style.setProperty("--crt-flicker", crtFlicker.toFixed(4));
-        root.style.setProperty("--crt-jitter-x", `${jitterX.toFixed(2)}px`);
-        root.style.setProperty("--crt-jitter-y", `${jitterY.toFixed(2)}px`);
-        root.style.setProperty("--crt-chromatic-shift", `${chromaticShift.toFixed(2)}px`);
-        root.style.setProperty("--crt-scanline-opacity", scanlineOpacity.toFixed(3));
+      // Write directly to document body styles to bypass React entirely!
+      if (typeof document !== "undefined") {
+        const style = document.documentElement.style;
+        style.setProperty("--crt-flicker", crtFlicker.toFixed(4));
+        style.setProperty("--crt-jitter-x", `${jitterX.toFixed(2)}px`);
+        style.setProperty("--crt-jitter-y", `${jitterY.toFixed(2)}px`);
+        style.setProperty("--crt-chromatic-shift", `${chromaticShift.toFixed(2)}px`);
+        style.setProperty("--crt-scanline-opacity", scanlineOpacity.toFixed(3));
       }
 
       frameRef.current = requestAnimationFrame(updateDrift);
@@ -109,7 +104,9 @@ export function useTerminalJitter() {
 
   // Return static style config so DashboardShell renders once and offloads drift to GPU transitions
   return {
-    jitterStyles: { transition: "transform 0.01s ease, filter 0.05s ease" } as React.CSSProperties,
+    jitterStyles: {
+      transition: "transform 0.01s ease, filter 0.05s ease"
+    } as React.CSSProperties,
     observerStability,
     dustIndex,
     currentCpm,

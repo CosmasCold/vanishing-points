@@ -369,7 +369,7 @@ export const AtlasMap: React.FC = () => {
                   {/* Physical Map Pin Core */}
                   <g 
                     id={`pin-${place.slug}`} 
-                    transformOrigin={`${place.projX}px ${place.projY}px`}
+                    style={{ transformOrigin: `\${place.projX}px \${place.projY}px` }}
                   >
                     <circle
                       cx={place.projX}

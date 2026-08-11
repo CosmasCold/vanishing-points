@@ -353,16 +353,7 @@ export const DashboardShell: React.FC = () => {
             var(--crt-chromatic-shift, 0px) 0px 0px rgba(255, 0, 0, 0.4),
             calc(var(--crt-chromatic-shift, 0px) * -1) 0px 0px rgba(0, 255, 255, 0.4) !important;
         }
-        .crt-scanlines::after {
-          content: ' ';
-          display: block;
-          position: absolute;
-          inset: 0;
-          background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
-          opacity: var(--crt-scanline-opacity, 0.12) !important;
-          pointer-events: none;
-          z-index: 50;
-        }
+/* Scanlines styled off */
       `
       }} />
 

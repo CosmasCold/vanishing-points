@@ -229,7 +229,7 @@ export const CRTOverlay: React.FC = () => {
         thickness: type === "fiber" ? 0.45 : 1.3,
         angle: Math.random() * Math.PI * 2,
         angularSpeed: (Math.random() - 0.5) * 0.005,
-        opacity: 0.015 + Math.random() * 0.075, // Ghostly, transparent fibers
+        opacity: 0.18 + Math.random() * 0.32, // High contrast visible dust
         type,
       };
 
@@ -316,34 +316,9 @@ export const CRTOverlay: React.FC = () => {
           filter: "url(#crt-lens-curvature)", // Drives structural barrel distortion
         }}
       >
-        {/* 2. Scanning Phosphor lines (Dynamic alpha scales with CPM load) */}
-        <div
-          className="absolute inset-0 scanline-crawl"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 2px,
-              rgba(20, 18, 15, ${0.11 + emiRatio * 0.18}) 2px,
-              rgba(20, 18, 15, ${0.11 + emiRatio * 0.18}) 4px
-            )`,
-            backgroundSize: "100% 4px",
-            animationDuration: `${30 - emiRatio * 18}s`, // Crawls faster under high EMI
-          }}
-        />
+        {/* Scanlines removed per user request */}
 
-        {/* 3. Shadow Mask grid layout (Representing the raw physical phosphor triad structure) */}
-        <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(90deg, #ff0000 0px, #ff0000 1px, transparent 1px, transparent 3px),
-              repeating-linear-gradient(90deg, #00ff00 1px, #00ff00 2px, transparent 2px, transparent 3px),
-              repeating-linear-gradient(90deg, #0000ff 2px, #0000ff 3px, transparent 3px, transparent 3px)
-            `,
-            backgroundSize: "3px 100%",
-          }}
-        />
+        {/* Shadow Mask removed per user request */}
 
         {/* 4. Constant Phosphorus Decay Flicker */}
         <div

@@ -91,7 +91,7 @@ function DustCanvas() {
         thickness: type === "fiber" ? 0.45 : 1.2,
         angle: Math.random() * Math.PI * 2,
         angularSpeed: (Math.random() - 0.5) * 0.006,
-        opacity: 0.02 + Math.random() * 0.08, // Microscopic, ghostly and almost invisible
+        opacity: 0.22 + Math.random() * 0.35, // High contrast visible dust
         type,
       };
 
@@ -517,6 +517,7 @@ export function BootSequence({ onPowerOn }: BootSequenceProps) {
             VANISHING POINTS ARCHIVE — SYSTEM 7-B
           </div>
         </div>
+        <DustCanvas />
       </motion.div>
     );
   }

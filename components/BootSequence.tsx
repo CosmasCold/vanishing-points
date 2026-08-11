@@ -42,7 +42,7 @@ const LOADING_STEPS = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   DUST PARTICLES (Canvas 2D)
+   DUST PARTICLES (Canvas 2D) - STORY GROUNDED GHOSTLY PARTICLES
    ═══════════════════════════════════════════════════════════════ */
 function DustCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,51 +54,107 @@ function DustCanvas() {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     window.addEventListener("resize", handleResize);
+    handleResize();
 
-    const particles: { x: number; y: number; r: number; vx: number; vy: number; alpha: number }[] = [];
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        r: Math.random() * 1.5 + 0.5,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: -Math.random() * 0.15 - 0.05,
-        alpha: Math.random() * 0.4 + 0.1,
-      });
+    // Microscopic static drift particulates configuration
+    interface Particulate {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      length: number;
+      thickness: number;
+      angle: number;
+      angularSpeed: number;
+      opacity: number;
+      type: "fiber" | "ash";
+      points?: { dx: number; dy: number }[];
     }
 
-    const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "rgba(201, 169, 110, 0.15)";
-      
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.y < 0) {
-          p.y = height;
-          p.x = Math.random() * width;
-        }
-        if (p.x < 0 || p.x > width) p.vx = -p.vx;
+    const particulates: Particulate[] = [];
+    const maxParticles = 60; // Lightweight high-density thread layer
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201, 169, 110, ${p.alpha})`;
-        ctx.fill();
+    for (let i = 0; i < maxParticles; i++) {
+      const type = Math.random() > 0.4 ? "ash" : "fiber";
+      const p: Particulate = {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: (Math.random() * 0.1) + 0.04, // Slow, weighted falling drift
+        length: type === "fiber" ? 4 + Math.random() * 8 : 1 + Math.random() * 2,
+        thickness: type === "fiber" ? 0.45 : 1.2,
+        angle: Math.random() * Math.PI * 2,
+        angularSpeed: (Math.random() - 0.5) * 0.006,
+        opacity: 0.02 + Math.random() * 0.08, // Microscopic, ghostly and almost invisible
+        type,
+      };
+
+      if (type === "ash") {
+        const sides = 3 + Math.floor(Math.random() * 3);
+        p.points = [];
+        for (let s = 0; s < sides; s++) {
+          const a = (s / sides) * Math.PI * 2;
+          const r = 0.5 + Math.random() * 1.5;
+          p.points.push({ dx: Math.cos(a) * r, dy: Math.sin(a) * r });
+        }
+      }
+      particulates.push(p);
+    }
+
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particulates.forEach((p) => {
+        // Apply lazy Brownian motion transforms
+        p.y += p.vy;
+        p.x += p.vx + Math.sin(Date.now() * 0.001 + p.angle) * 0.06;
+        p.angle += p.angularSpeed;
+
+        // Reset wrapping limits
+        if (p.y > canvas.height) {
+          p.y = -10;
+          p.x = Math.random() * canvas.width;
+        }
+        if (p.x < -10) p.x = canvas.width + 10;
+        if (p.x > canvas.width + 10) p.x = -10;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+
+        // Faint electrostatic blue-indigo UV resonance glare
+        ctx.strokeStyle = `rgba(129, 140, 248, ${p.opacity})`;
+        ctx.fillStyle = `rgba(129, 140, 248, ${p.opacity * 0.8})`;
+        ctx.lineWidth = p.thickness;
+
+        if (p.type === "fiber") {
+          ctx.beginPath();
+          ctx.moveTo(-p.length / 2, 0);
+          ctx.quadraticCurveTo(0, Math.sin(p.angle) * 1.8, p.length / 2, 0);
+          ctx.stroke();
+        } else if (p.type === "ash" && p.points) {
+          ctx.beginPath();
+          ctx.moveTo(p.points[0].dx, p.points[0].dy);
+          for (let idx = 1; idx < p.points.length; idx++) {
+            ctx.lineTo(p.points[idx].dx, p.points[idx].dy);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
       });
 
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(render);
     };
 
-    animate();
+    render();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -107,7 +163,11 @@ function DustCanvas() {
   }, []);
 
   return (
-    <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-30" style={{ mixBlendMode: "screen" }} />
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 z-30"
+      style={{ mixBlendMode: "screen", filter: "blur(0.35px)" }}
+    />
   );
 }
 
@@ -129,18 +189,13 @@ function LoadingScreen({ progress }: { progress: number }) {
         <div className="mb-4 h-px w-full" style={{ background: "#2a2520" }} />
         {LOADING_STEPS.slice(0, visibleSteps).map((step, i) => (
           <div key={i} style={{ opacity: i === visibleSteps - 1 ? 0.7 : 1 }}>
-            {step} <span className="ml-3" style={{ color: "#6a9a5a" }}> [OK] </span>
+            {step}
+            <span className="ml-3" style={{ color: "#6a9a5a" }}> [OK] </span>
           </div>
         ))}
         <div className="mt-5">
           <div className="h-0.5 w-full" style={{ background: "#1a1815" }}>
-            <motion.div
-              className="h-full"
-              style={{ background: "#ffb000", boxShadow: "0 0 6px rgba(255,176,0,0.3)" }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
+            <motion.div className="h-full" style={{ background: "#ffb000", boxShadow: "0 0 6px rgba(255,176,0,0.3)" }} initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
           </div>
           <div className="mt-2 text-right text-[10px] opacity-50">{Math.round(progress)}%</div>
         </div>
@@ -148,12 +203,6 @@ function LoadingScreen({ progress }: { progress: number }) {
     </div>
   );
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   MAIN SEQUENCE EXPORT
-   ═══════════════════════════════════════════════════════════════ */
-type BootPhase = "idle" | "degauss" | "loading" | "booting" | "exiting";
-
 
 /* ═══════════════════════════════════════════════════════════════
    SHUTDOWN SCREEN (CRT Power-down physics collapse simulation)
@@ -178,18 +227,12 @@ function ShutdownScreen() {
 
   if (stage === 3) {
     return (
-      <div 
-        className="fixed inset-0 z-50 bg-[#000000] flex flex-col items-center justify-center pointer-events-none" 
-        style={{ backgroundColor: "#000000" }}
-      />
+      <div className="fixed inset-0 z-50 bg-[#000000] flex flex-col items-center justify-center pointer-events-none" style={{ backgroundColor: "#000000" }} />
     );
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" 
-      style={{ backgroundColor: "#0a0908" }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ backgroundColor: "#0a0908" }} >
       <motion.div
         initial={{ scaleX: 1, scaleY: 1, opacity: 1, filter: "brightness(1) contrast(1.15)" }}
         animate={{
@@ -198,15 +241,10 @@ function ShutdownScreen() {
           opacity: stage >= 2 ? [1, 0.4, 0] : 1,
           filter: stage >= 2 ? "brightness(2) contrast(1.5)" : "brightness(1) contrast(1.15)",
         }}
-        transition={{
-          duration: 0.5,
-          ease: "easeInOut",
-        }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
         className="w-[480px] h-[360px] bg-[#ffaa55] rounded-[2px]"
         style={{
-          boxShadow: stage < 2 
-            ? "0 0 45px rgba(255, 170, 85, 0.85), inset 0 0 40px rgba(0,0,0,0.9)" 
-            : "0 0 15px rgba(255, 250, 240, 1)",
+          boxShadow: stage < 2 ? "0 0 45px rgba(255, 170, 85, 0.85), inset 0 0 40px rgba(0,0,0,0.9)" : "0 0 15px rgba(255, 250, 240, 1)",
           backgroundColor: stage >= 2 ? "#ffffff" : "#ffaa55",
         }}
       />
@@ -214,10 +252,18 @@ function ShutdownScreen() {
   );
 }
 
-export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
+/* ═══════════════════════════════════════════════════════════════
+   MAIN SEQUENCE EXPORT
+   ═══════════════════════════════════════════════════════════════ */
+type BootPhase = "idle" | "degauss" | "loading" | "booting" | "exiting";
+
+interface BootSequenceProps {
+  onPowerOn?: () => void;
+}
+
+export function BootSequence({ onPowerOn }: BootSequenceProps) {
   const markComplete = useBootStore((s) => s.markComplete);
   const setBooted = useUIStore((s) => s.setBooted);
-
   const [phase, setPhase] = useState<BootPhase>("idle");
 
   useEffect(() => {
@@ -226,11 +272,11 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
       if (storedEnding === "shutdown") {
         setPhase("shutdown" as any);
       } else if (storedEnding === "backup") {
-        // Clear backup flag so next startup behaves normally
         localStorage.removeItem("vp-ending");
       }
     }
   }, []);
+
   const [loadProgress, setLoadProgress] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -256,7 +302,6 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
   const cursorIntervalRef = useRef<any>(null);
   const degaussFrameId = useRef<number | null>(null);
 
-  // Initialize howler sounds safely on client-side mount
   useEffect(() => {
     audioRef.current = {
       powerClick: new Howl({ src: [AUDIO_PATHS.powerClick], volume: 0.8 }),
@@ -266,7 +311,11 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
     };
 
     return () => {
-      Object.values(audioRef.current).forEach((sound) => sound?.stop());
+      const a = audioRef.current;
+      a.powerClick?.unload();
+      a.crtWarmup?.unload();
+      a.roomTone?.unload();
+      a.rain?.unload();
     };
   }, []);
 
@@ -277,118 +326,63 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContextClass();
       const now = ctx.currentTime;
-
-      // 1. Master Output Gain
-      const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.0, now);
-      masterGain.gain.linearRampToValueAtTime(0.85, now + 0.02); // Sharp surge
-      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6); // 1.6s decay
-      masterGain.connect(ctx.destination);
-
-      // 2. High-Voltage Spark Relay Clack
-      const bufferSize = 0.015 * ctx.sampleRate; // 15ms duration
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-      const noiseNode = ctx.createBufferSource();
-      noiseNode.buffer = noiseBuffer;
-
-      const hpFilter = ctx.createBiquadFilter();
-      hpFilter.type = "highpass";
-      hpFilter.frequency.setValueAtTime(2500, now);
-
-      noiseNode.connect(hpFilter);
-      hpFilter.connect(masterGain);
-      noiseNode.start(now);
-
-      // Triangle pressure clack
-      const clackOsc = ctx.createOscillator();
-      clackOsc.type = "triangle";
-      clackOsc.frequency.setValueAtTime(110, now);
-      clackOsc.frequency.exponentialRampToValueAtTime(25, now + 0.1);
-      const clackGain = ctx.createGain();
-      clackGain.gain.setValueAtTime(0.9, now);
-      clackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-      clackOsc.connect(clackGain);
-      clackGain.connect(masterGain);
-      clackOsc.start(now);
-      clackOsc.stop(now + 0.1);
-
-      // 3. Magnetic Coil Discharge (Swept Sub-Bass Sine)
-      const sineOsc = ctx.createOscillator();
-      sineOsc.type = "sine";
-      sineOsc.frequency.setValueAtTime(120, now); // Warm hum frequency
-      sineOsc.frequency.exponentialRampToValueAtTime(18, now + 1.1); // Sweeps deep down
-
-      const sineGain = ctx.createGain();
-      sineGain.gain.setValueAtTime(0.7, now);
-      sineGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
-
-      sineOsc.connect(sineGain);
-      sineGain.connect(masterGain);
-      sineOsc.start(now);
-      sineOsc.stop(now + 1.2);
-
-      // 4. Electromagnetic Coil Jitter (60Hz Line Buzz)
-      const buzzOsc = ctx.createOscillator();
-      buzzOsc.type = "sawtooth";
-      buzzOsc.frequency.setValueAtTime(60, now);
-
-      const buzzFilter = ctx.createBiquadFilter();
-      buzzFilter.type = "lowpass";
-      buzzFilter.frequency.setValueAtTime(180, now); // Muffle high harsh harmonics
-
-      const buzzGain = ctx.createGain();
-      buzzGain.gain.setValueAtTime(0.35, now);
-      buzzGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65); // Swiftly decays as coil settles
-
-      buzzOsc.connect(buzzFilter);
-      buzzFilter.connect(buzzGain);
-      buzzGain.connect(masterGain);
-      buzzOsc.start(now);
-      buzzOsc.stop(now + 0.7);
-
-      // Clean context teardown
-      setTimeout(() => {
-        ctx.close();
-      }, 2000);
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 1.2);
+      
+      const vibrato = ctx.createOscillator();
+      const vibratoGain = ctx.createGain();
+      vibrato.frequency.setValueAtTime(35, now);
+      vibratoGain.gain.setValueAtTime(15, now);
+      vibrato.connect(vibratoGain);
+      vibratoGain.connect(osc.frequency);
+      
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      vibrato.start();
+      osc.start();
+      vibrato.stop(now + 1.5);
+      osc.stop(now + 1.5);
     } catch (e) {
-      console.warn("[Degauss Web Audio fallback failed]", e);
+      console.warn("Web Audio Degauss failed:", e);
     }
   }, []);
 
   // ── CRT Degauss Visual Tick Loop ──
   const startDegaussVisualTick = useCallback(() => {
     let startTimestamp: number | null = null;
-    const duration = 1500; // 1.5 seconds
+    const duration = 1500;
 
-    const tick = (timestamp: number) => {
+    const degaussTick = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
-      const elapsed = timestamp - startTimestamp;
-      const progress = elapsed / duration;
-
-      if (progress >= 1.0) {
-        setDegaussIntensity(0);
-        setShakeOffset({ x: 0, y: 0 });
-        setPhase("loading"); // Complete degauss -> advance to loading progress bar!
-        return;
-      }
-
-      // Exponential decay of degaussing magnet energy
-      const intensity = Math.exp(-progress * 4.2);
+      const progress = timestamp - startTimestamp;
+      const pct = Math.min(1.0, progress / duration);
+      
+      const intensity = 1.0 - pct;
       setDegaussIntensity(intensity);
 
-      // High-frequency shiver shake logic
-      const shakeX = (Math.random() - 0.5) * intensity * 15;
-      const shakeY = (Math.random() - 0.5) * intensity * 15;
-      setShakeOffset({ x: shakeX, y: shakeY });
-
-      degaussFrameId.current = requestAnimationFrame(tick);
+      if (pct < 1.0) {
+        const shakePower = intensity * 15;
+        setShakeOffset({
+          x: (Math.random() - 0.5) * shakePower,
+          y: (Math.random() - 0.5) * shakePower,
+        });
+        degaussFrameId.current = requestAnimationFrame(degaussTick);
+      } else {
+        setShakeOffset({ x: 0, y: 0 });
+        setDegaussIntensity(0);
+        setPhase("loading");
+      }
     };
-
-    degaussFrameId.current = requestAnimationFrame(tick);
+    degaussFrameId.current = requestAnimationFrame(degaussTick);
   }, []);
 
   // Simulating the loading progress bar
@@ -411,27 +405,26 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
   useEffect(() => {
     if (phase !== "booting") return;
 
-    const a = audioRef.current;
-    a.crtWarmup?.play();
-    a.roomTone?.play();
-    a.rain?.play();
-
-    const playLines = (index: number) => {
-      if (index >= BOOT_LINES.length) {
+    let currentLine = 0;
+    const typeNextLine = () => {
+      if (currentLine >= BOOT_LINES.length) {
         setShowPrompt(true);
         return;
       }
-      setVisibleCount(index + 1);
-      const timer = setTimeout(() => {
-        playLines(index + 1);
-      }, 350 + Math.random() * 220);
+      setVisibleCount(currentLine + 1);
+      
+      const delay = currentLine === 7 ? 2200 : 250 + Math.random() * 180;
+      currentLine++;
+      const timer = setTimeout(typeNextLine, delay);
       timersRef.current.push(timer);
     };
 
-    playLines(0);
+    const startTimer = setTimeout(typeNextLine, 600);
+    timersRef.current.push(startTimer);
 
     return () => {
       timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
     };
   }, [phase]);
 
@@ -446,17 +439,24 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
   // Click to start
   const handleStart = useCallback(() => {
     if (phase !== "idle") return;
+    setPhase("degauss");
     
-    // 1. Play clack sound
-    audioRef.current.powerClick?.play();
+    const a = audioRef.current;
+    a.powerClick?.play();
+    
+    playDegaussSound();
+    startDegaussVisualTick();
+
     if (onPowerOn) onPowerOn();
 
-    // 2. Play massive procedural degauss surge
-    playDegaussSound();
-
-    // 3. Engage visual shake + convergence splits
-    setPhase("degauss");
-    startDegaussVisualTick();
+    setTimeout(() => {
+      a.roomTone?.play();
+      a.roomTone?.fade(0, 0.3, 1000);
+      a.rain?.play();
+      a.rain?.fade(0, 0.25, 1000);
+      a.crtWarmup?.play();
+      a.crtWarmup?.fade(0, 0.4, 3000);
+    }, 150);
   }, [phase, onPowerOn, playDegaussSound, startDegaussVisualTick]);
 
   // Keyboard navigation bypass / complete
@@ -472,9 +472,9 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
       if (phase === "booting" && e.key === "Enter" && showPrompt) {
         setPhase("exiting");
         const a = audioRef.current;
-        a.roomTone?.fade(a.roomTone.volume(), 0, 2200);
-        a.rain?.fade(a.rain.volume(), 0, 2200);
-        a.crtWarmup?.fade(a.crtWarmup.volume(), 0, 2200);
+        a.roomTone?.fade(a.roomTone.volume() as number, 0, 2200);
+        a.rain?.fade(a.rain.volume() as number, 0, 2200);
+        a.crtWarmup?.fade(a.crtWarmup.volume() as number, 0, 2200);
         setTimeout(() => {
           markComplete();
           setBooted(true);
@@ -489,7 +489,6 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Clean animation frame on unmount
   useEffect(() => {
     return () => {
       if (degaussFrameId.current) cancelAnimationFrame(degaussFrameId.current);
@@ -522,7 +521,11 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
     );
   }
 
-  // Visual Chromatic convergence shift values driven directly by live Degauss loop!
+  const degaussIntensityInv = 1.0 - degaussIntensity;
+  // Opening scene visual sags calibrated for rich, warm backlight (0.45 baseline to 0.85 full lit)
+  const roomBrightness = phase === "degauss" ? 0.45 + degaussIntensityInv * 0.40 : 0.85;
+  const roomScale = phase === "degauss" ? 1.0 - degaussIntensityInv * 0.05 : 0.95;
+
   const chromaticSeparation = degaussIntensity * 18;
 
   return (
@@ -531,9 +534,8 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
         <motion.div
           key="boot"
           className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-          style={{ 
+          style={{
             background: "#0a0908",
-            // Apply physical coordinate shakes directly to viewport matrix!
             transform: `translate(${shakeOffset.x}px, ${shakeOffset.y}px)`,
           }}
           initial={{ opacity: 0 }}
@@ -543,131 +545,93 @@ export function BootSequence({ onPowerOn }: { onPowerOn?: () => void }) {
         >
           {/* Static room background frame (Photographic rendering) */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[4000ms] ease-in-out"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: "url(/images/boot-room-render.png)",
-              // Scales down slightly as degauss activates (represents desk receding)
-              transform: phase === "degauss" ? "scale(0.95)" : "scale(1.0)",
-              filter: `brightness(${0.22 + (phase === "degauss" ? (1 - degaussIntensity) * 0.28 : 0.0)}) contrast(1.15) sepia(0.08)`,
+              transform: `scale(${roomScale})`,
+              filter: `brightness(${roomBrightness}) contrast(1.15) sepia(0.08)`,
               transition: "transform 1500ms cubic-bezier(0.1, 0.8, 0.2, 1), filter 1500ms ease",
             }}
           />
 
-          {/* Degauss Electromagnetic White Discharge screen flash overlay */}
-          {phase === "degauss" && (
-            <div 
-              className="absolute inset-0 z-40 bg-white pointer-events-none"
-              style={{
-                opacity: degaussIntensity * 0.95, // Bright instant flare fading exponentially
-              }}
-            />
-          )}
+          {/* Glowing CRT phosphor monitor screen frame */}
+          <motion.div
+            style={{
+              zIndex: 40,
+              boxShadow: `0 0 ${40 + degaussIntensity * 120}px rgba(255, 170, 85, ${0.15 + (1 - degaussIntensity) * 0.45})`,
+              textShadow: `${chromaticSeparation}px 0 0 rgba(255,0,0,0.3), -${chromaticSeparation}px 0 0 rgba(0,255,255,0.3)`,
+              filter: `contrast(${1.0 + degaussIntensity * 0.4}) brightness(${1.0 - degaussIntensity * 0.6})`,
+              transform: `scale(${1.0 - degaussIntensity * 0.08})`,
+            }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.8, ease: "easeOut" }}
+          >
+            {phase === "loading" ? (
+              <LoadingScreen progress={loadProgress} />
+            ) : (
+              <CRTScreenText visibleCount={visibleCount} showPrompt={showPrompt} cursorOn={cursorOn} />
+            )}
+          </motion.div>
 
-          {/* Core overlay effects: Dust & CRT scanline convergence grid */}
+          {/* Interactive procedural dust floating around - story grounded */}
           <DustCanvas />
 
-          {/* Main system screen component */}
-          <div className="relative z-10 w-full max-w-lg scale-90 md:scale-100">
-            {phase === "degauss" || phase === "loading" ? (
-              <div 
-                className="w-[480px] h-[360px] flex items-center justify-center border bg-[#050403] rounded-[2px] shadow-2xl relative"
-                style={{
-                  borderColor: "#1a1612",
-                  // Visual color splitting text shadow convergence errors [28]
-                  textShadow: `${chromaticSeparation}px 0px 0px rgba(255, 0, 0, 0.35), ${-chromaticSeparation}px 0px 0px rgba(0, 255, 255, 0.35)`,
-                }}
-              >
-                {phase === "loading" ? (
-                  <LoadingScreen progress={loadProgress} />
-                ) : (
-                  <div className="text-center font-mono text-[10px] uppercase tracking-widest text-[#8a6000] animate-pulse">
-                    Magnetic Calibration Active...
-                  </div>
-                )}
-              </div>
-            ) : (
-              <CRTScreenText
-                visibleCount={visibleCount}
-                showPrompt={showPrompt}
-                cursorOn={cursorOn}
-              />
-            )}
-          </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SUBCOMPONENTS
-   ═══════════════════════════════════════════════════════════════ */
-function CRTScreenText({
-  visibleCount,
-  showPrompt,
-  cursorOn,
-}: {
-  visibleCount: number;
-  showPrompt: boolean;
-  cursorOn: boolean;
-}) {
+function CRTScreenText({ visibleCount, showPrompt, cursorOn, }: { visibleCount: number; showPrompt: boolean; cursorOn: boolean; }) {
   return (
-    <div
-      style={{
-        width: "480px",
-        height: "360px",
-        pointerEvents: "none",
-        fontFamily: "'Courier New', Courier, monospace",
-        fontSize: "13px",
-        lineHeight: "1.7",
-        color: "#ffb000",
-        textShadow: "0 0 6px rgba(255,176,0,0.5), 0 0 14px rgba(255,176,0,0.15)",
-        whiteSpace: "pre-wrap",
-        userSelect: "none",
-        background: "rgba(8,6,3,0.92)",
-        padding: "28px",
-        borderRadius: "2px",
-        boxShadow: "inset 0 0 50px rgba(0,0,0,0.9)",
-        border: "1px solid #2a2520",
-      }}
-    >
+    <div style={{
+      width: "480px",
+      height: "360px",
+      pointerEvents: "none",
+      fontFamily: "'Courier New', Courier, monospace",
+      fontSize: "13px",
+      lineHeight: "1.7",
+      color: "#ffb000",
+      textShadow: "0 0 6px rgba(255,176,0,0.5), 0 0 14px rgba(255,176,0,0.15)",
+      whiteSpace: "pre-wrap",
+      userSelect: "none",
+      background: "rgba(8,6,3,0.92)",
+      padding: "28px",
+      borderRadius: "2px",
+      boxShadow: "inset 0 0 50px rgba(0,0,0,0.9)",
+      border: "1px solid #2a2520",
+    }} >
       {BOOT_LINES.slice(0, visibleCount).map((line, i) => (
-        <div
-          key={i}
-          style={{
-            color: line.color,
-            marginBottom: "5px",
-            opacity: 0,
-            animation: "phosphorIn 70ms ease forwards",
-            animationDelay: `${i * 40}ms`,
-          }}
-        >
+        <div key={i} style={{
+          color: line.color,
+          marginBottom: "5px",
+          opacity: 0,
+          animation: "phosphorIn 70ms ease forwards",
+          animationDelay: `${i * 40}ms`,
+        }} >
           {line.text}
           {i === visibleCount - 1 && cursorOn && (
-            <span
-              style={{
-                display: "inline-block",
-                width: "7px",
-                height: "13px",
-                background: line.color,
-                marginLeft: "4px",
-                verticalAlign: "middle",
-              }}
-            />
+            <span style={{
+              display: "inline-block",
+              width: "7px",
+              height: "13px",
+              background: line.color,
+              marginLeft: "4px",
+              verticalAlign: "middle",
+            }} />
           )}
         </div>
       ))}
       {showPrompt && (
-        <div
-          style={{
-            marginTop: "18px",
-            color: "#ffb000",
-            fontSize: "11px",
-            letterSpacing: "2.5px",
-            textAlign: "center",
-            animation: "pulsePrompt 2.2s ease-in-out infinite",
-          }}
-        >
+        <div style={{
+          marginTop: "18px",
+          color: "#ffb000",
+          fontSize: "11px",
+          letterSpacing: "2.5px",
+          textAlign: "center",
+          animation: "pulsePrompt 2.2s ease-in-out infinite",
+        }} >
           [ PRESS ENTER TO BOOT ]
         </div>
       )}

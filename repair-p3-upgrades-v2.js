@@ -105,7 +105,7 @@ function applyP3Upgrades() {
     "        sessionWorkDone: ui.status.sessionWorkDone + 1",
     "      });",
     "      ",
-    "      log('success', gateMsg);",
+    "      console.log(gateMsg);",
     "    }",
     "  }, [rotation, zoom, lampMode, activeArtifact]);"
   ].join("\n");

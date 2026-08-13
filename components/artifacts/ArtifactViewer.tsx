@@ -590,7 +590,7 @@ export const ArtifactViewer: React.FC = () => {
     return Math.sqrt(dx * dx + dy * dy) * 0.45; // scale factor to mm
   }, [caliperPoints]);
 
-  const handlePointerDown = (e) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (lampMode === 'measure') {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -605,20 +605,20 @@ export const ArtifactViewer: React.FC = () => {
     }
     setIsDraggingSpecimen(true);
     dragStartRef.current = e.clientX;
-    e.target.setPointerCapture(e.pointerId);
+    (e.target as any).setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingSpecimen) return;
     const deltaX = e.clientX - dragStartRef.current;
     dragStartRef.current = e.clientX;
     if (typeof rotate === 'function') rotate(deltaX * 0.5);
   };
 
-  const handlePointerUp = (e) => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDraggingSpecimen(false);
     try {
-      e.target.releasePointerCapture(e.pointerId);
+      (e.target as any).releasePointerCapture(e.pointerId);
     } catch (err) {}
   };
 

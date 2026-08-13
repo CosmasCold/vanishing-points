@@ -20,25 +20,25 @@ const AUDIO_PATHS = {
    BOOT TEXT DATA
    ═══════════════════════════════════════════════════════════════ */
 const BOOT_LINES = [
-  { text: "POWER RESTORED", color: "#6a9a5a" },
-  { text: "Loading Archive Kernel...", color: "#8a6000" },
-  { text: "Initializing Atlas...", color: "#8a6000" },
-  { text: "Checking Integrity...", color: "#8a6000" },
-  { text: "Loading Investigations...", color: "#8a6000" },
-  { text: "Synchronizing Evidence...", color: "#8a6000" },
-  { text: "Loading Local Cache...", color: "#8a6000" },
-  { text: "4,211 days since last session", color: "#a85d5d" },
-  { text: "Dust Index: Stable", color: "#6a9a5a" },
-  { text: "Good evening, Investigator.", color: "#e8e0d0" },
+  { text: "ARCHIVE NODE SYSTEM 7-B ONLINE.", color: "#ffb000" },
+  { text: "FIRMWARE: V7.04-1962 BOOT PATH: /SYS/CORE", color: "#8a6000" },
+  { text: "MEMORY CONGRITY: 92% (DEGRADED)", color: "#8a6000" },
+  { text: "TEMPORAL SYNC: NOMINAL [SOLSTICE CALIBRATION DRIFT]", color: "#8a6000" },
+  { text: "PREVIOUS SESSION TERMINATED: 4,211 DAYS, 7 HOURS AGO.", color: "#a85d5d" },
+  { text: "IDENTIFICATION: INV_RED-7 (UNVERIFIED)", color: "#a85d5d" },
+  { text: "----------------------------------------", color: "#2a2520" },
+  { text: "ELECTROSTATIC DUST DEPOSIT: ELEVATED", color: "#ffaa55" },
+  { text: "WARN: COGNITIVE FOCUS RE-CALIBRATION PENDING.", color: "#ffaa55" },
+  { text: "THE WORK HAS BEEN WAITING.", color: "#e8e0d0" },
 ];
 
 const LOADING_STEPS = [
-  "> Initializing Archive kernel...",
-  "> Mounting asset volumes...",
-  "> Verifying geometry integrity...",
-  "> Loading texture banks...",
-  "> Synchronizing scene graph...",
-  "> Calibrating render pipeline...",
+  "> POWER LEVEL: STABILIZED [6.3V HEATER ANODE RAILS]...",
+  "> POST STAGE: SCANNING 16KB MAGNETIC CORE REGISTER ARRAYS...",
+  "> INTEGRITY: DETECTED CORRUPTED SECTOR SEALS (AUTO-HEALING)...",
+  "> SEEKING REEL_RED-7 COAXIAL TAPE STORAGE CORES...",
+  "> MOUNTING RAW SYSTEM BLOCK /SYS/CORE [BLOCK SIZE 1024]...",
+  "> STABILIZING COMPROMISED SYSTEM DIAGNOSTIC KERNEL V7.04...",
 ];
 
 /* ═══════════════════════════════════════════════════════════════

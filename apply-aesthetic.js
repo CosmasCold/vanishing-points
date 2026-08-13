@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 console.log("\n====================================================================");
-console.log("  DEPARTMENT OF DEFENSE // FEMA ARCHIVAL DIVISION -- EMERGENCY REPAIR");
-console.log("  SYSTEM-7B WORKSTATION CALIBRATION: SCREEN FLASHING & WIDGET GATING");
+console.log("  DEPARTMENT OF DEFENSE // FEMA ARCHIVAL DIVISION -- EXTREME RECOVERY");
+console.log("  SYSTEM-7B MAP WORKSTATION CALIBRATION: BULLETPROOF ATLAS REPAIR");
 console.log("====================================================================\n");
 
 function log(status, msg) {
@@ -22,7 +22,9 @@ const rootDir = process.cwd();
 function findFile(filename, subdirs = []) {
   const paths = [
     path.join(rootDir, ...subdirs, filename),
-    path.join(rootDir, 'src', ...subdirs, filename)
+    path.join(rootDir, 'src', ...subdirs, filename),
+    path.join(rootDir, 'components', 'atlas', filename),
+    path.join(rootDir, 'src', 'components', 'atlas', filename)
   ];
   for (const p of paths) {
     if (fs.existsSync(p)) return p;
@@ -30,111 +32,60 @@ function findFile(filename, subdirs = []) {
   return null;
 }
 
-// 1. Inject compile-safe .mahogany-console class definitions to globals.css
-function patchGlobalsCSS() {
-  const globalsPath = findFile('globals.css', ['app']);
-  if (!globalsPath) {
-    log('warn', 'Could not locate globals.css inside app/ directory. Skipping CSS definition.');
+function patchAtlasMap() {
+  const mapPath = findFile('AtlasMap.tsx', ['components', 'atlas']) || findFile('AtlasMap.tsx', ['components']);
+  if (!mapPath) {
+    log('error', "Could not locate 'AtlasMap.tsx' in your Next.js directory tree.");
     return false;
   }
 
-  log('info', `Located globals.css at: ${globalsPath}`);
-  let content = fs.readFileSync(globalsPath, 'utf8').replace(/\r\n/g, '\n');
-  let updated = false;
+  log('info', `Located AtlasMap.tsx at: ${mapPath}`);
+  let content = fs.readFileSync(mapPath, 'utf8').replace(/\r\n/g, '\n');
+  let fixed = false;
 
-  const styleClassMarker = '/* CLASSIFIED MAHOGANY CONSOLE BACKING CLASS */';
-  if (!content.includes(styleClassMarker) && !content.includes('.mahogany-console')) {
-    const classBlock = `\n${styleClassMarker}\n.mahogany-console {\n  background-color: #0f0b08 !important;\n  background-image: radial-gradient(circle at center, rgba(40, 30, 20, 0.45) 0%, transparent 85%), url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E") !important;\n}\n`;
-    content += classBlock;
-    fs.writeFileSync(globalsPath, content, 'utf8');
-    log('success', '✓ Injected compile-safe .mahogany-console class definitions to globals.css.');
-    updated = true;
-  } else {
-    log('info', '• .mahogany-console background style class is already registered in globals.css.');
-  }
-  return true;
-}
-
-// 2. Clear inline JSX style syntax error from InvestigationView.tsx
-function patchInvestigationView() {
-  const viewPath = findFile('InvestigationView.tsx', ['components', 'investigation']);
-  if (!viewPath) {
-    log('error', 'Could not locate InvestigationView.tsx. Skipping JSX compile fix.');
-    return false;
-  }
-
-  log('info', `Located InvestigationView at: ${viewPath}`);
-  let content = fs.readFileSync(viewPath, 'utf8').replace(/\r\n/g, '\n');
-
-  // Bulletproof structure-based parser: find first <div inside return block and remove inline style
-  let returnIdx = content.indexOf("return (");
-  if (returnIdx === -1) {
-    returnIdx = content.indexOf("return  (");
-  }
-
-  if (returnIdx !== -1) {
-    const divIdx = content.indexOf("<div", returnIdx);
-    if (divIdx !== -1) {
-      const closeAngleIdx = content.indexOf(">", divIdx);
-      if (closeAngleIdx !== -1) {
-        const originalTag = content.substring(divIdx, closeAngleIdx + 1);
-        if (originalTag.includes("style={{") && (originalTag.includes("radial-gradient") || originalTag.includes("feTurbulence") || originalTag.includes("colors.archive.black"))) {
-          const cleanTag = '<div className="absolute inset-0 flex flex-col z-10 mahogany-console">';
-          content = content.substring(0, divIdx) + cleanTag + content.substring(closeAngleIdx + 1);
-          fs.writeFileSync(viewPath, content, 'utf8');
-          log('success', '✓ Surgically removed multiline inline style block and replaced with mahogany-console.');
-          return true;
-        }
-      }
+  // Print existing transform assignments for visibility before making any modifications
+  log('info', "Scanning existing style.transform alignments inside file...");
+  const lines = content.split('\n');
+  lines.forEach((line, i) => {
+    if (line.includes('style.transform')) {
+      log('info', `[Line ${i + 1}] -> ${line.trim()}`);
     }
+  });
+
+  // Extremely robust regex that matches translate3d(...) followed optionally by scale(...) 
+  // It handles double quotes, single quotes, backticks, or complete absence of quotes!
+  const transformRegex = /mapContentRef\.current\.style\.transform\s*=\s*(['"`]?)(translate(?:3d)?\([^;]+?\)(?:\s*scale\([^;]+?\))?)\1;?/g;
+
+  if (transformRegex.test(content)) {
+    // Reset regex index for safe replacement
+    transformRegex.lastIndex = 0;
+    
+    content = content.replace(transformRegex, (match, quote, expr) => {
+      const cleanExpr = expr.trim().replace(/^['"`]/, '').replace(/['"`]$/, '');
+      const replacement = `mapContentRef.current.style.transform = \`${cleanExpr}\`;`;
+      log('success', `✓ Surgically normalized: \`${cleanExpr}\` to safe backticks.`);
+      fixed = true;
+      return replacement;
+    });
   }
 
-  log('info', '• InvestigationView background looks clean or is already compiled-safe.');
-  return true;
-}
-
-// 3. Bulletproof gating of Strowger and Geiger widgets to only appear inside system panel
-function patchDashboardShell() {
-  const shellPath = findFile('DashboardShell.tsx', ['components']);
-  if (!shellPath) {
-    log('error', 'Could not locate DashboardShell.tsx. Skipping widget gating.');
+  if (fixed) {
+    fs.writeFileSync(mapPath, content, 'utf8');
+    log('success', "✓ Saved all Atlas Map direct-DOM transform updates successfully!");
+    return true;
+  } else {
+    log('warn', "Could not match translate3d templates. Checking for other syntax patterns...");
     return false;
   }
-
-  log('info', `Located DashboardShell at: ${shellPath}`);
-  let content = fs.readFileSync(shellPath, 'utf8').replace(/\r\n/g, '\n');
-
-  // Check if already wrapped
-  if (content.includes("activeModule === 'system'") || content.includes('activeModule === "system"')) {
-    log('info', '• Dashboard Shell floating widgets are already wrapped in system check.');
-    return true;
-  }
-
-  // Matches the absolute container that wraps GeigerHUD and StrowgerStepper regardless of their tag orders
-  const containerPattern = /(<div\s+className="absolute[^"]*right-4[^"]*"[\s\S]*?>[\s\S]*?(?:StrowgerStepper|GeigerHUD)[\s\S]*?(?:StrowgerStepper|GeigerHUD)[\s\S]*?<\/div>)/;
-
-  if (containerPattern.test(content)) {
-    content = content.replace(containerPattern, (match, block) => {
-      return `{\n    activeModule === 'system' && (\n      ${block.trim()}\n    )\n  }`;
-    });
-    fs.writeFileSync(shellPath, content, 'utf8');
-    log('success', '✓ Wrapped Geiger and Strowger widgets in activeModule conditional guard.');
-    return true;
-  }
-
-  log('warn', '• Could not find floating widgets absolute container in DashboardShell.tsx.');
-  return false;
 }
 
-const globalsDone = patchGlobalsCSS();
-const viewDone = patchInvestigationView();
-const shellDone = patchDashboardShell();
+const mapFixed = patchAtlasMap();
 
 console.log("\n--------------------------------------------------------------------");
-if (globalsDone || viewDone || shellDone) {
-  log('success', "EMERGENCY SYSTEM-7B RECOVERY COMPLETED SUCCESSFULLY!");
-  log('info', "Run your local production build 'npm run build' to confirm absolute sync.");
+if (mapFixed) {
+  log('success', "EMERGENCY SYSTEM CALIBRATION COMPLETED!");
+  log('info', "Run 'node fix-atlas-crashing-v2.js' locally on your workstation.");
 } else {
-  log('warn', "No modifications were necessary. Cores appear in consensus alignment.");
+  log('warn', "Atlas Map is already fully patched or did not match alignment vectors.");
 }
 console.log("--------------------------------------------------------------------\n");

@@ -947,8 +947,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 5,
-        "message": "Accumulate dust to access this sector."
+        "value": 15,
+        "message": "The grid requires more dust to resolve this location (15% Dust threshold)."
       }
     },
     {

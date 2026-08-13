@@ -220,6 +220,14 @@ export const ResearchPanel: React.FC = () => {
 
   const handleTabChange = (tab: any) => {
     click();
+    if (tab === 'spectrometer' && dust < 25) {
+      if (typeof play === 'function') play('error');
+      return;
+    }
+    if (tab === 'convergence' && dust < 65) {
+      if (typeof play === 'function') play('error');
+      return;
+    }
     setActiveTab(tab);
   };
 

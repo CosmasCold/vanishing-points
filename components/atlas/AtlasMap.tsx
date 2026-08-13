@@ -85,7 +85,7 @@ export const AtlasMap: React.FC = () => {
     transformRef.current = transform;
     if (mapContentRef.current) {
       // Use hardware accelerated translate3d to bypass virtual DOM paints and offload to GPU compositor
-      mapContentRef.current.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0px) scale(${transform.k})`;
+      mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
     }
   }, [transform]);
 

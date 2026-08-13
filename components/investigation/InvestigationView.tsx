@@ -101,10 +101,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
   }, [evidenceItems, safeConnections.length, timelineEvents.length]);
 
   return (
-    <div className="absolute inset-0 flex flex-col z-10" style={{
-      backgroundColor: '#0f0b08',
-      backgroundImage: 'radial-gradient(circle at center, rgba(40, 30, 20, 0.45) 0%, transparent 85%), url("data:image/svg+xml,%3Csvg width=\'120\' height=\'120\' xmlns=\'http://www.w3.org/2000/svg'%3E%3Cfilter id=\'n'%3E%3CfeTurbulence type=\'fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.02'/%3E%3C/svg%3E")',
-    }}>
+    <div className="absolute inset-0 flex flex-col z-10 mahogany-console">
       {/* Header */}
       <div
         className="shrink-0 border-b px-6 py-4 flex items-center justify-between"

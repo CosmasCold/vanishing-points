@@ -298,3 +298,9 @@ div[style*="spacing.rail"] button span:last-child, .fixed.left-0.top-0.bottom-0 
 div[style*="spacing.rail"] button span:first-child, .fixed.left-0.top-0.bottom-0 button span:first-child {
   font-size: 1.4rem !important;
 }
+
+/* CLASSIFIED MAHOGANY CONSOLE BACKING CLASS */
+.mahogany-console {
+  background-color: #0f0b08 !important;
+  background-image: radial-gradient(circle at center, rgba(40, 30, 20, 0.45) 0%, transparent 85%), url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E") !important;
+}

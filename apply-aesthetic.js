@@ -2,10 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 console.log("\n=======================================================");
-console.log("   SYSTEM-7B WORKSTATION - ADVANCED AESTHETIC OVERHAUL V5");
-console.log("   TARGETING: FLOATING TELEMETRY WIDGET CONFINEMENT [BUGFIX]");
-console.log("              NAVIGATION COLUMN SCALE & TYPOGRAPHY READABILITY,");
-console.log("              CASE FILE SCREEN CONSOLE WARMTH & BAKELITE DECK");
+console.log("   SYSTEM-7B WORKSTATION - BUILD COMPILATION RECOVERY");
+console.log("   TARGETING: SYNTAX ERROR IN InvestigationView.tsx");
 console.log("=======================================================\n");
 
 function log(status, msg) {
@@ -32,112 +30,7 @@ function findFile(filename, subdirs = []) {
   return null;
 }
 
-// 1. Bulletproof JSX-targeted order-agnostic container resolution inside DashboardShell.tsx
-function patchDashboardShell() {
-  const shellPath = findFile('DashboardShell.tsx', ['components']);
-  if (!shellPath) {
-    log('warn', 'Could not locate DashboardShell.tsx. Skipping widget gating.');
-    return false;
-  }
-
-  log('info', `Located DashboardShell at: ${shellPath}`);
-  let content = fs.readFileSync(shellPath, 'utf8').replace(/\r\n/g, '\n');
-
-  if (content.includes('StrowgerStepper') && content.includes('GeigerHUD')) {
-    // Check if the widgets are already conditionalized
-    if (content.includes("activeModule === 'system'") || content.includes('activeModule === "system"')) {
-      log('info', '• Dashboard Shell floating widgets are already wrapped in system check.');
-      return true;
-    }
-
-    // Locate indices using exact JSX tag definitions to bypass top-level imports and component declarations!
-    const stepperIdx = content.indexOf('<StrowgerStepper');
-    const geigerIdx = content.indexOf('<GeigerHUD');
-
-    if (stepperIdx !== -1 && geigerIdx !== -1) {
-      // Find the first occurring JSX tag index to trace backwards for the opening <div
-      const firstWidgetIdx = Math.min(stepperIdx, geigerIdx);
-      const beforeFirst = content.substring(0, firstWidgetIdx);
-      const lastDivOpenIdx = beforeFirst.lastIndexOf('<div');
-
-      // Find the second occurring JSX tag index to trace forwards for the closing </div>
-      const secondWidgetIdx = Math.max(stepperIdx, geigerIdx);
-      const afterSecond = content.substring(secondWidgetIdx);
-      const closeDivIdx = afterSecond.indexOf('</div>');
-
-      if (lastDivOpenIdx !== -1 && closeDivIdx !== -1) {
-        const absoluteCloseDivIdx = secondWidgetIdx + closeDivIdx + '</div>'.length;
-        const fullWidgetBlock = content.substring(lastDivOpenIdx, absoluteCloseDivIdx);
-
-        if (fullWidgetBlock.includes('StrowgerStepper') && 
-            fullWidgetBlock.includes('GeigerHUD') && 
-            fullWidgetBlock.includes('absolute')) {
-          
-          const patchedBlock = `{\n      activeModule === 'system' && (\n        ${fullWidgetBlock.trim()}\n      )\n    }`;
-          content = content.substring(0, lastDivOpenIdx) + patchedBlock + content.substring(absoluteCloseDivIdx);
-          
-          fs.writeFileSync(shellPath, content, 'utf8');
-          log('success', '✓ Robustly wrapped Geiger and Strowger widgets in activeModule conditional guard (Order-Agnostic JSX Solver!).');
-          return true;
-        }
-      }
-    }
-    log('warn', 'Could not cleanly resolve container boundaries in DashboardShell.tsx.');
-  } else {
-    log('info', '• Geiger or Strowger widgets are not active in this shell instance.');
-  }
-  return false;
-}
-
-// 2. Widen Navigation Rail column & establish crisp contrast inside NavigationRail.tsx
-function patchNavigationRail() {
-  const railPath = findFile('NavigationRail.tsx', ['components']);
-  if (!railPath) {
-    log('warn', 'Could not locate NavigationRail.tsx. Skipping.');
-    return false;
-  }
-
-  log('info', `Located NavigationRail at: ${railPath}`);
-  let content = fs.readFileSync(railPath, 'utf8').replace(/\r\n/g, '\n');
-  let updated = false;
-
-  // Elevate container z-index to sit cleanly above CRT vignetting overlays
-  if (content.includes('z-30')) {
-    content = content.replace('z-30', 'z-[61]');
-    updated = true;
-    log('success', '✓ Elevated Navigation Rail z-index to z-[61].');
-  }
-
-  // Enhance icon text labels contrast from archive.gray to high-visibility archive.grayLight
-  const oldBtnPattern = `color: isActive ? colors.archive.amber : colors.archive.gray`;
-  const newBtnPattern = `color: isActive ? colors.archive.amber : colors.archive.grayLight`;
-  if (content.includes(oldBtnPattern)) {
-    content = content.replace(oldBtnPattern, newBtnPattern);
-    updated = true;
-    log('success', '✓ Upgraded unselected menu colors to colors.archive.grayLight.');
-  }
-
-  // Elevate unselected buttons' opacity from dim 0.4 to clear 0.75
-  const oldOpacity1 = 'opacity: isActive ? 1.0 : 0.4';
-  const oldOpacity2 = 'opacity: isActive ? 1 : 0.4';
-  if (content.includes(oldOpacity1)) {
-    content = content.replace(oldOpacity1, 'opacity: isActive ? 1.0 : 0.75');
-    updated = true;
-  } else if (content.includes(oldOpacity2)) {
-    content = content.replace(oldOpacity2, 'opacity: isActive ? 1 : 0.75');
-    updated = true;
-  }
-
-  if (updated) {
-    fs.writeFileSync(railPath, content, 'utf8');
-    log('success', '✓ Saved Navigation Rail contrast and layout refinements.');
-  } else {
-    log('info', '• Navigation Rail is already calibrated.');
-  }
-  return true;
-}
-
-// 3. Apply high-contrast text rendering and layout scaling in global.css
+// 1. Inject mahogany-console class to globals.css
 function patchGlobalsCSS() {
   const globalsPath = findFile('globals.css', ['app']);
   if (!globalsPath) {
@@ -149,47 +42,50 @@ function patchGlobalsCSS() {
   let content = fs.readFileSync(globalsPath, 'utf8').replace(/\r\n/g, '\n');
   let updated = false;
 
-  const overridesMarker = '/* CLASSIFIED NAVIGATION OVERRIDES BLOCK V5 */';
-  if (!content.includes(overridesMarker)) {
-    const overrides = `
-${overridesMarker}
-/* Adjust navigation columns dynamically */
-.fixed.left-0.top-0.bottom-0[style*="spacing.rail"], div[style*="spacing.rail"] {
-  width: 4.75rem !important;
-}
-
-/* Force text inside buttons of the navigation rail to expand and scale uppercase */
-div[style*="spacing.rail"] button span:last-child, .fixed.left-0.top-0.bottom-0 button span:last-child {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  opacity: 0.95 !important;
-}
-
-/* Ensure icons are beautifully sized */
-div[style*="spacing.rail"] button span:first-child, .fixed.left-0.top-0.bottom-0 button span:first-child {
-  font-size: 1.4rem !important;
-}
-`;
-    content += overrides;
+  const styleClassMarker = '/* CLASSIFIED MAHOGANY CONSOLE BACKING CLASS */';
+  if (!content.includes(styleClassMarker)) {
+    const classBlock = `\n${styleClassMarker}\n.mahogany-console {\n  background-color: #0f0b08 !important;\n  background-image: radial-gradient(circle at center, rgba(40, 30, 20, 0.45) 0%, transparent 85%), url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E") !important;\n}\n`;
+    content += classBlock;
     fs.writeFileSync(globalsPath, content, 'utf8');
-    log('success', '✓ Injected vertical-rail layout and text size overrides to globals.css.');
+    log('success', '✓ Injected compile-safe .mahogany-console class definitions to globals.css.');
     updated = true;
   } else {
-    log('info', '• CSS overrides already registered.');
+    log('info', '• .mahogany-console background style class is already registered.');
   }
-  return updated;
+  return true;
 }
 
-// Execute Repairs
-const shellDone = patchDashboardShell();
-const railDone = patchNavigationRail();
-const globalsDone = patchGlobalsCSS();
+// 2. Clear inline JSX style syntax error from InvestigationView.tsx
+function patchInvestigationView() {
+  const viewPath = findFile('InvestigationView.tsx', ['components', 'investigation']);
+  if (!viewPath) {
+    log('error', 'Could not locate InvestigationView.tsx.');
+    return false;
+  }
 
-console.log("\n=======================================================");
-if (shellDone || railDone || globalsDone) {
-  log('success', "Aesthetic calibration successfully integrated!");
+  log('info', `Located InvestigationView at: ${viewPath}`);
+  let content = fs.readFileSync(viewPath, 'utf8').replace(/\r\n/g, '\n');
+
+  // Regex targeting the style attribute containing the broken unescaped single quotes
+  const brokenStyleRegex = /<div\s+className="absolute inset-0 flex flex-col z-10"\s+style=\{\{[\s\S]*?\}\}\s*>/;
+
+  if (brokenStyleRegex.test(content)) {
+    content = content.replace(brokenStyleRegex, '<div className="absolute inset-0 flex flex-col z-10 mahogany-console">');
+    fs.writeFileSync(viewPath, content, 'utf8');
+    log('success', '✓ Successfully purged inline style syntax block and replaced with clean className="mahogany-console".');
+    return true;
+  }
+
+  log('info', '• InvestigationView background looks clean or already patched.');
+  return true;
+}
+
+const globalsPatched = patchGlobalsCSS();
+const viewPatched = patchInvestigationView();
+
+console.log("\n-------------------------------------------------------");
+if (globalsPatched && viewPatched) {
+  log('success', "BUILD RECOVERY COMPLETED SUCCESSFULLY!");
 } else {
   log('warn', "No modifications were necessary.");
 }

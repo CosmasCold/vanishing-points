@@ -24,7 +24,7 @@ export const NavigationRail: React.FC = () => {
 
   return (
     <div
-      className="fixed left-0 top-0 bottom-0 z-30 flex flex-col"
+      className="fixed left-0 top-0 bottom-0 z-[61] flex flex-col"
       style={{
         width: spacing.rail,
         background: `linear-gradient(180deg, ${microform.iron} 0%, ${microform.mahogany} 40%, ${colors.archive.black} 100%)`,

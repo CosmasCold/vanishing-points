@@ -84,7 +84,8 @@ export const AtlasMap: React.FC = () => {
   useEffect(() => {
     transformRef.current = transform;
     if (mapContentRef.current) {
-      mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
+      // Use hardware accelerated translate3d to bypass virtual DOM paints and offload to GPU compositor
+      mapContentRef.current.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0px) scale(${transform.k})`;
     }
   }, [transform]);
 
@@ -297,7 +298,7 @@ export const AtlasMap: React.FC = () => {
       {/* SVG Canvas Root */}
       <svg className="w-full h-full" style={{ imageRendering: "pixelated" }}>
         {/* Dynamic content layer grouped under optimized transform ref */}
-        <g ref={mapContentRef} style={{ transformOrigin: "0px 0px" }}>
+        <g ref={mapContentRef} style={{ transformOrigin: "0px 0px", willChange: "transform" }}>
           
           {/* Static Country Boundaries Base Layer */}
           <CountryBaseLayer />

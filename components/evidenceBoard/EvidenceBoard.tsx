@@ -903,6 +903,9 @@ export const EvidenceBoard: React.FC = () => {
       />
 
       <ReactFlow
+        onlyRenderVisibleElements={true}
+        minZoom={0.25}
+        maxZoom={2.0}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}

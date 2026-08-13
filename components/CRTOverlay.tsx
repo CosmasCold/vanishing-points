@@ -344,7 +344,7 @@ export const CRTOverlay: React.FC = () => {
       </div>
 
       {/* 6. Custom SVG Displacement Filter to Render Real Glass curvature */}
-      <svg className="absolute pointer-events-none w-0 h-0 opacity-0 overflow-hidden" width="0" height="0" style={{ position: "absolute", zIndex: -9999 }}  className="absolute w-0 h-0 pointer-events-none" style={{ visibility: "hidden" }} aria-hidden="true">
+      <svg className="absolute pointer-events-none w-0 h-0 opacity-0 overflow-hidden" width="0" height="0" style={{ position: "absolute", zIndex: -9999, visibility: "hidden" }} aria-hidden="true">
         <defs>
           <filter id="crt-lens-curvature" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="fractalNoise" baseFrequency="0.005" numOctaves="1" result="noise" />

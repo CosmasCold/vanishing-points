@@ -84,7 +84,6 @@ export const AtlasMap: React.FC = () => {
   useEffect(() => {
     transformRef.current = transform;
     if (mapContentRef.current) {
-      // Use hardware accelerated translate3d to bypass virtual DOM paints and offload to GPU compositor
       mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
     }
   }, [transform]);
@@ -158,7 +157,7 @@ export const AtlasMap: React.FC = () => {
     transformRef.current.y = dragY;
 
     if (mapContentRef.current) {
-      mapContentRef.current.style.transform = `translate(${dragX}px, ${dragY}px) scale(${currentK})`;
+      mapContentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${transformRef.current.k})`;
     }
   };
 

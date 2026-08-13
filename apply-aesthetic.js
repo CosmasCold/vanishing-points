@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 console.log("\n====================================================================");
-console.log("  DEPARTMENT OF DEFENSE // FEMA ARCHIVAL DIVISION -- COMPILER FIX");
-console.log("  SYSTEM-7B WORKSTATION RECOVERY: DUPLICATE JSX ATTRIBUTES REPAIR");
+console.log("  DEPARTMENT OF DEFENSE // FEMA ARCHIVAL DIVISION -- EXTREME RECOVERY");
+console.log("  SYSTEM-7B MAP WORKSTATION RECOVERY: MULTI-LINE ATLAS STABILIZER");
 console.log("====================================================================\n");
 
 function log(status, msg) {
@@ -22,7 +22,9 @@ const rootDir = process.cwd();
 function findFile(filename, subdirs = []) {
   const paths = [
     path.join(rootDir, ...subdirs, filename),
-    path.join(rootDir, 'src', ...subdirs, filename)
+    path.join(rootDir, 'src', ...subdirs, filename),
+    path.join(rootDir, 'components', 'atlas', filename),
+    path.join(rootDir, 'src', 'components', 'atlas', filename)
   ];
   for (const p of paths) {
     if (fs.existsSync(p)) return p;
@@ -30,61 +32,60 @@ function findFile(filename, subdirs = []) {
   return null;
 }
 
-function patchCRTOverlay() {
-  const crtPath = findFile('CRTOverlay.tsx', ['components']);
-  if (!crtPath) {
-    log('error', "Could not locate 'CRTOverlay.tsx' in your components folder.");
+function patchAtlasMap() {
+  const mapPath = findFile('AtlasMap.tsx', ['components', 'atlas']) || findFile('AtlasMap.tsx', ['components']);
+  if (!mapPath) {
+    log('error', "Could not locate 'AtlasMap.tsx' in your Next.js directory tree.");
     return false;
   }
 
-  log('info', `Located CRTOverlay.tsx at: ${crtPath}`);
-  let content = fs.readFileSync(crtPath, 'utf8').replace(/\r\n/g, '\n');
+  log('info', `Located AtlasMap.tsx at: ${mapPath}`);
+  let content = fs.readFileSync(mapPath, 'utf8').replace(/\r\n/g, '\n');
   let fixed = false;
 
-  // Pattern matching the line with duplicate className and style attributes
-  const brokenSvgPattern = /<svg\s+className="absolute pointer-events-none w-0 h-0 opacity-0 overflow-hidden"\s+width="0"\s+height="0"\s+style=\{\{\s*position:\s*"absolute",\s*zIndex:\s*-9999\s*\}\}\s+className="absolute w-0 h-0 pointer-events-none"\s+style=\{\{\s*visibility:\s*"hidden"\s*\}\}\s+aria-hidden="true"\s*>/;
+  // Pattern 1: useEffect synchronization block
+  const effectPattern = /(useEffect\s*\(\s*\(\s*\)\s*=>\s*\{\s*transformRef\.current\s*=\s*transform;\s*if\s*\(\s*mapContentRef\.current\s*\)\s*\{)[\s\S]*?(\}\s*\},?\s*\[\s*transform\s*\]\s*\);?)/g;
+  const cleanEffectBody = "\n      mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;\n    ";
 
-  const correctedSvgTag = '<svg className="absolute pointer-events-none w-0 h-0 opacity-0 overflow-hidden" width="0" height="0" style={{ position: "absolute", zIndex: -9999, visibility: "hidden" }} aria-hidden="true">';
+  if (effectPattern.test(content)) {
+    effectPattern.lastIndex = 0;
+    content = content.replace(effectPattern, (match, prefix, suffix) => {
+      log('success', "✓ Located and stabilized useEffect coordinate synchronization block.");
+      fixed = true;
+      return prefix + cleanEffectBody + suffix;
+    });
+  }
 
-  if (brokenSvgPattern.test(content)) {
-    content = content.replace(brokenSvgPattern, correctedSvgTag);
-    log('success', "✓ Purged duplicate className and style attributes from lens-curvature SVG.");
-    fixed = true;
-  } else {
-    // Alternate format check in case spacing differs slightly
-    const alternatePattern = /<svg[^>]*crt-lens-curvature[^>]*className=[^>]*className=[^>]*>/;
-    // Let's do a more generic search-and-replace for the svg line above defs
-    const targetBlockIndex = content.indexOf('filter id="crt-lens-curvature"');
-    if (targetBlockIndex !== -1) {
-      const beforeFilter = content.substring(0, targetBlockIndex);
-      const lastSvgOpenIdx = beforeFilter.lastIndexOf('<svg');
-      const firstDefsOpenIdx = content.indexOf('<defs>', targetBlockIndex);
-      
-      if (lastSvgOpenIdx !== -1 && firstDefsOpenIdx !== -1) {
-        log('info', "Using index-fallback resolver to normalize duplicate SVG parameters...");
-        content = content.substring(0, lastSvgOpenIdx) + correctedSvgTag + "\n        " + content.substring(firstDefsOpenIdx);
-        fixed = true;
-      }
-    }
+  // Pattern 2: handleMouseMove direct DOM write block
+  const mousemovePattern = /(const\s+handleMouseMove\s*=\s*\([^)]*?\)\s*=>\s*\{[\s\S]*?if\s*\(\s*mapContentRef\.current\s*\)\s*\{)[\s\S]*?(\}\s*\};?)/g;
+  const cleanMouseMoveBody = "\n      mapContentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${transformRef.current.k})`;\n    ";
+
+  if (mousemovePattern.test(content)) {
+    mousemovePattern.lastIndex = 0;
+    content = content.replace(mousemovePattern, (match, prefix, suffix) => {
+      log('success', "✓ Located and stabilized handleMouseMove drag deflection loops.");
+      fixed = true;
+      return prefix + cleanMouseMoveBody + suffix;
+    });
   }
 
   if (fixed) {
-    fs.writeFileSync(crtPath, content, 'utf8');
-    log('success', "✓ CRTOverlay.tsx compilation issues successfully fixed!");
+    fs.writeFileSync(mapPath, content, 'utf8');
+    log('success', "✓ Saved all Atlas Map direct-DOM transform updates successfully!");
     return true;
   } else {
-    log('warn', "• CRTOverlay.tsx looks clean or already compile-safe.");
+    log('warn', "• Atlas Map did not match standard search blocks or was already fully stabilized.");
     return false;
   }
 }
 
-const crtFixed = patchCRTOverlay();
+const mapFixed = patchAtlasMap();
 
 console.log("\n--------------------------------------------------------------------");
-if (crtFixed) {
-  log('success', "EMERGENCY CRT OVERLAY COMPILER RECOVERY SUCCESSFUL!");
-  log('info', "Run your local production build 'npm run build' or deploy on Vercel.");
+if (mapFixed) {
+  log('success', "EMERGENCY SYSTEM CALIBRATION COMPLETED!");
+  log('info', "Execute 'node fix-atlas-crashing-v5.js' locally on your workstation.");
 } else {
-  log('warn', "No modifications were required. Your CRT Overlay file appears compile-safe.");
+  log('warn', "No modifications were necessary. The map file appears healthy.");
 }
 console.log("--------------------------------------------------------------------\n");

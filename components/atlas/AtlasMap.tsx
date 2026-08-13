@@ -147,15 +147,12 @@ export const AtlasMap: React.FC = () => {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-
-    // Apply high-performance DOM-direct translation (0ms React lag!)
-    const dragX = e.clientX - dragStart.current.x;
-    const dragY = e.clientY - dragStart.current.y;
-    const currentK = transformRef.current.k;
-
-    transformRef.current.x = dragX;
-    transformRef.current.y = dragY;
-
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    
+    // Bypasses React state updates during active pan/drag to run fluidly at 60fps
+    transformRef.current.x = dx;
+    transformRef.current.y = dy;
     if (mapContentRef.current) {
       mapContentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${transformRef.current.k})`;
     }

@@ -3,7 +3,7 @@ const path = require('path');
 
 console.log("\n====================================================================");
 console.log("  DEPARTMENT OF DEFENSE // FEMA ARCHIVAL DIVISION -- EXTREME RECOVERY");
-console.log("  SYSTEM-7B MAP WORKSTATION RECOVERY: MULTI-LINE ATLAS STABILIZER");
+console.log("  SYSTEM-7B MAP WORKSTATION RECOVERY: MOUSEMOVE VARIABLE RESTORATION");
 console.log("====================================================================\n");
 
 function log(status, msg) {
@@ -43,30 +43,49 @@ function patchAtlasMap() {
   let content = fs.readFileSync(mapPath, 'utf8').replace(/\r\n/g, '\n');
   let fixed = false;
 
-  // Pattern 1: useEffect synchronization block
-  const effectPattern = /(useEffect\s*\(\s*\(\s*\)\s*=>\s*\{\s*transformRef\.current\s*=\s*transform;\s*if\s*\(\s*mapContentRef\.current\s*\)\s*\{)[\s\S]*?(\}\s*\},?\s*\[\s*transform\s*\]\s*\);?)/g;
-  const cleanEffectBody = "\n      mapContentRef.current.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;\n    ";
+  // Pattern 1: Find the broken handleMouseMove block where variables 'dx' and 'dy' are missing
+  const brokenMouseMoveRegex = /const\s+handleMouseMove\s*=\s*\([^)]*?\)\s*=>\s*\{[\s\S]*?if\s*\(\s*mapContentRef\.current\s*\)\s*\{[\s\S]*?\}\s*\};?/g;
 
-  if (effectPattern.test(content)) {
-    effectPattern.lastIndex = 0;
-    content = content.replace(effectPattern, (match, prefix, suffix) => {
-      log('success', "✓ Located and stabilized useEffect coordinate synchronization block.");
-      fixed = true;
-      return prefix + cleanEffectBody + suffix;
-    });
+  const restoredMouseMoveBlock = `const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    
+    // Bypasses React state updates during active pan/drag to run fluidly at 60fps
+    transformRef.current.x = dx;
+    transformRef.current.y = dy;
+    if (mapContentRef.current) {
+      mapContentRef.current.style.transform = \`translate(\${dx}px, \${dy}px) scale(\${transformRef.current.k})\`;
+    }
+  };`;
+
+  if (brokenMouseMoveRegex.test(content)) {
+    content = content.replace(brokenMouseMoveRegex, restoredMouseMoveBlock);
+    log('success', "✓ Successfully restored missing variable definitions ('dx', 'dy') inside handleMouseMove.");
+    fixed = true;
   }
 
-  // Pattern 2: handleMouseMove direct DOM write block
-  const mousemovePattern = /(const\s+handleMouseMove\s*=\s*\([^)]*?\)\s*=>\s*\{[\s\S]*?if\s*\(\s*mapContentRef\.current\s*\)\s*\{)[\s\S]*?(\}\s*\};?)/g;
-  const cleanMouseMoveBody = "\n      mapContentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${transformRef.current.k})`;\n    ";
+  // Double check that we don't have any split syntax left in useEffect block
+  const brokenEffectPattern = /style\.transform\s*=\s*`translate3d\(([^,]+),\s*([^,]+),\s*0px\)`\s*;\s*scale\(([^)]+)\);/g;
+  if (brokenEffectPattern.test(content)) {
+    content = content.replace(brokenEffectPattern, "style.transform = `translate($1, $2) scale($3)`;");
+    log('success', "✓ Cleaned up any dangling split statements inside transform assignments.");
+    fixed = true;
+  }
 
-  if (mousemovePattern.test(content)) {
-    mousemovePattern.lastIndex = 0;
-    content = content.replace(mousemovePattern, (match, prefix, suffix) => {
-      log('success', "✓ Located and stabilized handleMouseMove drag deflection loops.");
-      fixed = true;
-      return prefix + cleanMouseMoveBody + suffix;
-    });
+  // Guarantee useEffect block is also standard 2D and perfectly compiled-safe
+  const brokenUseEffectRegex = /useEffect\s*\(\s*\(\s*\)\s*=>\s*\{\s*transformRef\.current\s*=\s*transform;\s*if\s*\(\s*mapContentRef\.current\s*\)\s*\{[\s\S]*?\}\s*\},?\s*\[\s*transform\s*\]\s*\);?/g;
+  const restoredUseEffectBlock = `useEffect(() => {
+    transformRef.current = transform;
+    if (mapContentRef.current) {
+      mapContentRef.current.style.transform = \`translate(\${transform.x}px, \${transform.y}px) scale(\${transform.k})\`;
+    }
+  }, [transform]);`;
+
+  if (restoredUseEffectBlock && brokenUseEffectRegex.test(content)) {
+    content = content.replace(brokenUseEffectRegex, restoredUseEffectBlock);
+    log('success', "✓ Unified useEffect coordinate synchronization logic.");
+    fixed = true;
   }
 
   if (fixed) {
@@ -74,7 +93,7 @@ function patchAtlasMap() {
     log('success', "✓ Saved all Atlas Map direct-DOM transform updates successfully!");
     return true;
   } else {
-    log('warn', "• Atlas Map did not match standard search blocks or was already fully stabilized.");
+    log('warn', "• Atlas Map already has robust variable tracking or did not match broken templates.");
     return false;
   }
 }
@@ -84,7 +103,7 @@ const mapFixed = patchAtlasMap();
 console.log("\n--------------------------------------------------------------------");
 if (mapFixed) {
   log('success', "EMERGENCY SYSTEM CALIBRATION COMPLETED!");
-  log('info', "Execute 'node fix-atlas-crashing-v5.js' locally on your workstation.");
+  log('info', "Execute 'node fix-atlas-crashing-v6.js' locally on your workstation.");
 } else {
   log('warn', "No modifications were necessary. The map file appears healthy.");
 }

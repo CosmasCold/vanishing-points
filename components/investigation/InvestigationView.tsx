@@ -437,7 +437,7 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                             fontFamily: typography.mono,
                           }}
                         >
-                          → {slug.replace(/-/g, ' ').toUpperCase()}
+                          → {(slug ? slug.replace(/-/g, ' ').toUpperCase() : 'UNKNOWN CORES')}
                         </button>
                       ))}
                     </div>

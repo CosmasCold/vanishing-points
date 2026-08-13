@@ -148,4 +148,62 @@ export function registerSystemCommands(registry: CommandRegistry) {
       };
     },
   });
+  // 6. /time-sync command: mock current system time dynamically for testing
+  registry.register({
+    name: 'time-sync',
+    description: 'Sync or mock the terminal system clock to bypass temporal lockouts',
+    usage: 'time-sync [HH:MM]',
+    aliases: ['sync-time', 'mock-time'],
+    handler: (args: string[]) => {
+      if (typeof window === 'undefined') {
+        return { output: 'Time-sync is only available in the client terminal environment.', type: 'error' as const };
+      }
+      const time = args[0];
+      if (!time) {
+        delete (window as any).__mockTime;
+        return { output: 'BUNKER_7: Time synchronization aligned with real-time atomic clock.', type: 'success' as const };
+      }
+      if (!/^\d{2}:\d{2}$/.test(time)) {
+        return { output: 'Usage: /time-sync [HH:MM] (e.g., /time-sync 03:14)', type: 'error' as const };
+      }
+      (window as any).__mockTime = time;
+      
+      // Inject global Date class override on-demand to prevent hydration mismatches
+      if (!(window as any).__dateOverridden) {
+        const OriginalDate = window.Date;
+        const CustomDate = function(...args: any[]) {
+          if (args.length === 0 && (window as any).__mockTime) {
+            const d = new OriginalDate();
+            const [h, m] = (window as any).__mockTime.split(':').map(Number);
+            d.setHours(h);
+            d.setMinutes(m);
+            d.setSeconds(0);
+            return d;
+          }
+          return new (OriginalDate as any)(...args);
+        };
+        CustomDate.prototype = OriginalDate.prototype;
+        CustomDate.now = function() {
+          if ((window as any).__mockTime) {
+            const d = new OriginalDate();
+            const [h, m] = (window as any).__mockTime.split(':').map(Number);
+            d.setHours(h);
+            d.setMinutes(m);
+            d.setSeconds(0);
+            return d.getTime();
+          }
+          return OriginalDate.now();
+        };
+        Object.getOwnPropertyNames(OriginalDate).forEach(key => {
+          if (!(key in CustomDate)) {
+            try { (CustomDate as any)[key] = (OriginalDate as any)[key]; } catch(e){}
+          }
+        });
+        window.Date = CustomDate as any;
+        (window as any).__dateOverridden = true;
+      }
+      
+      return { output: 'BUNKER_7: Terminal clock spoofed to [' + time + ']. Geodetic temporal gates aligned.', type: 'success' as const };
+    }
+  });
 }

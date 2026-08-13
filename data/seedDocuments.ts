@@ -7,6 +7,59 @@ import { DocumentArtifact } from "@/types/documents";
  */
 export const SEED_DOCUMENTS: DocumentArtifact[] = [
   {
+    "id": "doc-stn-001",
+    "slug": "stanley-hotel-music-room",
+    "title": "Flora's Steinway Ledger — The Stanley Hotel",
+    "type": "journal",
+    "date": "1939-11-23",
+    "source": "Colorado Historical Records",
+    "author": "F. O. Stanley",
+    "condition": "aged",
+    "tier": 1,
+    "placeSlug": "the-stanley-hotel",
+    "content": "Subject: FLORA'S PIANO RESONANCE. October 1939 logs. Flora Stanley's Steinway grand piano remains untouched in the music room since her departure. However, security guards report hearing complete nocturnes played at 03:00 AM, matching her precise signature. Spectrograph logs indicate that the piano keys are depressing themselves in sequences that match the local 4.5 Hz sub-audible granite vibration.",
+    "pages": 2,
+    "paperType": "bond",
+    "inkType": "fountain_pen",
+    "corruptionLevel": 0.15,
+    "recoveredAt": "2024-03-20T12:00:00Z",
+    "recoveredBy": "system",
+    "verificationStatus": "verified",
+    "relatedDocuments": [],
+    "dustReward": 8,
+    "readCount": 0,
+    "annotations": [
+      "The notes continue playing even when the keyboard lid is locked with the brass key."
+    ]
+  },
+  {
+    "id": "doc-pyr-001",
+    "slug": "pyramiden-permafrost-logs",
+    "title": "Canteen Assembly Manifest — Pyramiden",
+    "type": "field_report",
+    "date": "1998-10-31",
+    "source": "Soviet Mining Administration",
+    "author": "Director Volkov",
+    "condition": "aged",
+    "tier": 0,
+    "placeSlug": "pyramiden",
+    "content": "PYRAMIDEN EVACUATION AUDIT. Upon the sudden departure of the final 1,000 residents in 1998, inspectors noted that the tables in the central canteen remained set. Plates of borscht and rye bread were frozen solid, completely preserved by the permafrost. Of note: geophones placed near the northernmost Lenin bust record a non-repeating 18 Hz hum that matches no local generator telemetry.",
+    "pages": 2,
+    "paperType": "typewriter",
+    "inkType": "carbon",
+    "corruptionLevel": 0.1,
+    "recoveredAt": "2024-04-18T12:00:00Z",
+    "recoveredBy": "system",
+    "verificationStatus": "verified",
+    "relatedDocuments": [],
+    "dustReward": 6,
+    "readCount": 0,
+    "annotations": [
+      "The permafrost preserves the food, but the soup has been found rearranged into concentric rings."
+    ]
+  },
+
+  {
     "id": "doc-esp-001",
     "slug": "eastern-state-field-report",
     "title": "Field Report #2847-A — Eastern State Penitentiary",

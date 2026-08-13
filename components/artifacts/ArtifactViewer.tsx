@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { useArtifactStore } from '@/state/artifactStore';
+import { useUIStore } from '@/state/uiStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, spacing } from '@/styles/theme';
 import { 
@@ -577,6 +578,71 @@ export const ArtifactViewer: React.FC = () => {
     setLampMode,
     inspectMarking,
   } = useArtifactStore();
+
+  // PRIORITY-3: Dynamic Web Audio drag friction solenoid tick loop
+  const prevRotationRef = React.useRef(rotation);
+  React.useEffect(() => {
+    if (rotation !== prevRotationRef.current) {
+      const delta = Math.abs(rotation - prevRotationRef.current);
+      prevRotationRef.current = rotation;
+      
+      // Play high-fidelity mechanical click on drag threshold crossing
+      if (delta > 1.5) {
+        const audio = useAudioStore.getState();
+        if (audio && typeof audio.play === 'function') {
+          audio.play('type'); // procedural click
+        }
+      }
+    }
+  }, [rotation]);
+
+    // PRIORITY-3: Alignment gate state coupling logic
+  React.useEffect(() => {
+    if (!activeArtifact) return;
+    const rot = rotation % 360;
+    const normRot = rot < 0 ? rot + 360 : rot;
+    
+    let aligned = false;
+    let gateMsg = "";
+    
+    if (activeArtifact.id === 'art-solenoid' && lampMode === 'uv' && normRot >= 165 && normRot <= 195 && zoom >= 1.5) {
+      aligned = true;
+      gateMsg = "BUNKER_7: Fused Solenoid Core vector locked at " + Math.round(normRot) + "° [UV FLUX OVERLAP]. Unredacting Lebanon coordinates: 38.000°N, 97.000°W.";
+    } else if (activeArtifact.id === 'art-core' && lampMode === 'uv' && normRot >= 75 && normRot <= 105 && zoom >= 1.8) {
+      aligned = true;
+      gateMsg = "BUNKER_7: Kola segment mineral fractures aligned at " + Math.round(normRot) + "° [BEDROCK SIGNAL LOCK]. Triangulating 4.5 Hz seismic carrier signal.";
+    } else if (activeArtifact.id === 'art-watch' && lampMode === 'uv' && normRot >= 255 && normRot <= 285 && zoom >= 2.0) {
+      aligned = true;
+      gateMsg = "BUNKER_7: Pocketwatch dial gears meshed at " + Math.round(normRot) + "° [TEMPORAL SLIP DISPLACEMENT LOCK]. Hands locked forever at 01:23:45 AM.";
+    } else if (activeArtifact.id === 'art-asbestos' && lampMode === 'standard' && zoom >= 1.8) {
+      aligned = true;
+      gateMsg = "BUNKER_7: Wittenoom Blue Crocidolite base stamp scanned under standard lighting [WITTENOOM ERASURE EXPOSURE]. Degazetted coordinates unredacted: -22.14°S, 118.33°E.";
+    } else if (activeArtifact.id === 'art-scale' && lampMode === 'uv' && normRot >= 105 && normRot <= 135 && zoom >= 2.0) {
+      aligned = true;
+      gateMsg = "BUNKER_7: Humberstone scale weight calibrated at " + Math.round(normRot) + "° [ORGAN MASS ALIGNMENT]. Etched coordinates secured: -20.2085°S, -69.7945°W. Mass aligned: 1.2 kg.";
+    }
+
+    if (aligned && !activeArtifact.hasBeenScanned) {
+      const audio = useAudioStore.getState();
+      const ui = useUIStore.getState();
+      
+      // Trigger a deep resonant geophone confirmation chime
+      if (audio && typeof audio.play === 'function') {
+        audio.play('return');
+      }
+      
+      // Update local artifact database state in store
+      useArtifactStore.getState().updateArtifact(activeArtifact.id, { hasBeenScanned: true });
+      
+      // Award Dust for unredaction sequence
+      ui.updateStatus({
+        dustIndex: Math.min(100, ui.status.dustIndex + 8),
+        sessionWorkDone: ui.status.sessionWorkDone + 1
+      });
+      
+      log('success', gateMsg);
+    }
+  }, [rotation, zoom, lampMode, activeArtifact]);
   
   const am = activeMarking as any;
   const { click, play } = useAudioStore();

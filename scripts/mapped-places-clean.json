@@ -220,18 +220,14 @@
     "updatedAt": {
       "$date": "2026-07-30T18:01:20.209Z"
     },
-    "tier": 3,
+    "tier": 0,
     "narrativeRole": "framebreak_impossible",
     "connectedTo": [
       "manzanar",
       "winchester-mystery-house"
     ],
-    "unlockCondition": {
-      "type": "dust",
-      "value": 69,
-      "message": "The null point is not a place. It is an absence. Maximum dust required."
-    },
-    "resonanceNote": "I do not know if I placed this file here, or if it placed itself."
+    "unlockCondition": null,
+    "resonanceNote": "Uncanny weathering logs."
   },
   {
     "_id": {
@@ -1002,64 +998,6 @@
   },
   {
     "_id": {
-      "$oid": "6a68d28a0ce0117278ae7f68"
-    },
-    "name": "Oradour-sur-Glane",
-    "slug": "oradour-sur-glane",
-    "category": "abandoned",
-    "coordinates": [
-      1.0333,
-      45.9333
-    ],
-    "address": {
-      "city": "Oradour-sur-Glane",
-      "country": "France",
-      "formatted": "Oradour-sur-Glane, Haute-Vienne, France"
-    },
-    "yearAbandoned": 1944,
-    "history": "On June 10, 1944, the 2nd SS Panzer Division Das Reich entered this village and murdered 642 men, women, and children — burning them alive in the church, machine-gunning them in the barns, hanging them from the bakery hooks. The village was never rebuilt. A new Oradour-sur-Glane was constructed nearby, but the original remains exactly as the SS left it: rusted cars in the garages, sewing machines in the parlors, a child's bicycle fused to the cobblestones by fire. The doctor's Peugeot still sits in the square. Signs read Souviens-toi — Remember. The martyr village is not a ruin. It is a crime scene preserved under open sky, and the silence there has a weight that presses on the sternum.",
-    "hauntingReports": [],
-    "dangerLevel": 1,
-    "photos": [
-      "https://upload.wikimedia.org/wikipedia/commons/1/11/Oradour-sur-Glane_43.JPG",
-      "https://upload.wikimedia.org/wikipedia/commons/3/33/Oradour-sur-Glane-cars.jpg"
-    ],
-    "status": "verified",
-    "contributor": {
-      "name": "The Archivist",
-      "email": "archivist@vanishingpoints.app"
-    },
-    "submittedAt": {
-      "$date": "2026-07-28T16:02:18.162Z"
-    },
-    "verifiedAt": {
-      "$date": "2026-07-28T16:02:18.162Z"
-    },
-    "verifiedBy": "system",
-    "viewCount": 604,
-    "__v": 0,
-    "createdAt": {
-      "$date": "2026-07-28T16:02:18.244Z"
-    },
-    "updatedAt": {
-      "$date": "2026-07-29T18:03:47.724Z"
-    },
-    "tier": 3,
-    "narrativeRole": "framebreak_impossible",
-    "connectedTo": [
-      "chteau-de-brissac",
-      "belchite",
-      "d-ghetto-industrial-ruins"
-    ],
-    "unlockCondition": {
-      "type": "dust",
-      "value": 95,
-      "message": "This coordinate exists only in the space between memories."
-    },
-    "resonanceNote": "The evidence here predates the location. The photograph is dated 1843. The building was constructed in 1971."
-  },
-  {
-    "_id": {
       "$oid": "6a68d28a0ce0117278ae7f69"
     },
     "name": "Teufelsberg",
@@ -1164,7 +1102,7 @@
     "narrativeRole": "framebreak_impossible",
     "connectedTo": [
       "belchite",
-      "oradour-sur-glane",
+      "oradour-church-crypt",
       "ordos-kangbashi",
       "skellig-michael"
     ],
@@ -4760,7 +4698,7 @@
     "verifiedBy": "system",
     "connectedTo": [
       "hill-of-crosses",
-      "oradour-sur-glane",
+      "oradour-church-crypt",
       "fordlndia"
     ],
     "__v": 0,
@@ -4858,7 +4796,7 @@
       "formatted": "Oradour-sur-Glane Church Crypt, Haute-Vienne, France"
     },
     "yearAbandoned": 1944,
-    "history": "Beneath the church of Saint-Martin in the martyr village lies a crypt built in the 13th century. It was not used for burials; it was used for storage of communion wine and parish records. On June 10, 1944, the SS locked 247 women and children in the church and set it on fire. The roof collapsed. The crypt survived. When the ruins were preserved in 1946, the crypt was sealed with a concrete slab. In 1994, the slab was removed for structural inspection. The wine bottles were intact. The parish records were not ash; they were wet, as if submerged. The dates in the records continued until June 17, 1944 — seven days after the massacre. The last entry describes a baptism. The crypt has no water source. The slab was replaced. It has not been removed since.",
+    "history": "Beneath the burned ruins of the church of Saint-Martin in the martyr village of Oradour-sur-Glane lies a crypt built in the 13th century. On June 10, 1944, the 2nd SS Panzer Division Das Reich entered this village and murdered 642 men, women, and children — burning them alive in the church, machine-gunning them in the barns. The village was never rebuilt, preserved under open sky as a silent crime scene. Yet, the crypt survived. When the concrete slab sealing it was removed for structural inspection in 1994, the parish records inside were found completely wet, saturated with salt water, with baptismal entries written in neat fountain pen continuing until June 17, 1944 — seven days after the massacre. The crypt has no natural water source. The slab was replaced, and the silence remains absolute.",
     "dangerLevel": 2,
     "photos": [],
     "hauntingReports": [
@@ -4882,10 +4820,11 @@
     "verifiedBy": "system",
     "connectedTo": [
       "chteau-de-brissac",
-      "oradour-sur-glane",
       "kayaky",
       "vieques-island",
-      "flannan-isles-lighthouse"
+      "flannan-isles-lighthouse",
+      "belchite",
+      "d-ghetto-industrial-ruins"
     ],
     "__v": 0,
     "createdAt": {
@@ -5082,7 +5021,9 @@
     },
     "history": "A 564-acre underground city built into the granite of the Blue Ridge Mountains, constructed by the Bureau of Mines in 1959 and expanded continuously through the Cold War. Mount Weather is the primary relocation site for the highest levels of the US government in the event of nuclear war. It has its own power plant, water reservoirs, crematorium, and television studio. The above-ground portion is a maintenance facility. The underground portion is classified. FEMA operates the site. Tours are not available. The existence of the facility was not officially acknowledged until 1974. The mountain is honeycombed with tunnels extending an unknown depth. Seismic sensors in the region detect irregular low-frequency vibrations from beneath Mount Weather. FEMA attributes them to the power plant. The vibrations do not match any known generator signature. The frequency is 4.5 Hz. The same frequency is detected at the Cheyenne Mountain Complex and the Raven Rock Mountain Complex. The three facilities are 2,000 kilometers apart. The vibrations are synchronized.",
     "dangerLevel": 4,
-    "photos": ["/story-assets/bunker-resonance-triangle.png"],
+    "photos": [
+      "/story-assets/bunker-resonance-triangle.png"
+    ],
     "hauntingReports": [],
     "viewCount": 3561,
     "status": "mirage",
@@ -6958,7 +6899,9 @@
     },
     "history": "The geographic center of the contiguous United States is near Lebanon, Kansas. The grid null point is 40 kilometers north. It is not a place. It is a coordinate where the grid's mapping fails. Satellite imagery shows a wheat field. Ground surveys confirm a wheat field. The wheat in this field grows in a spiral pattern, 200 meters in diameter. The spiral is not visible from the ground. It is visible only from above. The farmer who owns the field — his family has farmed it since 1887 — does not plant in spirals. He plants in rows. The spiral appears every June, regardless of the crop. In 2019, a drone survey found that the spiral's center is 1 meter lower than the surrounding field. The depression is not a sinkhole. It is perfectly circular. It is 30 centimeters deep. It contains no water. It contains no soil. It contains ash. The ash has been tested. It is volcanic. There are no volcanoes in Kansas. The ash is 12,000 years old. The wheat grows through it.",
     "dangerLevel": 3,
-    "photos": ["/story-assets/bunker-resonance-triangle.png"],
+    "photos": [
+      "/story-assets/bunker-resonance-triangle.png"
+    ],
     "hauntingReports": [
       "The spiral pattern rotates 15 degrees counterclockwise each year, though no mechanical process affects the field.",
       "The ash at the center produces a temperature 5°C above ambient at midnight, though it has no heat source.",
@@ -7686,7 +7629,7 @@
       "duga-radar-array",
       "duga-control-room",
       "the-stanley-hotel",
-      "oradour-sur-glane"
+      "oradour-church-crypt"
     ],
     "resonanceNote": "The button is still warm. I have the thermal imaging to prove it.",
     "__v": 0,

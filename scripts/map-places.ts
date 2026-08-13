@@ -53,17 +53,17 @@ const RESONANCE_TEMPLATES = {
 };
 
 function projectCoordinates(lng: number, lat: number): { x: number; y: number } {
-  // SVG canvas bounds: 800 x 600
-  // Standard Mercator projection centered around Sonoran/global centroid shifts
-  const mapWidth = 800;
-  const mapHeight = 600;
+  // SVG dynamic canvas bounds matching WORLD_SIZE: 4096 x 4096
+  const WORLD_SIZE = 4096;
+  const x = ((lng + 180) / 360) * WORLD_SIZE;
+  const latClamped = Math.max(-85.05112878, Math.min(85.05112878, lat));
+  const latRad = (latClamped * Math.PI) / 180;
+  const y = (0.5 - Math.log(Math.tan(Math.PI / 4 + latRad / 2)) / (2 * Math.PI)) * WORLD_SIZE;
 
-  const x = (lng + 180) * (mapWidth / 360);
-  const latRad = (lat * Math.PI) / 180;
-  const mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
-  const y = mapHeight / 2 - (mapWidth * mercN) / (2 * Math.PI);
-
-  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+  return {
+    x: Math.round(x * 100) / 100,
+    y: Math.round(y * 100) / 100
+  };
 }
 
 function compilePlaces() {

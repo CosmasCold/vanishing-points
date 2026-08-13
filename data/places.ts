@@ -225,17 +225,13 @@ export const LOCAL_PLACES: Place[] = [
     "submittedAt": "2026-07-28T16:02:18.162Z",
     "verifiedAt": "2026-07-28T16:02:18.162Z",
     "verifiedBy": "system",
-    "tier": 3,
+    "tier": 0,
     "connectedTo": [
       "manzanar",
       "winchester-mystery-house"
     ],
-    "unlockCondition": {
-      "type": "dust",
-      "value": 69,
-      "message": "The null point is not a place. It is an absence. Maximum dust required."
-    },
-    "resonanceNote": "I do not know if I placed this file here, or if it placed itself."
+    "unlockCondition": null,
+    "resonanceNote": "Uncanny weathering logs."
   },
   {
     "slug": "aokigahara-forest",

@@ -471,6 +471,8 @@ export const DashboardShell: React.FC = () => {
         </AnimatePresence>
 
         {/* Floating Instrumental Sensor HUD Stack: Geiger HUD + Strowger Stepper Dial */}
+        {
+      activeModule === 'system' && (
         <div 
           className="absolute top-4 right-4 z-20 flex flex-col gap-3 pointer-events-auto transition-all duration-300"
           style={{
@@ -485,6 +487,8 @@ export const DashboardShell: React.FC = () => {
             <StrowgerStepper />
           </ArchiveErrorBoundary>
         </div>
+      )
+    }
       </div>
 
       {/* ─── ROOT LEVEL POPUPS, TAPE DECKS & SYSTEM HUDs ─── */}

@@ -1,8 +1,8 @@
 export const colors = {
   archive: {
-    black: '#070503', // Deeper, more atmospheric terminal black
-    surface: '#12100e', // Dark weathered wood/bakelite surface
-    surfaceRaised: '#1a1714', // Lighter panel background
+    black: '#0f0b08', // Deeper, more atmospheric terminal black
+    surface: '#16110d', // Dark weathered wood/bakelite surface
+    surfaceRaised: '#221914', // Lighter panel background
     amber: '#dfb27c', // Richer amber glare
     amberDim: 'rgba(223, 178, 124, 0.15)',
     blue: '#5c7b8f', // Soft radio static blue
@@ -44,7 +44,7 @@ export const typography = {
 };
 
 export const spacing = {
-  rail: '3.5rem',
+  rail: '4.75rem',
   statusBar: '2rem',
   terminalHeight: '28rem', // Restored: Defines essential layout proportions for panels
   modulePanel: '22rem',    // Restored: Prevents sidebar collapse and off-proportion stretching

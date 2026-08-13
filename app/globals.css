@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --archive-black: #070503;
-  --archive-surface: #12100e;
+  --archive-black: #0f0b08;
+  --archive-surface: #16110d;
 }
 
 body {
-  background-color: #070503 !important;
+  background-color: #0f0b08 !important;
   color: #f2ece0 !important;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 14.5px !important; /* Unified typography scaling! */
@@ -230,4 +230,71 @@ body {
   box-shadow: 
     inset 0 2px 10px rgba(0, 0, 0, 0.95), 
     0 8px 32px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* NAVIGATION RAIL LAYOUT CALIBRATION OVERRIDES */
+/* High-visibility Navigation Rail scaling overrides */
+div[style*="spacing.rail"], .z-\[61\], .fixed.left-0.top-0.bottom-0 {
+  width: 4.75rem !important; /* Widen rail columns to prevent cramped layouts */
+  gap: 0.5rem !important;
+  padding-top: 0.5rem !important;
+}
+
+/* Enlarge Navigation Rail menu button items and label typography */
+div[style*="spacing.rail"] button, .z-\[61\] button {
+  height: 3.5rem !important; /* Taller tactile keys */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.25rem !important;
+  transition: all 120ms cubic-bezier(0.1, 0.8, 0.25, 1) !important;
+}
+
+/* Icons size calibration */
+div[style*="spacing.rail"] button span:first-child, .z-\[61\] button span:first-child {
+  font-size: 1.35rem !important; /* Enlarge icons */
+}
+
+/* Text labels readability (solving unreadable and small texts) */
+div[style*="spacing.rail"] button span:last-child, .z-\[61\] button span:last-child {
+  font-size: 10.5px !important; /* Enlarge text labels */
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+/* CLASSIFIED NAVIGATION OVERRIDES BLOCK V3 */
+/* Adjust navigation columns dynamically */
+.fixed.left-0.top-0.bottom-0[style*="spacing.rail"], div[style*="spacing.rail"] {
+  width: 4.75rem !important;
+}
+
+/* Force text inside buttons of the navigation rail to expand and scale uppercase */
+div[style*="spacing.rail"] button span:last-child, .fixed.left-0.top-0.bottom-0 button span:last-child {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  opacity: 0.9 !important;
+}
+
+/* CLASSIFIED NAVIGATION OVERRIDES BLOCK V5 */
+/* Adjust navigation columns dynamically */
+.fixed.left-0.top-0.bottom-0[style*="spacing.rail"], div[style*="spacing.rail"] {
+  width: 4.75rem !important;
+}
+
+/* Force text inside buttons of the navigation rail to expand and scale uppercase */
+div[style*="spacing.rail"] button span:last-child, .fixed.left-0.top-0.bottom-0 button span:last-child {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  opacity: 0.95 !important;
+}
+
+/* Ensure icons are beautifully sized */
+div[style*="spacing.rail"] button span:first-child, .fixed.left-0.top-0.bottom-0 button span:first-child {
+  font-size: 1.4rem !important;
 }

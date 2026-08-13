@@ -230,8 +230,7 @@ export const LOCAL_PLACES: Place[] = [
       "manzanar",
       "winchester-mystery-house"
     ],
-    "unlockCondition": null,
-    "resonanceNote": "Uncanny weathering logs."
+        "resonanceNote": "Uncanny weathering logs."
   },
   {
     "slug": "aokigahara-forest",

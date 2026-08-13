@@ -579,7 +579,7 @@ export const ArtifactViewer: React.FC = () => {
     inspectMarking,
   } = useArtifactStore();
   // --- INJECTED TACTILE SCANNER STATE CONTROLS ---
-  const [caliperPoints, setCaliperPoints] = useState([]);
+  const [caliperPoints, setCaliperPoints] = useState<{ x: number; y: number }[]>([]);
   const [isDraggingSpecimen, setIsDraggingSpecimen] = useState(false);
   const dragStartRef = useRef(0);
 

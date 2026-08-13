@@ -79,6 +79,8 @@ export function useSignalModulator({
   // Lazy constructor for our procedural AudioContext
   const initAudio = useCallback(() => {
     if (typeof window === "undefined") return;
+    const { getSharedAudioContext } = require("@/lib/sharedAudioContext");
+    audioCtxRef.current = getSharedAudioContext();
     if (audioCtxRef.current) {
       if (audioCtxRef.current.state === "suspended") {
         audioCtxRef.current.resume();

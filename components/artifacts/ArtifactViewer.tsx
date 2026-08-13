@@ -721,7 +721,7 @@ export const ArtifactViewer: React.FC = () => {
   const renderArtifactGraphic = () => {
     return (
       <div 
-        className="relative w-72 h-72 flex items-center justify-center border border-stone-900 bg-[#070503]"
+        className="relative w-[512px] h-[512px] flex items-center justify-center border border-stone-900 bg-[#070503] cursor-grab active:cursor-grabbing relative overflow-hidden"
         style={{
           boxShadow: 'inset 0 0 40px rgba(0,0,0,0.95)',
         }}

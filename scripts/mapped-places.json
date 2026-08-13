@@ -67,8 +67,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 10,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 15,
+        "message": "The Ferris wheel never turned for paying customers. The bumper cars remain locked. Accumulate dust to map what was cancelled."
       }
     },
     {
@@ -186,8 +186,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 10,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 25,
+        "message": "The dolls hang from the branches, eyes tracking movement. The canal carries too much static residue. Accumulate dust to land."
       }
     },
     {
@@ -301,8 +301,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 8,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 30,
+        "message": "The forest absorbs all sound. Compasses spin in volcanic rock. The grid requires maximum dust of Act II to map these roots."
       }
     },
     {
@@ -358,8 +358,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 58,
-        "message": "The archive remembers those who remember. Earn more dust."
+        "value": 40,
+        "message": "NATO called it the Russian Woodpecker. The lattice groans in the radioactive wind. The grid requires more dust to track its signal."
       },
       "resonanceNote": "I have archived this location 3695 times. The file is different each time."
     },
@@ -423,8 +423,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 10,
-        "message": "Accumulate dust to access this sector."
+        "value": 20,
+        "message": "The roofs are collapsing and the mortar is wet. Entry forbidden between sunset and sunrise. Higher dust is required to enter the gates."
       }
     },
     {
@@ -522,7 +522,7 @@
       "updatedAt": {
         "$date": "2026-07-28T16:02:18.244Z"
       },
-      "tier": 3,
+      "tier": 2,
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
         "humberstone-saltpeter-morgue",
@@ -530,9 +530,9 @@
         "vieques-island"
       ],
       "unlockCondition": {
-        "type": "code",
-        "value": "RESONANCE",
-        "message": "A resonance code is required. Find it in another investigation."
+        "type": "dust",
+        "value": 50,
+        "message": "The Atacama Desert preserves everything. The theater seats still face a blank screen. Significant dust required to open this case."
       },
       "resonanceNote": "You have been here before. The file says you have not. I believe the file."
     },
@@ -584,7 +584,7 @@
       "updatedAt": {
         "$date": "2026-07-29T18:23:20.645Z"
       },
-      "tier": 1,
+      "tier": 3,
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "oradour-church-crypt",
@@ -592,8 +592,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 19,
-        "message": "Accumulate dust to access this sector."
+        "value": 75,
+        "message": "Jacques de Brézé caught his wife Charlotte in flagrante. She wanders the chapel tower in green. The chapel organ plays itself. Dust 75+ required."
       }
     },
     {
@@ -640,7 +640,7 @@
       "updatedAt": {
         "$date": "2026-07-29T18:25:20.583Z"
       },
-      "tier": 0,
+      "tier": 1,
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "gonjiam-psychiatric-hospital",
@@ -648,7 +648,12 @@
         "houtouwan",
         "sanatorium-du-basil",
         "kuldhara"
-      ]
+      ],
+      "unlockCondition": {
+        "type": "dust",
+        "value": 20,
+        "message": "Concrete towers on a basalt battleship. The mine has been flooded since 1974. Earn more dust to cross the seawall."
+      }
     },
     {
       "_id": {
@@ -872,7 +877,7 @@
       "updatedAt": {
         "$date": "2026-07-30T17:59:50.058Z"
       },
-      "tier": 2,
+      "tier": 3,
       "narrativeRole": "impossible_unstable",
       "connectedTo": [
         "poveglia-subterranean-ward",
@@ -880,8 +885,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 47,
-        "message": "This sector is sealed. Dust accumulation required."
+        "value": 70,
+        "message": "The soil is fifty percent plague ash. Compasses fail and the water moves when the silent tower tolls. Unlocks at dust 70."
       },
       "resonanceNote": "The previous investigator left a note in the margin. It is in your handwriting."
     },
@@ -1112,7 +1117,7 @@
       "updatedAt": {
         "$date": "2026-07-28T16:02:18.244Z"
       },
-      "tier": 3,
+      "tier": 0,
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
         "belchite",
@@ -1120,11 +1125,7 @@
         "ordos-kangbashi",
         "skellig-michael"
       ],
-      "unlockCondition": {
-        "type": "dust",
-        "value": 75,
-        "message": "The null point is not a place. It is an absence. Maximum dust required."
-      },
+      "unlockCondition": null,
       "resonanceNote": "This coordinate is not on any map. It is only in the database. I checked twice."
     },
     {
@@ -1352,7 +1353,7 @@
       "updatedAt": {
         "$date": "2026-07-29T19:16:44.678Z"
       },
-      "tier": 1,
+      "tier": 0,
       "narrativeRole": "pattern_dense",
       "connectedTo": [
         "houska-castle",
@@ -1360,11 +1361,7 @@
         "poveglia-island",
         "armero"
       ],
-      "unlockCondition": {
-        "type": "dust",
-        "value": 8,
-        "message": "Accumulate dust to access this sector."
-      }
+      "unlockCondition": null
     },
     {
       "_id": {
@@ -1579,18 +1576,14 @@
       "updatedAt": {
         "$date": "2026-07-28T16:02:18.245Z"
       },
-      "tier": 3,
+      "tier": 0,
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
         "bunker-3-relay",
         "leptis-magna",
         "babylon-reconstruction"
       ],
-      "unlockCondition": {
-        "type": "reading",
-        "value": "bunker7-transmission-6",
-        "message": "Wait for BUNKER_7 to reveal the path."
-      },
+      "unlockCondition": null,
       "resonanceNote": "The evidence here predates the location. The photograph is dated 1843. The building was constructed in 1971."
     },
     {
@@ -2548,7 +2541,7 @@
       "updatedAt": {
         "$date": "2026-07-31T12:30:50.206Z"
       },
-      "tier": 2,
+      "tier": 1,
       "narrativeRole": "impossible_unstable",
       "connectedTo": [
         "hashima-island",
@@ -2558,8 +2551,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 55,
-        "message": "The archive remembers those who remember. Earn more dust."
+        "value": 30,
+        "message": "A silent fairytale kingdom rotting behind barbed wire. The plaster castles shiver. Accumulate dust to unlock."
       },
       "resonanceNote": "This place hums at a frequency that should not propagate through air."
     },
@@ -3798,7 +3791,8 @@
       "connectedTo": [
         "letchworth-village",
         "d-ghetto-industrial-ruins"
-      ]
+      ],
+      "unlockCondition": null
     },
     {
       "_id": {
@@ -3967,8 +3961,8 @@
       ],
       "unlockCondition": {
         "type": "dust",
-        "value": 6,
-        "message": "Accumulate dust to access this sector."
+        "value": 25,
+        "message": "Eighty-four Paliwal villages abandoned in a single night. The curse is still wet in the wells. Significant dust required to map."
       }
     },
     {
@@ -5051,9 +5045,9 @@
       },
       "verifiedBy": "system",
       "unlockCondition": {
-        "type": "reading",
-        "value": "bunker7-transmission-6",
-        "message": "Wait for BUNKER_7 to reveal the path."
+        "type": "dust",
+        "value": 85,
+        "message": "Classified underground bunkers vibrating at a synchronized 4.5 Hz granite carrier hum. solstices folding space. Unlocks at dust 85."
       },
       "connectedTo": [
         "pennhurst-state-school",
@@ -5352,12 +5346,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.613Z"
       },
-      "tier": 1,
+      "tier": 3,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
         "type": "dust",
-        "value": 13,
-        "message": "Accumulate dust to access this sector."
+        "value": 80,
+        "message": "The windows are painted black. Forty chairs are arranged in a semicircle facing east, dusted and vacuumed by no one. Dust 80+ required."
       }
     },
     {
@@ -5533,12 +5527,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.624Z"
       },
-      "tier": 1,
+      "tier": 3,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
         "type": "dust",
-        "value": 5,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 80,
+        "message": "The priest was stabbed at the altar. The oubliette contained one hundred and fifty skeletons missing their feet. Dust 80+ required."
       }
     },
     {
@@ -5771,13 +5765,9 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.612Z"
       },
-      "tier": 2,
+      "tier": 0,
       "narrativeRole": "impossible_unstable",
-      "unlockCondition": {
-        "type": "evidence",
-        "value": 10,
-        "message": "Collect 10 evidence items to breach the seal."
-      },
+      "unlockCondition": null,
       "resonanceNote": "The coordinates drift by 0.003 degrees when no one is observing."
     },
     {
@@ -5833,12 +5823,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.612Z"
       },
-      "tier": 1,
+      "tier": 2,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
-        "type": "visit",
-        "value": 3,
-        "message": "Investigate 3 verified locations to unlock."
+        "type": "dust",
+        "value": 55,
+        "message": "subterranean tunnels filled with concrete that remains soft and sweating coal tar. Handprints appear overnight. Dust 55+ required."
       }
     },
     {
@@ -5955,12 +5945,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.624Z"
       },
-      "tier": 1,
+      "tier": 2,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
         "type": "dust",
-        "value": 5,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 45,
+        "message": "Grave markers in the woods are numbered bronze spikes. The skipped numbers form a counterclockwise spiral pointing to the medical center. Dust 45+ required."
       }
     },
     {
@@ -6003,9 +5993,9 @@
       },
       "verifiedBy": "system",
       "unlockCondition": {
-        "type": "reading",
-        "value": "bunker7-transmission-6",
-        "message": "Wait for BUNKER_7 to reveal the path."
+        "type": "dust",
+        "value": 66,
+        "message": "Demolished in 2006, yet the basement cages still contain fresh straw and rattle. The cracks form the word HUNGRY. Dust 66+ required."
       },
       "connectedTo": [
         "eastern-state-penitentiary",
@@ -6073,12 +6063,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.624Z"
       },
-      "tier": 1,
+      "tier": 3,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
-        "type": "visit",
-        "value": 3,
-        "message": "Investigate 3 verified locations to unlock."
+        "type": "dust",
+        "value": 75,
+        "message": "A Victorian manor used as a military burn unit. The gray lady walks the staircase crying. Dust 75+ required."
       }
     },
     {
@@ -6122,8 +6112,8 @@
       "verifiedBy": "system",
       "unlockCondition": {
         "type": "dust",
-        "value": 91,
-        "message": "This coordinate exists only in the space between memories."
+        "value": 70,
+        "message": "Orderlies found catatonic behind a plaster wall. Twelve iron beds, all facing the wall. Bricks weep saltwater. Dust 70+ required."
       },
       "connectedTo": [
         "poveglia-island",
@@ -6187,12 +6177,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.612Z"
       },
-      "tier": 2,
+      "tier": 1,
       "narrativeRole": "impossible_unstable",
       "unlockCondition": {
         "type": "dust",
-        "value": 46,
-        "message": "The archive remembers those who remember. Earn more dust."
+        "value": 15,
+        "message": "The camp barracks are gone, but the outlines remain sterile. The grid requires more dust to resolve this internment block."
       },
       "resonanceNote": "The readings here do not match any known telemetry. Something is counting down."
     },
@@ -6249,12 +6239,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.613Z"
       },
-      "tier": 1,
+      "tier": 2,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
         "type": "dust",
-        "value": 16,
-        "message": "Accumulate dust to access this sector."
+        "value": 55,
+        "message": "The pine organ scale registers 1.2 kilograms with nothing on it. The bloodstain is a map drawn before the town was built. Dust 55+ required."
       }
     },
     {
@@ -6540,7 +6530,8 @@
         "$date": "2026-08-03T20:15:40.61Z"
       },
       "tier": 0,
-      "narrativeRole": "baseline_cautionary"
+      "narrativeRole": "baseline_cautionary",
+      "unlockCondition": null
     },
     {
       "_id": {
@@ -6583,8 +6574,8 @@
       "verifiedBy": "system",
       "unlockCondition": {
         "type": "dust",
-        "value": 91,
-        "message": "This coordinate exists only in the space between memories."
+        "value": 66,
+        "message": "NSA Dome 3 is an acoustic test facility. Whisper and the mountain whispers back. Whispered inputs shiver the terminal. Unlocks at dust 66."
       },
       "connectedTo": [
         "teufelsberg",
@@ -7524,12 +7515,12 @@
       "updatedAt": {
         "$date": "2026-08-03T20:15:40.624Z"
       },
-      "tier": 1,
+      "tier": 2,
       "narrativeRole": "pattern_dense",
       "unlockCondition": {
         "type": "dust",
-        "value": 0,
-        "message": "The grid requires more dust to resolve this location."
+        "value": 50,
+        "message": "Four hundred twenty-seven suitcases left in the attic. They are empty, but the emptiness is recent. The grid needs significant dust to map what was left behind."
       }
     },
     {
@@ -7573,8 +7564,8 @@
       "verifiedBy": "system",
       "unlockCondition": {
         "type": "dust",
-        "value": 49,
-        "message": "This sector is sealed. Dust accumulation required."
+        "value": 40,
+        "message": "The basement holds the liquidators' uniforms, too hot to move. The Geiger counter is listening. Extreme dust required."
       },
       "connectedTo": [
         "pripyat-amusement-park",
@@ -8499,8 +8490,8 @@
       "verifiedBy": "system",
       "unlockCondition": {
         "type": "dust",
-        "value": 27,
-        "message": "The grid will not show this ruin to the unclaimed. Accumulate more dust."
+        "value": 45,
+        "message": "Receivers and master clocks frozen at the reactor's fatal second. The printout paper extends itself. Unlocks at dust 45."
       },
       "connectedTo": [
         "duga-radar-array",

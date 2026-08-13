@@ -539,6 +539,7 @@ const edgeTypes = {
 };
 
 const CORE_CASE_SLUGS = new Set([
+  'aokigahara-forest',
   'beelitz-surgery-basement',
   'bhangarh-fort',
   'blackwood-hospital',
@@ -564,10 +565,12 @@ const CORE_CASE_SLUGS = new Set([
   'nara-dreamland',
   'nocton-hall-raf-hospital',
   'oradour-church-crypt',
+  'the-stanley-hotel',
   'poveglia-island',
   'poveglia-subterranean-ward',
-  'pripyat-hospital-126',
   'pripyat-amusement-park',
+  'pripyat-hospital-126',
+  'pyramiden',
   'raven-rock-mountain-complex',
   'rhyolite',
   'sedlec-ossuary',

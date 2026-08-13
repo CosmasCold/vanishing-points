@@ -10,6 +10,7 @@ import { BookOpen, AlertTriangle, ShieldAlert, FolderLock, FileDigit } from 'luc
 
 // 13 Authoritative Core Case Slugs (Layer A) to isolate and prevent list clutter
 const CORE_CASE_SLUGS = new Set([
+  'aokigahara-forest',
   'beelitz-surgery-basement',
   'bhangarh-fort',
   'blackwood-hospital',
@@ -37,8 +38,8 @@ const CORE_CASE_SLUGS = new Set([
   'oradour-church-crypt',
   'poveglia-island',
   'poveglia-subterranean-ward',
-  'pripyat-hospital-126',
   'pripyat-amusement-park',
+  'pripyat-hospital-126',
   'raven-rock-mountain-complex',
   'rhyolite',
   'sedlec-ossuary',

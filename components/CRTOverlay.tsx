@@ -25,6 +25,13 @@ export const CRTOverlay: React.FC = () => {
 
   const [flickerClass, setFlickerClass] = useState("");
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // Centralized AudioContext registration on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const { getSharedAudioContext } = require("@/lib/sharedAudioContext");
+      audioCtxRef.current = getSharedAudioContext();
+    }
+  }, []);
   const dustCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Audio Nodes Refs

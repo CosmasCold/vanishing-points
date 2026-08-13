@@ -42,6 +42,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T18:03:24.861Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 15,
+      "message": "The Ferris wheel never turned for paying customers. The bumper cars remain locked. Accumulate dust to map what was cancelled."
     }
   },
   {
@@ -142,6 +148,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-28T16:02:18.243Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 25,
+      "message": "The dolls hang from the branches, eyes tracking movement. The canal carries too much static residue. Accumulate dust to land."
     }
   },
   {
@@ -239,6 +251,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T18:27:48.37Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 30,
+      "message": "The forest absorbs all sound. Compasses spin in volcanic rock. The grid requires maximum dust of Act II to map these roots."
     }
   },
   {
@@ -284,6 +302,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-30T18:00:05.966Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 40,
+      "message": "NATO called it the Russian Woodpecker. The lattice groans in the radioactive wind. The grid requires more dust to track its signal."
     }
   },
   {
@@ -334,6 +358,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T19:17:06.904Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 20,
+      "message": "The roofs are collapsing and the mortar is wet. Entry forbidden between sunset and sunrise. Higher dust is required to enter the gates."
     }
   },
   {
@@ -424,6 +454,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-28T16:02:18.244Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 50,
+      "message": "The Atacama Desert preserves everything. The theater seats still face a blank screen. Significant dust required to open this case."
     }
   },
   {
@@ -473,6 +509,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T18:23:20.645Z"
+    },
+    "tier": 3,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 75,
+      "message": "Jacques de Brézé caught his wife Charlotte in flagrante. She wanders the chapel tower in green. The chapel organ plays itself. Dust 75+ required."
     }
   },
   {
@@ -518,6 +560,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T18:25:20.583Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 20,
+      "message": "Concrete towers on a basalt battleship. The mine has been flooded since 1974. Earn more dust to cross the seawall."
     }
   },
   {
@@ -708,6 +756,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-30T17:59:50.058Z"
+    },
+    "tier": 3,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 70,
+      "message": "The soil is fifty percent plague ash. Compasses fail and the water moves when the silent tower tolls. Unlocks at dust 70."
     }
   },
   {
@@ -897,7 +951,9 @@
     },
     "updatedAt": {
       "$date": "2026-07-28T16:02:18.244Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -1090,7 +1146,9 @@
     },
     "updatedAt": {
       "$date": "2026-07-29T19:16:44.678Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -1274,7 +1332,9 @@
     },
     "updatedAt": {
       "$date": "2026-07-28T16:02:18.245Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -2056,6 +2116,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-31T12:30:50.206Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 30,
+      "message": "A silent fairytale kingdom rotting behind barbed wire. The plaster castles shiver. Accumulate dust to unlock."
     }
   },
   {
@@ -3061,7 +3127,9 @@
     },
     "updatedAt": {
       "$date": "2026-07-30T17:38:07.985Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -3201,6 +3269,12 @@
     },
     "updatedAt": {
       "$date": "2026-07-28T16:02:18.247Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 25,
+      "message": "Eighty-four Paliwal villages abandoned in a single night. The curse is still wet in the wells. Significant dust required to map."
     }
   },
   {
@@ -4087,9 +4161,9 @@
     },
     "verifiedBy": "system",
     "unlockCondition": {
-      "type": "time",
-      "value": "03:14",
-      "message": "Mount Weather is not on the grid. But at 03:14, the grid receives a ping from coordinates that do not exist."
+      "type": "dust",
+      "value": 85,
+      "message": "Classified underground bunkers vibrating at a synchronized 4.5 Hz granite carrier hum. solstices folding space. Unlocks at dust 85."
     },
     "connectedTo": [
       "teufelsberg-echo-dome"
@@ -4101,7 +4175,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.614Z"
-    }
+    },
+    "tier": 3
   },
   {
     "_id": {
@@ -4349,6 +4424,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.613Z"
+    },
+    "tier": 3,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 80,
+      "message": "The windows are painted black. Forty chairs are arranged in a semicircle facing east, dusted and vacuumed by no one. Dust 80+ required."
     }
   },
   {
@@ -4498,6 +4579,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.624Z"
+    },
+    "tier": 3,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 80,
+      "message": "The priest was stabbed at the altar. The oubliette contained one hundred and fifty skeletons missing their feet. Dust 80+ required."
     }
   },
   {
@@ -4705,7 +4792,9 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.612Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -4756,6 +4845,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.612Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 55,
+      "message": "subterranean tunnels filled with concrete that remains soft and sweating coal tar. Handprints appear overnight. Dust 55+ required."
     }
   },
   {
@@ -4858,6 +4953,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.624Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 45,
+      "message": "Grave markers in the woods are numbered bronze spikes. The skipped numbers form a counterclockwise spiral pointing to the medical center. Dust 45+ required."
     }
   },
   {
@@ -4901,8 +5002,8 @@
     "verifiedBy": "system",
     "unlockCondition": {
       "type": "dust",
-      "value": 55,
-      "message": "The basements were not on the plans. The grid requires more dust to map what was built without permission."
+      "value": 66,
+      "message": "Demolished in 2006, yet the basement cages still contain fresh straw and rattle. The cracks form the word HUNGRY. Dust 66+ required."
     },
     "connectedTo": [
       "eastern-state-penitentiary",
@@ -4914,7 +5015,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.624Z"
-    }
+    },
+    "tier": 3
   },
   {
     "_id": {
@@ -4965,6 +5067,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.624Z"
+    },
+    "tier": 3,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 75,
+      "message": "A Victorian manor used as a military burn unit. The gray lady walks the staircase crying. Dust 75+ required."
     }
   },
   {
@@ -5008,8 +5116,8 @@
     "verifiedBy": "system",
     "unlockCondition": {
       "type": "dust",
-      "value": 55,
-      "message": "Ward X does not appear on maps. The grid requires significant dust accumulation to resolve the signal."
+      "value": 70,
+      "message": "Orderlies found catatonic behind a plaster wall. Twelve iron beds, all facing the wall. Bricks weep saltwater. Dust 70+ required."
     },
     "connectedTo": [
       "poveglia-island"
@@ -5021,7 +5129,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.611Z"
-    }
+    },
+    "tier": 3
   },
   {
     "_id": {
@@ -5066,6 +5175,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.612Z"
+    },
+    "tier": 1,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 15,
+      "message": "The camp barracks are gone, but the outlines remain sterile. The grid requires more dust to resolve this internment block."
     }
   },
   {
@@ -5117,6 +5232,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.613Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 55,
+      "message": "The pine organ scale registers 1.2 kilograms with nothing on it. The bloodstain is a map drawn before the town was built. Dust 55+ required."
     }
   },
   {
@@ -5361,7 +5482,9 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.61Z"
-    }
+    },
+    "tier": 0,
+    "unlockCondition": null
   },
   {
     "_id": {
@@ -5404,8 +5527,8 @@
     "verifiedBy": "system",
     "unlockCondition": {
       "type": "dust",
-      "value": 35,
-      "message": "The dome is listening. The grid requires more dust to hear what it hears."
+      "value": 66,
+      "message": "NSA Dome 3 is an acoustic test facility. Whisper and the mountain whispers back. Whispered inputs shiver the terminal. Unlocks at dust 66."
     },
     "connectedTo": [
       "teufelsberg"
@@ -5417,7 +5540,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.611Z"
-    }
+    },
+    "tier": 3
   },
   {
     "_id": {
@@ -5713,7 +5837,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.623Z"
-    }
+    },
+    "tier": 3
   },
   {
     "_id": {
@@ -6210,6 +6335,12 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.624Z"
+    },
+    "tier": 2,
+    "unlockCondition": {
+      "type": "dust",
+      "value": 50,
+      "message": "Four hundred twenty-seven suitcases left in the attic. They are empty, but the emptiness is recent. The grid needs significant dust to map what was left behind."
     }
   },
   {
@@ -6267,7 +6398,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.607Z"
-    }
+    },
+    "tier": 2
   },
   {
     "_id": {
@@ -7081,7 +7213,8 @@
     },
     "updatedAt": {
       "$date": "2026-08-03T20:15:40.611Z"
-    }
+    },
+    "tier": 2
   },
   {
     "_id": {

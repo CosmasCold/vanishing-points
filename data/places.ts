@@ -113,7 +113,7 @@ export const LOCAL_PLACES: Place[] = [
       "duga-radar-array",
       "duga-control-room",
       "the-stanley-hotel",
-      "oradour-sur-glane"
+      "oradour-church-crypt"
     ],
     "unlockCondition": {
       "type": "dust",

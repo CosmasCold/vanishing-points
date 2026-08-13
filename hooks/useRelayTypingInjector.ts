@@ -28,14 +28,9 @@ export function useRelayTypingInjector({ baseVolume = 0.22, pitchOffset = 145 }:
   const observerTimerRef = useRef<any>(null);
 
   const initAudioCtx = useCallback(() => {
-    if (audioCtxRef.current) return audioCtxRef.current;
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      audioCtxRef.current = new AudioContextClass();
-      return audioCtxRef.current;
-    } catch (e) {
-      return null;
-    }
+    const { getSharedAudioContext } = require("@/lib/sharedAudioContext");
+    audioCtxRef.current = getSharedAudioContext();
+    return audioCtxRef.current;
   }, []);
 
   // Synthesizes a physical, high-voltage clack

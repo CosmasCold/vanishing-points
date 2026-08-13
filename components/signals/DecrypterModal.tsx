@@ -305,6 +305,11 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
               × CLOSE
             </button>
           </div>
+        {/* Decrypter Alert Banner - Solstice Rotational Offset Clue */}
+        <div className="bg-amber-950/20 border-b border-amber-900/40 px-4 py-2 flex items-center gap-2 text-[10px] text-amber-500 font-mono animate-pulse" style={{ borderColor: 'rgba(138, 90, 0, 0.15)' }}>
+          <span className="text-amber-500 font-bold shrink-0">⚠️ TELEMETRY RESIDUAL:</span>
+          <span className="truncate">SOLSTICE WAVE SHIFT DETECTED (+2° ROTATIONAL DRIFT COUPLING ACTIVE) // CALIBRATE DIALS ACCORDINGLY</span>
+        </div>
 
           {/* Dual Column Layout */}
           <div className="flex flex-1 min-h-0 divide-x" style={{ borderColor: colors.archive.grayDark }}>

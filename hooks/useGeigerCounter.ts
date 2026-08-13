@@ -40,6 +40,11 @@ export function useGeigerCounter({
   volume = 0.25
 }: GeigerConfig = {}) {
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // centralize Geiger audio context mounting
+  useEffect(() => {
+    const { getSharedAudioContext } = require("@/lib/sharedAudioContext");
+    audioCtxRef.current = getSharedAudioContext();
+  }, []);
   
   const { status } = useUIStore();
   const { selectedPlaceSlug, places } = useAtlasStore();

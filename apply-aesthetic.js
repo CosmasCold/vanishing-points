@@ -66,26 +66,27 @@ function patchInvestigationView() {
   log('info', `Located InvestigationView at: ${viewPath}`);
   let content = fs.readFileSync(viewPath, 'utf8').replace(/\r\n/g, '\n');
 
-  // Multi-line regex targeting style attribute with unescaped single quotes inside the main div container
-  const brokenStyleRegex = /<div\s+className="absolute inset-0 flex flex-col z-10"\s+style=\{\{[\s\S]*?\}\}\s*>/;
-
-  if (brokenStyleRegex.test(content)) {
-    content = content.replace(brokenStyleRegex, '<div className="absolute inset-0 flex flex-col z-10 mahogany-console">');
-    fs.writeFileSync(viewPath, content, 'utf8');
-    log('success', '✓ Successfully purged inline style syntax block and replaced with clean className="mahogany-console".');
-    return true;
+  // Bulletproof structure-based parser: find first <div inside return block and remove inline style
+  let returnIdx = content.indexOf("return (");
+  if (returnIdx === -1) {
+    returnIdx = content.indexOf("return  (");
   }
 
-  // Generic fallback if className is slightly different
-  const brokenStyleGenericRegex = /<div\s+className="([^"]+)"\s+style=\{\{[\s\S]*?(?:radial-gradient|feTurbulence)[\s\S]*?\}\}\s*>/;
-  if (brokenStyleGenericRegex.test(content)) {
-    content = content.replace(brokenStyleGenericRegex, (match, classes) => {
-      const cleanClasses = classes.includes("mahogany-console") ? classes : `${classes} mahogany-console`;
-      return `<div className="${cleanClasses}">`;
-    });
-    fs.writeFileSync(viewPath, content, 'utf8');
-    log('success', '✓ Successfully cleaned up generic background style tag on InvestigationView.');
-    return true;
+  if (returnIdx !== -1) {
+    const divIdx = content.indexOf("<div", returnIdx);
+    if (divIdx !== -1) {
+      const closeAngleIdx = content.indexOf(">", divIdx);
+      if (closeAngleIdx !== -1) {
+        const originalTag = content.substring(divIdx, closeAngleIdx + 1);
+        if (originalTag.includes("style={{") && (originalTag.includes("radial-gradient") || originalTag.includes("feTurbulence") || originalTag.includes("colors.archive.black"))) {
+          const cleanTag = '<div className="absolute inset-0 flex flex-col z-10 mahogany-console">';
+          content = content.substring(0, divIdx) + cleanTag + content.substring(closeAngleIdx + 1);
+          fs.writeFileSync(viewPath, content, 'utf8');
+          log('success', '✓ Surgically removed multiline inline style block and replaced with mahogany-console.');
+          return true;
+        }
+      }
+    }
   }
 
   log('info', '• InvestigationView background looks clean or is already compiled-safe.');
@@ -110,7 +111,7 @@ function patchDashboardShell() {
   }
 
   // Matches the absolute container that wraps GeigerHUD and StrowgerStepper regardless of their tag orders
-  const containerPattern = /(<div\s+className="absolute[^"]*right-4[^"]*"[\s\S]*?>[\s\S]*?(?:<GeigerHUD|<StrowgerStepper)[\s\S]*?(?:<GeigerHUD|<StrowgerStepper)[\s\S]*?<\/div>)/;
+  const containerPattern = /(<div\s+className="absolute[^"]*right-4[^"]*"[\s\S]*?>[\s\S]*?(?:StrowgerStepper|GeigerHUD)[\s\S]*?(?:StrowgerStepper|GeigerHUD)[\s\S]*?<\/div>)/;
 
   if (containerPattern.test(content)) {
     content = content.replace(containerPattern, (match, block) => {

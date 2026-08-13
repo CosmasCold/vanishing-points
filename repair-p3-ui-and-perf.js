@@ -3,7 +3,7 @@ const path = require('path');
 
 console.log("\n=======================================================");
 console.log("   SYSTEM-7B ARCHIVE REPAIR PROTOCOL // LEVEL-4 UTILITY");
-console.log("   TARGETING: PRIORITY-3 UI POLISH & PERF OPTIMIZATIONS");
+console.log("   TARGETING: PRIORITY-3 UI POLISH & PERF OPTIMIZATIONS (v2)");
 console.log("=======================================================\n");
 
 // Helper log function
@@ -164,8 +164,7 @@ function repairAtlasMap() {
     return false;
   }
 
-  log('info', `Reading AtlasMap at: ${targetPath}`);
-  let content = fs.readFileSync(targetPath, 'utf8');
+  log('info', `Reading AtlasMap at: ${targetPath}`);  let content = fs.readFileSync(targetPath, 'utf8');
 
   content = content.replace(/\r\n/g, '\n');
 
@@ -255,7 +254,7 @@ function repairAtlasMap() {
       '<g ref={mapContentRef} style={{ transformOrigin: "0px 0px" }}>',
       '<g ref={mapContentRef} style={{ transformOrigin: "0px 0px", willChange: "transform" }}>'
     );
-    log('success', 'Injected "willChange: transform" rendering hint to SVG map layer.');
+    log('success', 'Injected \"willChange: transform\" rendering hint to SVG map layer.');
     fixed = true;
   }
 
@@ -269,7 +268,7 @@ function repairAtlasMap() {
 }
 
 /**
- * REPAIR 04: Optimize EvidenceBoard.tsx felt canvas and edge rendering
+ * REPAIR 04: Optimize EvidenceBoard.tsx felt canvas and edge rendering (Idempotent V2)
  */
 function repairEvidenceBoard() {
   const possiblePaths = [
@@ -301,17 +300,31 @@ function repairEvidenceBoard() {
 
   let fixed = false;
 
-  // 1. Enable React Flow rendering optimization gates
-  if (content.includes('<ReactFlow') && !content.includes('onlyRenderVisibleElements')) {
-    content = content.replace(
-      '<ReactFlow',
-      '<ReactFlow\n        onlyRenderVisibleElements={true}\n        minZoom={0.25}\n        maxZoom={2.0}'
-    );
-    log('success', 'Enabled onlyRenderVisibleElements and strict zoom bounds inside EvidenceBoard.');
+  // STEP 0: Revert previous buggy duplicate-attribute replacement if it exists
+  const brokenPattern = '<ReactFlow\n        onlyRenderVisibleElements={true}\n        minZoom={0.25}\n        maxZoom={2.0}';
+  if (content.includes(brokenPattern)) {
+    log('info', 'Detected previous duplicate zoom attributes. Reverting and self-healing EvidenceBoard.tsx...');
+    content = content.replace(brokenPattern, '<ReactFlow');
     fixed = true;
   }
 
-  // 2. Replace costly high-radius SVG blur shadows inside RedWoolStringEdge with vector-native translucent outlines
+  // STEP 1: Enable React Flow rendering optimization gates and adjust zoom bounds safely (no duplication)
+  if (content.includes('<ReactFlow') && !content.includes('onlyRenderVisibleElements')) {
+    // Insert onlyRenderVisibleElements={true} directly into the <ReactFlow tag opening
+    content = content.replace(
+      '<ReactFlow',
+      '<ReactFlow\n        onlyRenderVisibleElements={true}'
+    );
+    
+    // Safely update minZoom and maxZoom values inline instead of appending to prevent duplicate attribute JSX syntax errors
+    content = content.replace(/maxZoom=\{[0-9.]+\}/g, 'maxZoom={2.0}');
+    content = content.replace(/minZoom=\{[0-9.]+\}/g, 'minZoom={0.25}');
+    
+    log('success', 'Enabled onlyRenderVisibleElements and updated strict zoom bounds inside EvidenceBoard without duplication.');
+    fixed = true;
+  }
+
+  // STEP 2: Replace costly high-radius SVG blur shadows inside RedWoolStringEdge with vector-native translucent outlines
   const oldEdgeShadow = [
     '      {/* Double-offset deep blurred drop-shadow (GPU composited) */}',
     '      <path',

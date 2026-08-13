@@ -904,8 +904,6 @@ export const EvidenceBoard: React.FC = () => {
 
       <ReactFlow
         onlyRenderVisibleElements={true}
-        minZoom={0.25}
-        maxZoom={2.0}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -917,8 +915,8 @@ export const EvidenceBoard: React.FC = () => {
         onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.15 }}
-        maxZoom={3.0}
-        minZoom={0.3}
+        maxZoom={2.0}
+        minZoom={0.25}
         className="relative z-10"
       >
         <Background color="#161310" gap={16} size={1} style={{ opacity: 0.06 }} />

@@ -1,12 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { initializeCommands } from '@/logic/commands';
+import React from 'react';
 
 export const CommandProvider: React.FC = () => {
-  useEffect(() => {
-    initializeCommands();
-  }, []);
-  
   return null;
 };

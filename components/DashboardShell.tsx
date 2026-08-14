@@ -337,13 +337,11 @@ export const DashboardShell: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
       className="fixed inset-0 flex overflow-hidden select-none"
-      style={{ 
-        backgroundColor: colors.archive.black,
-        ...jitterStyles,
-        transform: `translate(var(--crt-jitter-x, 0px), var(--crt-jitter-y, 0px))`,
-        opacity: `var(--crt-flicker, 1)`,
-        filter: `contrast(1.05) brightness(var(--crt-flicker, 1))`,
-      } as React.CSSProperties}
+      style={{
+  backgroundColor: colors.archive.black,
+  ...jitterStyles,
+  transform: `translate(var(--crt-jitter-x, 0px), var(--crt-jitter-y, 0px))`,
+} as React.CSSProperties}
     >
       {/* CSS-injected Chromatic Aberration Text Shadow Split Filter [28] */}
       <style dangerouslySetInnerHTML={{

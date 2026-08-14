@@ -18,12 +18,22 @@ export type ArtifactCondition =
 
 export interface ArtifactMarking {
   id: string;
-  type: 'inscription' | 'serial' | 'symbol' | 'damage' | 'residue';
-  description: string;
-  location: string; // e.g., "underside", "edge", "interior"
-  requiresMagnification: boolean;
-  requiresUV: boolean;
+  label: string;
+  coordinates: {
+    x: number;
+    y: number;
+  };
+  revealedInMode: 'standard' | 'magnify' | 'uv' | 'measure';
+  clueText: string;
+
+  // Optional legacy metadata retained for existing artifact records and UI.
+  type?: 'inscription' | 'serial' | 'symbol' | 'damage' | 'residue';
+  description?: string;
+  location?: string;
+  requiresMagnification?: boolean;
+  requiresUV?: boolean;
 }
+
 
 export interface PhysicalArtifact {
   id: string;

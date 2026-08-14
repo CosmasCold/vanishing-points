@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "node scripts/seed-db.js"
+    "validate:data": "tsx scripts/validate-corpus.ts",
+    "check:all": "npm run validate:data && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -35,9 +36,8 @@
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.52.1",
     "react-icons": "^5.7.0",
-    "reactflow": "^11.11.4",
     "resend": "^6.18.1",
-    "seedrandom": "^3.0.5",
+    "seedrandom": "^3.0.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^3.4.6",
     "three": "^0.185.1",

@@ -1,24 +1,38 @@
-import { Node, Edge } from 'reactflow';
+import type { Edge, Node } from '@xyflow/react';
 
-export type BoardNodeType = 'evidence' | 'place' | 'theory' | 'person' | 'signal';
+export type BoardNodeType =
+  | 'evidence'
+  | 'place'
+  | 'theory'
+  | 'person'
+  | 'signal';
 
-export type BoardEdgeType = 'resonance' | 'causation' | 'similarity' | 'contradiction' | 'reference';
+export type BoardEdgeType =
+  | 'resonance'
+  | 'causation'
+  | 'similarity'
+  | 'contradiction'
+  | 'reference';
 
-export interface BoardNodeData {
+export interface BoardNodeData
+  extends Record<string, unknown> {
   label: string;
   type: BoardNodeType;
   status?: string;
   description?: string;
   sourceId?: string;
-  mediaUrl?: string;
-  createdAt: string;
 }
 
-export interface BoardEdgeData {
+export interface BoardEdgeData
+  extends Record<string, unknown> {
   type: BoardEdgeType;
   label?: string;
-  createdAt: string;
+  confidence?: number;
+  sourceId?: string;
 }
 
-export type EvidenceBoardNode = Node<BoardNodeData>;
-export type EvidenceBoardEdge = Edge<BoardEdgeData>;
+export type EvidenceBoardNode =
+  Node<BoardNodeData>;
+
+export type EvidenceBoardEdge =
+  Edge<BoardEdgeData>;

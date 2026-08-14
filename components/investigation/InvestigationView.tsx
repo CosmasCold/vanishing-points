@@ -88,7 +88,9 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 
   // Defensive: filter null/undefined from connectedTo to prevent runtime crashes
   const safeConnections = useMemo(() => {
-    return (place.connectedTo || []).filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+    return (place.connectedTo || [])
+      .filter((placeId) => typeof placeId === 'string' && placeId.length > 0)
+      .map((placeId) => placeId.replace(/^place:/, ''));
   }, [place.connectedTo]);
 
   const progressionSummary = useMemo(() => {

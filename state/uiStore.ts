@@ -27,7 +27,7 @@ export interface Status {
   observerStability: number;
   investigatedSlugs: string[];
   activeAlerts: number;
-  sessionWorkDone: number; // Tracker for active grounding gate checks
+  sessionWorkDone: number; // Tracker for active grounding/calibration checks
   atlasCoverage: number;     // Restored to resolve compilation requirements
 }
 
@@ -95,7 +95,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   ground: () => {
     const { status } = get();
     if (status.dustIndex <= 0) {
-      return { success: false, message: "BUNKER_7: No electrostatic load detected on terminal chassis contact plates." };
+      return {
+        success: false,
+        message: "BUNKER_7: No electrostatic load detected on terminal chassis contact plates."
+      };
     }
     set((s) => ({
       status: {
@@ -104,16 +107,25 @@ export const useUIStore = create<UIState>((set, get) => ({
         observerStability: Math.min(100, s.status.observerStability + 5),
       }
     }));
-    return { success: true, message: `BUNKER_7: Grounding loop complete. Bled off -12% electrostatic static load into Wing C copper drains.` };
+    return {
+      success: true,
+      message: "BUNKER_7: Grounding loop complete. Bled off -12% electrostatic static load into Wing C copper drains."
+    };
   },
 
   restoreStability: () => {
     const { status } = get();
     if (status.sessionWorkDone < 2) {
-      return { success: false, message: "BUNKER_7: Recalibration rejected. Insufficient cognitive focus. Analyze at least 2 case materials in this session to align calibration vectors. Current: " + status.sessionWorkDone + "." };
+      return {
+        success: false,
+        message: "BUNKER_7: Recalibration rejected. Insufficient cognitive focus. Analyze at least 2 case materials in this session to align calibration vectors. Current: " + status.sessionWorkDone + "."
+      };
     }
     if (status.observerStability >= 100) {
-      return { success: false, message: "BUNKER_7: Observer cognitive alignment is already at nominal ceiling (100%)." };
+      return {
+        success: false,
+        message: "BUNKER_7: Observer cognitive alignment is already at nominal ceiling (100%)."
+      };
     }
     set((s) => ({
       status: {
@@ -122,7 +134,10 @@ export const useUIStore = create<UIState>((set, get) => ({
         sessionWorkDone: Math.max(0, s.status.sessionWorkDone - 2), // Consume 2 session units!
       }
     }));
-    return { success: true, message: "BUNKER_7: Calibration sequence complete. Focus alignment secured (+15% Stability). Consumed 2 progress units." };
+    return {
+      success: true,
+      message: "BUNKER_7: Calibration sequence complete. Focus alignment secured (+15% Stability). Consumed 2 progress units."
+    };
   },
 
   examineEvidence: (evidenceId, isVerified = false) => {
@@ -134,7 +149,7 @@ export const useUIStore = create<UIState>((set, get) => ({
             ...s.status,
             dustIndex: Math.max(0, s.status.dustIndex - 1), // Tighter balance metrics
             observerStability: Math.min(100, s.status.observerStability + 2),
-            sessionWorkDone: s.status.sessionWorkDone + 1,
+            sessionWorkDone: s.status.sessionWorkDone + 1, // CORRECTLY SYNCHRONIZED PROGRESS VARIABLE
           }
         };
       } else {
@@ -144,7 +159,7 @@ export const useUIStore = create<UIState>((set, get) => ({
             ...s.status,
             dustIndex: Math.min(100, s.status.dustIndex + 1), // Slow Burn: +1 instead of +4
             observerStability: Math.max(0, s.status.observerStability - 1), // Gentle drain: -1 instead of -3
-            sessionWorkDone: s.status.sessionWorkDone + 1,
+            sessionWorkDone: s.status.sessionWorkDone + 1, // CORRECTLY SYNCHRONIZED PROGRESS VARIABLE
           }
         };
       }

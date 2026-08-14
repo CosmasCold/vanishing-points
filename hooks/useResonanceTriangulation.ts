@@ -5,85 +5,66 @@ import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
 
 /**
- * High-fidelity geodetic triangulation hook for Vanishing Points.
- * Tracks player-drawn connections between the three Cold-War geodetic pillars.
- * When a chain or triangle is formed, stabilizes and unlocks "The Grid Null Point" in Kansas,
- * aligning the 4.5 Hz sub-audible resonance axis [4, 46].
+ *  High-fidelity geodetic triangulation hook for Vanishing Points.
+ *  Tracks player-drawn connections between the three Cold-War geodetic pillars.
+ *  When a chain or triangle is formed, stabilizes and unlocks "The Grid Null Point" in Kansas,
+ *  aligning the 4.5 Hz sub-audible resonance axis [4, 46].
  */
 export function useResonanceTriangulation() {
   const { playerEdges, discoveredEdges } = useEvidenceBoardStore();
   const { status, updateStatus } = useUIStore();
   const { places, selectPlace, setPlaces } = useAtlasStore();
-  const { playCalibrationDrone, click } = useAudioStore();
+  const { playCalibrationDrone, click, play } = useAudioStore();
 
   useEffect(() => {
     // Symmetrically support both shorthand and formal database slugs for geodetic anchors
     const weatherSlugs = ['mount-weather-emergency-operations-center', 'mount-weather'];
-    const cheyenneSlugs = ['cheyenne-mountain-complex', 'cheyenne-mountain'];
+    const cheyenneSlugs = ['cheyenne-mountain-complex', 'cheyenne-mountain', 'cheyenne-mount'];
     const ravenSlugs = ['raven-rock-mountain-complex', 'raven-rock'];
-    
-    const centroidNode = 'the-grid-null-point';
 
-    // Helper to check if two slug-groups have an active edge connecting them on the felt board
-    const hasConnection = (groupA: string[], groupB: string[]) => {
-      const allEdges = [...(playerEdges || []), ...(discoveredEdges || [])];
-      return allEdges.some(edge => {
-        const s = edge.source;
-        const t = edge.target;
-        return (
-          (groupA.includes(s) && groupB.includes(t)) ||
-          (groupA.includes(t) && groupB.includes(s))
-        );
-      });
+    // Helper to evaluate connections across different slug aliases on the corkboard
+    const hasConnection = (slugsA: string[], slugsB: string[]) => {
+      return [...playerEdges, ...discoveredEdges].some(edge => 
+        (slugsA.includes(edge.source) && slugsB.includes(edge.target)) ||
+        (slugsA.includes(edge.target) && slugsB.includes(edge.source))
+      );
     };
 
-    // Calculate geodetic link lines
-    const connectWeatherCheyenne = hasConnection(weatherSlugs, cheyenneSlugs);
-    const connectCheyenneRaven = hasConnection(cheyenneSlugs, ravenSlugs);
-    const connectRavenWeather = hasConnection(ravenSlugs, weatherSlugs);
+    const conn1 = hasConnection(weatherSlugs, cheyenneSlugs);
+    const conn2 = hasConnection(cheyenneSlugs, ravenSlugs);
+    const conn3 = hasConnection(ravenSlugs, weatherSlugs);
 
-    // Triangulation is secured if there is a geodetic chain linking all three nodes
-    // (at least 2 out of the 3 possible connections are actively established)
-    const activeConnections = 
-      (connectWeatherCheyenne ? 1 : 0) + 
-      (connectCheyenneRaven ? 1 : 0) + 
-      (connectRavenWeather ? 1 : 0);
-
-    const isTriangulated = activeConnections >= 2;
+    // Triangulation resolves if at least a dual-link chain is drawn between the geodetic pillars
+    const isTriangulated = (conn1 && conn2) || (conn2 && conn3) || (conn3 && conn1);
 
     if (isTriangulated) {
-      const nullPoint = places.find(p => p.slug === centroidNode);
-      
-      // If the Null Point exists but is still represented as an unstable 'mirage', stabilize it!
-      if (nullPoint && nullPoint.status === 'mirage') {
-        // Trigger warm geodetic alignment frequency drone
-        if (typeof playCalibrationDrone === 'function') {
-          playCalibrationDrone();
-        } else if (typeof click === 'function') {
-          click();
-        }
-
-        // Deep-copy and update the map places status
+      const nullPoint = places.find(p => p.slug === 'the-grid-null-point');
+      if (nullPoint && nullPoint.status !== 'verified') {
         const updatedPlaces = places.map(p => {
-          if (p.slug === centroidNode) {
-            return {
-              ...p,
-              status: 'verified' as const // Stabilize the coordinate on the Atlas!
-            };
+          if (p.slug === 'the-grid-null-point') {
+            return { ...p, status: 'verified' as const };
+          }
+          // Symmetrically verify the pillars themselves if they are currently locked or mirages
+          if (weatherSlugs.includes(p.slug) || cheyenneSlugs.includes(p.slug) || ravenSlugs.includes(p.slug)) {
+            if (p.status === 'mirage' || p.status === 'sealed') {
+              return { ...p, status: 'verified' as const };
+            }
           }
           return p;
         });
 
-        // Set verified places back into store and center viewport on Kansas centroid
         setPlaces(updatedPlaces);
-        selectPlace(centroidNode);
+        
+        // Trigger high-fidelity diegetic audio and console responses
+        if (typeof playCalibrationDrone === 'function') {
+          playCalibrationDrone();
+        }
+        if (typeof play === 'function') {
+          play('alert');
+        }
 
-        // Award +10 Stability and +8 Dust on anomalous unredaction
-        updateStatus({
-          observerStability: Math.min(100, (status?.observerStability ?? 100) + 10),
-          dustIndex: Math.min(100, (status?.dustIndex ?? 0) + 8)
-        });
+        console.log('[BUNKER_7] Centroid lock achieved. 4.5 Hz Bedrock signal synchronized. Kansas Null Point coordinates unredacted.');
       }
     }
-  }, [playerEdges, discoveredEdges, places, selectPlace, setPlaces, updateStatus, status, playCalibrationDrone, click]);
+  }, [playerEdges, discoveredEdges, places, selectPlace, setPlaces, updateStatus, status, playCalibrationDrone, click, play]);
 }

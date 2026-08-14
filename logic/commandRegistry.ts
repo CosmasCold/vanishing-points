@@ -19,13 +19,25 @@ export class CommandRegistry {
   private commands = new Map<string, CommandDefinition>();
 
   public register(cmd: CommandDefinition) {
-    this.commands.set(cmd.name.toLowerCase(), cmd);
-    if (cmd.aliases) {
-      cmd.aliases.forEach((alias) => {
-        this.commands.set(alias.toLowerCase(), cmd);
-      });
+    const names = [cmd.name, ...(cmd.aliases ?? [])]
+      .map((name) => name.trim().toLowerCase())
+      .filter(Boolean);
+
+    for (const name of names) {
+      if (this.commands.has(name)) {
+        throw new Error(
+          `[CommandRegistry] Duplicate command or alias registration: "${name}"`
+        );
+      }
+    }
+
+    this.commands.set(cmd.name.trim().toLowerCase(), cmd);
+
+    for (const alias of cmd.aliases ?? []) {
+      this.commands.set(alias.trim().toLowerCase(), cmd);
     }
   }
+
 
   /**
    * Complete Command Execution Engine

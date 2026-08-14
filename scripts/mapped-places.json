@@ -715,67 +715,6 @@
     },
     {
       "_id": {
-        "oid": "6a68d28a0ce0117278ae7f63"
-      },
-      "name": "Beelitz-Heilstätten",
-      "slug": "beelitz-heilsttten",
-      "category": "both",
-      "coordinates": [
-        12.9114,
-        52.2589
-      ],
-      "address": {
-        "city": "Beelitz",
-        "country": "Germany",
-        "formatted": "Beelitz-Heilstätten, Brandenburg, Germany"
-      },
-      "yearAbandoned": 1994,
-      "history": "Built in 1898 as a tuberculosis sanatorium for the German National Insurance Institute, this complex of 60 buildings on 200 hectares treated Adolf Hitler in 1916 for a thigh wound sustained at the Somme. After World War II, the Soviet Army took it over as a military hospital, treating soldiers from the Eastern Bloc until 1994. They left everything: operating tables, X-ray machines, gurneys, a bowling alley, a theater with red velvet seats. The men's pavilion is a ruin of peeling surgical green paint and collapsed solariums. Vines pull the roof off the women's pavilion. In the surgery wing, a single lightbulb still hangs over a porcelain operating table, and no one can say who keeps replacing it when it burns out.",
-      "hauntingReports": [
-        "Night security reports footsteps in the surgery wing when the building is sealed and empty.",
-        "A patient in a Soviet-era gown has been observed standing at third-floor windows that no longer exist.",
-        "The bowling alley produces the sound of a single strike at 3:00 AM, though the pins were removed in 2005.",
-        "Temperature in the Hitler treatment room drops 15 degrees below ambient, and cameras malfunction within its walls."
-      ],
-      "dangerLevel": 3,
-      "photos": [
-        "https://upload.wikimedia.org/wikipedia/commons/c/c7/20220808_Chirurgie_Beelitz-Heilst%C3%A4tten_06.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/1/10/Beelitz-Heilst%C3%A4tten-1.jpg"
-      ],
-      "status": "verified",
-      "contributor": {
-        "name": "The Archivist",
-        "email": "archivist@vanishingpoints.app"
-      },
-      "submittedAt": {
-        "$date": "2026-07-28T16:02:18.162Z"
-      },
-      "verifiedAt": {
-        "$date": "2026-07-28T16:02:18.162Z"
-      },
-      "verifiedBy": "system",
-      "viewCount": 2233,
-      "__v": 0,
-      "createdAt": {
-        "$date": "2026-07-28T16:02:18.244Z"
-      },
-      "updatedAt": {
-        "$date": "2026-07-28T16:02:18.244Z"
-      },
-      "tier": 1,
-      "narrativeRole": "pattern_dense",
-      "connectedTo": [
-        "beelitz-surgery-basement",
-        "gila-river-relocation-center"
-      ],
-      "unlockCondition": {
-        "type": "visit",
-        "value": 3,
-        "message": "Investigate 3 verified locations to unlock."
-      }
-    },
-    {
-      "_id": {
         "oid": "6a68d28a0ce0117278ae7f64"
       },
       "name": "Château Miranda",
@@ -1062,7 +1001,7 @@
       "tier": 3,
       "narrativeRole": "framebreak_impossible",
       "connectedTo": [
-        "beelitz-heilsttten",
+        "beelitz-surgery-basement",
         "bunker-3-relay",
         "al-madam-ghost-town"
       ],
@@ -2821,7 +2760,7 @@
       "narrativeRole": "baseline_cautionary",
       "connectedTo": [
         "deception-island-whalers-bay-cemeteries",
-        "beelitz-heilsttten",
+        "beelitz-surgery-basement",
         "kuldhara",
         "varosha",
         "san-zhi-pod-village"
@@ -4770,11 +4709,11 @@
         "message": "A resonance code is required. Find it in another investigation."
       },
       "connectedTo": [
-        "beelitz-heilsttten",
         "teufelsberg",
         "cocos-island",
         "d-ghetto-industrial-ruins",
-        "lawang-sewu"
+        "lawang-sewu",
+        "gila-river-relocation-center"
       ],
       "resonanceNote": "The drain is 1.2 meters across. I have checked the architectural records. It was not in the original plans. It was added in 1942.",
       "__v": 0,
@@ -7919,7 +7858,7 @@
       },
       "verifiedBy": "system",
       "connectedTo": [
-        "beelitz-heilsttten",
+        "beelitz-surgery-basement",
         "dallol"
       ],
       "resonanceNote": "The well is capped with 3 meters of concrete. The park gardeners do not know why. The old residents do not answer questions about it.",

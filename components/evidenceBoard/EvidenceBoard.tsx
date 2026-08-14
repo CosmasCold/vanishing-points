@@ -1,16 +1,19 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   Handle,
   Position,
   useNodesState,
   useEdgesState,
-  EdgeProps,
-  Connection,
   addEdge,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+  type EdgeProps,
+  type Connection,
+  type Node,
+  type Edge,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
@@ -61,7 +64,7 @@ const PolaroidNode: React.FC<CustomNodeProps> = React.memo(({ id, data }) => {
     for (let i = 0; i < id.length; i++) {
       hash = id.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return (hash % 7) - 3; // Generates constant tilt between -3deg and +3deg
+    return (hash % 7) - 3;
   }, [id]);
 
   const categoryColor = useMemo(() => {
@@ -83,143 +86,152 @@ const PolaroidNode: React.FC<CustomNodeProps> = React.memo(({ id, data }) => {
         zIndex: isSelected ? 30 : 10,
       }}
     >
-      {/* Grommet-styled connection handles visible on hover */}
-      <Handle 
-        type="target" 
-        position={Position.Top} 
-        style={{ 
-          top: '-6px', 
-          background: '#d4af37', 
-          borderColor: '#8a6d1c', 
-          width: '8px', 
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          top: '-6px',
+          background: '#d4af37',
+          borderColor: '#8a6d1c',
+          width: '8px',
           height: '8px',
           boxShadow: '0 0 4px rgba(212, 175, 55, 0.5)'
-        }} 
+        }}
       />
-      <Handle 
-        type="source" 
-        position={Position.Bottom} 
-        style={{ 
-          bottom: '-6px', 
-          background: '#d4af37', 
-          borderColor: '#8a6d1c', 
-          width: '8px', 
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{
+          bottom: '-6px',
+          background: '#d4af37',
+          borderColor: '#8a6d1c',
+          width: '8px',
           height: '8px',
           boxShadow: '0 0 4px rgba(212, 175, 55, 0.5)'
-        }} 
+        }}
       />
 
-      {/* 3D Brass Pushpin with detailed dimensional casting drop-shadow */}
-      <div 
+      <div
         className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full transition-all duration-150 z-[40]"
         style={{
           background: 'radial-gradient(circle at 35% 35%, #bf9f62 0%, #7a5f2e 60%, #403010 100%)',
-          boxShadow: isSelected 
+          boxShadow: isSelected
             ? '0 6px 12px rgba(0,0,0,0.95), inset 0 1px 1px rgba(255,255,255,0.45)'
             : '0 4px 6px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.4)',
           border: '1px solid #5a451e',
           transform: isSelected ? 'scale(1.15) translateY(-1.5px)' : 'scale(1.0)',
         }}
       >
-        {/* Metal pin shaft shadow on the Polaroid */}
         <div className="absolute w-[2px] h-3.5 bg-black/75 top-3.5 left-1.5 rotate-[15deg] blur-[0.5px]" />
       </div>
 
-      {/* Aged and stained white-matte Polaroid sheet body */}
       <div
         className="p-3 rounded-[1px] border transition-all duration-300"
         style={{
-          backgroundColor: '#dfd5c0', // Yellowed, stained paper look
-          // Beautiful procedural aging stains, watermarks, and edge grime
+          backgroundColor: '#dfd5c0',
           backgroundImage: `
             radial-gradient(circle at 12% 15%, rgba(139, 90, 43, 0.12) 0%, transparent 22%),
-            radial-gradient(circle at 88% 80%, rgba(90, 75, 45, 0.08) 0%, transparent 28%),
-            radial-gradient(circle at 50% 50%, rgba(200, 180, 160, 0.04) 0px, rgba(200, 180, 160, 0.04) 1px, transparent 1px, transparent 4px),
-            radial-gradient(ellipse at center, transparent 55%, rgba(69, 53, 30, 0.08) 100%)
+            radial-gradient(circle at 80% 90%, rgba(60, 40, 20, 0.10) 0%, transparent 25%),
+            linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)
           `,
-          borderColor: isSelected ? '#ffaa55' : '#a69f8c',
-          width: '135px',
-          height: '165px',
+          borderColor: isSelected ? '#bf9f62' : '#8a806f',
           boxShadow: isSelected
-            ? '0 24px 56px rgba(0,0,0,0.95), 0 0 16px rgba(255,170,85,0.18)'
-            : '0 12px 28px rgba(0,0,0,0.85)',
-          transform: isSelected ? 'translateY(-2px)' : 'translateY(0)',
+            ? '0 12px 30px rgba(0,0,0,0.9), inset 0 0 10px rgba(139, 90, 43, 0.12)'
+            : '0 6px 16px rgba(0,0,0,0.65)',
         }}
       >
-        {/* Physical image container frame (high contrast vintage sepia filter) */}
         <div
-          className="w-full relative overflow-hidden flex items-center justify-center border bg-stone-950"
-          style={{ height: '110px', borderColor: '#c1baa8' }}
+          className="relative overflow-hidden border border-black/20"
+          style={{
+            width: '180px',
+            height: '135px',
+            background: '#171411',
+          }}
         >
-          {/* Sepia Atmosphere Overlay */}
-          <div className="absolute inset-0 bg-[#3a200a]/15 mix-blend-color pointer-events-none z-10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent z-10" />
-
-          {/* Hyper-Realistic Photographic Semi-Gloss Sheen Overlay */}
-          <div 
-            className="absolute inset-0 pointer-events-none z-20 opacity-70 group-hover:opacity-90 transition-all duration-300"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 48%, transparent 49%, transparent 100%)',
-              mixBlendMode: 'screen',
-            }}
-          />
-
-          {/* Place Photo or Schematic Silhouette Icon */}
-          {place.photos && place.photos.length > 0 ? (
+          {place.photos?.[0] ? (
             <img
               src={place.photos[0]}
               alt={place.name}
-              className="w-full h-full object-cover filter sepia brightness-[0.65] contrast-[1.25]"
-              loading="lazy"
+              className="w-full h-full object-cover"
+              style={{
+                filter: 'sepia(0.18) contrast(1.05) brightness(0.86)',
+              }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-1.5 opacity-30">
-              <span style={{ fontSize: '18px', color: categoryColor }}>
-                {place.category === 'haunted' ? '💀' : '▲'}
-              </span>
-              <span className="text-[6.5px] font-mono tracking-widest text-stone-400">CLASSIFIED</span>
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                color: categoryColor,
+                fontFamily: typography.mono,
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+              }}
+            >
+              NO PHOTOGRAPH
             </div>
           )}
 
-          {/* Floating coordinate stamp at the bottom of the photo layout */}
           <div
-            className="absolute bottom-1 right-1.5 z-20 font-mono text-[6px] tracking-wider uppercase opacity-75"
-            style={{ color: colors.archive.white, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}
-          >
-            {place.coordinates ? `${place.coordinates[0].toFixed(2)}N, ${place.coordinates[1].toFixed(2)}E` : 'LOC_UNKNOWN'}
-          </div>
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.32))',
+              mixBlendMode: 'multiply',
+            }}
+          />
         </div>
 
-        {/* Polaroid lower margins containing raw scrawled typewriter tags */}
-        <div className="mt-2.5 flex flex-col justify-between h-[32px]">
-          <span
-            className="truncate block leading-tight font-bold font-mono tracking-tight"
+        <div className="mt-2 px-1">
+          <div
+            className="font-serif font-bold uppercase truncate"
             style={{
-              fontFamily: typography.mono,
-              fontSize: place.name.length > 18 ? '7.5px' : '9px',
-              color: isSelected ? '#000' : '#2d2a25',
-              textShadow: isSelected ? '0 0 1px rgba(255,255,255,0.2)' : 'none',
+              color: '#211b16',
+              fontSize: '11px',
+              letterSpacing: '0.05em',
             }}
           >
-            {place.name.toUpperCase()}
-          </span>
-          <div className="flex justify-between items-center text-[6px] font-mono opacity-65 tracking-wider mt-0.5">
-            <span style={{ color: categoryColor, fontWeight: 'bold' }}>
-              {(place.category || 'BASELINE').toUpperCase()}
-            </span>
-            <span style={{ color: colors.archive.gray }}>
-              MDL_{id.substring(0, 4).toUpperCase()}
-            </span>
+            {place.name}
+          </div>
+
+          <div
+            className="font-mono uppercase truncate mt-1"
+            style={{
+              color: categoryColor,
+              fontSize: '7px',
+              letterSpacing: '0.12em',
+            }}
+          >
+            {place.category} // {place.status}
+          </div>
+
+          <div
+            className="font-mono mt-1 truncate"
+            style={{
+              color: '#5f574c',
+              fontSize: '7px',
+            }}
+          >
+            {place.address?.formatted || 'LOCATION UNKNOWN'}
           </div>
         </div>
+      </div>
+
+      <div
+        className="absolute bottom-1 right-1"
+        style={{
+          color: '#5f574c',
+          opacity: 0.6,
+          fontSize: '6px',
+          fontFamily: typography.mono,
+        }}
+      >
+        {place.id}
       </div>
     </div>
   );
 });
-PolaroidNode.displayName = 'PolaroidNode';
 
 /* ═══════════════════════════════════════════════════════════════
-   CUSTOM NODE TYPE B: MANILA INDEX DECLASSIFIED RECORD
+   CUSTOM NODE TYPE B: MANILA RESONANCE CARD
    ═══════════════════════════════════════════════════════════════ */
 
 interface ManilaCardProps {
@@ -234,105 +246,91 @@ interface ManilaCardProps {
   };
 }
 
-const ManilaCardNode: React.FC<ManilaCardProps> = React.memo(({ id, data }) => {
-  const { title, excerpt, isFocused, hasActiveThread, placeSlug } = data;
-
-  const rotateAngle = useMemo(() => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return (hash % 5) - 2.5; // Constant tilt between -2.5deg and +2.5deg
-  }, [id]);
+const ManilaCardNode: React.FC<ManilaCardProps> = React.memo(({ data }) => {
+  const {
+    title,
+    excerpt,
+    isFocused,
+    hasActiveThread,
+    placeSlug,
+    onSelect,
+  } = data;
 
   return (
     <div
-      onClick={() => data.onSelect(placeSlug)}
-      className="relative cursor-pointer select-none transition-all duration-300 group"
+      onClick={() => onSelect(placeSlug)}
+      className="relative cursor-pointer select-none transition-all duration-300"
       style={{
-        transform: `rotate(${rotateAngle}deg)`,
-        opacity: hasActiveThread ? (isFocused ? 1.0 : 0.22) : 1.0,
-        zIndex: 15,
+        width: '220px',
+        opacity: hasActiveThread ? (isFocused ? 1 : 0.25) : 0.92,
+        transform: `rotate(-1deg) ${isFocused ? 'scale(1.04)' : 'scale(1)'}`,
       }}
     >
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        style={{ 
-          left: '-4px', 
-          background: '#d4af37', 
-          borderColor: '#8a6d1c', 
-          width: '6px', 
-          height: '6px' 
-        }} 
-      />
-      <Handle 
-        type="source" 
-        position={Position.Right} 
-        style={{ 
-          right: '-4px', 
-          background: '#d4af37', 
-          borderColor: '#8a6d1c', 
-          width: '6px', 
-          height: '6px' 
-        }} 
-      />
-
-      {/* Staple Pin Effect at the Top Center with drop shadow */}
-      <div 
-        className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-[3px] bg-stone-500 rounded-[1px] shadow-sm border"
-        style={{ borderColor: '#66635c', zIndex: 30 }}
-      />
-
-      {/* Manila Index Card Sheet Body */}
-      <div
-        className="p-3 border rounded-[1px] transition-shadow duration-300"
+      <Handle
+        type="target"
+        position={Position.Left}
         style={{
-          backgroundColor: '#eddcc4', // Manila envelope yellow-tan color
+          left: '-6px',
+          background: '#bf9f62',
+          borderColor: '#6f5624',
+          width: '7px',
+          height: '7px',
+        }}
+      />
+
+      <div
+        className="p-4 border"
+        style={{
+          backgroundColor: '#bca987',
           backgroundImage: `
-            linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%),
-            radial-gradient(ellipse at center, transparent 60%, rgba(90, 80, 60, 0.05) 100%)
+            radial-gradient(circle at 15% 20%, rgba(80, 55, 30, 0.12), transparent 30%),
+            radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.08), transparent 25%)
           `,
-          borderColor: '#cbbaaa',
-          width: '160px',
-          height: '100px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.65), inset 0 0 8px rgba(255,255,255,0.4)',
+          borderColor: '#76654c',
+          boxShadow: '0 7px 18px rgba(0,0,0,0.6)',
         }}
       >
-        {/* Classification Header Stamp */}
-        <div className="flex justify-between items-center border-b pb-1 mb-1.5 border-dashed border-[#cbbaaa]">
-          <span
-            className="text-[6.5px] font-bold font-mono tracking-widest text-red-800"
-            style={{ fontFamily: typography.mono }}
-          >
-            DECLAS_UNRESTRICTED
-          </span>
-          <span className="text-[5.5px] font-mono opacity-50">RECORD_{id.substring(0, 5).toUpperCase()}</span>
+        <div
+          className="font-mono uppercase"
+          style={{
+            color: '#3c3226',
+            fontSize: '8px',
+            letterSpacing: '0.12em',
+            marginBottom: '6px',
+          }}
+        >
+          {title}
         </div>
 
-        {/* Typewriter Document Excerpt Text */}
-        <div className="space-y-1 overflow-hidden h-[62px]">
-          <h4
-            className="text-[7.5px] font-bold text-stone-800 tracking-tight leading-tight truncate"
-            style={{ fontFamily: typography.mono }}
-          >
-            {title.toUpperCase()}
-          </h4>
-          <p
-            className="text-[6.2px] text-stone-700 leading-snug line-clamp-4 font-mono font-medium tracking-tight whitespace-pre-wrap"
-            style={{ fontFamily: typography.mono }}
-          >
-            {excerpt}
-          </p>
+        <div
+          className="font-serif"
+          style={{
+            color: '#282018',
+            fontSize: '11px',
+            lineHeight: 1.5,
+          }}
+        >
+          {excerpt}
+        </div>
+
+        <div
+          className="mt-3 pt-2 border-t font-mono"
+          style={{
+            borderColor: 'rgba(50,40,30,0.25)',
+            color: '#5f503d',
+            fontSize: '7px',
+            letterSpacing: '0.08em',
+          }}
+        >
+          RESONANCE RECORD // {placeSlug}
         </div>
       </div>
     </div>
   );
 });
-ManilaCardNode.displayName = 'ManilaCardNode';
 
 /* ═══════════════════════════════════════════════════════════════
-   CUSTOM NODE TYPE C: HYPOTHESIS DEDUCTION BLOCK
+   CUSTOM NODE TYPE C: HYPOTHESIS CARD
    ═══════════════════════════════════════════════════════════════ */
 
 interface HypothesisNodeProps {
@@ -348,185 +346,151 @@ interface HypothesisNodeProps {
 }
 
 const HypothesisNode: React.FC<HypothesisNodeProps> = React.memo(({ id, data }) => {
-  const { title, description, confidence, completed, connectedSlugs } = data;
+  const {
+    title,
+    description,
+    confidence,
+    completed,
+    onHover,
+  } = data;
 
   return (
     <div
-      onMouseEnter={() => data.onHover(id)}
-      onMouseLeave={() => data.onHover(null)}
-      className={`relative p-4 rounded-[2px] border transition-all duration-300 ${
-        completed 
-          ? 'border-green-600/80 bg-stone-950/98 shadow-[0_0_20px_rgba(34,197,94,0.25)]' 
-          : 'border-amber-600/40 bg-stone-950/98 shadow-[0_12px_40px_rgba(0,0,0,0.9)]'
-      }`}
+      onMouseEnter={() => onHover(id)}
+      onMouseLeave={() => onHover(null)}
+      className="relative w-[250px] select-none"
       style={{
-        width: '260px',
-        minHeight: '140px',
-        fontFamily: typography.mono,
-        backgroundImage: 'linear-gradient(180deg, rgba(20,18,16,0.2) 0%, transparent 100%)',
+        filter: completed
+          ? 'drop-shadow(0 0 10px rgba(212,175,55,0.3))'
+          : 'none',
       }}
     >
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        style={{ 
-          left: '-6px', 
-          background: completed ? '#22c55e' : '#d97706', 
-          borderColor: completed ? '#15803d' : '#92400e', 
-          width: '10px', 
-          height: '10px',
-          boxShadow: `0 0 6px ${completed ? '#22c55e' : '#d97706'}`
-        }} 
-      />
-      <Handle 
-        type="source" 
-        position={Position.Right} 
-        style={{ 
-          right: '-6px', 
-          background: completed ? '#22c55e' : '#d97706', 
-          borderColor: completed ? '#15803d' : '#92400e', 
-          width: '10px', 
-          height: '10px',
-          boxShadow: `0 0 6px ${completed ? '#22c55e' : '#d97706'}`
-        }} 
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{
+          left: '-6px',
+          background: '#eab308',
+          borderColor: '#854d0e',
+          width: '8px',
+          height: '8px',
+        }}
       />
 
-      {/* Decorative brass corner brackets inside node */}
-      <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 border-t border-l opacity-30 border-stone-400" />
-      <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 border-t border-r opacity-30 border-stone-400" />
-      <div className="absolute bottom-1.5 left-1.5 w-1.5 h-1.5 border-b border-l opacity-30 border-stone-400" />
-      <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 border-b border-r opacity-30 border-stone-400" />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          right: '-6px',
+          background: '#eab308',
+          borderColor: '#854d0e',
+          width: '8px',
+          height: '8px',
+        }}
+      />
 
-      {/* Pinned Tack Head */}
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-red-800 border border-red-950 shadow-md" style={{ background: 'radial-gradient(circle at 35% 35%, #991b1b 0%, #7f1d1d 60%, #450a0a 100%)' }} />
-
-      {/* Header Tag */}
-      <div className="flex justify-between items-baseline mb-2 border-b border-stone-850 pb-1.5">
-        <span className={`text-[8px] font-bold tracking-widest ${completed ? 'text-green-500' : 'text-amber-500'}`}>
-          {completed ? 'COGNITIVE HYPOTHESIS SECURED' : 'HYPOTHESIS DEDUCTION'}
-        </span>
-        <span className="text-[7px] text-stone-500">VP_7B_CONTRADICT</span>
-      </div>
-
-      {/* Title */}
-      <h3 className={`text-[10px] font-bold tracking-tight mb-1.5 ${completed ? 'text-green-400' : 'text-stone-200'}`}>
-        {title}
-      </h3>
-
-      {/* Description */}
-      <p className="text-[7.2px] text-stone-400 leading-normal mb-3 font-mono opacity-85">
-        {description}
-      </p>
-
-      {/* Connected nodes trace */}
-      {connectedSlugs.length > 0 && (
-        <div className="mb-3 border-t border-stone-900 pt-2 text-[6.8px] text-stone-500 space-y-0.5">
-          <div className="tracking-widest uppercase text-stone-600 font-bold mb-0.5">Connected Evidence:</div>
-          {connectedSlugs.map(slug => (
-            <div key={slug} className="truncate text-stone-400">
-              ● {slug.replace(/-/g, ' ').toUpperCase()}
-            </div>
-          ))}
+      <div
+        className="border p-3"
+        style={{
+          background: 'linear-gradient(145deg, rgba(20,16,11,0.98), rgba(8,7,5,0.98))',
+          borderColor: completed ? '#bf9f62' : '#574a39',
+          boxShadow: '0 10px 22px rgba(0,0,0,0.8)',
+        }}
+      >
+        <div
+          className="font-mono font-bold"
+          style={{
+            color: completed ? '#bf9f62' : '#c8b79b',
+            fontSize: '9px',
+            letterSpacing: '0.12em',
+          }}
+        >
+          {title}
         </div>
-      )}
 
-      {/* Meter Bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[7.5px]">
-          <span className="text-stone-500">CONSENSUS INTEGRITY:</span>
-          <span className={`font-bold ${completed ? 'text-green-500 animate-pulse' : 'text-amber-500'}`}>
-            {confidence}% {completed && '(LOCKED)'}
-          </span>
+        <div
+          className="mt-2 font-serif"
+          style={{
+            color: '#aaa092',
+            fontSize: '10px',
+            lineHeight: 1.45,
+          }}
+        >
+          {description}
         </div>
-        <div className="h-2 w-full bg-stone-950 rounded-[1px] border border-stone-900 p-[1px] sunken-panel">
-          <div 
-            className={`h-full transition-all duration-500 rounded-[1px] ${
-              completed ? 'bg-green-600' : 'bg-amber-600'
-            }`}
-            style={{ 
-              width: `${confidence}%`,
-              boxShadow: `0 0 6px ${completed ? '#16a34a' : '#d97706'}60`
-            }} 
-          />
+
+        <div className="mt-3">
+          <div
+            className="flex justify-between font-mono uppercase"
+            style={{
+              color: '#71685d',
+              fontSize: '7px',
+            }}
+          >
+            <span>CONFIDENCE</span>
+            <span>{confidence}%</span>
+          </div>
+
+          <div
+            className="mt-1 h-[3px]"
+            style={{
+              background: '#241e17',
+            }}
+          >
+            <div
+              className="h-full"
+              style={{
+                width: `${Math.max(0, Math.min(100, confidence))}%`,
+                background: completed ? '#bf9f62' : '#854d0e',
+                transition: 'width 300ms ease',
+              }}
+            />
+          </div>
+        </div>
+
+        <div
+          className="mt-2 font-mono uppercase"
+          style={{
+            color: completed ? '#bf9f62' : '#70665a',
+            fontSize: '7px',
+            letterSpacing: '0.1em',
+          }}
+        >
+          {completed ? 'CONSENSUS FAILURE CONFIRMED' : 'HYPOTHESIS UNRESOLVED'}
         </div>
       </div>
     </div>
   );
 });
-HypothesisNode.displayName = 'HypothesisNode';
 
 /* ═══════════════════════════════════════════════════════════════
-   CUSTOM EDGE RENDERER: SUSPENDED RED WOOL STRING
+   CUSTOM EDGE TYPE: WOOL / THREAD
    ═══════════════════════════════════════════════════════════════ */
 
-const RedWoolStringEdge: React.FC<EdgeProps> = ({
+const WoolEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
   sourceY,
   targetX,
   targetY,
-  style = {},
-  markerEnd,
+  style,
 }) => {
-  const sagY = 32; 
-  const midX = (sourceX + targetX) / 2;
-  const midY = (sourceY + targetY) / 2 + sagY;
-
-  const path = `M ${sourceX},${sourceY} Q ${midX},${midY} ${targetX},${targetY}`;
+  const path = `M ${sourceX},${sourceY} C ${sourceX + 80},${sourceY} ${targetX - 80},${targetY} ${targetX},${targetY}`;
 
   return (
     <>
-      <g className="react-flow__edge">
-        {/* Double-offset deep blurred drop-shadow (GPU composited) */}
-        <path
-          d={path}
-          fill="none"
-          stroke="rgba(0, 0, 0, 0.75)"
-          strokeWidth={5}
-          strokeLinecap="round"
-          className="transition-opacity duration-300"
-          style={{
-            filter: 'blur(4px)',
-            transform: 'translate(4px, 14px)', // Physical offset simulating distance from felt backdrop
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* Primary Textured Crimson Wool Thread Yarn Path */}
-        <path
-          id={id}
-          d={path}
-          fill="none"
-          stroke="#9b1b12" // Deep blood crimson string
-          strokeWidth={2.4}
-          strokeLinecap="round"
-          className="transition-opacity duration-300"
-          style={{
-            ...style,
-            strokeDasharray: 'none',
-            filter: 'drop-shadow(0 0 1.5px rgba(0,0,0,0.65))',
-          }}
-          markerEnd={markerEnd}
-        />
-
-        {/* Accent fuzzy fiber highlights (giving string realistic wool feel) */}
-        <path
-          d={path}
-          fill="none"
-          stroke="#b83126" // Brighter core fiber thread
-          strokeWidth={0.85}
-          strokeLinecap="round"
-          opacity={0.7}
-          style={{ pointerEvents: 'none' }}
-        />
-      </g>
+      <path
+        id={id}
+        d={path}
+        fill="none"
+        stroke={(style?.stroke as string) || '#801811'}
+        strokeWidth={2}
+        strokeDasharray={(style?.strokeDasharray as string) || 'none'}
+        opacity={(style?.opacity as number) ?? 0.85}
+      />
     </>
   );
 };
-
-/* ═══════════════════════════════════════════════════════════════
-   MASTER EVIDENCE CONNECTION BOARD COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
 
 const nodeTypes = {
   polaroid: PolaroidNode,
@@ -535,254 +499,446 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
-  wool: RedWoolStringEdge,
+  wool: WoolEdge,
 };
 
-const CORE_CASE_SLUGS = new Set([
-  'aokigahara-forest',
-  'beelitz-surgery-basement',
-  'bhangarh-fort',
-  'blackwood-hospital',
-  'bodie-ghost-town',
-  'borovsko-bridge',
-  'byberry-state-hospital',
-  'canfranc-international-railway-station',
-  'cheyenne-mountain-complex',
-  'chteau-de-brissac',
-  'copemish-masonic-temple',
-  'duga-control-room',
-  'duga-radar-array',
-  'eastern-state-penitentiary',
-  'eloise-psychiatric-hospital',
-  'gila-river-relocation-center',
-  'hashima-island',
-  'humberstone-saltpeter-morgue',
-  'humberstone-saltpeter-works',
-  'isla-de-las-muecas',
-  'kuldhara',
-  'letchworth-village',
-  'mount-weather-emergency-operations-center',
-  'nara-dreamland',
-  'nocton-hall-raf-hospital',
-  'oradour-church-crypt',
-  'the-stanley-hotel',
-  'poveglia-island',
-  'poveglia-subterranean-ward',
-  'pripyat-amusement-park',
-  'pripyat-hospital-126',
-  'pyramiden',
-  'raven-rock-mountain-complex',
-  'rhyolite',
-  'sedlec-ossuary',
-  'spreepark-berlin',
-  'stelmo-light',
-  'teufelsberg-echo-dome',
-  'the-grid-null-point',
-  'the-leap-castle-bloody-chapel',
-  'the-vanishing-hospital',
-  'willard-asylum-suitcases',
-  'wittenoom'
-]);
+/* ═══════════════════════════════════════════════════════════════
+   MAIN EVIDENCE BOARD
+   ═══════════════════════════════════════════════════════════════ */
+
+const INITIAL_HYPOTHESES = [
+  {
+    id: 'hyp-01-vance',
+    title: 'THE EDWARD VANCE PARADOX',
+    description: 'Is Edward Vance the keeper of St. Elmo Lighthouse, or a casualty of Oradour Crypt?',
+    targetSlugs: ['stelmo-light', 'oradour-church-crypt', 'bodie-ghost-town'],
+    connectedSlugs: [],
+    completed: false,
+    contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY V-01
+------------------------------------------------
+Edward Vance kept the St. Elmo light for exactly 40 years, yet disappeared into the sealed Oradour Crypt in 1944. His signature appears in a 1962 transfer record assigned to INV_RED-7.
+
+COMMON VARIABLE: YOU. THE ARCHIVE IS RECONSTRUCTING YOUR HISTORY.`,
+  },
+  {
+    id: 'hyp-02-signal',
+    title: 'THE 18 HZ SIGNAL',
+    description: 'Are the apparently unrelated resonance events actually one distributed signal?',
+    targetSlugs: ['cheyenne-mountain-complex', 'dallol-sulfur-cathedral', 'the-grid-null-point'],
+    connectedSlugs: [],
+    completed: false,
+    contradictionText: `⚠ SIGNAL CORRELATION REPORT // FREQUENCY ANOMALY V-02
+------------------------------------------------
+Three locations report resonance activity at precisely 18 Hz despite having no shared geological, electrical, or communications infrastructure.
+
+The signal is not traveling between them.
+
+THE LOCATIONS ARE RECEIVING THE SAME THING.`,
+  },
+  {
+    id: 'hyp-03-map',
+    title: 'THE IMPOSSIBLE MAP',
+    description: 'Do the Atlas coordinates describe physical locations, or positions in a second geography?',
+    targetSlugs: ['pripyat-amusement-park', 'poveglia-island', 'the-grid-null-point'],
+    connectedSlugs: [],
+    completed: false,
+    contradictionText: `⚠ GEODETIC INTEGRITY REPORT // CARTOGRAPHIC ANOMALY V-03
+------------------------------------------------
+Three verified coordinates form a triangle that does not exist on any recognized terrestrial projection.
+
+The same triangle appears in historical maps predating the locations themselves.
+
+THE MAP MAY NOT BE DESCRIBING EARTH.`,
+  },
+];
 
 export const EvidenceBoard: React.FC = () => {
-  const { places, selectedPlaceSlug, selectPlace, setPlaces } = useAtlasStore();
+  const {
+    places,
+    selectedPlaceSlug,
+    selectPlace,
+    setPlaces,
+  } = useAtlasStore();
+
   const { click, play } = useAudioStore();
-  const { status, updateStatus } = useUIStore();
-  const { addCommand } = useTerminalStore();
-  const { selectNode, setFocusNode, setViewMode, playerEdges, addPlayerEdge, nodePositions, setNodePosition } = useEvidenceBoardStore();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [focusedHypothesisId, setFocusedHypothesisId] = useState<string | null>(null);
+  const {
+    status,
+    updateStatus,
+  } = useUIStore();
 
-  // 1. Lore-Seeded Hypotheses Local State (The Contradiction Engine)
-  const [hypotheses, setHypotheses] = useState<any[]>([
-    {
-      id: 'hyp-01-vance',
-      title: 'THE EDWARD VANCE PARADOX',
-      description: 'Is Edward Vance the keeper of St. Elmo Lighthouse, or a casualty of Oradour Crypt?',
-      targetSlugs: ['stelmo-light', 'oradour-church-crypt', 'bodie-ghost-town'],
-      connectedSlugs: [],
-      completed: false,
-      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY V-01\n------------------------------------------------\nEdward Vance kept the St. Elmo light for exactly 40 years, yet disappeared into the sealed Oradour Crypt in 1944. His signature appears in a 1962 transfer record assigned to INV_RED-7.\\n\\nCOMMON VARIABLE: YOU. THE ARCHIVE IS RECONSTRUCTING YOUR HISTORY.`
-    },
-    {
-      id: 'hyp-02-signal',
-      title: 'THE SPATIAL COAXIAL CENTROID',
-      description: 'Connect Mount Weather, Cheyenne Mountain, and Raven Rock Complexes to align the 4.5 Hz sub-audible vibration.',
-      targetSlugs: ['mount-weather-emergency-operations-center', 'cheyenne-mountain-complex', 'raven-rock-mountain-complex'],
-      connectedSlugs: [],
-      completed: false,
-      contradictionText: `⚠ GEODETIC CENTROID SECURED // ANOMALY ALIGNMENT\n------------------------------------------------\nThe synchronized 4.5 Hz granite vibrations from all three Cold-War complexes cross precisely in an empty wheat field near Lebanon, Kansas.\\n\\nTHE GRID NULL POINT MARKER IS NOW VERIFIED AND UNLOCKED ON YOUR ATLAS.`
-    },
-    {
-      id: 'hyp-03-identity',
-      title: 'THE RECURSIVE ARCHIVIST INDEX',
-      description: "Evaluate Beelitz Surgery, Teufelsberg Echo Dome, and Byberry State Hospital to trace INV_RED-7's carrel transfer.",
-      targetSlugs: ['beelitz-surgery-basement', 'teufelsberg-echo-dome', 'byberry-state-hospital'],
-      connectedSlugs: [],
-      completed: false,
-      contradictionText: `⚠ CONSENSUS FAILURE REPORT // COGNITIVE ANOMALY I-03\n------------------------------------------------\nArchivist INV_RED-7 completed exactly 4,211 days of service before entering the basement carrel with no keyhole. You have been sitting in their empty chair since the boot sequence.\\n\\nCOMMON VARIABLE: YOU. THERE IS NO WINDOW IN THIS BUNK.`
-    }
-  ]);
+  const {
+    addCommand,
+  } = useTerminalStore();
 
-  const visiblePlaces = useMemo(() => {
-    return places.filter(
-      (place) => CORE_CASE_SLUGS.has(place.slug) && place.status && ['verified', 'whispered', 'sealed', 'mirage'].includes(place.status)
-    );
-  }, [places]);
+  const {
+    selectNode,
+    setFocusNode,
+    setViewMode,
+    playerEdges,
+    addPlayerEdge,
+    nodePositions,
+    setNodePosition,
+  } = useEvidenceBoardStore();
 
-  const onConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
+  const [nodes, setNodes, onNodesChange] =
+    useNodesState<Node>([]);
 
-    const isHypTarget = connection.target.startsWith('hyp-');
-    
-    if (isHypTarget) {
-      const hypId = connection.target;
-      const sourcePlaceSlug = connection.source;
+  const [edges, setEdges, onEdgesChange] =
+    useEdgesState<Edge>([]);
 
-      click();
+  const [focusedHypothesisId, setFocusedHypothesisId] =
+    useState<string | null>(null);
 
-      setHypotheses(prev => {
-        return prev.map(hyp => {
-          if (hyp.id === hypId) {
-            if (hyp.connectedSlugs.includes(sourcePlaceSlug)) return hyp;
+  const [hypotheses, setHypotheses] =
+    useState<any[]>(INITIAL_HYPOTHESES);
 
-            const updatedSlugs = [...hyp.connectedSlugs, sourcePlaceSlug];
-            const correctConnections = updatedSlugs.filter(slug => hyp.targetSlugs.includes(slug));
-            const baseConfidence = Math.round((correctConnections.length / hyp.targetSlugs.length) * 100);
-            
-            const incorrectCount = updatedSlugs.length - correctConnections.length;
-            const finalConfidence = Math.max(0, baseConfidence - (incorrectCount * 20));
+  const visiblePlaces = useMemo(
+    () => places.filter((place) => place.status !== 'rejected'),
+    [places]
+  );
 
-            const isCompleted = correctConnections.length === hyp.targetSlugs.length && finalConfidence >= 100;
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) {
+        return;
+      }
 
-            if (isCompleted && !hyp.completed) {
+      const sourcePlace = places.find(
+        (place) => place.slug === connection.source
+      );
+
+      const targetPlace = places.find(
+        (place) => place.slug === connection.target
+      );
+
+      const hyp = hypotheses.find(
+        (candidate) => candidate.id === connection.target
+      );
+
+      if (sourcePlace && targetPlace) {
+        const existing = sourcePlace.connectedTo?.some(
+          (connectedId) =>
+            connectedId === `place:${targetPlace.slug}`
+        );
+
+        if (!existing) {
+          const updatedPlaces = places.map((place) => {
+            if (place.slug !== sourcePlace.slug) {
+              return place;
+            }
+
+            return {
+              ...place,
+              connectedTo: [
+                ...(place.connectedTo || []),
+                `place:${targetPlace.slug}` as `place:${string}`,
+              ],
+            };
+          });
+
+          setPlaces(updatedPlaces);
+        }
+
+        click();
+
+        addPlayerEdge({
+          id: `edge-${connection.source}-${connection.target}`,
+          source: connection.source,
+          target: connection.target,
+          type: 'suspected',
+        });
+
+        return;
+      }
+
+      if (hyp) {
+        setHypotheses((current) =>
+          current.map((candidate) => {
+            if (candidate.id !== hyp.id) {
+              return candidate;
+            }
+
+            const updatedSlugs = Array.from(
+              new Set([
+                ...candidate.connectedSlugs,
+                connection.source,
+              ])
+            );
+
+            const correctConnections =
+              updatedSlugs.filter(
+                (slug) =>
+                  candidate.targetSlugs.includes(slug)
+              );
+
+            const baseConfidence =
+              candidate.targetSlugs.length > 0
+                ? Math.round(
+                    (correctConnections.length /
+                      candidate.targetSlugs.length) *
+                      100
+                  )
+                : 0;
+
+            const incorrectCount =
+              updatedSlugs.length -
+              correctConnections.length;
+
+            const finalConfidence = Math.max(
+              0,
+              baseConfidence -
+                incorrectCount * 20
+            );
+
+            const isCompleted =
+              correctConnections.length ===
+                candidate.targetSlugs.length &&
+              finalConfidence >= 100;
+
+            if (
+              isCompleted &&
+              !candidate.completed
+            ) {
               play('alert');
-              
+
               addCommand({
-                id: `hyp-unlocked-${hyp.id}-${Date.now()}`,
-                input: `/audit --hypothesis ${hyp.id.toUpperCase()}`,
-                output: hyp.contradictionText,
+                id: `hyp-unlocked-${candidate.id}-${Date.now()}`,
+                input: `/audit --hypothesis ${candidate.id.toUpperCase()}`,
+                output:
+                  candidate.contradictionText,
                 timestamp: Date.now(),
-                type: 'warning'
+                type: 'warning',
               });
 
-              if (hypId === 'hyp-02-signal') {
-                const updatedPlaces = places.map(p => {
-                  if (p.slug === 'the-grid-null-point') {
-                    return { ...p, status: 'verified' as const };
-                  }
-                  return p;
-                });
+              if (
+                candidate.id ===
+                'hyp-02-signal'
+              ) {
+                const updatedPlaces =
+                  places.map((place) => {
+                    if (
+                      place.slug ===
+                      'the-grid-null-point'
+                    ) {
+                      return {
+                        ...place,
+                        status:
+                          'verified' as const,
+                      };
+                    }
+
+                    return place;
+                  });
+
                 setPlaces(updatedPlaces);
               }
 
               updateStatus({
-                observerStability: Math.min(100, status.observerStability + 10),
-                dustIndex: Math.min(100, status.dustIndex + 8)
+                observerStability: Math.min(
+                  100,
+                  status.observerStability + 10
+                ),
+                dustIndex: Math.min(
+                  100,
+                  status.dustIndex + 8
+                ),
               });
             } else {
               play('type');
             }
 
             return {
-              ...hyp,
+              ...candidate,
               connectedSlugs: updatedSlugs,
               confidence: finalConfidence,
-              completed: isCompleted
+              completed: isCompleted,
             };
-          }
-          return hyp;
+          })
+        );
+
+        addPlayerEdge({
+          id: `edge-${connection.source}-${connection.target}`,
+          source: connection.source,
+          target: connection.target,
+          type: 'suspected',
         });
-      });
+      } else {
+        click();
 
-      addPlayerEdge({
-        id: `edge-${connection.source}-${connection.target}`,
-        source: connection.source,
-        target: connection.target,
-        type: 'suspected'
-      });
-
-    } else {
-      click();
-      addPlayerEdge({
-        id: `edge-${connection.source}-${connection.target}`,
-        source: connection.source,
-        target: connection.target,
-        type: 'suspected'
-      });
-    }
-  }, [click, play, addPlayerEdge, addCommand, places, setPlaces, updateStatus, status.observerStability, status.dustIndex]);
+        addPlayerEdge({
+          id: `edge-${connection.source}-${connection.target}`,
+          source: connection.source,
+          target: connection.target,
+          type: 'suspected',
+        });
+      }
+    },
+    [
+      click,
+      play,
+      addPlayerEdge,
+      addCommand,
+      places,
+      setPlaces,
+      updateStatus,
+      status.observerStability,
+      status.dustIndex,
+      hypotheses,
+    ]
+  );
 
   useEffect(() => {
-    if (visiblePlaces.length === 0) return;
+    if (visiblePlaces.length === 0) {
+      return;
+    }
 
     const centerBoardX = 400;
     const centerBoardY = 320;
     const orbitRadius = 240;
 
-    const flowNodes = visiblePlaces.map((place, index) => {
-      let position = nodePositions[place.slug];
-      if (!position) {
-        const angle = (index * 2 * Math.PI) / visiblePlaces.length;
-        const nodeX = place.coordinates
-          ? centerBoardX + (place.coordinates[0] - 30.0) * 12
-          : centerBoardX + orbitRadius * Math.cos(angle);
-        const nodeY = place.coordinates
-          ? centerBoardY + (51.0 - place.coordinates[1]) * 12
-          : centerBoardY + orbitRadius * Math.sin(angle);
-        position = { x: nodeX, y: nodeY };
-        setNodePosition(place.slug, position);
-      }
+    const flowNodes = visiblePlaces.map(
+      (place, index) => {
+        let position =
+          nodePositions[place.slug];
 
-      const isSelected = selectedPlaceSlug === place.slug;
-      const isFocused = selectedPlaceSlug ? (place.slug === selectedPlaceSlug || place.connectedTo?.includes(selectedPlaceSlug || '')) : false;
-      const hasActiveThread = selectedPlaceSlug !== null;
+        if (!position) {
+          const angle =
+            (index * 2 * Math.PI) /
+            visiblePlaces.length;
 
-      return {
-        id: place.slug,
-        type: 'polaroid' as const,
-        position: position,
-        data: {
-          place,
-          isSelected,
-          isFocused,
-          hasActiveThread,
-          onSelect: (slug: string) => {
-            click();
-            selectPlace(slug);
-            selectNode(slug);
-            setFocusNode(slug);
-            setViewMode('focus');
+          const nodeX = place.coordinates
+            ? centerBoardX +
+              (place.coordinates[0] -
+                30.0) *
+                12
+            : centerBoardX +
+              orbitRadius *
+                Math.cos(angle);
+
+          const nodeY = place.coordinates
+            ? centerBoardY +
+              (51.0 -
+                place.coordinates[1]) *
+                12
+            : centerBoardY +
+              orbitRadius *
+                Math.sin(angle);
+
+          position = {
+            x: nodeX,
+            y: nodeY,
+          };
+
+          setNodePosition(
+            place.slug,
+            position
+          );
+        }
+
+        const isSelected =
+          selectedPlaceSlug ===
+          place.slug;
+
+        const isFocused =
+          selectedPlaceSlug
+            ? (
+                place.slug ===
+                  selectedPlaceSlug ||
+                place.connectedTo?.some(
+                  (connectedId) =>
+                    connectedId ===
+                    `place:${selectedPlaceSlug}`
+                )
+              )
+            : false;
+
+        const hasActiveThread =
+          selectedPlaceSlug !== null;
+
+        return {
+          id: place.slug,
+          type: 'polaroid' as const,
+          position,
+          data: {
+            place,
+            isSelected,
+            isFocused,
+            hasActiveThread,
+            onSelect: (
+              slug: string
+            ) => {
+              click();
+              selectPlace(slug);
+              selectNode(slug);
+              setFocusNode(slug);
+              setViewMode('focus');
+            },
           },
-        },
-      };
-    });
+        };
+      }
+    );
 
-    const documentCardNodes: any[] = [];
-    visiblePlaces.forEach((place) => {
-      if (place.resonanceNote) {
-        const targetX = flowNodes.find(n => n.id === place.slug)?.position.x ?? centerBoardX;
-        const targetY = flowNodes.find(n => n.id === place.slug)?.position.y ?? centerBoardY;
+    const documentCardNodes: Node[] = [];
 
-        let cardPos = nodePositions[`card-${place.slug}`];
+    visiblePlaces.forEach(
+      (place) => {
+        if (!place.resonanceNote) {
+          return;
+        }
+
+        const targetX =
+          flowNodes.find(
+            (node) =>
+              node.id === place.slug
+          )?.position.x ??
+          centerBoardX;
+
+        const targetY =
+          flowNodes.find(
+            (node) =>
+              node.id === place.slug
+          )?.position.y ??
+          centerBoardY;
+
+        let cardPos =
+          nodePositions[
+            `card-${place.slug}`
+          ];
+
         if (!cardPos) {
-          cardPos = { x: targetX + 115, y: targetY + 30 };
-          setNodePosition(`card-${place.slug}`, cardPos);
+          cardPos = {
+            x: targetX + 115,
+            y: targetY + 30,
+          };
+
+          setNodePosition(
+            `card-${place.slug}`,
+            cardPos
+          );
         }
 
         documentCardNodes.push({
           id: `card-${place.slug}`,
-          type: 'manilaCard' as const,
+          type: 'manilaCard',
           position: cardPos,
           data: {
             title: `Resonance Log // ${place.name.toUpperCase()}`,
-            excerpt: place.resonanceNote,
-            isFocused: selectedPlaceSlug ? (place.slug === selectedPlaceSlug) : false,
-            hasActiveThread: selectedPlaceSlug !== null,
-            placeSlug: place.slug,
-            onSelect: (slug: string) => {
+            excerpt:
+              place.resonanceNote,
+            isFocused:
+              selectedPlaceSlug
+                ? place.slug ===
+                  selectedPlaceSlug
+                : false,
+            hasActiveThread:
+              selectedPlaceSlug !==
+              null,
+            placeSlug:
+              place.slug,
+            onSelect: (
+              slug: string
+            ) => {
               click();
               selectPlace(slug);
               selectNode(slug);
@@ -792,115 +948,277 @@ export const EvidenceBoard: React.FC = () => {
           },
         });
       }
-    });
+    );
 
-    const hypNodes = hypotheses.map((hyp, index) => {
-      let hypPos = nodePositions[hyp.id];
-      if (!hypPos) {
-        hypPos = { x: centerBoardX - 130, y: centerBoardY + (index * 200) - 180 };
-        setNodePosition(hyp.id, hypPos);
-      }
+    const hypNodes: Node[] =
+      hypotheses.map(
+        (
+          hyp,
+          index
+        ) => {
+          let hypPos =
+            nodePositions[
+              hyp.id
+            ];
 
-      return {
-        id: hyp.id,
-        type: 'hypothesis' as const,
-        position: hypPos,
-        data: {
-          title: hyp.title,
-          description: hyp.description,
-          confidence: hyp.confidence || 0,
-          completed: hyp.completed,
-          connectedSlugs: hyp.connectedSlugs,
-          onHover: (id: string | null) => setFocusedHypothesisId(id)
+          if (!hypPos) {
+            hypPos = {
+              x:
+                centerBoardX -
+                130,
+              y:
+                centerBoardY +
+                index * 200 -
+                180,
+            };
+
+            setNodePosition(
+              hyp.id,
+              hypPos
+            );
+          }
+
+          return {
+            id: hyp.id,
+            type: 'hypothesis',
+            position: hypPos,
+            data: {
+              title:
+                hyp.title,
+              description:
+                hyp.description,
+              confidence:
+                hyp.confidence ||
+                0,
+              completed:
+                hyp.completed,
+              connectedSlugs:
+                hyp.connectedSlugs,
+              onHover: (
+                id: string | null
+              ) =>
+                setFocusedHypothesisId(
+                  id
+                ),
+            },
+          };
         }
-      };
-    });
+      );
 
-    setNodes([...flowNodes, ...documentCardNodes, ...hypNodes]);
+    setNodes([
+      ...flowNodes,
+      ...documentCardNodes,
+      ...hypNodes,
+    ]);
 
-    const flowEdges: any[] = [];
-    visiblePlaces.forEach((place) => {
-      if (!place.connectedTo) return;
+    const flowEdges: Edge[] = [];
 
-      place.connectedTo.forEach((targetSlug) => {
-        const targetExists = visiblePlaces.some((p) => p.slug === targetSlug);
-        if (!targetExists) return;
+    visiblePlaces.forEach(
+      (place) => {
+        if (!place.connectedTo) {
+          return;
+        }
 
-        const isHighlighted = selectedPlaceSlug
-          ? (place.slug === selectedPlaceSlug || targetSlug === selectedPlaceSlug)
-          : false;
+        place.connectedTo.forEach(
+          (targetId) => {
+            const targetSlug =
+              targetId.replace(
+                /^place:/,
+                ''
+              );
+
+            const targetExists =
+              visiblePlaces.some(
+                (candidate) =>
+                  candidate.slug ===
+                  targetSlug
+              );
+
+            if (!targetExists) {
+              return;
+            }
+
+            const isHighlighted =
+              selectedPlaceSlug
+                ? (
+                    place.slug ===
+                      selectedPlaceSlug ||
+                    targetSlug ===
+                      selectedPlaceSlug
+                  )
+                : false;
+
+            flowEdges.push({
+              id: `edge-${place.slug}-${targetSlug}`,
+              source:
+                place.slug,
+              target:
+                targetSlug,
+              type: 'wool',
+              style: {
+                opacity:
+                  selectedPlaceSlug
+                    ? (
+                        isHighlighted
+                          ? 1.0
+                          : 0.12
+                      )
+                    : 0.85,
+                stroke:
+                  isHighlighted
+                    ? '#c11b17'
+                    : '#801811',
+              },
+            });
+          }
+        );
+
+        if (place.resonanceNote) {
+          const isHighlighted =
+            selectedPlaceSlug ===
+            place.slug;
+
+          flowEdges.push({
+            id: `edge-card-${place.slug}`,
+            source:
+              place.slug,
+            target:
+              `card-${place.slug}`,
+            type: 'wool',
+            style: {
+              opacity:
+                selectedPlaceSlug
+                  ? (
+                      isHighlighted
+                        ? 1.0
+                        : 0.12
+                    )
+                  : 0.65,
+              stroke:
+                isHighlighted
+                  ? '#bf9f62'
+                  : '#5a4632',
+            },
+          });
+        }
+      }
+    );
+
+    playerEdges.forEach(
+      (edge: any) => {
+        const sourceExists =
+          [
+            ...flowNodes,
+            ...hypNodes,
+          ].some(
+            (node) =>
+              node.id ===
+              edge.source
+          );
+
+        const targetExists =
+          [
+            ...flowNodes,
+            ...hypNodes,
+          ].some(
+            (node) =>
+              node.id ===
+              edge.target
+          );
+
+        if (
+          !sourceExists ||
+          !targetExists
+        ) {
+          return;
+        }
+
+        const isHighlighted =
+          selectedPlaceSlug
+            ? (
+                edge.source ===
+                  selectedPlaceSlug ||
+                edge.target ===
+                  selectedPlaceSlug ||
+                edge.target ===
+                  `card-${selectedPlaceSlug}`
+              )
+            : false;
+
+        const isHypEdge =
+          edge.target.startsWith(
+            'hyp-'
+          );
 
         flowEdges.push({
-          id: `edge-${place.slug}-${targetSlug}`,
-          source: place.slug,
-          target: targetSlug,
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
           type: 'wool',
           style: {
-            opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.85,
-            stroke: isHighlighted ? '#c11b17' : '#801811',
-          },
-        });
-      });
-
-      if (place.resonanceNote) {
-        const isHighlighted = selectedPlaceSlug === place.slug;
-        flowEdges.push({
-          id: `edge-card-${place.slug}`,
-          source: place.slug,
-          target: `card-${place.slug}`,
-          type: 'wool',
-          style: {
-            opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.65,
-            stroke: isHighlighted ? '#bf9f62' : '#5a4632',
+            opacity:
+              selectedPlaceSlug
+                ? (
+                    isHighlighted
+                      ? 1.0
+                      : 0.12
+                  )
+                : 0.75,
+            stroke:
+              isHypEdge
+                ? (
+                    isHighlighted
+                      ? '#eab308'
+                      : '#854d0e'
+                  )
+                : (
+                    isHighlighted
+                      ? '#eab308'
+                      : '#92400e'
+                  ),
+            strokeDasharray:
+              isHypEdge
+                ? 'none'
+                : '3, 6',
           },
         });
       }
-    });
-
-    playerEdges.forEach((edge: any) => {
-      const sourceExists = [...flowNodes, ...hypNodes].some(n => n.id === edge.source);
-      const targetExists = [...flowNodes, ...hypNodes].some(n => n.id === edge.target);
-      if (!sourceExists || !targetExists) return;
-
-      const isHighlighted = selectedPlaceSlug
-        ? (edge.source === selectedPlaceSlug || edge.target === selectedPlaceSlug || edge.target === `card-${selectedPlaceSlug}`)
-        : false;
-
-      const isHypEdge = edge.target.startsWith('hyp-');
-
-      flowEdges.push({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        type: 'wool',
-        style: {
-          opacity: selectedPlaceSlug ? (isHighlighted ? 1.0 : 0.12) : 0.75,
-          stroke: isHypEdge 
-            ? (isHighlighted ? '#eab308' : '#854d0e') 
-            : (isHighlighted ? '#eab308' : '#92400e'),
-          strokeDasharray: isHypEdge ? 'none' : '3, 6', 
-        }
-      });
-    });
+    );
 
     setEdges(flowEdges);
-  }, [visiblePlaces, selectedPlaceSlug, selectPlace, selectNode, setFocusNode, setViewMode, click, setNodes, setEdges, hypotheses, playerEdges]);
+  }, [
+    visiblePlaces,
+    selectedPlaceSlug,
+    selectPlace,
+    selectNode,
+    setFocusNode,
+    setViewMode,
+    click,
+    setNodes,
+    setEdges,
+    hypotheses,
+    playerEdges,
+  ]);
 
-  const handlePaneClick = useCallback(() => {
-    click();
-    selectPlace(null);
-  }, [click, selectPlace]);
+  const handlePaneClick =
+    useCallback(() => {
+      click();
+      selectPlace(null);
+    }, [
+      click,
+      selectPlace,
+    ]);
 
   return (
     <div
       className="w-full h-full select-none overflow-hidden relative felt-board"
       style={feltStyles.board}
     >
-      {/* Dynamic Overlay: Desklamp lighting glow and vignette shading */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.95) 100%)',
+          background:
+            'radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.95) 100%)',
           zIndex: 4,
         }}
       />
@@ -909,58 +1227,240 @@ export const EvidenceBoard: React.FC = () => {
         onlyRenderVisibleElements={true}
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeDragStop={(evt, node) => setNodePosition(node.id, node.position)}
+        onNodesChange={
+          onNodesChange
+        }
+        onEdgesChange={
+          onEdgesChange
+        }
+        onNodeDragStop={(
+          _evt,
+          node
+        ) => {
+          setNodePosition(
+            node.id,
+            node.position
+          );
+        }}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onConnect={onConnect}
-        onPaneClick={handlePaneClick}
+        onPaneClick={
+          handlePaneClick
+        }
         fitView
-        fitViewOptions={{ padding: 0.15 }}
+        fitViewOptions={{
+          padding: 0.15,
+        }}
         maxZoom={2.0}
         minZoom={0.25}
         className="relative z-10"
       >
-        <Background color="#161310" gap={16} size={1} style={{ opacity: 0.06 }} />
-        
+        <Background
+          color="#161310"
+          gap={16}
+          size={1}
+          style={{
+            opacity: 0.06,
+          }}
+        />
+
         <Controls
           showInteractive={false}
           className="border rounded-[2px]"
           style={{
-            borderColor: colors.archive.grayDark || '#2c251e',
-            backgroundColor: 'rgba(10, 8, 6, 0.95)',
-            color: colors.archive.grayLight,
-            fontFamily: typography.mono,
+            borderColor:
+              colors.archive
+                .grayDark ||
+              '#2c251e',
+            backgroundColor:
+              'rgba(10, 8, 6, 0.95)',
+            color:
+              colors.archive
+                .grayLight,
+            fontFamily:
+              typography.mono,
             fontSize: '9px',
           }}
         />
       </ReactFlow>
 
-      {/* Outer Tactical Corner Brackets */}
-      <div className="absolute inset-0 pointer-events-none" style={{ border: `1px solid ${microform.mahogany}`, zIndex: 5 }}>
-        <div className="absolute top-3 left-3 w-4 h-4 border-t border-l" style={{ borderColor: microform.halogen, opacity: 0.35 }} />
-        <div className="absolute top-3 right-3 w-4 h-4 border-t border-r" style={{ borderColor: microform.halogen, opacity: 0.35 }} />
-        <div className="absolute bottom-3 left-3 w-4 h-4 border-b border-l" style={{ borderColor: microform.halogen, opacity: 0.35 }} />
-        <div className="absolute bottom-3 right-3 w-4 h-4 border-b border-r" style={{ borderColor: microform.halogen, opacity: 0.35 }} />
+      <AnimatePresence>
+        {focusedHypothesisId && (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: 10,
+            }}
+            className="absolute bottom-5 right-5 z-20 max-w-[340px]"
+          >
+            <div
+              className="border p-4"
+              style={{
+                background:
+                  'rgba(10, 8, 6, 0.96)',
+                borderColor:
+                  '#574a39',
+                boxShadow:
+                  '0 12px 30px rgba(0,0,0,0.85)',
+              }}
+            >
+              <div
+                className="font-mono uppercase font-bold"
+                style={{
+                  color:
+                    microform.halogen,
+                  fontSize: '8px',
+                  letterSpacing:
+                    '0.14em',
+                }}
+              >
+                HYPOTHESIS THREAD
+              </div>
+
+              <div
+                className="mt-2 font-serif"
+                style={{
+                  color:
+                    colors.archive
+                      .grayLight,
+                  fontSize:
+                    '11px',
+                  lineHeight:
+                    1.45,
+                }}
+              >
+                {
+                  hypotheses.find(
+                    (hyp) =>
+                      hyp.id ===
+                      focusedHypothesisId
+                  )?.description
+                }
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        className="absolute top-5 left-5 z-20 pointer-events-none"
+        style={{
+          color:
+            microform.halogen,
+          fontFamily:
+            typography.mono,
+          fontSize: '8px',
+          letterSpacing:
+            '0.12em',
+          textShadow:
+            microform.halogenText,
+        }}
+      >
+        <div>
+          REALITY CONSENSUS BOARD
+        </div>
+        <div
+          className="mt-1"
+          style={{
+            color:
+              colors.archive
+                .grayLight,
+            opacity: 0.55,
+          }}
+        >
+          GEODETIC ATLAS // EVIDENCE RELATIONSHIP MATRIX
+        </div>
       </div>
 
-      {/* Board Information Card Tag styled as heavy modal-chassis bezel */}
+      <div
+        className="absolute top-5 right-5 z-20 pointer-events-none"
+        style={{
+          color:
+            colors.archive
+              .grayLight,
+          fontFamily:
+            typography.mono,
+          fontSize: '8px',
+          textAlign:
+            'right',
+          opacity: 0.65,
+        }}
+      >
+        <div>
+          DUST INDEX: {status.dustIndex}
+        </div>
+        <div>
+          STABILITY: {status.observerStability}
+        </div>
+      </div>
+
       <div
         className="absolute bottom-5 left-5 p-3 border font-mono text-[9px] tracking-wider pointer-events-auto modal-chassis"
         style={{
-          color: colors.archive.grayLight,
+          color:
+            colors.archive
+              .grayLight,
           zIndex: 5,
         }}
       >
-        <div style={{ color: microform.halogen, fontWeight: 'bold', marginBottom: '4px', textShadow: microform.halogenText }}>
+        <div
+          style={{
+            color:
+              microform.halogen,
+            fontWeight:
+              'bold',
+            marginBottom:
+              '4px',
+            textShadow:
+              microform.halogenText,
+          }}
+        >
           REALITY CONSENSUS BOARD
         </div>
+
         <div className="opacity-60 space-y-0.5">
-          <div>NODES PINNED: {visiblePlaces.length} UNIT(S)</div>
-          <div>ACTIVE THREADS: {edges.length} CONNECTION(S)</div>
-          <div>ACTIVE HYPOTHESES: {hypotheses.filter(h => !h.completed).length} DISCOVERED</div>
-          <div>CONSENSUS FAILURE WARNINGS: {hypotheses.filter(h => h.completed).length} RECONSTRUCTED</div>
+          <div>
+            NODES PINNED:{' '}
+            {visiblePlaces.length}{' '}
+            UNIT(S)
+          </div>
+
+          <div>
+            ACTIVE THREADS:{' '}
+            {edges.length}{' '}
+            CONNECTION(S)
+          </div>
+
+          <div>
+            ACTIVE HYPOTHESES:{' '}
+            {
+              hypotheses.filter(
+                (hyp) =>
+                  !hyp.completed
+              ).length
+            }{' '}
+            DISCOVERED
+          </div>
+
+          <div>
+            CONSENSUS FAILURE WARNINGS:{' '}
+            {
+              hypotheses.filter(
+                (hyp) =>
+                  hyp.completed
+              ).length
+            }{' '}
+            RECONSTRUCTED
+          </div>
         </div>
       </div>
     </div>

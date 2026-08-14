@@ -1,53 +1,75 @@
-import dagre from 'dagre';
-import { Node, Edge } from 'reactflow';
+import type {
+  Edge,
+  Node,
+  NodeProps,
+  XYPosition,
+} from "@xyflow/react";
 
-interface LayoutOptions {
-  direction?: 'TB' | 'LR'; // Top-Bottom or Left-Right
-  nodeWidth?: number;
-  nodeHeight?: number;
-  ranksep?: number; // vertical gap
-  nodesep?: number; // horizontal gap
+/**
+ * Generic Evidence Board node data.
+ *
+ * React Flow v12 constrains node data to Record<string, unknown>,
+ * so the generic is explicitly constrained here.
+ */
+export type EvidenceNodeData = Record<string, unknown>;
+
+/**
+ * Standard evidence-board node.
+ */
+export type EvidenceNode<T extends EvidenceNodeData = EvidenceNodeData> =
+  Node<T>;
+
+/**
+ * Standard evidence-board edge.
+ */
+export type EvidenceEdge = Edge;
+
+/**
+ * Position map used by the Evidence Board.
+ */
+export type EvidenceNodePositions = Record<
+  string,
+  XYPosition
+>;
+
+/**
+ * Generic node props helper.
+ */
+export type EvidenceNodeProps<
+  T extends EvidenceNodeData = EvidenceNodeData
+> = NodeProps<EvidenceNode<T>>;
+
+/**
+ * Stable node ID helper.
+ */
+export function evidenceNodeId(
+  type: string,
+  id: string
+): string {
+  return `${type}:${id}`;
 }
 
-export function layoutEvidenceGraph<T>(
-  nodes: Node<T>[],
-  edges: Edge[],
-  options: LayoutOptions = {}
-): { nodes: Node<T>[]; edges: Edge[] } {
-  const {
-    direction = 'TB',
-    nodeWidth = 220,
-    nodeHeight = 80,
-    ranksep = 60,
-    nodesep = 40,
-  } = options;
+/**
+ * Stable edge ID helper.
+ */
+export function evidenceEdgeId(
+  source: string,
+  target: string,
+  relationship: string = "related"
+): string {
+  return `edge:${source}:${target}:${relationship}`;
+}
 
-  const graph = new dagre.graphlib.Graph();
-  graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir: direction, ranksep, nodesep });
-
-  nodes.forEach((node) => {
-    graph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-  });
-
-  edges.forEach((edge) => {
-    if (graph.hasNode(edge.source) && graph.hasNode(edge.target)) {
-      graph.setEdge(edge.source, edge.target);
-    }
-  });
-
-  dagre.layout(graph);
-
-  const positionedNodes = nodes.map((node) => {
-    const pos = graph.node(node.id);
-    return {
-      ...node,
-      position: {
-        x: pos.x - nodeWidth / 2,
-        y: pos.y - nodeHeight / 2,
-      },
-    };
-  });
-
-  return { nodes: positionedNodes, edges };
+/**
+ * Canonical undirected relationship key.
+ *
+ * A -> B and B -> A resolve to the same key.
+ */
+export function evidenceConnectionKey(
+  source: string,
+  target: string
+): string {
+  return [source, target]
+    .sort()
+    .join("::");
 }

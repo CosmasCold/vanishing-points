@@ -39,10 +39,11 @@ import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
 import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { useInvestigationStore } from '@/state/investigationStore';
-import { useProgressionStore } from '@/state/progressionStore';
+import { normalizeBoardConnection, useProgressionStore } from '@/state/progressionStore';
 import { useTerminalStore } from '@/state/terminalStore';
 import { SignalModal, type SignalArtifact } from '@/components/signals/SignalModal';
 import { colors, typography, microform } from '@/styles/theme';
+import { ACT_I_CASES } from '@/data/act1Cases';
 import type { Place } from '@/types/places';
 import type { EvidenceItem } from '@/types/investigation';
 import type { EdgeProps as XYEdgeProps } from '@xyflow/react';
@@ -50,6 +51,35 @@ import type { EdgeProps as XYEdgeProps } from '@xyflow/react';
 const STELMO_CASE_SLUG = 'stelmo-light';
 const STATION_LAYOUT_VERSION = 'evidence-station-v2';
 const layoutKey = (id: string) => `${STATION_LAYOUT_VERSION}:${id}`;
+
+const findAuthoredCaseConnection = (source: string, target: string) => {
+  const sourceCase = ACT_I_CASES.find((caseSpec) => caseSpec.slug === source);
+  const targetCase = ACT_I_CASES.find((caseSpec) => caseSpec.slug === target);
+
+  if (!sourceCase || !targetCase) return null;
+
+  const canonicalId = normalizeBoardConnection(sourceCase.slug, targetCase.slug);
+  let fallback: { canonicalId: string; relationship: string } | null = null;
+
+  for (const caseSpec of ACT_I_CASES) {
+    for (const connection of caseSpec.connections) {
+      if (normalizeBoardConnection(caseSpec.slug, connection.caseSlug) !== canonicalId) continue;
+
+      const match = {
+        canonicalId,
+        relationship: connection.relationship,
+      };
+
+      if (caseSpec.slug === sourceCase.slug && connection.caseSlug === targetCase.slug) {
+        return match;
+      }
+
+      fallback ??= match;
+    }
+  }
+
+  return fallback;
+};
 
 const VANCE_SIGNAL: SignalArtifact = {
   id: 'vance-lighthouse',
@@ -210,7 +240,9 @@ export const EvidenceBoard: React.FC = () => {
   const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
 
   const visiblePlaces = useMemo(
-    () => places.filter((p) => p.slug === STELMO_CASE_SLUG && p.status !== 'rejected'),
+    () => places.filter((p) =>
+      p.status !== 'rejected' && ACT_I_CASES.some((caseSpec) => caseSpec.slug === p.slug),
+    ),
     [places],
   );
 
@@ -224,7 +256,7 @@ export const EvidenceBoard: React.FC = () => {
   );
 
   const items = useMemo<StationItem[]>(() => {
-    const place = visiblePlaces[0];
+    const place = visiblePlaces.find((candidate) => candidate.slug === STELMO_CASE_SLUG);
     const result: StationItem[] = [];
 
     if (place) {
@@ -238,6 +270,25 @@ export const EvidenceBoard: React.FC = () => {
         status: place.status,
         image: place.photos?.[0],
         place,
+      });
+    }
+
+    for (const caseSpec of ACT_I_CASES) {
+      if (caseSpec.slug === STELMO_CASE_SLUG) continue;
+
+      const casePlace = visiblePlaces.find((candidate) => candidate.slug === caseSpec.slug);
+      if (!casePlace) continue;
+
+      result.push({
+        id: casePlace.slug,
+        kind: 'place',
+        title: caseSpec.name,
+        subtitle: casePlace.address?.formatted || 'ACT I CASE',
+        typeLabel: 'CASE ANCHOR // LOCATION',
+        description: caseSpec.primaryAnomaly.statement,
+        status: casePlace.status,
+        image: casePlace.photos?.[0],
+        place: casePlace,
       });
     }
 
@@ -379,23 +430,47 @@ export const EvidenceBoard: React.FC = () => {
 
   const onConnect = useCallback((connection: Connection) => {
     if (!connection.source || !connection.target) return;
+
+    const authoredConnection = findAuthoredCaseConnection(connection.source, connection.target);
+    const edgeType = authoredConnection ? 'confirmed' : 'suspected';
+    const edgeLabel = authoredConnection?.relationship ?? 'PLAYER CONNECTION';
     const id = `station-${connection.source}-${connection.target}`;
-    const exists = playerEdges.some((edge: any) =>
+    const existing = playerEdges.find((edge: any) =>
       (edge.source === connection.source && edge.target === connection.target) ||
       (edge.source === connection.target && edge.target === connection.source)
     );
-    if (!exists) {
+
+    if (existing) {
+      if (!authoredConnection) return;
+      if (existing.type === edgeType && existing.label === edgeLabel) return;
+
+      if (existing.type !== 'confirmed') {
+        useProgressionStore.getState().addBoardConnection(authoredConnection.canonicalId);
+      }
+
       click();
-      // This is a player workspace relationship only. Canonical progression
-      // remains owned by the investigation/progression layer.
-      useEvidenceBoardStore.getState().addPlayerEdge({
-        id,
-        source: connection.source,
-        target: connection.target,
-        type: 'suspected',
-        label: 'PLAYER CONNECTION',
-      });
+      useEvidenceBoardStore.setState((state) => ({
+        playerEdges: state.playerEdges.map((edge) =>
+          edge.id === existing.id
+            ? { ...edge, type: edgeType, label: edgeLabel }
+            : edge,
+        ),
+      }));
+      return;
     }
+
+    if (authoredConnection) {
+      useProgressionStore.getState().addBoardConnection(authoredConnection.canonicalId);
+    }
+
+    click();
+    useEvidenceBoardStore.getState().addPlayerEdge({
+      id,
+      source: connection.source,
+      target: connection.target,
+      type: edgeType,
+      label: edgeLabel,
+    });
   }, [playerEdges, click]);
 
   const addEvidence = (id: string) => {
@@ -480,7 +555,7 @@ export const EvidenceBoard: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-auto p-2">
-            <div className="px-2 py-2 font-mono text-[7px] tracking-[.16em] text-[#514a41] uppercase">ST. ELMO / DISCOVERED RECORDS</div>
+            <div className="px-2 py-2 font-mono text-[7px] tracking-[.16em] text-[#514a41] uppercase">ACT I / DISCOVERED RECORDS</div>
             {filteredArchive.map((item) => {
               const onDesk = workspaceIds.includes(item.id);
               const active = selectedId === item.id;

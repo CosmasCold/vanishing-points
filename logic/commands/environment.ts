@@ -1,6 +1,6 @@
 import { CommandRegistry } from '../commandRegistry';
 import { useEnvironmentStore } from '@/state/environmentStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 
 export function registerEnvironmentCommands(registry: CommandRegistry) {
   registry.register({
@@ -27,8 +27,8 @@ export function registerEnvironmentCommands(registry: CommandRegistry) {
         output += `    Dust threshold: ${c.dustRequired} | Stability max: ${c.stabilityMax}%\n\n`;
       });
 
-      const { status } = useUIStore.getState();
-      if (status.observerStability <= 40) {
+      const { observerStability } = useProgressionStore.getState();
+      if (observerStability <= 40) {
         output += 'WARNING: Low stability may prevent detection of further anomalies.\n';
       }
 

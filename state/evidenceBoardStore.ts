@@ -15,7 +15,14 @@ export interface BoardEdge {
 }
 
 export type EvidenceBoardViewMode = 'overview' | 'focus' | 'detail';
-export type EvidenceBoardFilterMode = 'all' | 'visited' | 'sealed' | 'whispered' | 'mirage' | 'suspected';
+
+export type EvidenceBoardFilterMode =
+  | 'all'
+  | 'visited'
+  | 'sealed'
+  | 'whispered'
+  | 'mirage'
+  | 'suspected';
 
 interface EvidenceBoardState {
   nodePositions: Record<string, NodePosition>;
@@ -25,6 +32,7 @@ interface EvidenceBoardState {
   filterMode: EvidenceBoardFilterMode;
   discoveredEdges: BoardEdge[];
   playerEdges: BoardEdge[];
+  workspaceEvidenceIds: string[];
   zoom: number;
   pan: { x: number; y: number };
 
@@ -36,13 +44,22 @@ interface EvidenceBoardState {
   discoverEdge: (edge: BoardEdge) => void;
   addPlayerEdge: (edge: BoardEdge) => void;
   removePlayerEdge: (id: string) => void;
+  addToWorkspace: (id: string) => void;
+  removeFromWorkspace: (id: string) => void;
+  setWorkspaceEvidenceIds: (ids: string[]) => void;
   setViewport: (zoom: number, pan: { x: number; y: number }) => void;
   resetBoard: () => void;
 }
 
+const INITIAL_WORKSPACE = [
+  'stelmo-light',
+  'doc-stelmo-001',
+  'hyp-physical-record-drift',
+];
+
 export const useEvidenceBoardStore = create<EvidenceBoardState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       nodePositions: {},
       selectedNodeId: null,
       focusNodeId: null,
@@ -50,56 +67,122 @@ export const useEvidenceBoardStore = create<EvidenceBoardState>()(
       filterMode: 'all',
       discoveredEdges: [],
       playerEdges: [],
+      workspaceEvidenceIds: [...INITIAL_WORKSPACE],
       zoom: 1,
       pan: { x: 0, y: 0 },
 
       setNodePosition: (id, pos) =>
-        set((s) => ({
-          nodePositions: { ...s.nodePositions, [id]: pos },
+        set((state) => ({
+          nodePositions: {
+            ...state.nodePositions,
+            [id]: pos,
+          },
         })),
+
       selectNode: (id) => set({ selectedNodeId: id }),
+
       setFocusNode: (id) => set({ focusNodeId: id }),
+
       setViewMode: (mode) => set({ viewMode: mode }),
+
       setFilterMode: (mode) => set({ filterMode: mode }),
+
       discoverEdge: (edge) =>
-        set((s) => {
-          const exists = s.discoveredEdges.some(
-            (e) =>
-              (e.source === edge.source && e.target === edge.target) ||
-              (e.source === edge.target && e.target === edge.source)
+        set((state) => {
+          const exists = state.discoveredEdges.some(
+            (existing) =>
+              (existing.source === edge.source &&
+                existing.target === edge.target) ||
+              (existing.source === edge.target &&
+                existing.target === edge.source),
           );
-          if (exists) return s;
-          return { discoveredEdges: [...s.discoveredEdges, edge] };
+
+          return exists
+            ? state
+            : {
+                discoveredEdges: [
+                  ...state.discoveredEdges,
+                  edge,
+                ],
+              };
         }),
+
       addPlayerEdge: (edge) =>
-        set((s) => {
-          const exists = s.playerEdges.some(
-            (e) =>
-              (e.source === edge.source && e.target === edge.target) ||
-              (e.source === edge.target && e.target === edge.source)
+        set((state) => {
+          const exists = state.playerEdges.some(
+            (existing) =>
+              (existing.source === edge.source &&
+                existing.target === edge.target) ||
+              (existing.source === edge.target &&
+                existing.target === edge.source),
           );
-          if (exists) return s;
-          return { playerEdges: [...s.playerEdges, edge] };
+
+          return exists
+            ? state
+            : {
+                playerEdges: [
+                  ...state.playerEdges,
+                  edge,
+                ],
+              };
         }),
+
       removePlayerEdge: (id) =>
-        set((s) => ({
-          playerEdges: s.playerEdges.filter((e) => e.id !== id),
+        set((state) => ({
+          playerEdges: state.playerEdges.filter(
+            (edge) => edge.id !== id,
+          ),
         })),
-      setViewport: (zoom, pan) => set({ zoom, pan }),
+
+      addToWorkspace: (id) =>
+        set((state) => ({
+          workspaceEvidenceIds:
+            state.workspaceEvidenceIds.includes(id)
+              ? state.workspaceEvidenceIds
+              : [...state.workspaceEvidenceIds, id],
+        })),
+
+      removeFromWorkspace: (id) =>
+        set((state) => ({
+          workspaceEvidenceIds:
+            state.workspaceEvidenceIds.filter(
+              (candidate) => candidate !== id,
+            ),
+        })),
+
+      setWorkspaceEvidenceIds: (ids) =>
+        set({
+          workspaceEvidenceIds: Array.from(
+            new Set(ids),
+          ),
+        }),
+
+      setViewport: (zoom, pan) =>
+        set({
+          zoom,
+          pan,
+        }),
+
       resetBoard: () =>
         set({
           discoveredEdges: [],
           playerEdges: [],
           selectedNodeId: null,
+          focusNodeId: null,
+          workspaceEvidenceIds: [
+            ...INITIAL_WORKSPACE,
+          ],
         }),
     }),
     {
-      name: 'vp-feltboard-state',
+      name: 'vp-evidence-station-state',
       partialize: (state) => ({
         nodePositions: state.nodePositions,
         playerEdges: state.playerEdges,
         discoveredEdges: state.discoveredEdges,
+        workspaceEvidenceIds:
+          state.workspaceEvidenceIds,
       }),
-    }
-  )
+    },
+  ),
 );

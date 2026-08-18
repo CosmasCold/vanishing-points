@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { useArtifactStore } from '@/state/artifactStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, spacing } from '@/styles/theme';
 import { 
@@ -673,7 +673,7 @@ export const ArtifactViewer: React.FC = () => {
 
     if (aligned && !activeArtifact.hasBeenScanned) {
       const audio = useAudioStore.getState();
-      const ui = useUIStore.getState();
+      const progression = useProgressionStore.getState();
       
       // Trigger a deep resonant geophone confirmation chime
       if (audio && typeof audio.play === 'function') {
@@ -684,10 +684,8 @@ export const ArtifactViewer: React.FC = () => {
       useArtifactStore.getState().updateArtifact(activeArtifact.id, { hasBeenScanned: true });
       
       // Award Dust for unredaction sequence
-      ui.updateStatus({
-        dustIndex: Math.min(100, ui.status.dustIndex + 8),
-        sessionWorkDone: ui.status.sessionWorkDone + 1
-      });
+      progression.addDust(8);
+      progression.addSessionWork(1);
       
       console.log(gateMsg);
     }

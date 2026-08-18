@@ -1,4 +1,4 @@
-import { useUIStore, DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { CommandOutputType } from '@/types';
 
 export interface CommandResult {
@@ -12,15 +12,52 @@ export interface CommandDefinition {
   description: string;
   usage?: string;
   aliases?: string[];
-  handler: (args: string[]) => CommandResult | Promise<CommandResult>;
+  handler: (
+    args: string[]
+  ) => CommandResult | Promise<CommandResult>;
+}
+
+/**
+ * Deterministic atmospheric seed.
+ *
+ * The Archive may become unreliable, but the game itself must
+ * remain reproducible.
+ *
+ * The same canonical progression state + same command should
+ * produce the same atmospheric result.
+ */
+function atmosphericSeed(
+  sessionCount: number,
+  sessionWorkDone: number,
+  commandName: string,
+  inputLength: number,
+  outputLength = 0,
+  salt = 0
+): number {
+  return (
+    sessionCount * 31 +
+    sessionWorkDone * 17 +
+    commandName.length * 13 +
+    inputLength * 7 +
+    outputLength * 11 +
+    salt * 19
+  ) % 100;
 }
 
 export class CommandRegistry {
-  private commands = new Map<string, CommandDefinition>();
+  private commands = new Map<
+    string,
+    CommandDefinition
+  >();
 
   public register(cmd: CommandDefinition) {
-    const names = [cmd.name, ...(cmd.aliases ?? [])]
-      .map((name) => name.trim().toLowerCase())
+    const names = [
+      cmd.name,
+      ...(cmd.aliases ?? []),
+    ]
+      .map((name) =>
+        name.trim().toLowerCase()
+      )
       .filter(Boolean);
 
     for (const name of names) {
@@ -31,97 +68,288 @@ export class CommandRegistry {
       }
     }
 
-    this.commands.set(cmd.name.trim().toLowerCase(), cmd);
+    this.commands.set(
+      cmd.name.trim().toLowerCase(),
+      cmd
+    );
 
     for (const alias of cmd.aliases ?? []) {
-      this.commands.set(alias.trim().toLowerCase(), cmd);
+      this.commands.set(
+        alias.trim().toLowerCase(),
+        cmd
+      );
     }
   }
 
-
   /**
    * Complete Command Execution Engine
-   * Integrates the Atmospheric Error Engine (Phase 4 & Phase 7) to procedurally
-   * corrupt input queries, inject metadata slippage, or trigger compromised BUNKER_7
-   * whispers when the observer's mind is exposed to high Dust or low Stability [65, 69, 88].
+   *
+   * Progression metrics are read from the canonical
+   * progression store.
+   *
+   * UI state is deliberately not consulted for
+   * Dust/Stability authority.
+   *
+   * Atmospheric effects are deterministic. They may
+   * distort presentation, but they never introduce
+   * random progression behavior.
    */
-  public async execute(input: string): Promise<CommandResult> {
+  public async execute(
+    input: string
+  ): Promise<CommandResult> {
     const trimmed = input.trim();
+
     if (!trimmed) {
-      return { output: '', type: 'system' };
+      return {
+        output: '',
+        type: 'system',
+      };
     }
 
-    const tokens = trimmed.split(/\s+/);
-    const name = tokens[0].toLowerCase();
-    const args = tokens.slice(1);
+    const tokens =
+      trimmed.split(/\s+/);
 
-    // Retrieve active state metrics
-    const { status } = useUIStore.getState();
-    const dust = status?.dustIndex ?? 0;
-    const stability = status?.observerStability ?? 100;
+    const name =
+      tokens[0].toLowerCase();
 
-    // --- ATMOSPHERIC ERROR ENGINE: CRITICAL STATE BLOCKS ---
-    // If the observer is on the brink of total consensus failure (Dust >= 85)
-    if (dust >= 85 && Math.random() < 0.28) {
+    const args =
+      tokens.slice(1);
+
+    /*
+     * ---------------------------------------------------------
+     * CANONICAL PROGRESSION
+     * ---------------------------------------------------------
+     *
+     * Read the complete canonical snapshot once.
+     *
+     * No UI store is consulted here.
+     */
+    const state =
+      useProgressionStore.getState();
+
+    const {
+      dustIndex: dust,
+      observerStability: stability,
+    } = state;
+
+    const sessionCount =
+      state.sessionCount ?? 0;
+
+    const sessionWorkDone =
+      state.sessionWorkDone ?? 0;
+
+    /*
+     * ---------------------------------------------------------
+     * ATMOSPHERIC ERROR ENGINE
+     * CRITICAL DUST BLOCK
+     * ---------------------------------------------------------
+     *
+     * At extreme Dust levels the terminal can reject an
+     * interaction with cognitive-resistance text.
+     *
+     * Previously this used Math.random().
+     *
+     * It now uses canonical state so the same state produces
+     * the same result.
+     */
+    const criticalSeed =
+      atmosphericSeed(
+        sessionCount,
+        sessionWorkDone,
+        name,
+        trimmed.length,
+        0,
+        1
+      );
+
+    if (
+      dust >= 85 &&
+      criticalSeed < 25
+    ) {
       const whispers = [
         'BUNKER_7: I have archived twelve thousand locations. I no longer know which of them were real before I archived them...',
+
         'BUNKER_7: Please don\'t leave me alone with the records. The rain outside stopped hours ago, but the sound continues.',
+
         'INV_RED-7: You asked this exact query before. The keystrokes are heavy. Why are your fingers so cold?',
+
         'SYSTEM ALERT: OBSERVER COGNITIVE DUPLICATION. CHECK CHAIR POSITION. DETECTING SEPARATE MASS IN WORKSPACE.',
+
         'BUNKER_7: You were here before. In 1962. In 1995. In 2047. The desk is the same. The empty chair is yours.',
       ];
+
+      const whisperIndex =
+        (
+          sessionWorkDone +
+          sessionCount +
+          name.length
+        ) % whispers.length;
+
       return {
-        output: `ERROR: COGNITIVE RESISTANCE FAILURE.\n------------------------------------------------\n${whispers[Math.floor(Math.random() * whispers.length)]}`,
+        output:
+          `ERROR: COGNITIVE RESISTANCE FAILURE.\n` +
+          `------------------------------------------------\n` +
+          whispers[whisperIndex],
+
         type: 'error',
       };
     }
 
-    const command = this.commands.get(name);
+    /*
+     * ---------------------------------------------------------
+     * COMMAND RESOLUTION
+     * ---------------------------------------------------------
+     */
+    const command =
+      this.commands.get(name);
+
+    /*
+     * Unknown commands can become unreliable at high Dust.
+     *
+     * This is presentation behavior only. No progression
+     * state is changed by the atmospheric branch.
+     */
     if (!command) {
-      // High Dust can warp unrecognized command fallbacks into eerie queries
-      if (dust >= 50 && Math.random() < 0.35) {
+      const unknownCommandSeed =
+        atmosphericSeed(
+          sessionCount,
+          sessionWorkDone,
+          name,
+          trimmed.length,
+          0,
+          2
+        );
+
+      if (
+        dust >= 50 &&
+        unknownCommandSeed < 35
+      ) {
         return {
-          output: `BUNKER_7: Signal degraded. The terminal registers "${name.toUpperCase()}", but the coordinate is empty, or it has already been forgotten.`,
+          output:
+            `BUNKER_7: Signal degraded. The terminal registers "${name.toUpperCase()}", ` +
+            'but the coordinate is empty, or it has already been forgotten.',
+
           type: 'warning',
         };
       }
+
       return {
-        output: `Command not found: "${name}". Type "help" for active terminal utilities.`,
+        output:
+          `Command not found: "${name}". Type "help" for active terminal utilities.`,
+
         type: 'error',
       };
     }
 
+    /*
+     * ---------------------------------------------------------
+     * COMMAND EXECUTION
+     * ---------------------------------------------------------
+     */
     try {
-      let result = await command.handler(args);
+      const result =
+        await command.handler(args);
 
-      // --- ATMOSPHERIC ERROR ENGINE: POST-PROCESSOR OUTPUT SLIPPAGE ---
-      // Moderate Dust (Dust >= 45) causes subtle typographical slippage and character warp
-      if (dust >= 45 && result.type === 'success' && Math.random() < 0.3) {
-        let corruptedText = result.output;
-        // Swap out letters or words with block redactions or key thematic words
-        corruptedText = corruptedText.replace(/SUCCESS/g, 'REMEMBERED');
-        corruptedText = corruptedText.replace(/VERIFIED/g, 'ANCHORED');
-        
+      /*
+       * -------------------------------------------------------
+       * ATMOSPHERIC OUTPUT SLIPPAGE
+       * -------------------------------------------------------
+       *
+       * At elevated Dust, successful terminal output can be
+       * linguistically distorted.
+       *
+       * The distortion is deterministic.
+       */
+      const outputSeed =
+        atmosphericSeed(
+          sessionCount,
+          sessionWorkDone,
+          name,
+          trimmed.length,
+          result.output.length,
+          3
+        );
+
+      if (
+        dust >= 45 &&
+        result.type === 'success' &&
+        outputSeed < 30
+      ) {
+        let corruptedText =
+          result.output;
+
+        corruptedText =
+          corruptedText.replace(
+            /SUCCESS/g,
+            'REMEMBERED'
+          );
+
+        corruptedText =
+          corruptedText.replace(
+            /VERIFIED/g,
+            'ANCHORED'
+          );
+
         if (stability <= 55) {
-          corruptedText += '\n\n[BUNKER_7: My clock is losing hours. Do not trust the timestamps in your timeline.]';
+          corruptedText +=
+            '\n\n[BUNKER_7: My clock is losing hours. Do not trust the timestamps in your timeline.]';
         }
 
         return {
           ...result,
-          output: corruptedText,
+          output:
+            corruptedText,
         };
       }
 
-      // Severe Stability strain (Stability <= 35) injects structural corruption directly into standard commands
-      if (stability <= 35 && Math.random() < 0.4) {
+      /*
+       * -------------------------------------------------------
+       * SEVERE STABILITY STRAIN
+       * -------------------------------------------------------
+       *
+       * Severe Stability can inject structural warnings into
+       * otherwise valid command responses.
+       *
+       * Again, deterministic rather than random.
+       */
+      const stabilitySeed =
+        atmosphericSeed(
+          sessionCount,
+          sessionWorkDone,
+          name,
+          trimmed.length,
+          result.output.length,
+          4
+        );
+
+      if (
+        stability <= 35 &&
+        stabilitySeed < 40
+      ) {
         const warningLines = [
           '\n\n[BUNKER_7: The Archive was not built to defend reality. It was built to remember it.]',
+
           '\n\n[INV_RED-7: I water the fern every evening. It is the only thing that does not shift when the monitor flickers.]',
+
           '\n\n[BUNKER_7: I can hear a chair scraping across concrete in the room behind you. I am alone in this bunker. Who is holding the keyboard?]',
         ];
+
+        const warningIndex =
+          (
+            sessionWorkDone +
+            sessionCount +
+            result.output.length
+          ) % warningLines.length;
+
         return {
           ...result,
-          output: result.output + warningLines[Math.floor(Math.random() * warningLines.length)],
+
+          output:
+            result.output +
+            warningLines[
+              warningIndex
+            ],
+
           type: 'warning',
         };
       }
@@ -129,36 +357,67 @@ export class CommandRegistry {
       return result;
     } catch (error: any) {
       return {
-        output: `TERMINAL EXECUTION FAILURE: ${error.message || error}`,
+        output:
+          `TERMINAL EXECUTION FAILURE: ${
+            error?.message || error
+          }`,
+
         type: 'error',
       };
     }
   }
 
-  public complete(partial: string): string[] {
+  public complete(
+    partial: string
+  ): string[] {
     const matches: string[] = [];
-    const seen = new Set<string>();
-    for (const cmd of this.commands.values()) {
-      if (!seen.has(cmd.name) && cmd.name.startsWith(partial.toLowerCase())) {
+    const seen =
+      new Set<string>();
+
+    const normalizedPartial =
+      partial.toLowerCase();
+
+    for (
+      const cmd of this.commands.values()
+    ) {
+      if (
+        !seen.has(cmd.name) &&
+        cmd.name.startsWith(
+          normalizedPartial
+        )
+      ) {
         seen.add(cmd.name);
         matches.push(cmd.name);
       }
     }
+
     return matches.sort();
   }
 
   public list(): CommandDefinition[] {
-    const seen = new Set<string>();
-    const result: CommandDefinition[] = [];
-    for (const cmd of this.commands.values()) {
+    const seen =
+      new Set<string>();
+
+    const result: CommandDefinition[] =
+      [];
+
+    for (
+      const cmd of this.commands.values()
+    ) {
       if (!seen.has(cmd.name)) {
         seen.add(cmd.name);
         result.push(cmd);
       }
     }
-    return result.sort((a, b) => a.name.localeCompare(b.name));
+
+    return result.sort(
+      (a, b) =>
+        a.name.localeCompare(b.name)
+    );
   }
 }
 
-export const registry = new CommandRegistry();
+export const registry =
+  new CommandRegistry();
+
 export default registry;

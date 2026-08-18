@@ -6,6 +6,7 @@ import { colors, typography, microform } from "@/styles/theme";
 import { X, Play, Pause, Radio, Lock, Unlock } from "lucide-react";
 import { useSignalModulator } from "@/components/atlas/useSignalModulator";
 import { useAudioStore } from "@/state/audioStore";
+import { useProgressionStore } from "@/state/progressionStore";
 
 export interface SignalArtifact {
   id: string;
@@ -45,8 +46,11 @@ const SIGNAL_SETTINGS: Record<string, SignalAudioProfile> = {
 
 export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => {
   const { play, click } = useAudioStore();
+  const { markMediaListened } = useProgressionStore();
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const listenedRef = useRef(false);
+  const listenedSecondsRef = useRef(0);
   const [frequency, setFrequency] = useState(1.0); // Tuning slider from 1.0 to 10.0 Hz
   const [filterQ, setFilterQ] = useState(1.0); // Filter Q factor from 0.1 to 10.0
   const [inductiveGain, setInductiveGain] = useState(-6.0); // Inductive Gain from -12 to +12
@@ -123,6 +127,20 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
 
     const player = audioPlayerRef.current;
 
+    const recordListeningProgress = () => {
+      if (listenedRef.current) return;
+      const current = Number.isFinite(player.currentTime) ? player.currentTime : 0;
+      listenedSecondsRef.current = Math.max(listenedSecondsRef.current, current);
+      const threshold = Math.min(12, Math.max(6, (player.duration || 120) * 0.12));
+      if (current >= threshold) {
+        listenedRef.current = true;
+        markMediaListened(signal.id);
+      }
+    };
+
+    player.addEventListener('timeupdate', recordListeningProgress);
+    player.addEventListener('ended', recordListeningProgress);
+
     if (isPlaying && isLocked) {
       player.play().catch((err) => {
         console.warn("[Signal Audio] Voiceover playback blocked or failed:", err);
@@ -132,9 +150,11 @@ export const SignalModal: React.FC<SignalModalProps> = ({ signal, onClose }) => 
     }
 
     return () => {
+      player.removeEventListener('timeupdate', recordListeningProgress);
+      player.removeEventListener('ended', recordListeningProgress);
       player.pause();
     };
-  }, [isPlaying, isLocked, signal.mediaUrl, signal.id]);
+  }, [isPlaying, isLocked, signal.mediaUrl, signal.id, markMediaListened]);
 
   // Ensure clean teardown on close
   useEffect(() => {

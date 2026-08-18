@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTerminalStore } from '@/state/terminalStore';
 import { useUIStore, BUNKER7_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useAudioStore } from '@/state/audioStore';
 import { registry } from '@/logic/commandRegistry';
 import { colors, typography, microform } from '@/styles/theme';
@@ -21,7 +22,7 @@ const getOutputColor = (type: string) => {
 
 export const Terminal: React.FC = () => {
   const { terminalOpen, setTerminalOpen } = useUIStore();
-  const { status } = useUIStore();
+  const dustIndex = useProgressionStore((state) => state.dustIndex);
   const { history, addCommand, clearHistory } = useTerminalStore();
   const { play, init } = useAudioStore();
   const [input, setInput] = useState('');
@@ -30,7 +31,7 @@ export const Terminal: React.FC = () => {
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
 
-  const shouldJitter = status.dustIndex >= BUNKER7_THRESHOLDS.STABLE;
+  const shouldJitter = dustIndex >= BUNKER7_THRESHOLDS.STABLE;
 
   useEffect(() => {
     init();

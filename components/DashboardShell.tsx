@@ -6,6 +6,7 @@ import { useUIStore } from '@/state/uiStore';
 import { useBootStore } from '@/state/bootStore';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
+import { getCanonicalCase } from '@/data/canonicalProgression';
 import { useMediaStore } from '@/state/mediaStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useRelayTypingInjector } from '@/hooks/useRelayTypingInjector'; // Global keystroke solenoid feedback
@@ -38,10 +39,6 @@ import { InventoryPanel } from './inventory/InventoryPanel';
 import { GeigerHUD } from './system/GeigerHUD';
 import { CRTOverlay } from './CRTOverlay'; // Clean relative import for our new radiometric counter widget
 
-import { registry } from '@/logic/commandRegistry';
-import { registerSystemCommands } from '@/logic/commands/system';
-import { registerInvestigationCommands } from '@/logic/commands/investigation';
-import { registerEvidenceBoardCommands } from '@/logic/commands/evidenceBoard';
 import { colors, spacing, typography, shadows, microform } from '@/styles/theme';
 
 /* ═══════════════════════════════════════════════════════════════
@@ -286,12 +283,6 @@ export const DashboardShell: React.FC = () => {
   // Mount high-performance CSS-Variable driven terminal scanline jitters & hold slips [28]
   const { jitterStyles } = useTerminalJitter();
 
-  // Register command registry loops on cold boot
-  useEffect(() => {
-    registerSystemCommands(registry);
-    registerInvestigationCommands(registry);
-    registerEvidenceBoardCommands(registry);
-  }, []);
 
   // Sync state selectors from global Zustand stores
   const { booted, activeModule } = useUIStore();
@@ -329,7 +320,25 @@ export const DashboardShell: React.FC = () => {
   if (!booted || !isComplete) return null;
 
   // Resolve the active case folder currently opened by the investigator
-  const activePlace = activeInvestigationId ? places.find((p) => p.slug === activeInvestigationId) : null;
+  const activePlace = activeInvestigationId
+    ? places.find((p) => p.slug === activeInvestigationId)
+    : null;
+
+  // Canonical narrative cases can exist before their geographic Atlas record.
+  // Never fabricate geographic data for those cases. InvestigationView accepts
+  // a minimal narrative subject when the Place record is not yet mapped.
+  const activeCase = activeInvestigationId
+    ? getCanonicalCase(activeInvestigationId)
+    : undefined;
+
+  const activeInvestigationSubject =
+    activePlace ??
+    (activeCase
+      ? {
+          slug: activeCase.slug,
+          name: activeCase.name,
+        }
+      : null);
 
   return (
     <motion.div
@@ -340,20 +349,51 @@ export const DashboardShell: React.FC = () => {
       style={{
   backgroundColor: colors.archive.black,
   ...jitterStyles,
-  transform: `translate(var(--crt-jitter-x, 0px), var(--crt-jitter-y, 0px))`,
+  transform:
+    'translate(var(--crt-jitter-x, 0px), var(--crt-jitter-y, 0px))',
+  filter: 'contrast(1.05)',
 } as React.CSSProperties}
     >
       {/* CSS-injected Chromatic Aberration Text Shadow Split Filter [28] */}
       <style dangerouslySetInnerHTML={{
         __html: `
         .crt-text-chromatic {
-          text-shadow: 
+          text-shadow:
             var(--crt-chromatic-shift, 0px) 0px 0px rgba(255, 0, 0, 0.4),
             calc(var(--crt-chromatic-shift, 0px) * -1) 0px 0px rgba(0, 255, 255, 0.4) !important;
         }
-/* Scanlines styled off */
+
+        /*
+         * Evidence Room integration:
+         * the room plate supplies the physical board surface.
+         * EvidenceBoard retains its React Flow mechanics, nodes, edges,
+         * persistence and controls, while its synthetic felt surface is
+         * transparent only inside the Evidence Room.
+         */
+        .evidence-room-stage .felt-board {
+          background: transparent !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          box-shadow: none !important;
+        }
+
+        .evidence-room-stage .felt-board > div:first-child {
+          background: radial-gradient(
+            circle at center,
+            transparent 42%,
+            rgba(0, 0, 0, 0.18) 100%
+          ) !important;
+        }
+
+        .evidence-room-stage .react-flow,
+        .evidence-room-stage .react-flow__renderer,
+        .evidence-room-stage .react-flow__pane {
+          background: transparent !important;
+        }
+        /* Scanlines styled off */
       `
       }} />
+
 
       {/* Primary hardware composited scanline wrapper overlay [28] */}
       <CRTOverlay />
@@ -385,11 +425,33 @@ export const DashboardShell: React.FC = () => {
           </div>
         </ArchiveErrorBoundary>
 
-        {/* Alternative View: Crimson-Threaded Evidence Graph Board [14] */}
+        {/* Alternative View: Evidence Room / Carrel 7-B */}
         <ArchiveErrorBoundary moduleName="Evidence Connection Board">
           {activeModule === 'evidence' && (
-            <div className="absolute inset-0 animate-fade-in">
-              <EvidenceBoard />
+            <div
+              className="absolute inset-0 animate-fade-in evidence-room-stage"
+              style={{
+                backgroundColor: '#090705',
+                backgroundImage: "url('/images/evidence-room-final.png')",
+                backgroundPosition: 'center center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+              }}
+            >
+              {/* The image is the physical room. The live EvidenceBoard supplies
+                  everything that changes during play. */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.10) 100%)',
+                  zIndex: 0,
+                }}
+              />
+
+              <div className="absolute inset-0 z-[1]">
+                <EvidenceBoard />
+              </div>
             </div>
           )}
         </ArchiveErrorBoundary>
@@ -453,7 +515,7 @@ export const DashboardShell: React.FC = () => {
 
         {/* Active Dossier Investigation Folder View [30] */}
         <AnimatePresence mode="wait">
-          {activeInvestigationId && activePlace && (
+          {activeInvestigationId && activeInvestigationSubject && (
             <ArchiveErrorBoundary moduleName="Active Case Dossier">
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -462,7 +524,7 @@ export const DashboardShell: React.FC = () => {
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="absolute inset-0 z-10"
               >
-                <InvestigationView place={activePlace} />
+                <InvestigationView place={activeInvestigationSubject} />
               </motion.div>
             </ArchiveErrorBoundary>
           )}

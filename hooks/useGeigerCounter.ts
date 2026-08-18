@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { create } from 'zustand';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useAtlasStore } from '@/state/atlasStore';
+import { getSharedAudioContext } from '@/lib/sharedAudioContext';
 
 interface GeigerConfig {
-  baseCpm?: number;      // Background radiation counts per minute
-  maxCpm?: number;       // Maximum possible counts per minute
-  volume?: number;       // Master volume of clicks (0 to 1)
+  baseCpm?: number;
+  maxCpm?: number;
+  volume?: number;
 }
 
 interface GeigerStore {
@@ -22,202 +23,566 @@ interface GeigerStore {
   setHoveredPlaceSlug: (slug: string | null) => void;
 }
 
-// Global Geiger Zustand store to unify AtlasMap, GeigerHUD, and useTerminalJitter
 export const useGeigerStore = create<GeigerStore>((set) => ({
   isActive: false,
   currentCpm: 12,
   uSvh: 12 * 0.0057,
   hoveredPlaceSlug: null,
-  setIsActive: (active) => set({ isActive: active }),
-  setCurrentCpm: (cpm) => set({ currentCpm: cpm, uSvh: cpm * 0.0057 }),
-  setUSvh: (uSvh) => set({ uSvh }),
-  setHoveredPlaceSlug: (slug) => set({ hoveredPlaceSlug: slug }),
+
+  setIsActive: (active) =>
+    set({ isActive: active }),
+
+  setCurrentCpm: (cpm) =>
+    set({
+      currentCpm: cpm,
+      uSvh: cpm * 0.0057,
+    }),
+
+  setUSvh: (uSvh) =>
+    set({ uSvh }),
+
+  setHoveredPlaceSlug: (slug) =>
+    set({
+      hoveredPlaceSlug: slug,
+    }),
 }));
 
 export function useGeigerCounter({
   baseCpm = 12,
   maxCpm = 3600,
-  volume = 0.25
+  volume = 0.25,
 }: GeigerConfig = {}) {
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  // centralize Geiger audio context mounting
-  useEffect(() => {
-    const { getSharedAudioContext } = require("@/lib/sharedAudioContext");
-    audioCtxRef.current = getSharedAudioContext();
-  }, []);
-  
-  const { status } = useUIStore();
-  const { selectedPlaceSlug, places } = useAtlasStore();
-  const { 
-    isActive, 
-    currentCpm, 
-    uSvh, 
-    hoveredPlaceSlug, 
-    setIsActive, 
-    setCurrentCpm, 
-    setUSvh 
+  /*
+   * This ref points to the APPLICATION-WIDE shared AudioContext.
+   *
+   * This hook does NOT own the context and therefore must never call
+   * AudioContext.close().
+   */
+  const audioCtxRef =
+    useRef<AudioContext | null>(null);
+
+  /*
+   * Dust is canonical progression state.
+   * UIStore is intentionally not used for progression values here.
+   */
+  const dustIndex = useProgressionStore(
+    (state) => state.dustIndex
+  );
+
+  const {
+    selectedPlaceSlug,
+    places,
+  } = useAtlasStore();
+
+  const {
+    isActive,
+    currentCpm,
+    uSvh,
+    hoveredPlaceSlug,
+    setIsActive,
+    setCurrentCpm,
+    setUSvh,
   } = useGeigerStore();
 
-  const nextClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isPlayingRef = useRef(false);
+  const nextClickTimeoutRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
 
-  // 1. Calculate active radiation target factor based on player environment (selected or hovered)
+  const isPlayingRef =
+    useRef(false);
+
+  /*
+   * Acquire the shared context when the hook mounts.
+   *
+   * We do not create an AudioContext here.
+   */
+  useEffect(() => {
+    audioCtxRef.current =
+      getSharedAudioContext();
+
+    return () => {
+      /*
+       * The hook owns its scheduler, not the AudioContext.
+       *
+       * Stop the Geiger session and clear its pending timer.
+       */
+      isPlayingRef.current = false;
+
+      if (nextClickTimeoutRef.current) {
+        clearTimeout(
+          nextClickTimeoutRef.current
+        );
+
+        nextClickTimeoutRef.current =
+          null;
+      }
+
+      audioCtxRef.current = null;
+    };
+  }, []);
+
+  // --------------------------------------------------
+  // Calculate active radiation target
+  // --------------------------------------------------
+
   const getTargetCpm = useCallback((): number => {
     let multiplier = 1.0;
-    
-    // Read dust index as a primary ambient charge carrier
-    const dustLevel = status?.dustIndex || 0;
-    multiplier += (dustLevel / 100) * 8.0; // Moderate dust increases background clicks
 
-    // Prioritize hovered place, then fallback to selected place
-    const activeSlug = hoveredPlaceSlug || selectedPlaceSlug;
+    /*
+     * Dust index acts as an ambient charge carrier.
+     */
+    const dustLevel = dustIndex;
+
+    multiplier +=
+      (dustLevel / 100) * 8.0;
+
+    /*
+     * Prioritize hovered place, then selected place.
+     */
+    const activeSlug =
+      hoveredPlaceSlug ||
+      selectedPlaceSlug;
 
     if (activeSlug) {
-      const activePlace = places.find(p => p.slug === activeSlug);
-      if (activePlace) {
-        // Danger level scales base energy [230, 245]
-        const danger = activePlace.dangerLevel || 1;
-        multiplier += danger * 4.0;
+      const activePlace =
+        places.find(
+          (place) =>
+            place.slug === activeSlug
+        );
 
-        // Specific lore-accurate radiation hotspots [194, 267, 311, 320]
-        const hotZones: Record<string, number> = {
-          'chernobyl-reactor-4-control-room': 250.0, // Critical hotspot
-          'pripyat-hospital-126': 180.0,            // Discarded uniforms basement [267]
-          'pripyat-amusement-park': 90.0,           // Radiation meter near river still ticks [311]
-          'kola-superdeep-borehole': 140.0,         // Subterranean hum listening [320]
-          'duga-radar-array': 70.0,                 // Pulse telemetry [194]
-          'blackwood-hospital': 50.0,               // Infrasound Ward 4 [194]
+      if (activePlace) {
+        /*
+         * Danger level scales base energy.
+         */
+        const danger =
+          activePlace.dangerLevel || 1;
+
+        multiplier +=
+          danger * 4.0;
+
+        /*
+         * Lore-specific radiation hotspots.
+         */
+        const hotZones: Record<
+          string,
+          number
+        > = {
+          'chernobyl-reactor-4-control-room': 250.0,
+          'pripyat-hospital-126': 180.0,
+          'pripyat-amusement-park': 90.0,
+          'kola-superdeep-borehole': 140.0,
+          'duga-radar-array': 70.0,
+          'blackwood-hospital': 50.0,
         };
 
-        if (hotZones[activePlace.slug]) {
-          multiplier *= (1.0 + hotZones[activePlace.slug] / 10.0);
+        const hotspot =
+          hotZones[
+            activePlace.slug
+          ];
+
+        if (hotspot) {
+          multiplier *=
+            1.0 +
+            hotspot / 10.0;
         }
       }
     }
 
-    const calculatedCpm = Math.min(maxCpm, baseCpm * multiplier);
-    return Math.max(baseCpm, calculatedCpm);
-  }, [selectedPlaceSlug, hoveredPlaceSlug, places, status?.dustIndex, baseCpm, maxCpm]);
+    const calculatedCpm =
+      Math.min(
+        maxCpm,
+        baseCpm * multiplier
+      );
 
-  // 2. Synthesize a single authentic high-pitched electrostatic discharge crackle
-  const playGeigerClick = useCallback((ctx: AudioContext) => {
-    if (ctx.state === 'suspended') return;
+    return Math.max(
+      baseCpm,
+      calculatedCpm
+    );
+  }, [
+    dustIndex,
+    selectedPlaceSlug,
+    hoveredPlaceSlug,
+    places,
+    baseCpm,
+    maxCpm,
+  ]);
 
-    const now = ctx.currentTime;
-    
-    // Each click is created with a microscopic high-passed noise burst (metal contact discharge)
-    const bufferSize = 0.005 * ctx.sampleRate; // Ultra short duration (~5ms)
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const channelData = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-      channelData[i] = Math.random() * 2 - 1;
-    }
+  // --------------------------------------------------
+  // Geiger click synthesis
+  // --------------------------------------------------
 
-    const noiseNode = ctx.createBufferSource();
-    noiseNode.buffer = buffer;
+  const playGeigerClick =
+    useCallback(
+      (ctx: AudioContext) => {
+        /*
+         * A closed context can never be used again.
+         * Do nothing rather than allowing the exception to escape.
+         */
+        if (
+          ctx.state === 'closed'
+        ) {
+          return;
+        }
 
-    // Highpass filter removes muddy low-end to create a sharp metallic "tick"
-    const hpFilter = ctx.createBiquadFilter();
-    hpFilter.type = 'highpass';
-    hpFilter.frequency.setValueAtTime(1600, now);
+        /*
+         * Suspended contexts may occur before a user gesture.
+         * Do not manufacture nodes until the context is usable.
+         */
+        if (
+          ctx.state === 'suspended'
+        ) {
+          return;
+        }
 
-    // Bandpass filter adds the small plastic case resonance chamber profile (~3500 Hz)
-    const bpFilter = ctx.createBiquadFilter();
-    bpFilter.type = 'bandpass';
-    bpFilter.frequency.setValueAtTime(3500, now);
-    bpFilter.Q.setValueAtTime(4.0, now);
+        try {
+          const now =
+            ctx.currentTime;
 
-    // Instant volume rise with immediate exponential decay
-    const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(volume * (0.6 + Math.random() * 0.4), now);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.004);
+          /*
+           * Ultra-short noise burst.
+           */
+          const bufferSize =
+            Math.max(
+              1,
+              Math.floor(
+                0.005 *
+                  ctx.sampleRate
+              )
+            );
 
-    noiseNode.connect(hpFilter);
-    hpFilter.connect(bpFilter);
-    bpFilter.connect(gainNode);
-    gainNode.connect(ctx.destination);
+          const buffer =
+            ctx.createBuffer(
+              1,
+              bufferSize,
+              ctx.sampleRate
+            );
 
-    noiseNode.start(now);
-  }, [volume]);
+          const channelData =
+            buffer.getChannelData(0);
 
-  // 3. Poisson Distribution Scheduler (True Radioactive Decay Simulation)
-  const scheduleNextClick = useCallback(() => {
-    if (!isPlayingRef.current || !audioCtxRef.current) return;
+          for (
+            let i = 0;
+            i < bufferSize;
+            i++
+          ) {
+            channelData[i] =
+              Math.random() * 2 -
+              1;
+          }
 
-    const ctx = audioCtxRef.current;
-    const targetCpm = getTargetCpm();
-    
-    // Update live indicators in store
-    setCurrentCpm(Math.round(targetCpm));
-    setUSvh(targetCpm * 0.0057);
+          const noiseNode =
+            ctx.createBufferSource();
 
-    // lambda = clicks per second
-    const lambda = targetCpm / 60.0;
-    
-    // Generate exponential random variable
-    const randomVal = Math.random();
-    const delaySeconds = -Math.log(1.0 - randomVal) / lambda;
-    
-    playGeigerClick(ctx);
+          noiseNode.buffer =
+            buffer;
 
-    nextClickTimeoutRef.current = setTimeout(() => {
+          /*
+           * High-pass filter removes low-end
+           * and creates the sharp detector click.
+           */
+          const hpFilter =
+            ctx.createBiquadFilter();
+
+          hpFilter.type =
+            'highpass';
+
+          hpFilter.frequency.setValueAtTime(
+            1600,
+            now
+          );
+
+          /*
+           * Bandpass filter creates the
+           * detector casing resonance.
+           */
+          const bpFilter =
+            ctx.createBiquadFilter();
+
+          bpFilter.type =
+            'bandpass';
+
+          bpFilter.frequency.setValueAtTime(
+            3500,
+            now
+          );
+
+          bpFilter.Q.setValueAtTime(
+            4.0,
+            now
+          );
+
+          /*
+           * Instant rise followed by exponential decay.
+           */
+          const gainNode =
+            ctx.createGain();
+
+          gainNode.gain.setValueAtTime(
+            volume *
+              (0.6 +
+                Math.random() * 0.4),
+            now
+          );
+
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.0001,
+            now + 0.004
+          );
+
+          noiseNode.connect(
+            hpFilter
+          );
+
+          hpFilter.connect(
+            bpFilter
+          );
+
+          bpFilter.connect(
+            gainNode
+          );
+
+          gainNode.connect(
+            ctx.destination
+          );
+
+          noiseNode.start(now);
+
+          /*
+           * The nodes are intentionally not stored globally.
+           * They are short-lived detector clicks and will be
+           * garbage-collected after their scheduled playback.
+           */
+        } catch (error) {
+          /*
+           * Audio must never be allowed to crash
+           * the React render tree.
+           */
+          console.warn(
+            '[Geiger Audio] Failed to play click:',
+            error
+          );
+        }
+      },
+      [volume]
+    );
+
+  // --------------------------------------------------
+  // Poisson distribution scheduler
+  // --------------------------------------------------
+
+  const scheduleNextClick =
+    useCallback(() => {
+      if (
+        !isPlayingRef.current
+      ) {
+        return;
+      }
+
+      const ctx =
+        audioCtxRef.current;
+
+      if (!ctx) {
+        return;
+      }
+
+      /*
+       * If the shared context somehow became closed,
+       * don't keep hammering it.
+       */
+      if (
+        ctx.state === 'closed'
+      ) {
+        isPlayingRef.current =
+          false;
+
+        setIsActive(false);
+
+        return;
+      }
+
+      const targetCpm =
+        getTargetCpm();
+
+      setCurrentCpm(
+        Math.round(targetCpm)
+      );
+
+      setUSvh(
+        targetCpm * 0.0057
+      );
+
+      /*
+       * lambda = clicks per second
+       */
+      const lambda =
+        targetCpm / 60.0;
+
+      /*
+       * Generate exponential random variable.
+       *
+       * Protect against Math.random() returning exactly 1.
+       */
+      const randomVal =
+        Math.min(
+          0.999999999,
+          Math.random()
+        );
+
+      const delaySeconds =
+        -Math.log(
+          1.0 - randomVal
+        ) / lambda;
+
+      playGeigerClick(ctx);
+
+      nextClickTimeoutRef.current =
+        setTimeout(() => {
+          nextClickTimeoutRef.current =
+            null;
+
+          scheduleNextClick();
+        }, delaySeconds * 1000);
+    }, [
+      getTargetCpm,
+      playGeigerClick,
+      setCurrentCpm,
+      setUSvh,
+      setIsActive,
+    ]);
+
+  // --------------------------------------------------
+  // Start Geiger session
+  // --------------------------------------------------
+
+  const start =
+    useCallback(() => {
+      /*
+       * Prevent duplicate schedulers.
+       */
+      if (
+        isPlayingRef.current
+      ) {
+        return;
+      }
+
+      /*
+       * Always obtain the shared context.
+       *
+       * We do NOT assume the mount-time reference is still valid.
+       */
+      const ctx =
+        getSharedAudioContext();
+
+      if (!ctx) {
+        console.warn(
+          '[Geiger Audio] Shared AudioContext unavailable.'
+        );
+
+        return;
+      }
+
+      if (
+        ctx.state === 'closed'
+      ) {
+        console.warn(
+          '[Geiger Audio] Shared AudioContext is closed.'
+        );
+
+        return;
+      }
+
+      audioCtxRef.current =
+        ctx;
+
+      /*
+       * Browser autoplay policy can leave the context suspended.
+       */
+      if (
+        ctx.state === 'suspended'
+      ) {
+        void ctx
+          .resume()
+          .catch((error) => {
+            console.warn(
+              '[Geiger Audio] Failed to resume shared AudioContext:',
+              error
+            );
+          });
+      }
+
+      isPlayingRef.current =
+        true;
+
+      setIsActive(true);
+
+      /*
+       * Begin the radioactive decay scheduler.
+       */
       scheduleNextClick();
-    }, delaySeconds * 1000);
-  }, [getTargetCpm, playGeigerClick, setCurrentCpm, setUSvh]);
+    }, [
+      scheduleNextClick,
+      setIsActive,
+    ]);
 
-  // 4. Initialize Audio Session safely
-  const start = useCallback(() => {
-    if (audioCtxRef.current) return;
+  // --------------------------------------------------
+  // Stop Geiger session
+  // --------------------------------------------------
 
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    const ctx = new AudioContextClass();
-    audioCtxRef.current = ctx;
-    isPlayingRef.current = true;
-    setIsActive(true);
-    
-    // Kickstart decay loop
-    scheduleNextClick();
-  }, [scheduleNextClick, setIsActive]);
+  const stop =
+    useCallback(() => {
+      isPlayingRef.current =
+        false;
 
-  // 5. Tear down timeouts and context cleanly
-  const stop = useCallback(() => {
-    isPlayingRef.current = false;
-    setIsActive(false);
+      setIsActive(false);
 
-    if (nextClickTimeoutRef.current) {
-      clearTimeout(nextClickTimeoutRef.current);
-      nextClickTimeoutRef.current = null;
-    }
+      /*
+       * Stop this hook's scheduler.
+       */
+      if (
+        nextClickTimeoutRef.current
+      ) {
+        clearTimeout(
+          nextClickTimeoutRef.current
+        );
 
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close();
-      audioCtxRef.current = null;
-    }
-  }, [setIsActive]);
+        nextClickTimeoutRef.current =
+          null;
+      }
+    }, [setIsActive]);
+
+  // --------------------------------------------------
+  // Refresh radiation indicators when state changes
+  // --------------------------------------------------
 
   useEffect(() => {
-    // Keep internal scheduling parameters refreshed when state details shift
-    if (isPlayingRef.current) {
-      const targetCpm = getTargetCpm();
-      setCurrentCpm(Math.round(targetCpm));
-      setUSvh(targetCpm * 0.0057);
+    if (
+      !isPlayingRef.current
+    ) {
+      return;
     }
-  }, [getTargetCpm, setCurrentCpm, setUSvh]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isPlayingRef.current = false;
-      if (nextClickTimeoutRef.current) clearTimeout(nextClickTimeoutRef.current);
-    };
-  }, []);
+    const targetCpm =
+      getTargetCpm();
+
+    setCurrentCpm(
+      Math.round(targetCpm)
+    );
+
+    setUSvh(
+      targetCpm * 0.0057
+    );
+  }, [
+    getTargetCpm,
+    setCurrentCpm,
+    setUSvh,
+  ]);
 
   return {
     isActive,
     currentCpm,
     uSvh,
     start,
-    stop
+    stop,
   };
 }

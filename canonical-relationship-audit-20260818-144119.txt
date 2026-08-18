@@ -1,0 +1,68 @@
+==================================================
+VANISHING POINTS :: CANONICAL RELATIONSHIP AUDIT
+Generated: 2026-08-18 14:41:19
+==================================================
+
+==================================================
+SEARCH: addBoardConnection\s*\(
+==================================================
+
+==================================================
+SEARCH: removeBoardConnection\s*\(
+==================================================
+
+==================================================
+SEARCH: discoverEdge\s*\(
+==================================================
+
+==================================================
+SEARCH: boardConnections
+==================================================
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\hooks\useResonanceTriangulation.ts:59: * progressionStore.boardConnections.
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\hooks\useResonanceTriangulation.ts:66: const boardConnections = useProgressionStore(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\hooks\useResonanceTriangulation.ts:67: (state) => state.boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\hooks\useResonanceTriangulation.ts:78: boardConnections.some((connection) =>
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\hooks\useResonanceTriangulation.ts:168: boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\lib\conditions.ts:337: if (context.boardConnections.has(connection)) {
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\lib\conditions.ts:358: const found = [...context.boardConnections].some(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\lib\progressionContext.ts:51: boardConnections:
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\lib\progressionContext.ts:52: new Set(state.boardConnections),
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:206: boardConnections: string[],
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:210: boardConnections.some(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:232: boardConnections: string[],
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:236: boardConnections.some(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:328: boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:333: boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:338: boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\bunker7.ts:770: boardConnections.some(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\evidenceBoard.ts:139: * It does NOT modify progressionStore.boardConnections.
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\logic\commands\evidenceBoard.ts:198: * Canonical boardConnections are owned exclusively by
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:122: boardConnections: string[];
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:280: boardConnections: [],
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:539: get().boardConnections.includes(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:547: boardConnections: [
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:548: ...state.boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:567: !get().boardConnections.includes(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:575: boardConnections:
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:576: state.boardConnections.filter(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:1083: boardConnections:
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:1087: persisted.boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:1230: boardConnections:
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\progressionStore.ts:1231: state.boardConnections,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\types\conditions.ts:177: boardConnections: Set<string>;
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\types\progression.ts:38: boardConnections: string[];
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\types\progression.ts:93: boardConnections: [],
+
+==================================================
+SEARCH: discoveredEdges
+==================================================
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\components\evidenceBoard\EvidenceBoard.tsx:195: discoveredEdges,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\components\evidenceBoard\EvidenceBoard.tsx:337: const allEdges = [...discoveredEdges, ...playerEdges];
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\components\evidenceBoard\EvidenceBoard.tsx:367: }, [workspaceItems, discoveredEdges, playerEdges, selectedId, workspaceIds]);
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:33: discoveredEdges: BoardEdge[];
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:68: discoveredEdges: [],
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:92: const exists = state.discoveredEdges.some(
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:103: discoveredEdges: [
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:104: ...state.discoveredEdges,
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:168: discoveredEdges: [],
+C:\Users\gfrei\OneDrive\Desktop\vanishing-points\state\evidenceBoardStore.ts:182: discoveredEdges: state.discoveredEdges,

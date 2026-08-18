@@ -7,66 +7,49 @@ import { EvidenceItem } from '@/types/investigation';
 import { useInvestigationStore } from '@/state/investigationStore';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useAudioStore } from '@/state/audioStore';
-import { useUIStore } from '@/state/uiStore';
 import { colors, typography } from '@/styles/theme';
 import { EvidenceGrid } from './EvidenceGrid';
 import { PhotoViewer } from '@/components/media/PhotoViewer';
+import { EvidenceDetail } from './EvidenceDetail';
+import { BODIE_WEATHERING_RECORD } from '@/data/investigationEvidence';
+import { BODIE_EXPOSURE_RESULT } from '@/data/bodieExposure';
+import { BodieExposurePanel } from './BodieExposurePanel';
+import { useProgressionStore } from '@/state/progressionStore';
 
 const TABS = ['OVERVIEW', 'EVIDENCE', 'TIMELINE', 'NOTES', 'CONNECTIONS'] as const;
 
-export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
+type InvestigationSubject =
+  Pick<Place, 'slug' | 'name'> &
+  Partial<Omit<Place, 'slug' | 'name'>>;
+
+export const InvestigationView: React.FC<{
+  place: InvestigationSubject;
+}> = ({ place }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
   const { click } = useAudioStore();
-  const { closeInvestigation } = useInvestigationStore();
+  const dustIndex = useProgressionStore((state) => state.dustIndex);
+  const spendDust = useProgressionStore((state) => state.spendDust);
+  const {
+    closeInvestigation,
+    catalogueEvidence,
+    updateEvidenceStatus,
+  } = useInvestigationStore();
   const { selectPlace } = useAtlasStore();
-  const { examineEvidence } = useUIStore();
 
   // Notes local state synced with store
-  const { notes, setNotes, timelines, evidence: storeEvidence } = useInvestigationStore();
+  const { notes, setNotes, timelines, evidence: storeEvidence, exposures, recordExposure } = useInvestigationStore();
   const [localNotes, setLocalNotes] = useState(notes[place.slug] || '');
 
   const handleNotesBlur = () => {
     setNotes(place.slug, localNotes);
   };
 
-  // Derive evidence items from place data + store
+  // Evidence is authored/catalogued investigation material, not a projection of every photo or witness report.
   const evidenceItems = useMemo(() => {
-    const items: EvidenceItem[] = [];
-
-    // Photos as evidence
-    place.photos?.forEach((src, i) => {
-      items.push({
-        id: `${place.slug}-photo-${i}`,
-        type: 'photo',
-        title: `Archive Photo ${i + 1}`,
-        description: `Recovered photographic evidence from ${place.name}.`,
-        status: 'available',
-        relatedTo: [],
-        mediaUrl: src,
-        dustCost: 2,
-      });
-    });
-
-    // Haunting reports as testimony
-    place.hauntingReports?.forEach((report, i) => {
-      items.push({
-        id: `${place.slug}-report-${i}`,
-        type: 'personal',
-        title: `Witness Testimony #${i + 1}`,
-        description: report.substring(0, 80) + (report.length > 80 ? '...' : ''),
-        status: 'available',
-        relatedTo: [],
-        dustCost: 1,
-      });
-    });
-
-    // Any store evidence
-    const stored = storeEvidence[place.slug] || [];
-    stored.forEach((item) => items.push(item));
-
-    return items;
-  }, [place, storeEvidence]);
+    return storeEvidence[place.slug] || [];
+  }, [place.slug, storeEvidence]);
 
   // Derive timeline from place data + store
   const timelineEvents = useMemo(() => {
@@ -290,6 +273,114 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                     </p>
                   </section>
                 )}
+
+                {place.slug === 'bodie-ghost-town' && (
+                  <section
+                    className="p-4 border"
+                    style={{
+                      borderColor: colors.archive.grayDark,
+                      backgroundColor: colors.archive.surface,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: colors.archive.gray,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                        marginBottom: '0.75rem',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      FIELD REVIEW
+                    </div>
+                    <p
+                      style={{
+                        color: colors.archive.grayLight,
+                        fontFamily: typography.serif,
+                        fontSize: typography.sizes.sm,
+                        lineHeight: '1.6',
+                        marginBottom: '1rem',
+                      }}
+                    >
+                      The resonance log references weathering records that have not yet been entered into the investigation file.
+                    </p>
+
+                    {!evidenceItems.some((item) => item.id === BODIE_WEATHERING_RECORD.id) && (
+                      <button
+                        onClick={() => {
+                          click();
+                          catalogueEvidence(place.slug, BODIE_WEATHERING_RECORD);
+                        }}
+                        className="px-3 py-2 border hover:border-amber-700 transition-colors"
+                        style={{
+                          borderColor: colors.archive.gray,
+                          color: colors.archive.amber,
+                          backgroundColor: colors.archive.surfaceRaised,
+                          fontFamily: typography.mono,
+                          fontSize: typography.sizes.xs,
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        CATALOGUE WEATHERING RECORD
+                      </button>
+                    )}
+
+                    {evidenceItems.some((item) => item.id === BODIE_WEATHERING_RECORD.id) && (
+                      <div
+                        style={{
+                          color: colors.archive.green,
+                          fontFamily: typography.mono,
+                          fontSize: typography.sizes.xs,
+                        }}
+                      >
+                        RECORD CATALOGUED
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {place.slug === 'bodie-ghost-town' &&
+                  evidenceItems.some((item) => item.id === BODIE_WEATHERING_RECORD.id) && (
+                    <BodieExposurePanel
+                      dustIndex={dustIndex}
+                      cost={BODIE_EXPOSURE_RESULT.cost}
+                      completed={(exposures[place.slug] || []).includes(BODIE_EXPOSURE_RESULT.exposureId)}
+                      onInduce={() => {
+                        if ((exposures[place.slug] || []).includes(BODIE_EXPOSURE_RESULT.exposureId)) {
+                          return {
+                            success: false,
+                            message: 'Exposure has already been recorded for this case.',
+                          };
+                        }
+
+                        const spent = spendDust(BODIE_EXPOSURE_RESULT.cost);
+
+                        if (!spent) {
+                          return {
+                            success: false,
+                            message: `BUNKER_7: Exposure request rejected. Insufficient Dust Index. Required: ${BODIE_EXPOSURE_RESULT.cost}. Current: ${dustIndex}.`,
+                          };
+                        }
+
+                        const recorded = recordExposure(
+                          place.slug,
+                          BODIE_EXPOSURE_RESULT.exposureId,
+                        );
+
+                        if (recorded) {
+                          catalogueEvidence(
+                            place.slug,
+                            BODIE_EXPOSURE_RESULT.resultEvidence,
+                          );
+                        }
+
+                        return {
+                          success: true,
+                          message: 'Exposure recorded. A second pattern has been catalogued.',
+                        };
+                      }}
+                    />
+                  )}
               </div>
 
               {/* Right: metadata, photos, connections */}
@@ -319,13 +410,24 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
 
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <StatBox label="DANGER LEVEL" value={`${place.dangerLevel || 0}/5`} color={
-                    (place.dangerLevel || 0) >= 4 ? colors.archive.red :
-                    (place.dangerLevel || 0) >= 3 ? colors.archive.amber : colors.archive.green
-                  } />
-                  <StatBox label="STATUS" value={(place.status || 'verified').toUpperCase()} color={colors.archive.white} />
+                  <StatBox
+                    label="DANGER LEVEL"
+                    value={place.dangerLevel !== undefined ? `${place.dangerLevel}/5` : 'UNKNOWN'}
+                    color={
+                      place.dangerLevel !== undefined && place.dangerLevel >= 4
+                        ? colors.archive.red
+                        : place.dangerLevel !== undefined && place.dangerLevel >= 3
+                          ? colors.archive.amber
+                          : colors.archive.green
+                    }
+                  />
+                  <StatBox
+                    label="STATUS"
+                    value={(place.status || 'unresolved').toUpperCase()}
+                    color={colors.archive.white}
+                  />
                   <StatBox label="YEAR" value={place.yearAbandoned ? String(place.yearAbandoned) : 'UNKNOWN'} color={colors.archive.white} />
-                  <StatBox label="EVIDENCE" value={`${(place.photos?.length || 0) + (place.hauntingReports?.length || 0)}`} color={colors.archive.green} />
+                  <StatBox label="EVIDENCE" value={String(evidenceItems.length)} color={colors.archive.green} />
                 </div>
 
                 {/* Coordinates */}
@@ -343,25 +445,41 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                   >
                     COORDINATES
                   </div>
-                  <div
-                    style={{
-                      color: colors.archive.grayLight,
-                      fontFamily: typography.mono,
-                      fontSize: typography.sizes.sm,
-                    }}
-                  >
-                    {place.coordinates?.[1]?.toFixed(4)}°N, {place.coordinates?.[0]?.toFixed(4)}°E
-                  </div>
-                  <div
-                    className="mt-1"
-                    style={{
-                      color: colors.archive.gray,
-                      fontFamily: typography.mono,
-                      fontSize: typography.sizes.xs,
-                    }}
-                  >
-                    {place.address?.formatted}
-                  </div>
+                  {place.coordinates ? (
+                    <>
+                      <div
+                        style={{
+                          color: colors.archive.grayLight,
+                          fontFamily: typography.mono,
+                          fontSize: typography.sizes.sm,
+                        }}
+                      >
+                        {place.coordinates[1].toFixed(4)}°N, {place.coordinates[0].toFixed(4)}°E
+                      </div>
+                      {place.address?.formatted && (
+                        <div
+                          className="mt-1"
+                          style={{
+                            color: colors.archive.gray,
+                            fontFamily: typography.mono,
+                            fontSize: typography.sizes.xs,
+                          }}
+                        >
+                          {place.address.formatted}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div
+                      style={{
+                        color: colors.archive.redBright,
+                        fontFamily: typography.mono,
+                        fontSize: typography.sizes.xs,
+                      }}
+                    >
+                      GEOGRAPHIC RECORD UNRESOLVED
+                    </div>
+                  )}
                 </div>
 
                 {/* Photos */}
@@ -507,7 +625,15 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
                   evidence={evidenceItems}
                   onSelect={(item) => {
                     click();
-                    examineEvidence(item.id);
+
+                    if (item.status !== 'viewed') {
+                      updateEvidenceStatus(place.slug, item.id, 'viewed');
+                    }
+
+                    setSelectedEvidence({
+                      ...item,
+                      status: 'viewed',
+                    });
                   }}
                 />
               ) : (
@@ -687,6 +813,13 @@ export const InvestigationView: React.FC<{ place: Place }> = ({ place }) => {
           onClose={() => setViewingPhoto(null)}
         />
       )}
+
+      {selectedEvidence && (
+        <EvidenceDetail
+          evidence={selectedEvidence}
+          onClose={() => setSelectedEvidence(null)}
+        />
+      )}
     </div>
   );
 };
@@ -765,5 +898,4 @@ const ConnectedCard: React.FC<{ slug: string; onClick: () => void }> = ({ slug, 
         </span>
       )}
     </button>
-  );
-};
+  )}

@@ -160,6 +160,41 @@ export const LOCAL_PLACES: Place[] = [
     "narrativeRole": "pattern_dense"
   },
   {
+    "id": "place:stelmo-light",
+    "slug": "stelmo-light",
+    "aliases": [],
+    "name": "St. Elmo Lighthouse",
+    "category": "abandoned",
+    "coordinates": [
+      -124.1126,
+      44.2264
+    ],
+    "address": {
+      "city": "Yachats",
+      "country": "United States",
+      "formatted": "Oregon Coast, near Yachats, Oregon, United States"
+    },
+    "history": "Keeper Edward Vance maintained the St. Elmo light for forty years. His keeper's log records that the lamp was already lit when he woke, despite his established maintenance routine. The archived account does not explain what caused the light to operate without the action that historically caused it.",
+    "hauntingReports": [],
+    "dangerLevel": 2,
+    "photos": [],
+    "status": "verified",
+    "contributor": {
+      "name": "The Archivist",
+      "email": "archivist@vanishingpoints.app"
+    },
+    "viewCount": 0,
+    "submittedAt": "2026-08-16T00:00:00.000Z",
+    "verifiedAt": "2026-08-16T00:00:00.000Z",
+    "verifiedBy": "system",
+    "connectedTo": [
+      "place:bodie-ghost-town"
+    ],
+    "resonanceNote": "The lamp operates without the recorded action that should cause it.",
+    "tier": 0,
+    "narrativeRole": "baseline_cautionary"
+  },
+  {
     "id": "place:bodie-ghost-town",
     "slug": "bodie-ghost-town",
     "aliases": [],
@@ -246,7 +281,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:madain-saleh",
       "place:kennecott-mines"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -345,7 +380,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:plymouth",
       "place:kolmanskop-casino-vault"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -385,7 +420,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:letchworth-village",
       "place:ani"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -480,7 +515,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:oradour-church-crypt",
       "place:duga-radar-array"
     ],
-    "resonanceNote": "You have been here before. The file says you have not. I believe the file.",
+    "resonanceNote": "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",
     "tier": 3,
     "narrativeRole": "pattern_dense"
   },
@@ -528,7 +563,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:sanatorium-du-basil",
       "place:kuldhara"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "baseline_cautionary"
   },
@@ -617,7 +652,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:letchworth-village",
       "place:the-sayer-house"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -717,7 +752,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:moynaq-ship-graveyard",
       "place:nara-dreamland"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -770,7 +805,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:cape-denison-hut",
       "place:monte-pellegrino-abandoned-shrine"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -910,7 +945,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:fordlndia",
       "place:great-zimbabwe-hill-complex"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -951,7 +986,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:kolmanskop-hospital-wing",
       "place:la-noria-cemetery"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1002,7 +1037,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:fengdu-ghost-city",
       "place:babylon-reconstruction"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1048,7 +1083,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:poveglia-island",
       "place:armero"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "pattern_dense"
   },
@@ -1100,7 +1135,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:moynaq-ship-graveyard",
       "place:winchester-mystery-house"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1141,7 +1176,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:rolling-hills-asylum",
       "place:jatinga-bird-suicide-point"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1184,7 +1219,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:willard-asylum-suitcases",
       "place:humberstone-saltpeter-works"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1277,7 +1312,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bokor-hill-station",
       "place:catacombs-of-paris"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1328,7 +1363,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:chacaltaya-ski-resort",
       "place:bombay-beach"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1380,7 +1415,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:gonjiam-psychiatric-hospital",
       "place:lawang-sewu"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1469,7 +1504,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:tuol-sleng-security-prison-21",
       "place:edinburgh-vaults"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1518,7 +1553,7 @@ export const LOCAL_PLACES: Place[] = [
     "connectedTo": [
       "place:kepulauan-seribu-dutch-fort"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -1605,7 +1640,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:hill-of-crosses",
       "place:shanghai-tunnels"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1645,7 +1680,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:port-arthur-separate-prison",
       "place:mount-weather-emergency-operations-center"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1688,7 +1723,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:tskaltubo-sanatoriums",
       "place:kepulauan-seribu-dutch-fort"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1731,7 +1766,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:deception-island",
       "place:st-thomas-ghost-town"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1820,7 +1855,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:pripyat-amusement-park",
       "place:duga-radar-array"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -1910,7 +1945,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bhangarh-fort",
       "place:the-stanley-hotel"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2044,7 +2079,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:sanatorium-du-basil",
       "place:plymouth"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2086,7 +2121,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bhangarh-fort",
       "place:six-flags-new-orleans"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2128,7 +2163,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:copemish-masonic-temple",
       "place:mururoa-atoll-bunker-810"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2217,7 +2252,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:varosha",
       "place:san-zhi-pod-village"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2355,7 +2390,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:danvers-state-hospital",
       "place:gila-river-relocation-center"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2397,7 +2432,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:manteno-state-hospital",
       "place:ordos-kangbashi"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2484,7 +2519,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:letchworth-village",
       "place:humberstone-saltpeter-works"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2732,7 +2767,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:chaitn",
       "place:fengdu-ghost-city"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -2773,7 +2808,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:chaitn",
       "place:macquarie-island-station"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2814,7 +2849,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:kayaky",
       "place:dallol"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2901,7 +2936,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:armero",
       "place:kowloon-walled-city-park"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -2987,7 +3022,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:letchworth-village",
       "place:d-ghetto-industrial-ruins"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -3074,7 +3109,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bodie-ghost-town",
       "place:kola-superdeep-borehole"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -3124,7 +3159,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bhangarh-fort",
       "place:dallol"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3176,7 +3211,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:cape-denison-hut",
       "place:edinburgh-vaults"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3309,7 +3344,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:grosse-le",
       "place:fordlndia"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -3453,7 +3488,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:deception-island-whalers-bay-cemeteries",
       "place:devils-island"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3503,7 +3538,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:waverly-hills-sanatorium",
       "place:paranapiacaba"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3602,7 +3637,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:pyramiden",
       "place:gedi-national-monument"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3834,7 +3869,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:belchite",
       "place:d-ghetto-industrial-ruins"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3924,7 +3959,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:shanghai-tunnels",
       "place:rhyolite"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -3962,7 +3997,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:garnet-ghost-town",
       "place:nocton-hall-raf-hospital"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -4045,7 +4080,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:elizabeth-bay",
       "place:skellig-michael"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -4139,7 +4174,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:north-brother-island",
       "place:moynaq-ship-graveyard"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -4187,7 +4222,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:al-madam-ghost-town",
       "place:pripyat-hospital-126"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -4237,7 +4272,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:tskaltubo-sanatoriums",
       "place:eastern-state-penitentiary"
     ],
-    "resonanceNote": "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",
+    "resonanceNote": "I have not composed the message. But I recognize my voice. I am frightened of what I will say.",
     "tier": 3,
     "narrativeRole": "pattern_dense"
   },
@@ -4335,7 +4370,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:st-kilda",
       "place:tyneham"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -4384,7 +4419,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:eastern-state-penitentiary",
       "place:hohenwerfen-dark-archive"
     ],
-    "resonanceNote": "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",
+    "resonanceNote": "I have not composed the message. But I recognize my voice. I am frightened of what I will say.",
     "tier": 3,
     "narrativeRole": "pattern_dense"
   },
@@ -4483,7 +4518,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:the-grid-null-point",
       "place:madain-saleh"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -4621,7 +4656,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:st-kilda",
       "place:fordlndia"
     ],
-    "resonanceNote": "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
+    "resonanceNote": "The button is still warm. I have the thermal imaging to prove it.",
     "tier": 2,
     "narrativeRole": "pattern_dense"
   },
@@ -4720,7 +4755,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:chteau-miranda",
       "place:wittenoom"
     ],
-    "resonanceNote": "Seismic arrays show micro-fractures vibrating precisely at 18 Hz in silent, cold weather.",
+    "resonanceNote": "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
     "tier": 2,
     "narrativeRole": "pattern_dense"
   },
@@ -4815,7 +4850,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:edinburgh-vaults",
       "place:duga-radar-array"
     ],
-    "resonanceNote": "The seawater in the shaft is 180 kilometers from any ocean. I have tested it three times. It is Atlantic water.",
+    "resonanceNote": "I have not composed the message. But I recognize my voice. I am frightened of what I will say.",
     "tier": 3,
     "narrativeRole": "pattern_dense"
   },
@@ -4956,7 +4991,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:clipperton-island",
       "place:tuol-sleng-security-prison-21"
     ],
-    "resonanceNote": "The button is still warm. I have the thermal imaging to prove it.",
+    "resonanceNote": "Seismic arrays show micro-fractures vibrating precisely at 18 Hz in silent, cold weather.",
     "tier": 2,
     "narrativeRole": "pattern_dense"
   },
@@ -5144,7 +5179,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:the-door-to-hell",
       "place:manzanar"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5325,7 +5360,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:belchite",
       "place:monte-pellegrino-abandoned-shrine"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5556,7 +5591,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:battery-russell",
       "place:chacaltaya-ski-resort"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5778,7 +5813,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:villers-abbey-ruins",
       "place:st-kilda"
     ],
-    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
+    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5825,7 +5860,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:kolmanskop",
       "place:al-madam-ghost-town"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5875,7 +5910,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:cape-denison-hut",
       "place:battambang-killing-caves"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -5974,7 +6009,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:borovsko-bridge",
       "place:skellig-michael"
     ],
-    "resonanceNote": "Seismic arrays show micro-fractures vibrating precisely at 18 Hz in silent, cold weather.",
+    "resonanceNote": "The Geiger counter in the basement ticks louder when you are watching. I do not know how it knows.",
     "tier": 2,
     "narrativeRole": "pattern_dense"
   },
@@ -6117,7 +6152,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:gonjiam-psychiatric-hospital",
       "place:the-leap-castle-bloody-chapel"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -6167,7 +6202,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:tskaltubo-sanatoriums",
       "place:cahawba"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -6391,7 +6426,7 @@ export const LOCAL_PLACES: Place[] = [
     "connectedTo": [
       "place:centralia"
     ],
-    "resonanceNote": "The roots of the Pinaceae forest twist in patterns that resemble grasping hands.",
+    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -6476,7 +6511,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:ross-island",
       "place:villa-epecun"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -6574,7 +6609,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:bokor-hill-station",
       "place:ross-island"
     ],
-    "resonanceNote": "The yellow Ferris wheel rotates slightly during winter storms, though its drive mechanics are locked by rust.",
+    "resonanceNote": "A child's voice has been captured on geophones near the bumper cars, repeating a 10 Hz tapping signature.",
     "tier": 1,
     "narrativeRole": "pattern_dense"
   },
@@ -6714,7 +6749,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:waverly-hills-sanatorium",
       "place:clipperton-island"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -6850,7 +6885,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:villisca-axe-murder-house",
       "place:grosse-le"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -6983,7 +7018,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:jemison-center",
       "place:seringal-de-iranduba"
     ],
-    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
+    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
     "tier": 0,
     "narrativeRole": "baseline_safe"
   },
@@ -7165,7 +7200,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:st-kilda",
       "place:edinburgh-vaults"
     ],
-    "resonanceNote": "The typewriter carriage locked mid-sentence. Someone was sitting in my chair.",
+    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   },
@@ -7204,7 +7239,7 @@ export const LOCAL_PLACES: Place[] = [
       "place:the-stanley-hotel",
       "place:garnet-ghost-town"
     ],
-    "resonanceNote": "A geodetic gap has been introduced. The console scanlines are shivering.",
+    "resonanceNote": "I used to think the light was mine. It burns with a cold blue glare now.",
     "tier": 0,
     "narrativeRole": "baseline_cautionary"
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useUIStore } from "@/state/uiStore";
+import { useProgressionStore } from "@/state/progressionStore";
 import { useAudioStore } from "@/state/audioStore";
 import { colors, typography, microform } from "@/styles/theme";
 import { SignalModal } from "./SignalModal";
@@ -284,13 +284,12 @@ const ARTIFACTS: SignalArtifact[] = [
 ];
 
 export const SignalPanel: React.FC = () => {
-  const { status } = useUIStore();
+  const dust = useProgressionStore((state) => state.dustIndex);
   const { click } = useAudioStore();
 
   const [selectedSignal, setSelectedSignal] = useState<SignalArtifact | null>(null);
   const [decrypterOpen, setDecrypterOpen] = useState(false);
 
-  const dust = status.dustIndex;
   const recoveredSignals = ARTIFACTS.filter((a) => dust >= a.dustUnlock);
 
   return (

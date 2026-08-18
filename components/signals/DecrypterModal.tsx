@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colors, typography, microform, shadows } from "@/styles/theme";
-import { useUIStore } from "@/state/uiStore";
+import { useProgressionStore } from "@/state/progressionStore";
 import { useAudioStore } from "@/state/audioStore";
 import { Cpu, RotateCcw, ShieldCheck, Activity, Lock, CheckCircle2, Radio } from "lucide-react";
 import { useSignalModulator } from "@/components/atlas/useSignalModulator";
@@ -89,7 +89,7 @@ const DECRYPTION_CHANNELS: DecryptionChannel[] = [
 ];
 
 export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
-  const { status, updateStatus } = useUIStore();
+  const { dustIndex, observerStability } = useProgressionStore();
   const { click, play } = useAudioStore();
 
   // Active Selected Channel state
@@ -180,9 +180,7 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
           });
           
           // Safely award Dust ONCE strictly upon active completion of the code-dial alignment [6]
-          updateStatus({
-            dustIndex: Math.min(100, useUIStore.getState().status.dustIndex + 6),
-          });
+          useProgressionStore.getState().addDust(6);
           
           play("success" as any); // Play locked validation tone
           return 100;
@@ -216,10 +214,9 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
       setEngageMessage("COAXIAL DISCHARGE! STATIC FEEDBACK DETECTED.");
       
       // Inflict cognitive strain penalty (+4 Dust, -10% Stability)
-      updateStatus({
-        dustIndex: Math.min(100, status.dustIndex + 4),
-        observerStability: Math.max(0, status.observerStability - 10),
-      });
+      const progression = useProgressionStore.getState();
+      progression.addDust(4);
+      progression.changeStability(-10);
       
       setTimeout(() => setEngageMessage(null), 3000);
     }
@@ -322,7 +319,7 @@ export const DecrypterModal: React.FC<DecrypterModalProps> = ({ onClose }) => {
                 Encrypted Radio Feeds
               </div>
               {DECRYPTION_CHANNELS.map((ch) => {
-                const isUnlocked = status.dustIndex >= ch.dustUnlock;
+                const isUnlocked = dustIndex >= ch.dustUnlock;
                 const isChDecrypted = decryptedIds.includes(ch.id);
                 const isSelected = ch.id === selectedChannelId;
 

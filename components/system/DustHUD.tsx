@@ -2,19 +2,20 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useUIStore, DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { colors, typography } from '@/styles/theme';
 
 export const DustHUD: React.FC = () => {
-  const { status } = useUIStore();
+  const { dustIndex, observerStability } = useProgressionStore();
 
-  const dustPct = Math.min(100, (status.dustIndex / DUST_THRESHOLDS.EXTREME) * 100);
-  const stabilityPct = status.observerStability;
+  const dustPct = Math.min(100, (dustIndex / DUST_THRESHOLDS.EXTREME) * 100);
+  const stabilityPct = observerStability;
 
   const dustColor =
-    status.dustIndex >= DUST_THRESHOLDS.EXTREME ? colors.archive.red :
-    status.dustIndex >= DUST_THRESHOLDS.HIGH ? colors.archive.redBright :
-    status.dustIndex >= DUST_THRESHOLDS.MODERATE ? colors.archive.amber :
+    dustIndex >= DUST_THRESHOLDS.EXTREME ? colors.archive.red :
+    dustIndex >= DUST_THRESHOLDS.HIGH ? colors.archive.redBright :
+    dustIndex >= DUST_THRESHOLDS.MODERATE ? colors.archive.amber :
     colors.archive.green;
 
   const stabilityColor =
@@ -43,7 +44,7 @@ export const DustHUD: React.FC = () => {
         >
           OBSERVER STATUS
         </span>
-        {status.dustIndex >= DUST_THRESHOLDS.HIGH && (
+        {dustIndex >= DUST_THRESHOLDS.HIGH && (
           <motion.span
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -62,7 +63,7 @@ export const DustHUD: React.FC = () => {
             DUST INDEX
           </span>
           <span style={{ color: dustColor, fontFamily: typography.mono, fontSize: typography.sizes.xs }}>
-            {status.dustIndex}
+            {dustIndex}
           </span>
         </div>
         <div className="h-1.5 w-full" style={{ backgroundColor: colors.archive.grayDark }}>
@@ -77,7 +78,7 @@ export const DustHUD: React.FC = () => {
         <div className="flex justify-between mt-1">
           {['LOW', 'MOD', 'HIGH', 'EXT'].map((label, i) => {
             const thresholds = [DUST_THRESHOLDS.LOW, DUST_THRESHOLDS.MODERATE, DUST_THRESHOLDS.HIGH, DUST_THRESHOLDS.EXTREME];
-            const active = status.dustIndex >= thresholds[i];
+            const active = dustIndex >= thresholds[i];
             return (
               <span
                 key={label}

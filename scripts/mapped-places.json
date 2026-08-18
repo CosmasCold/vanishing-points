@@ -1,14 +1,14 @@
 {
   "meta": {
     "generatedAt": "2026-08-04T23:59:15.303Z",
-    "totalPlaces": 159,
+    "totalPlaces": 160,
     "tierDistribution": {
-      "0": 38,
+      "0": 39,
       "1": 45,
       "2": 45,
       "3": 31
     },
-    "totalConnections": 744,
+    "totalConnections": 745,
     "totalUnlockConditions": 122,
     "totalResonanceNotes": 79
   },
@@ -190,6 +190,41 @@
         "message": "The dolls hang from the branches, eyes tracking movement. The canal carries too much static residue. Accumulate dust to land."
       }
     },
+    {
+  "id": "place:stelmo-light",
+  "slug": "stelmo-light",
+  "aliases": [],
+  "name": "St. Elmo Lighthouse",
+  "category": "abandoned",
+  "coordinates": [
+    -124.1126,
+    44.2264
+  ],
+  "address": {
+    "city": "Yachats",
+    "country": "United States",
+    "formatted": "Oregon Coast, near Yachats, Oregon, United States"
+  },
+  "history": "Keeper Edward Vance maintained the St. Elmo light for forty years. His keeper's log records that the lamp was already lit when he woke, despite his established maintenance routine. The archived account does not explain what caused the light to operate without the action that historically caused it.",
+  "hauntingReports": [],
+  "dangerLevel": 2,
+  "photos": [],
+  "status": "verified",
+  "contributor": {
+    "name": "The Archivist",
+    "email": "archivist@vanishingpoints.app"
+  },
+  "viewCount": 0,
+  "submittedAt": "2026-08-16T00:00:00.000Z",
+  "verifiedAt": "2026-08-16T00:00:00.000Z",
+  "verifiedBy": "system",
+  "connectedTo": [
+    "place:bodie-ghost-town"
+  ],
+  "resonanceNote": "The lamp operates without the recorded action that should cause it.",
+  "tier": 0,
+  "narrativeRole": "baseline_cautionary"
+},
     {
       "_id": {
         "oid": "6a68d28a0ce0117278ae7f5a"

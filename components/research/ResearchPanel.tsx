@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useUIStore, DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, microform } from '@/styles/theme';
 import { Shield, Sparkles, BookOpen, Cpu, Settings, Eye } from 'lucide-react';
@@ -82,7 +83,7 @@ Experienced investigators often report:
 ];
 
 export const ResearchPanel: React.FC = () => {
-  const { status } = useUIStore();
+  const { dustIndex: dust, observerStability: stability } = useProgressionStore();
   const { click, play } = useAudioStore();
   const [activeTab, setActiveTab] = useState<'ledger' | 'spectrometer' | 'convergence'>('ledger');
   
@@ -93,9 +94,6 @@ export const ResearchPanel: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
-
-  const dust = status.dustIndex;
-  const stability = status.observerStability;
 
   const dustLevel = dust >= DUST_THRESHOLDS.EXTREME ? 'EXTREME' : dust >= DUST_THRESHOLDS.HIGH ? 'HIGH' : dust >= DUST_THRESHOLDS.MODERATE ? 'MODERATE' : dust >= DUST_THRESHOLDS.LOW ? 'LOW' : 'NOMINAL';
   const stabilityLevel = stability >= STABILITY_THRESHOLDS.NOMINAL ? 'NOMINAL' : stability >= STABILITY_THRESHOLDS.STABLE ? 'STABLE' : stability >= STABILITY_THRESHOLDS.DEGRADED ? 'DEGRADED' : stability >= STABILITY_THRESHOLDS.CRITICAL ? 'CRITICAL' : 'UNSTABLE';

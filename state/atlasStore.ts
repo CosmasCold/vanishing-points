@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Place } from '@/types/places';
+import { LOCAL_PLACES } from '@/data/places';
 
 interface AtlasState {
   places: Place[];
@@ -20,7 +21,7 @@ interface AtlasState {
 }
 
 export const useAtlasStore = create<AtlasState>((set) => ({
-  places: [],
+  places: LOCAL_PLACES,
   selectedPlaceSlug: null,
   isLoading: false,
   error: null,
@@ -28,11 +29,30 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   filterStatus: null,
 
   setPlaces: (places) => set({ places }),
-  selectPlace: (slug) => set({ selectedPlaceSlug: slug }),
-  setLoading: (isLoading) => set({ isLoading }),
-  setError: (error) => set({ error }),
-  setFilterCategory: (filterCategory) => set({ filterCategory }),
-  setFilterStatus: (filterStatus) => set({ filterStatus }),
-  clearFilters: () => set({ filterCategory: null, filterStatus: null }),
-  clearError: () => set({ error: null }),
+
+  selectPlace: (slug) =>
+    set({ selectedPlaceSlug: slug }),
+
+  setLoading: (isLoading) =>
+    set({ isLoading }),
+
+  setError: (error) =>
+    set({ error }),
+
+  setFilterCategory: (filterCategory) =>
+    set({ filterCategory }),
+
+  setFilterStatus: (filterStatus) =>
+    set({ filterStatus }),
+
+  clearFilters: () =>
+    set({
+      filterCategory: null,
+      filterStatus: null,
+    }),
+
+  clearError: () =>
+    set({
+      error: null,
+    }),
 }));

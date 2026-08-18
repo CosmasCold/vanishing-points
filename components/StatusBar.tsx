@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { useUIStore, DUST_THRESHOLDS, STABILITY_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, spacing } from '@/styles/theme';
 
 export const StatusBar: React.FC = () => {
-  const { status, terminalOpen, setTerminalOpen } = useUIStore();
+  const { terminalOpen, setTerminalOpen, status } = useUIStore();
+  const { dustIndex, observerStability, atlasCoverage } = useProgressionStore();
   const { muted, toggleMute } = useAudioStore();
-  const { dustIndex, observerStability } = status;
 
   const dustColor =
     dustIndex >= DUST_THRESHOLDS.EXTREME ? colors.archive.red :
@@ -65,7 +66,7 @@ export const StatusBar: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <span style={{ color: colors.archive.gray }}>COVERAGE</span>
-          <span style={{ color: colors.archive.blue }}>{status.atlasCoverage} km²</span>
+          <span style={{ color: colors.archive.blue }}>{atlasCoverage} km²</span>
         </div>
 
         {status.activeAlerts > 0 && (

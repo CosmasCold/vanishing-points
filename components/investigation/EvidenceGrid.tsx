@@ -125,19 +125,6 @@ export const EvidenceGrid: React.FC<EvidenceGridProps> = ({ evidence, onSelect }
                 LOCKED: {unlockCondition.message}
               </p>
             )}
-
-            {!isLocked && !isViewed && (
-              <p
-                style={{
-                  color: colors.archive.amber,
-                  fontSize: typography.sizes.xs,
-                  marginTop: '0.5rem',
-                  fontFamily: typography.mono,
-                }}
-              >
-                COST: {unlockCondition?.value ?? item.dustCost ?? 1} DUST
-              </p>
-            )}
           </button>
         );
       })}

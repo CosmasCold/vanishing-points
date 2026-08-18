@@ -1,7 +1,7 @@
 // logic/commands/personalCache.ts
 import { CommandRegistry, CommandResult } from '../commandRegistry';
 import { usePersonalCacheStore } from '@/state/personalCacheStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useMediaStore } from '@/state/mediaStore';
 
 // Map your personal recordings to the game's Dust progression
@@ -20,8 +20,7 @@ export function registerPersonalCacheCommands(registry: CommandRegistry) {
     usage: 'drawer',
     aliases: ['cache', 'personal'],
     handler: (): CommandResult => {
-      const { status } = useUIStore.getState();
-      const dust = status?.dustIndex || 0;
+      const dust = useProgressionStore.getState().dustIndex;
       const { discoverCache } = usePersonalCacheStore.getState();
 
       let output = 'DESK DRAWER 7: PERSONAL CACHE\n═════════════════════════════\n';
@@ -50,8 +49,7 @@ export function registerPersonalCacheCommands(registry: CommandRegistry) {
     description: 'Play a personal cache recording',
     usage: 'play cache-<number>',
     handler: (args: string[]): CommandResult => {
-      const { status } = useUIStore.getState();
-      const dust = status?.dustIndex || 0;
+      const dust = useProgressionStore.getState().dustIndex;
       const { openMedia } = useMediaStore.getState();
 
       const target = args[0];

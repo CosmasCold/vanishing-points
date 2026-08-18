@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 import { useBootStore } from "@/state/bootStore";
 import { useUIStore } from "@/state/uiStore";
+import { getSharedAudioContext } from '@/lib/sharedAudioContext';
 
 /* ═══════════════════════════════════════════════════════════════
    AUDIO PATHS
@@ -323,8 +324,15 @@ export function BootSequence({ onPowerOn }: BootSequenceProps) {
   const playDegaussSound = useCallback(() => {
     if (typeof window === "undefined") return;
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContextClass();
+      const ctx = getSharedAudioContext();
+
+if (!ctx) {
+  return;
+}
+
+if (ctx.state === 'suspended') {
+  void ctx.resume().catch(() => {});
+}
       const now = ctx.currentTime;
       
       const osc = ctx.createOscillator();

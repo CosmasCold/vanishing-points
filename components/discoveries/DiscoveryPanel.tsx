@@ -3,14 +3,14 @@
 import React, { useMemo } from 'react';
 import { useAtlasStore } from '@/state/atlasStore';
 import { useInvestigationStore } from '@/state/investigationStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { colors, typography, microform } from '@/styles/theme';
 import { Shield, Activity, Lock, CheckCircle2, AlertTriangle, FileDigit } from 'lucide-react';
 
 export const DiscoveryPanel: React.FC = () => {
   const { places } = useAtlasStore();
   const { evidence, timelines, notes } = useInvestigationStore();
-  const { status } = useUIStore();
+  const { dustIndex, observerStability } = useProgressionStore();
 
   const investigatedSlugs = Object.keys(evidence).filter((k) => evidence[k]?.length > 0);
   const placesWithNotes = Object.keys(notes).filter((k) => notes[k]?.length > 0);
@@ -26,7 +26,7 @@ export const DiscoveryPanel: React.FC = () => {
     { label: 'EVIDENCE EXAMINED', value: `${totalEvidence} DOSSIERS`, color: colors.archive.green, desc: 'Analyzed archival materials' },
     { label: 'TEMPORAL DRIFT LOGS', value: `${totalTimelineEvents} MARKS`, color: colors.archive.redBright, desc: 'Chronological anomalies cataloged' },
     { label: 'INVESTIGATOR ANNOTATIONS', value: `${placesWithNotes.length} SECTORS`, color: colors.archive.grayLight, desc: 'Free-form observation sets saved' },
-    { label: 'ELECTROSTATIC LOAD', value: `${status.dustIndex}% DUST`, color: colors.archive.amber, desc: 'TIMELINE RESIDUE RESISTANCE PRESSURE' },
+    { label: 'ELECTROSTATIC LOAD', value: `${dustIndex}% DUST`, color: colors.archive.amber, desc: 'TIMELINE RESIDUE RESISTANCE PRESSURE' },
   ];
 
   // Overhaul achievements into highly threatening "Consensus Slip Threat Diagnostics"
@@ -52,13 +52,13 @@ export const DiscoveryPanel: React.FC = () => {
     {
       id: "LOG-04",
       label: "PARTICULATE OVERLOAD SENSING",
-      condition: status.dustIndex >= 25,
+      condition: dustIndex >= 25,
       desc: "Moderate Dust accumulation. Micro-fine ash has settled on the screen interior, blooming the phosphorus glow.",
     },
     {
       id: "LOG-05",
       label: "NOMINAL ANCHOR CALIBRATION",
-      condition: status.observerStability >= 90,
+      condition: observerStability >= 90,
       desc: "Cognitive stability sustained above 90%. Consensus reality remains cleanly locked in. For now.",
     },
     {

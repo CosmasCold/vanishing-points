@@ -18,6 +18,7 @@ import { registerAuditCommands } from './audit';
 
 import { registerSolsticeCommands } from './solstice';
 import { registerForgetCommands } from './forget';
+import { registerExposureCommands } from './exposure';
 import { registerSearchCommands } from './search';
 
 let commandsInitialized = false;
@@ -47,5 +48,6 @@ export function initializeCommands() {
 
   registerSolsticeCommands(registry);
   registerForgetCommands(registry);
+  registerExposureCommands(registry);
   registerSearchCommands(registry);
 }

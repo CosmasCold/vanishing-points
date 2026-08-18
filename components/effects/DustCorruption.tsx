@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { useUIStore, BUNKER7_THRESHOLDS } from '@/state/uiStore';
+import { BUNKER7_THRESHOLDS } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { microform } from '@/styles/theme';
 
 export const DustCorruption: React.FC = () => {
-  const { status } = useUIStore();
-  const dust = status.dustIndex;
+  const dust = useProgressionStore((state) => state.dustIndex);
 
   const corruption = useMemo(() => {
     if (dust >= BUNKER7_THRESHOLDS.UNSTABLE) {

@@ -2,18 +2,25 @@
 
 import React, { useEffect } from 'react';
 import { useEnvironmentStore } from '@/state/environmentStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 import { useTerminalStore } from '@/state/terminalStore';
 import { colors } from '@/styles/theme';
 
 export const ImpossibleChangeToast: React.FC = () => {
-  const { changes, checkForChanges, applyChange } = useEnvironmentStore();
-  const { status } = useUIStore();
+  const { checkForChanges, applyChange } = useEnvironmentStore();
+  const dustIndex = useProgressionStore((state) => state.dustIndex);
+  const observerStability = useProgressionStore(
+    (state) => state.observerStability
+  );
   const { addCommand } = useTerminalStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const candidates = checkForChanges(status.dustIndex, status.observerStability);
+      const candidates = checkForChanges(
+        dustIndex,
+        observerStability
+      );
+
       if (candidates.length > 0) {
         const change = candidates[0];
         applyChange(change.id);
@@ -30,7 +37,13 @@ export const ImpossibleChangeToast: React.FC = () => {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [status.dustIndex, status.observerStability, checkForChanges, applyChange, addCommand]);
+  }, [
+    dustIndex,
+    observerStability,
+    checkForChanges,
+    applyChange,
+    addCommand,
+  ]);
 
   // This component renders nothing. It is a silent watcher.
   return null;

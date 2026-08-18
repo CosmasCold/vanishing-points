@@ -1,6 +1,6 @@
 import { CommandRegistry } from '../commandRegistry';
 import { useSessionStore } from '@/state/sessionStore';
-import { useUIStore } from '@/state/uiStore';
+import { useProgressionStore } from '@/state/progressionStore';
 
 export function registerDailyCommands(registry: CommandRegistry) {
   registry.register({
@@ -59,17 +59,17 @@ export function registerDailyCommands(registry: CommandRegistry) {
     usage: 'today',
     handler: () => {
       const { sessionCount, inboxItems, lastSessionDate } = useSessionStore.getState();
-      const { status } = useUIStore.getState();
+      const { dustIndex, observerStability } = useProgressionStore.getState();
 
       let output = 'DAILY BRIEFING\n';
       output += '══════════════\n\n';
       output += `Session: ${sessionCount}\n`;
       output += `Date: ${lastSessionDate || 'Unknown'}\n`;
-      output += `Dust Index: ${status.dustIndex}\n`;
-      output += `Observer Stability: ${status.observerStability.toFixed(1)}%\n\n`;
+      output += `Dust Index: ${dustIndex}\n`;
+      output += `Observer Stability: ${observerStability.toFixed(1)}%\n\n`;
       output += `Inbox: ${inboxItems.length} items (${inboxItems.filter((i) => !i.read).length} unread)\n\n`;
 
-      if (status.dustIndex >= 30) {
+      if (dustIndex >= 30) {
         output += 'RECOMMENDATION: Perform grounding ritual before proceeding with new investigations.\n';
       } else {
         output += 'Status: Nominal. Proceed with investigations.\n';

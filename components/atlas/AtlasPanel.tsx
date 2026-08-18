@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useAtlasStore } from '@/state/atlasStore';
-import { fetchPlaces } from '@/data/places';
 import { PlaceDetail } from './PlaceDetail';
 import { colors, typography, microform } from '@/styles/theme';
 
@@ -16,52 +15,30 @@ function getDangerColor(level: number): string {
 export const AtlasPanel: React.FC = () => {
   const {
     places,
-    isLoading,
     selectedPlaceSlug,
     filterCategory,
     filterStatus,
-    setPlaces,
-    setLoading,
     selectPlace,
     setFilterCategory,
     setFilterStatus,
     clearFilters,
   } = useAtlasStore();
 
-  useEffect(() => {
-    if (places.length === 0) {
-      setLoading(true);
-      fetchPlaces().then((data) => {
-        setPlaces(data);
-        setLoading(false);
-      });
-    }
-  }, [places.length, setPlaces, setLoading]);
+  const selectedPlace = places.find(
+    (place) => place.slug === selectedPlaceSlug
+  );
 
-  const selectedPlace = places.find((p) => p.slug === selectedPlaceSlug);
-  const filtered = places.filter((p) => {
-    if (filterCategory && p.category !== filterCategory) return false;
-    if (filterStatus && p.status !== filterStatus) return false;
+  const filtered = places.filter((place) => {
+    if (filterCategory && place.category !== filterCategory) {
+      return false;
+    }
+
+    if (filterStatus && place.status !== filterStatus) {
+      return false;
+    }
+
     return true;
   });
-
-  if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div
-          style={{
-            color: microform.halogen,
-            fontFamily: typography.mono,
-            fontSize: typography.sizes.sm,
-            textShadow: microform.halogenText,
-          }}
-          className="animate-pulse"
-        >
-          SYNCHRONIZING ARCHIVE...
-        </div>
-      </div>
-    );
-  }
 
   if (selectedPlace) {
     return (
@@ -80,6 +57,7 @@ export const AtlasPanel: React.FC = () => {
         >
           ← RETURN TO ATLAS
         </button>
+
         <div className="flex-1 overflow-y-auto">
           <PlaceDetail place={selectedPlace} />
         </div>
@@ -92,11 +70,17 @@ export const AtlasPanel: React.FC = () => {
       {/* Stamped header */}
       <div
         className="mb-4 pb-3"
-        style={{ borderBottom: `1px solid ${microform.mahoganyLight}` }}
+        style={{
+          borderBottom: `1px solid ${microform.mahoganyLight}`,
+        }}
       >
         <div
           className="text-[10px] tracking-[0.15em] mb-3"
-          style={{ color: microform.halogen, fontFamily: typography.mono, textShadow: microform.halogenText }}
+          style={{
+            color: microform.halogen,
+            fontFamily: typography.mono,
+            textShadow: microform.halogenText,
+          }}
         >
           ATLAS FILTERS
         </div>
@@ -105,23 +89,50 @@ export const AtlasPanel: React.FC = () => {
         <div className="mb-3">
           <div
             className="mb-1.5"
-            style={{ color: colors.archive.gray, fontSize: '0.5625rem', fontFamily: typography.mono, letterSpacing: '0.06em' }}
+            style={{
+              color: colors.archive.gray,
+              fontSize: '0.5625rem',
+              fontFamily: typography.mono,
+              letterSpacing: '0.06em',
+            }}
           >
             CATEGORY
           </div>
+
           <div className="flex gap-1">
             {(['abandoned', 'haunted', 'both'] as const).map((cat) => (
               <button
                 key={cat}
-                onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+                onClick={() =>
+                  setFilterCategory(
+                    filterCategory === cat ? null : cat
+                  )
+                }
                 className="px-2 py-1 text-[10px] transition-all duration-150"
                 style={{
-                  border: `1px solid ${filterCategory === cat ? colors.archive.amber : microform.iron}`,
-                  color: filterCategory === cat ? colors.archive.amber : colors.archive.gray,
-                  background: filterCategory === cat ? `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)` : microform.iron,
+                  border: `1px solid ${
+                    filterCategory === cat
+                      ? colors.archive.amber
+                      : microform.iron
+                  }`,
+                  color:
+                    filterCategory === cat
+                      ? colors.archive.amber
+                      : colors.archive.gray,
+                  background:
+                    filterCategory === cat
+                      ? `linear-gradient(
+                          180deg,
+                          ${microform.mahogany} 0%,
+                          ${microform.iron} 100%
+                        )`
+                      : microform.iron,
                   fontFamily: typography.mono,
                   letterSpacing: '0.04em',
-                  boxShadow: filterCategory === cat ? `inset 0 0 8px ${microform.halogenDim}` : 'none',
+                  boxShadow:
+                    filterCategory === cat
+                      ? `inset 0 0 8px ${microform.halogenDim}`
+                      : 'none',
                 }}
               >
                 {cat.toUpperCase()}
@@ -134,28 +145,57 @@ export const AtlasPanel: React.FC = () => {
         <div className="mb-3">
           <div
             className="mb-1.5"
-            style={{ color: colors.archive.gray, fontSize: '0.5625rem', fontFamily: typography.mono, letterSpacing: '0.06em' }}
+            style={{
+              color: colors.archive.gray,
+              fontSize: '0.5625rem',
+              fontFamily: typography.mono,
+              letterSpacing: '0.06em',
+            }}
           >
             STATUS
           </div>
+
           <div className="flex flex-wrap gap-1">
-            {(['verified', 'sealed', 'whispered', 'mirage'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setFilterStatus(filterStatus === st ? null : st)}
-                className="px-2 py-1 text-[10px] transition-all duration-150"
-                style={{
-                  border: `1px solid ${filterStatus === st ? colors.archive.blue : microform.iron}`,
-                  color: filterStatus === st ? colors.archive.blue : colors.archive.gray,
-                  background: filterStatus === st ? `linear-gradient(180deg, ${microform.mahogany} 0%, ${microform.iron} 100%)` : microform.iron,
-                  fontFamily: typography.mono,
-                  letterSpacing: '0.04em',
-                  boxShadow: filterStatus === st ? 'inset 0 0 8px rgba(107, 143, 163, 0.15)' : 'none',
-                }}
-              >
-                {st.toUpperCase()}
-              </button>
-            ))}
+            {(['verified', 'sealed', 'whispered', 'mirage'] as const).map(
+              (st) => (
+                <button
+                  key={st}
+                  onClick={() =>
+                    setFilterStatus(
+                      filterStatus === st ? null : st
+                    )
+                  }
+                  className="px-2 py-1 text-[10px] transition-all duration-150"
+                  style={{
+                    border: `1px solid ${
+                      filterStatus === st
+                        ? colors.archive.blue
+                        : microform.iron
+                    }`,
+                    color:
+                      filterStatus === st
+                        ? colors.archive.blue
+                        : colors.archive.gray,
+                    background:
+                      filterStatus === st
+                        ? `linear-gradient(
+                            180deg,
+                            ${microform.mahogany} 0%,
+                            ${microform.iron} 100%
+                          )`
+                        : microform.iron,
+                    fontFamily: typography.mono,
+                    letterSpacing: '0.04em',
+                    boxShadow:
+                      filterStatus === st
+                        ? 'inset 0 0 8px rgba(107, 143, 163, 0.15)'
+                        : 'none',
+                  }}
+                >
+                  {st.toUpperCase()}
+                </button>
+              )
+            )}
           </div>
         </div>
 
@@ -163,7 +203,11 @@ export const AtlasPanel: React.FC = () => {
           <button
             onClick={clearFilters}
             className="transition-opacity hover:opacity-70"
-            style={{ color: colors.archive.gray, fontSize: typography.sizes.xs, fontFamily: typography.mono }}
+            style={{
+              color: colors.archive.gray,
+              fontSize: typography.sizes.xs,
+              fontFamily: typography.mono,
+            }}
           >
             [CLEAR FILTERS]
           </button>
@@ -174,12 +218,28 @@ export const AtlasPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         <div
           className="flex justify-between items-baseline mb-2 pb-1"
-          style={{ borderBottom: `1px solid ${microform.iron}` }}
+          style={{
+            borderBottom: `1px solid ${microform.iron}`,
+          }}
         >
-          <span style={{ color: colors.archive.gray, fontFamily: typography.mono, fontSize: '0.5625rem', letterSpacing: '0.06em' }}>
+          <span
+            style={{
+              color: colors.archive.gray,
+              fontFamily: typography.mono,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.06em',
+            }}
+          >
             LOCATIONS
           </span>
-          <span style={{ color: microform.halogen, fontFamily: typography.mono, fontSize: '0.5625rem' }}>
+
+          <span
+            style={{
+              color: microform.halogen,
+              fontFamily: typography.mono,
+              fontSize: '0.5625rem',
+            }}
+          >
             {filtered.length}
           </span>
         </div>
@@ -189,18 +249,26 @@ export const AtlasPanel: React.FC = () => {
             key={place.slug}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.02, duration: 0.2 }}
+            transition={{
+              delay: i * 0.02,
+              duration: 0.2,
+            }}
             onClick={() => selectPlace(place.slug)}
             className="w-full text-left transition-all duration-200"
             style={{
               padding: '0.625rem',
-              background: `linear-gradient(180deg, ${colors.archive.surfaceRaised} 0%, ${colors.archive.surface} 100%)`,
+              background: `linear-gradient(
+                180deg,
+                ${colors.archive.surfaceRaised} 0%,
+                ${colors.archive.surface} 100%
+              )`,
               border: `1px solid ${microform.iron}`,
               boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
             }}
             whileHover={{
               borderColor: microform.mahoganyLight,
-              boxShadow: `0 2px 8px rgba(0,0,0,0.4), inset 0 0 8px ${microform.halogenDim}`,
+              boxShadow: `0 2px 8px rgba(0,0,0,0.4),
+                inset 0 0 8px ${microform.halogenDim}`,
             }}
           >
             <div className="flex justify-between items-start">
@@ -213,6 +281,7 @@ export const AtlasPanel: React.FC = () => {
               >
                 {place.name}
               </span>
+
               <span
                 className="px-1.5 py-0.5 text-[10px] border shrink-0 ml-2"
                 style={{
@@ -225,6 +294,7 @@ export const AtlasPanel: React.FC = () => {
                 D{place.dangerLevel}
               </span>
             </div>
+
             <div
               className="flex justify-between mt-1.5"
               style={{
@@ -234,8 +304,18 @@ export const AtlasPanel: React.FC = () => {
                 letterSpacing: '0.04em',
               }}
             >
-              <span>{place.address?.country || 'UNKNOWN'}</span>
-              <span style={{ color: place.status !== 'verified' ? colors.archive.blue : colors.archive.gray }}>
+              <span>
+                {place.address?.country || 'UNKNOWN'}
+              </span>
+
+              <span
+                style={{
+                  color:
+                    place.status !== 'verified'
+                      ? colors.archive.blue
+                      : colors.archive.gray,
+                }}
+              >
                 {place.status.toUpperCase()}
               </span>
             </div>
@@ -245,3 +325,5 @@ export const AtlasPanel: React.FC = () => {
     </div>
   );
 };
+
+export default AtlasPanel;

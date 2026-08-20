@@ -17,6 +17,7 @@ import {
   isPlaceId,
   placeIdFromSlug,
 } from "@/lib/entityIds";
+import { validateCanonicalCaseRegistries } from "@/data/canonicalCaseRegistryValidation";
 
 type ValidationSeverity = "error" | "warning";
 
@@ -573,9 +574,30 @@ function printSummary(
   console.log("");
 }
 
+function validateCanonicalRegistries(): void {
+  const result = validateCanonicalCaseRegistries();
+
+  if (!result.valid) {
+    for (const mismatch of result.mismatches) {
+      const detail =
+        mismatch.progression !== undefined ||
+        mismatch.contract !== undefined
+          ? ` progression=${String(mismatch.progression)} contract=${String(mismatch.contract)}`
+          : '';
+
+      error(
+        "canonical-registry",
+        `${mismatch.field}: "${mismatch.slug}"${detail}`,
+      );
+    }
+  }
+}
+
 function main(): void {
   const places =
     LOCAL_PLACES;
+
+  validateCanonicalRegistries();
 
   const ids =
     new Set<string>();

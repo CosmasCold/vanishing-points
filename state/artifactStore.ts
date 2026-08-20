@@ -23,6 +23,41 @@ interface ArtifactState {
 // Lore-seeded anomalous artifacts in Carrel #7-B containment locker [108]
 const SEEDED_ARTIFACTS: PhysicalArtifact[] = [
   {
+    id: "art-vance-cassette",
+    name: "Keeper's Final Log Cassette",
+    description: "A black magnetic cassette containing Edward Vance's final recorded log from St. Elmo Light. The shell is aged but intact; the original label remains attached.",
+    material: "plastic" as any,
+    condition: "aged" as any,
+    weight: "38g",
+    dimensions: "10cm x 6.3cm x 1.2cm",
+    origin: "St. Elmo Light Station Archive",
+    dateRecovered: "1942-03-14",
+    recoveredBy: "Coast Guard District 13",
+    quarantineStatus: "cleared",
+    hasBeenWeighed: false,
+    hasBeenPhotographed: false,
+    hasBeenScanned: false,
+    relatedPlaceSlugs: ["stelmo-light"],
+    relatedEvidenceIds: [],
+    markings: [
+      {
+        id: "mark-vance-mechanical-wear",
+        label: "Mechanical Wear",
+        coordinates: { x: 28, y: 72 },
+        revealedInMode: "magnify",
+        clueText:
+          "Localized wear follows the cassette label / housing seam. The pattern is inconsistent with ordinary archival handling.",
+        type: "damage",
+        description:
+          "Localized mechanical wear around the cassette label and housing seam. The wear establishes a physical discrepancy, but not who or what produced it.",
+        location: "label / housing seam",
+        requiresMagnification: true,
+        requiresUV: false,
+      }
+    ]
+  },
+
+  {
     id: "art-solenoid",
     name: "Fused Solenoid Core (M-11A)",
     description: "An old telegraph contact coil recovered from the base of the St. Elmo light tower. The heavy copper wire wraps are completely fused together, as if struck by a localized high-voltage static surge.",

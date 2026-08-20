@@ -1,18 +1,17 @@
 import { CommandRegistry } from '../commandRegistry';
 import { useEvidenceBoardStore } from '@/state/evidenceBoardStore';
 import { useAtlasStore } from '@/state/atlasStore';
+import { normalizeBoardConnection, useProgressionStore } from '@/state/progressionStore';
+import { resolveBoardRelationship } from '@/lib/evidenceBoard/relationshipResolver';
 import { useUIStore } from '@/state/uiStore';
 
-export function registerEvidenceBoardCommands(
-  registry: CommandRegistry,
-) {
+export function registerEvidenceBoardCommands(registry: CommandRegistry) {
   registry.register({
     name: 'board',
     description: 'Open the Evidence Board',
     usage: 'board',
     handler: () => {
       useUIStore.getState().setActiveModule('evidence');
-
       return {
         output: 'Evidence Board initialized.',
         type: 'success' as const,
@@ -26,7 +25,6 @@ export function registerEvidenceBoardCommands(
     usage: 'focus <case-name>',
     handler: (args: string[]) => {
       const query = args.join(' ').toLowerCase();
-
       if (!query) {
         return {
           output: 'Usage: focus <case-name>',
@@ -35,7 +33,6 @@ export function registerEvidenceBoardCommands(
       }
 
       const { places } = useAtlasStore.getState();
-
       const place = places.find(
         (p) =>
           p.name.toLowerCase().includes(query) ||
@@ -49,13 +46,8 @@ export function registerEvidenceBoardCommands(
         };
       }
 
-      useEvidenceBoardStore
-        .getState()
-        .selectNode(place.slug);
-
-      useUIStore
-        .getState()
-        .setActiveModule('evidence');
+      useEvidenceBoardStore.getState().selectNode(place.slug);
+      useUIStore.getState().setActiveModule('evidence');
 
       return {
         output: `Focused: ${place.name}`,
@@ -66,8 +58,7 @@ export function registerEvidenceBoardCommands(
 
   registry.register({
     name: 'connect',
-    description:
-      'Create a suspected player connection between two cases',
+    description: 'Create a suspected or canonically established connection between two cases',
     usage: 'connect <case-a> <case-b>',
     handler: (args: string[]) => {
       if (args.length < 2) {
@@ -78,21 +69,15 @@ export function registerEvidenceBoardCommands(
       }
 
       const { places } = useAtlasStore.getState();
-
       const a = places.find(
         (p) =>
           p.slug === args[0] ||
-          p.name
-            .toLowerCase()
-            .includes(args[0].toLowerCase()),
+          p.name.toLowerCase().includes(args[0].toLowerCase()),
       );
-
       const b = places.find(
         (p) =>
           p.slug === args[1] ||
-          p.name
-            .toLowerCase()
-            .includes(args[1].toLowerCase()),
+          p.name.toLowerCase().includes(args[1].toLowerCase()),
       );
 
       if (!a || !b) {
@@ -104,56 +89,75 @@ export function registerEvidenceBoardCommands(
 
       if (a.slug === b.slug) {
         return {
-          output:
-            'A case cannot be connected to itself.',
+          output: 'A case cannot be connected to itself.',
           type: 'error' as const,
         };
       }
 
-      const edgeId = `player-${a.slug}-${b.slug}`;
-
-      const board =
-        useEvidenceBoardStore.getState();
-
-      const exists = board.playerEdges.some(
-        (edge) =>
-          (edge.source === a.slug &&
-            edge.target === b.slug) ||
-          (edge.source === b.slug &&
-            edge.target === a.slug),
+      const progression = useProgressionStore.getState();
+      const resolution = resolveBoardRelationship(
+        a.slug,
+        b.slug,
+        progression.investigatedPlaceIds,
       );
 
-      if (exists) {
+            const canonicalId = resolution.canonicalId;
+
+      const canonical =
+        resolution.canonical && canonicalId !== null;
+
+      const alreadyCanonical =
+        canonical &&
+        canonicalId !== null &&
+        progression.boardConnections.includes(canonicalId);
+
+      if (canonical && canonicalId !== null && !alreadyCanonical) {
+        progression.addBoardConnection(canonicalId);
+      }
+
+      const edgeId =
+        `player-${canonicalId ?? `${a.slug}-${b.slug}`}`;
+
+      const existing = useEvidenceBoardStore
+        .getState()
+        .playerEdges.find((edge) => edge.id === edgeId);
+
+      if (!existing) {
+        useEvidenceBoardStore.getState().addPlayerEdge({
+          id: edgeId,
+          source: a.slug,
+          target: b.slug,
+          type: canonical ? 'confirmed' : 'suspected',
+          label:
+            resolution.relationship?.relationship ??
+            'SUSPECTED',
+        });
+      }
+
+      if (canonical) {
         return {
           output:
-            `Player connection already exists: ${a.name} ↔ ${b.name}\n` +
-            `Status: SUSPECTED`,
-          type: 'warning' as const,
+            `Canonical connection recorded: ${a.name} ↔ ${b.name}\n` +
+            `Status: CONFIRMED\n` +
+            `Key: ${canonicalId}`,
+          type: alreadyCanonical
+            ? 'warning' as const
+            : 'success' as const,
         };
       }
 
-      /*
-       * IMPORTANT:
-       *
-       * This is deliberately a workspace/player relationship.
-       * It does NOT modify progressionStore.boardConnections.
-       *
-       * Canonical relationships may only be established by
-       * authored investigation/progression logic.
-       */
-      board.addPlayerEdge({
-        id: edgeId,
-        source: a.slug,
-        target: b.slug,
-        type: 'suspected',
-        label: 'SUSPECTED',
-      });
+      const reason =
+        resolution.reason === 'authored-proposed'
+          ? 'The authored relationship is still proposed.'
+          : resolution.reason === 'case-not-investigated'
+            ? 'Both cases must be investigated before this source relationship becomes canonical.'
+            : 'No authored relationship matches these cases.';
 
       return {
         output:
           `Player connection recorded: ${a.name} ↔ ${b.name}\n` +
           `Status: SUSPECTED\n` +
-          `Key: ${edgeId}`,
+          `${reason}`,
         type: 'success' as const,
       };
     },
@@ -161,8 +165,7 @@ export function registerEvidenceBoardCommands(
 
   registry.register({
     name: 'disconnect',
-    description:
-      'Remove a player-created connection',
+    description: 'Remove a player-created connection',
     usage: 'disconnect <edge-id>',
     handler: (args: string[]) => {
       const id = args[0];
@@ -174,37 +177,34 @@ export function registerEvidenceBoardCommands(
         };
       }
 
-      const board =
-        useEvidenceBoardStore.getState();
+      const board = useEvidenceBoardStore.getState();
+      const edge = board.playerEdges.find((candidate) => candidate.id === id);
+      const canonicalId = edge
+        ? `${edge.source}::${edge.target}`
+        : id.replace(/^player-/, '').replaceAll('-', '::');
 
-      const edge = board.playerEdges.find(
-        (candidate) => candidate.id === id,
-      );
+      const progression = useProgressionStore.getState();
+      const normalizedId = normalizeBoardConnection(canonicalId);
+      const isCanonical = progression.boardConnections.includes(normalizedId);
+      const removedCanonical = isCanonical
+        ? progression.removeBoardConnection(normalizedId)
+        : false;
 
-      if (!edge) {
+      if (edge) {
+        board.removePlayerEdge(id);
+      }
+
+      if (!removedCanonical && !edge) {
         return {
-          output:
-            `Player connection not found: ${id}`,
+          output: `Connection not found: ${id}`,
           type: 'warning' as const,
         };
       }
 
-      /*
-       * IMPORTANT:
-       *
-       * Removing a player relationship must NEVER mutate
-       * canonical progression.
-       *
-       * Canonical boardConnections are owned exclusively by
-       * progressionStore and can only be changed by
-       * legitimate investigation/progression logic.
-       */
-      board.removePlayerEdge(id);
-
       return {
-        output:
-          `Player connection removed: ${edge.source} ↔ ${edge.target}\n` +
-          `Key: ${id}`,
+        output: removedCanonical
+          ? `Canonical connection removed: ${normalizedId}`
+          : `Player connection removed: ${id}`,
         type: 'success' as const,
       };
     },

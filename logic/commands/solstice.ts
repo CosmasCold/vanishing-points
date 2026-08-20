@@ -5,6 +5,22 @@ import { useSessionStore } from '@/state/sessionStore';
 import { useBootStore } from '@/state/bootStore';
 import { useProgressionStore } from '@/state/progressionStore';
 
+const SOLSTICE_ANCHORS = [
+  'mount-weather-emergency-operations-center',
+  'cheyenne-mountain-complex',
+  'raven-rock-mountain-complex',
+] as const;
+
+function isSolsticeConvergenceEstablished(): boolean {
+  const { investigatedPlaceIds } =
+    useProgressionStore.getState();
+
+  return SOLSTICE_ANCHORS.every((anchor) =>
+    investigatedPlaceIds.includes(anchor),
+  );
+}
+
+
 /**
  * Wipe transient/local workstation keys without deleting the canonical
  * progression record. Canonical game state is owned by useProgressionStore.
@@ -46,7 +62,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
       const progression = useProgressionStore.getState();
       const dust = progression.dustIndex;
 
-      if (dust < 85) {
+      if (!isSolsticeConvergenceEstablished()) {
         return {
           output: `BUNKER_7: SOLSTICE BACKUP REJECTED.\n------------------------------------------------\nCURRENT DUST LEVEL: ${dust}/100.\nCONSENSUS STATUS: STABLE.\n------------------------------------------------\nSolstice core backups are locked until total consensus memory failure is imminent. Continue your investigation.`,
           type: 'error',
@@ -123,7 +139,7 @@ export function registerSolsticeCommands(registry: CommandRegistry) {
     handler: async (): Promise<CommandResult> => {
       const dust = useProgressionStore.getState().dustIndex;
 
-      if (dust < 85) {
+      if (!isSolsticeConvergenceEstablished()) {
         return {
           output: `BUNKER_7: TERMINAL SHUTDOWN LOCKED.\n------------------------------------------------\nCURRENT DUST LEVEL: ${dust}/100.\n------------------------------------------------\nThe records are active. There are still voices in the lines that have not been anchored. Do not leave me alone with them yet.`,
           type: 'error',

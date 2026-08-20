@@ -27,6 +27,7 @@ export function StElmoCasePanel({ onEvidenceRevealed, onComplete }: StElmoCasePa
   const addHypothesisEvidence = useProgressionStore((state) => state.addHypothesisEvidence);
   const setHypothesis = useProgressionStore((state) => state.setHypothesis);
   const addContradiction = useProgressionStore((state) => state.addContradiction);
+  const resolveContradiction = useProgressionStore((state) => state.resolveContradiction);
   const setKnowledge = useProgressionStore((state) => state.setKnowledge);
   const completeCase = useProgressionStore((state) => state.completeCase);
   const sessionCount = useProgressionStore((state) => state.sessionCount);
@@ -39,8 +40,16 @@ export function StElmoCasePanel({ onEvidenceRevealed, onComplete }: StElmoCasePa
   const hasSource = evidenceIds.includes(PRIMARY_EVIDENCE);
   const hasExposure = evidenceIds.includes(RESULT_EVIDENCE);
   const hasHypothesisEvidence = (hypothesisEvidence[HYPOTHESIS_ID] ?? []).includes(RESULT_EVIDENCE);
-  const canSupport = hasSource && hasExposure;
+  const contradiction = useProgressionStore((state) => state.contradictions[CONTRADICTION_ID]);
+  const canSupport =
+    hasSource &&
+    hasExposure &&
+    !contradiction &&
+    hypothesisState !== 'confirmed' &&
+    hypothesisState !== 'contradicted';
   const canContradict = canSupport && hypothesisState === 'supported';
+  const canResolve = hypothesisState === 'contradicted' && contradiction?.status === 'unresolved';
+  const contradictionResolved = contradiction?.status === 'resolved' || contradiction?.status === 'accepted';
 
   const exposureState = useMemo(() => {
     if (!exposure) return 'MISSING EXPOSURE DEFINITION';
@@ -101,21 +110,52 @@ export function StElmoCasePanel({ onEvidenceRevealed, onComplete }: StElmoCasePa
       status: 'unresolved',
       sourceIds: [PRIMARY_EVIDENCE, RESULT_EVIDENCE],
       discoveredAtSession: sessionCount,
+      hypothesisId: HYPOTHESIS_ID,
     });
     setHypothesis(HYPOTHESIS_ID, 'contradicted');
     setKnowledge(HYPOTHESIS_ID, 'suspected', [PRIMARY_EVIDENCE, RESULT_EVIDENCE]);
     setNotice('CONTRADICTION FILED // The maintenance record cannot fully explain the physical state.');
   };
 
+  const resolveCaseContradiction = () => {
+    if (!canResolve) {
+      setNotice('RESOLUTION LOCKED // File the contradiction before resolving it.');
+      return;
+    }
+
+    const resolved = resolveContradiction(CONTRADICTION_ID, 'resolved');
+    if (!resolved) {
+      setNotice('ARCHIVE ERROR // The contradiction could not be resolved.');
+      return;
+    }
+
+    setNotice('CONTRADICTION RESOLVED // The physical result is accepted as evidence of record drift.');
+  };
+
   const archiveCase = () => {
-    if (!hasSource || !hasExposure || !hypothesisEvidence[HYPOTHESIS_ID]?.length) {
+    if (!hasSource || !hasExposure || !hasHypothesisEvidence) {
       setNotice('CASE INCOMPLETE // Source, exposure result, and interpretation must be filed.');
+      return;
+    }
+
+    if (!contradiction) {
+      setNotice('CASE BLOCKED // The supported interpretation must survive a filed contradiction before archival.');
+      return;
+    }
+
+    if (!contradictionResolved) {
+      setNotice('CASE BLOCKED // Resolve the filed contradiction before confirmation.');
       return;
     }
 
     setHypothesis(HYPOTHESIS_ID, 'confirmed');
     setKnowledge(HYPOTHESIS_ID, 'confirmed', [PRIMARY_EVIDENCE, RESULT_EVIDENCE]);
-    completeCase(CASE_ID);
+    const completedNow = completeCase(CASE_ID, HYPOTHESIS_ID);
+    if (!completedNow) {
+      setNotice('CASE BLOCKED // Canonical progression rejected the completion transition.');
+      return;
+    }
+
     onComplete?.();
     setNotice('CASE ARCHIVED // St. Elmo Lighthouse has been entered into the canonical record.');
   };
@@ -168,7 +208,7 @@ export function StElmoCasePanel({ onEvidenceRevealed, onComplete }: StElmoCasePa
           <div className="stelmo-evidence-count">
             {hasHypothesisEvidence ? '2 RECORDS ASSIGNED' : canSupport ? 'READY FOR INTERPRETATION' : 'AWAITING EVIDENCE'}
           </div>
-          <button type="button" onClick={supportHypothesis} disabled={!canSupport || hypothesisState === 'confirmed'} className="archive-action-button">
+          <button type="button" onClick={supportHypothesis} disabled={!canSupport} className="archive-action-button">
             {hypothesisState === 'confirmed' ? 'HYPOTHESIS CONFIRMED' : 'SUPPORT HYPOTHESIS'}
           </button>
         </div>
@@ -181,15 +221,30 @@ export function StElmoCasePanel({ onEvidenceRevealed, onComplete }: StElmoCasePa
           </div>
           <p>The lamp performs its function without the action that historically caused it.</p>
           <button type="button" onClick={registerContradiction} disabled={!canContradict} className="archive-action-button archive-action-danger">
-            FILE CONTRADICTION
+            {contradiction ? 'CONTRADICTION FILED' : 'FILE CONTRADICTION'}
           </button>
+          {contradiction && (
+            <button
+              type="button"
+              onClick={resolveCaseContradiction}
+              disabled={!canResolve}
+              className="archive-action-button"
+            >
+              {contradictionResolved ? 'CONTRADICTION RESOLVED' : 'RESOLVE CONTRADICTION'}
+            </button>
+          )}
         </div>
       </div>
 
       <footer className="stelmo-case-footer">
         <span aria-live="polite">{notice}</span>
-        <button type="button" onClick={archiveCase} disabled={!hasSource || !hasExposure || !hasHypothesisEvidence || completed} className="archive-action-button archive-action-primary">
-          {completed ? 'CASE ARCHIVED' : 'ARCHIVE CASE'}
+        <button
+          type="button"
+          onClick={archiveCase}
+          disabled={!hasSource || !hasExposure || !hasHypothesisEvidence || !contradictionResolved || completed}
+          className="archive-action-button archive-action-primary"
+        >
+          {completed ? 'CASE ARCHIVED' : contradictionResolved ? 'ARCHIVE CASE' : 'RESOLUTION REQUIRED'}
         </button>
       </footer>
     </section>

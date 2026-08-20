@@ -1,0 +1,86 @@
+/**
+ * Vanishing Points
+ * Shared canonical case contract.
+ *
+ * This file defines the common shape for authored investigation cases.
+ * It is deliberately independent of runtime progression and place exposure.
+ */
+
+export type CanonicalAct = 1 | 2 | 3 | 4 | 5;
+
+export type CanonicalPhase =
+  | 'GROUND STATE'
+  | 'ERASED LIVES'
+  | 'TEMPORAL BLEED'
+  | 'THE SILENCE'
+  | 'CONVERGENCE';
+
+export type CaseContentStatus =
+  | 'proposed'
+  | 'approved-outline'
+  | 'authored-source';
+
+export interface CanonicalEvidenceSpec {
+  id: string;
+  title: string;
+  description: string;
+  kind: string;
+  required?: boolean;
+}
+
+export interface CanonicalCaseConnection {
+  targetCase: string;
+  relationship: string;
+  description: string;
+}
+
+export interface CanonicalHypothesis {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface CanonicalCompletionContract {
+  requiredEvidence: string[];
+  requiredHypothesisEvidence: string[];
+  requiredBoardConnections: string[];
+  requiredKnowledge: string[];
+  requiredContradictions: string[];
+  status: 'unpopulated' | 'authored-source';
+}
+
+export interface CanonicalCaseNarrative {
+  purpose: string;
+  playerAssumption?: string;
+  baselineTruth?: string;
+  anomaly?: string;
+  falseLead?: string;
+  discoveryAction?: string;
+  conclusion?: string;
+  payoff?: string;
+  recontextualization?: string;
+}
+
+export interface CanonicalCaseDefinition {
+  order: number;
+  act: CanonicalAct;
+  phase: CanonicalPhase;
+  slug: string;
+  name: string;
+  contentStatus: CaseContentStatus;
+
+  narrative: CanonicalCaseNarrative;
+
+  evidence?: CanonicalEvidenceSpec[];
+  hypotheses?: CanonicalHypothesis[];
+  contradictions?: string[];
+  knowledge?: string[];
+  connections?: CanonicalCaseConnection[];
+
+  completion: CanonicalCompletionContract;
+
+  special?: {
+    type: 'centroid-convergence';
+    anchors: string[];
+  };
+}

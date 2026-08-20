@@ -1,8 +1,13 @@
 import type { Place } from '@/types/places';
-import type { ProgressionState } from '@/state/progressionStore';
+import {
+  normalizeBoardConnection,
+  type ProgressionState,
+} from '@/state/progressionStore';
 import type { EvidenceItem } from '@/types/investigation';
 import {
+  CANONICAL_CASES,
   getCanonicalCase,
+  type CanonicalAct,
   type CanonicalCase,
 } from '@/data/canonicalProgression';
 
@@ -24,8 +29,9 @@ import {
 /**
  * Canonical progression fields required by the access evaluator.
  *
- * ProgressionState is the authoritative source for Dust and investigation
- * history.
+ * ProgressionState is the authoritative source for canonical investigation
+ * history and epistemic state. Dust remains available here only for the
+ * separate geographic Place-access evaluator.
  *
  * `investigatedSlugs` remains optional only as a migration compatibility
  * projection for callers that have not yet been moved off the legacy UI store.
@@ -38,7 +44,16 @@ import {
  */
 export type InvestigationAccessStatus = Pick<
   ProgressionState,
-  'dustIndex' | 'investigatedPlaceIds'
+  | 'dustIndex'
+  | 'investigatedPlaceIds'
+  | 'completedCaseIds'
+  | 'discoveredEvidenceIds'
+  | 'analysedEvidenceIds'
+  | 'boardConnections'
+  | 'hypotheses'
+  | 'hypothesisEvidence'
+  | 'knowledge'
+  | 'contradictions'
 > & {
   investigatedSlugs?: string[];
 };
@@ -266,66 +281,157 @@ function evaluateCanonicalDefinitionAccess(
   const gate = definition.gate;
 
   switch (gate.type) {
-    case 'dust': {
-      const required = gate.value;
+    case 'act': {
+      /*
+       * MIGRATION RULE
+       *
+       * Historical case definitions used Dust thresholds as narrative gates.
+       * Those thresholds are no longer consulted.
+       *
+       * Act I is the authored starting frontier and remains available.
+       * For Acts II-IV, legacy Dust-gated cases are provisionally available
+       * when every case in the immediately preceding act is complete.
+       *
+       * This is an INTERMEDIATE migration state, not the final epistemic
+       * gate design. Individual cases will later receive authored
+       * knowledge/evidence/relationship requirements as the lore audit
+       * resolves them. We must not invent those requirements prematurely.
+       */
+      if (gate.act === 1) {
+        return {
+          unlocked: true,
+          reason: '',
+        };
+      }
+
+      const previousAct = (gate.act - 1) as CanonicalAct;
+      const previousActCases = CANONICAL_CASES.filter(
+        (candidate) => candidate.act === previousAct,
+      );
+
+      const completed = previousActCases.filter((candidate) =>
+        context.status.completedCaseIds.includes(candidate.slug),
+      );
 
       const unlocked =
-        context.status.dustIndex >= required;
+        previousActCases.length > 0 &&
+        completed.length === previousActCases.length;
 
       return {
         unlocked,
         reason: unlocked
           ? ''
-          : `Requires Dust Index ${required}.`,
+          : `Requires completion of the ${previousActCases.length} canonical cases in Act ${previousAct}.`,
       };
     }
 
-    case 'centroid': {
+    case 'convergence': {
       /*
-       * The Grid Null Point is not a normal Dust-gated case.
+       * THE GRID NULL POINT IS AN EPISTEMIC GATE.
        *
-       * It materializes only after the three authored geographic anchors
-       * have been investigated:
+       * The canon requires:
+       *   1. all three military anchors established
+       *   2. the three correct Board relationships
+       *   3. the Signal hypothesis supported/confirmed
+       *   4. evidence attached to that hypothesis
        *
-       *   Mount Weather
-       *   Cheyenne Mountain
-       *   Raven Rock
-       *
-       * We use canonical investigatedPlaceIds here because the canonical
-       * progression store owns investigation history.
+       * This deliberately reads canonical progression state only.
        */
-      const missingAnchors =
-        gate.anchors.filter(
-          (anchor) =>
-            !getInvestigatedPlaceIds(
-              context
-            ).includes(anchor)
+      const investigated = getInvestigatedPlaceIds(context);
+
+      const missingAnchors = gate.anchors.filter(
+        (anchor) => !investigated.includes(anchor),
+      );
+
+      const boardConnections = new Set(
+        context.status.boardConnections.map((connection) =>
+          normalizeBoardConnection(connection),
+        ),
+      );
+
+      const requiredConnections = gate.triangleConnections.map(
+        ([source, target]) =>
+          normalizeBoardConnection(`${source}::${target}`),
+      );
+
+      const missingConnections =
+        requiredConnections.filter(
+          (required) => !boardConnections.has(required),
         );
 
+      const hypothesis =
+        context.status.hypotheses[gate.signalHypothesisId];
+
+      const hypothesisStatus =
+        typeof hypothesis === 'object' &&
+        hypothesis !== null
+          ? String(
+              (hypothesis as {
+                status?: unknown;
+                state?: unknown;
+              }).status ??
+                (hypothesis as {
+                  status?: unknown;
+                  state?: unknown;
+                }).state ??
+                '',
+            ).toLowerCase()
+          : '';
+
+      const signalSupported =
+        hypothesisStatus === 'supported' ||
+        hypothesisStatus === 'confirmed';
+
+      const hypothesisEvidence =
+        context.status.hypothesisEvidence[
+          gate.signalHypothesisId
+        ] ?? [];
+
+      const evidenceVerified =
+        hypothesisEvidence.length > 0;
+
       const unlocked =
-        missingAnchors.length === 0;
+        missingAnchors.length === 0 &&
+        missingConnections.length === 0 &&
+        signalSupported &&
+        evidenceVerified;
 
-      return {
-        unlocked,
-        reason: unlocked
-          ? ''
-          : `Requires reconstruction of the three military anchor sites. Missing ${missingAnchors.length} anchor investigation${
-              missingAnchors.length === 1
-                ? ''
-                : 's'
-            }.`,
-      };
-    }
+      if (unlocked) {
+        return {
+          unlocked: true,
+          reason: '',
+        };
+      }
 
-    default: {
-      const exhaustive: never = gate;
+      const blockers: string[] = [];
+
+      if (missingAnchors.length > 0) {
+        blockers.push(
+          `${missingAnchors.length} anchor investigation${
+            missingAnchors.length === 1 ? '' : 's'
+          }`,
+        );
+      }
+
+      if (missingConnections.length > 0) {
+        blockers.push(
+          `${missingConnections.length} geodetic Board relationship${
+            missingConnections.length === 1 ? '' : 's'
+          }`,
+        );
+      }
+
+      if (!signalSupported) {
+        blockers.push('supported Signal hypothesis');
+      }
+
+      if (!evidenceVerified) {
+        blockers.push('evidence attached to the Signal hypothesis');
+      }
 
       return {
         unlocked: false,
-        reason:
-          `UNSUPPORTED CASE GATE: ${String(
-            exhaustive
-          )}`,
+        reason: `Grid Null Point convergence incomplete: ${blockers.join(', ')}.`,
       };
     }
   }

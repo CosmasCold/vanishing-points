@@ -69,9 +69,20 @@ export interface Act1CaseSpec {
     status: ContentStatus;
   };
 
+  /**
+   * Canonical case-completion contract.
+   *
+   * The optional fields are deliberately additive. They do not become
+   * requirements until an individual case explicitly authors them and its
+   * completion status is promoted to `source`.
+   */
   completion: {
     requiredEvidence: string[];
     requiredHypothesis: string;
+    requiredHypothesisEvidence?: string[];
+    requiredBoardConnections?: string[];
+    requiredKnowledge?: string[];
+    requiredContradictions?: string[];
     status: ContentStatus;
   };
 

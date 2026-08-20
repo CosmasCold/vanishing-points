@@ -447,7 +447,18 @@ export const InvestigationsPanel: React.FC = () => {
   const { places } = useAtlasStore();
   const { evidence, notes, openInvestigation } = useInvestigationStore();
   const { setActiveModule } = useUIStore();
-  const { dustIndex, investigatedPlaceIds } = useProgressionStore();
+  const {
+    dustIndex,
+    investigatedPlaceIds,
+    completedCaseIds,
+    discoveredEvidenceIds,
+    analysedEvidenceIds,
+    boardConnections,
+    hypotheses,
+    hypothesisEvidence,
+    knowledge,
+    contradictions,
+  } = useProgressionStore();
   const { play } = useAudioStore();
 
   const cases = useMemo<CaseView[]>(() => {
@@ -455,6 +466,14 @@ export const InvestigationsPanel: React.FC = () => {
       status: {
         dustIndex,
         investigatedPlaceIds,
+        completedCaseIds,
+        discoveredEvidenceIds,
+        analysedEvidenceIds,
+        boardConnections,
+        hypotheses,
+        hypothesisEvidence,
+        knowledge,
+        contradictions,
       },
       places,
       evidence,
@@ -575,6 +594,14 @@ export const InvestigationsPanel: React.FC = () => {
     places,
     dustIndex,
     investigatedPlaceIds,
+    completedCaseIds,
+    discoveredEvidenceIds,
+    analysedEvidenceIds,
+    boardConnections,
+    hypotheses,
+    hypothesisEvidence,
+    knowledge,
+    contradictions,
     evidence,
     notes,
   ]);

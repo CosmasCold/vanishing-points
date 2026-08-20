@@ -9,7 +9,8 @@
  * IMPORTANT:
  * - This file defines authored narrative progression only.
  * - Atlas/place data remains responsible for geographic metadata.
- * - Dust thresholds are authored exposure gates from the dossier.
+ * - Historical Dust thresholds are retained as migration metadata only.
+ *   Dust is observer exposure, not narrative progression.
  * - The five LEGACY cases at the bottom are retained in the corpus but are NOT
  *   part of the current 36-case narrative spine.
  */
@@ -23,16 +24,45 @@ export type CanonicalAct =
 
 export type CanonicalGate =
   | {
-      type: 'dust';
-      value: number;
+      /**
+       * Provisional migration gate for an act.
+       *
+       * Legacy Dust thresholds previously attached to individual cases are
+       * intentionally not consulted. Until each case receives its authored
+       * epistemic gate, cases inherit their act's availability frontier.
+       */
+      type: 'act';
+      act: CanonicalAct;
     }
   | {
-      type: 'centroid';
+      /**
+       * Final Grid Null Point convergence.
+       *
+       * The Null Point is not unlocked by geography alone. The player must
+       * establish the three anchors, build the canonical geodetic triangle,
+       * support the Signal hypothesis, and provide evidence for that hypothesis.
+       */
+      type: 'convergence';
       anchors: readonly [
         'mount-weather-emergency-operations-center',
         'cheyenne-mountain-complex',
         'raven-rock-mountain-complex',
       ];
+      triangleConnections: readonly [
+        readonly [
+          'mount-weather-emergency-operations-center',
+          'cheyenne-mountain-complex',
+        ],
+        readonly [
+          'cheyenne-mountain-complex',
+          'raven-rock-mountain-complex',
+        ],
+        readonly [
+          'raven-rock-mountain-complex',
+          'mount-weather-emergency-operations-center',
+        ],
+      ];
+      signalHypothesisId: 'hyp-02-signal';
     };
 
 export interface CanonicalCase {
@@ -66,7 +96,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'stelmo-light',
     name: 'St. Elmo Lighthouse',
     dossierSlug: 'stelmo-light',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 2,
@@ -75,7 +105,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'bodie-ghost-town',
     name: 'Bodie Ghost Town',
     dossierSlug: 'bodie-ghost-town',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 3,
@@ -84,7 +114,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'borovsko-bridge',
     name: 'Borovsko Bridge',
     dossierSlug: 'borovsko-bridge',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 4,
@@ -93,7 +123,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'wittenoom',
     name: 'Wittenoom',
     dossierSlug: 'wittenoom',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 5,
@@ -102,7 +132,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'sedlec-ossuary',
     name: 'Sedlec Ossuary',
     dossierSlug: 'sedlec-ossuary',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 6,
@@ -111,7 +141,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'canfranc-international-railway-station',
     name: 'Canfranc International Railway Station',
     dossierSlug: 'canfranc-railway',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 7,
@@ -120,7 +150,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'spreepark-berlin',
     name: 'Spreepark Berlin',
     dossierSlug: 'spreepark-berlin',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
   {
     order: 8,
@@ -129,7 +159,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'rhyolite',
     name: 'Rhyolite',
     dossierSlug: 'rhyolite',
-    gate: { type: 'dust', value: 0 },
+    gate: { type: 'act', act: 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -142,7 +172,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'gila-river-relocation-center',
     name: 'Gila River Relocation Center',
     dossierSlug: 'gila-river',
-    gate: { type: 'dust', value: 15 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 10,
@@ -151,7 +181,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'pripyat-amusement-park',
     name: 'Pripyat Amusement Park',
     dossierSlug: 'pripyat-park',
-    gate: { type: 'dust', value: 15 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 11,
@@ -160,7 +190,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'hashima-island',
     name: 'Hashima Island',
     dossierSlug: 'hashima-island',
-    gate: { type: 'dust', value: 20 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 12,
@@ -169,7 +199,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'bhangarh-fort',
     name: 'Bhangarh Fort',
     dossierSlug: 'bhangarh-fort',
-    gate: { type: 'dust', value: 20 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 13,
@@ -178,7 +208,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'isla-de-las-muecas',
     name: 'Isla de las Muñecas',
     dossierSlug: 'isla-muecas',
-    gate: { type: 'dust', value: 25 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 14,
@@ -187,7 +217,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'kuldhara',
     name: 'Kuldhara',
     dossierSlug: 'kuldhara',
-    gate: { type: 'dust', value: 25 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 15,
@@ -196,7 +226,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'aokigahara-forest',
     name: 'Aokigahara Forest',
     dossierSlug: 'aokigahara',
-    gate: { type: 'dust', value: 30 },
+    gate: { type: 'act', act: 2 },
   },
   {
     order: 16,
@@ -205,7 +235,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'nara-dreamland',
     name: 'Nara Dreamland',
     dossierSlug: 'nara-dreamland',
-    gate: { type: 'dust', value: 30 },
+    gate: { type: 'act', act: 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -218,7 +248,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'pripyat-hospital-126',
     name: 'Pripyat Hospital 126',
     dossierSlug: 'pripyat-hosp-126',
-    gate: { type: 'dust', value: 40 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 18,
@@ -227,7 +257,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'duga-radar-array',
     name: 'DUGA Radar Array',
     dossierSlug: 'duga-radar',
-    gate: { type: 'dust', value: 40 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 19,
@@ -236,7 +266,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'duga-control-room',
     name: 'DUGA Control Room',
     dossierSlug: 'duga-control',
-    gate: { type: 'dust', value: 45 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 20,
@@ -245,7 +275,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'letchworth-village',
     name: 'Letchworth Village',
     dossierSlug: 'letchworth-vill',
-    gate: { type: 'dust', value: 45 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 21,
@@ -254,7 +284,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'willard-asylum-suitcases',
     name: 'Willard Asylum',
     dossierSlug: 'willard-asylum',
-    gate: { type: 'dust', value: 50 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 22,
@@ -263,7 +293,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'humberstone-saltpeter-works',
     name: 'Humberstone Saltpeter Works',
     dossierSlug: 'humberstone-works',
-    gate: { type: 'dust', value: 50 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 23,
@@ -272,7 +302,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'humberstone-saltpeter-morgue',
     name: 'Humberstone Saltpeter Morgue',
     dossierSlug: 'humberstone-morg',
-    gate: { type: 'dust', value: 55 },
+    gate: { type: 'act', act: 3 },
   },
   {
     order: 24,
@@ -281,7 +311,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'eloise-psychiatric-hospital',
     name: 'Eloise Psychiatric Hospital',
     dossierSlug: 'eloise-hospital',
-    gate: { type: 'dust', value: 55 },
+    gate: { type: 'act', act: 3 },
   },
 
   // ---------------------------------------------------------------------------
@@ -294,7 +324,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'teufelsberg-echo-dome',
     name: 'Teufelsberg Echo Dome',
     dossierSlug: 'teufelsberg-dome',
-    gate: { type: 'dust', value: 66 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 26,
@@ -303,7 +333,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'byberry-state-hospital',
     name: 'Byberry State Hospital',
     dossierSlug: 'byberry-hospital',
-    gate: { type: 'dust', value: 66 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 27,
@@ -312,7 +342,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'poveglia-subterranean-ward',
     name: 'Poveglia Subterranean Ward',
     dossierSlug: 'poveglia-ward-x',
-    gate: { type: 'dust', value: 70 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 28,
@@ -321,7 +351,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'poveglia-island',
     name: 'Poveglia Island',
     dossierSlug: 'poveglia-island',
-    gate: { type: 'dust', value: 70 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 29,
@@ -330,7 +360,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'chteau-de-brissac',
     name: 'Château de Brissac',
     dossierSlug: 'chateau-brissac',
-    gate: { type: 'dust', value: 75 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 30,
@@ -339,7 +369,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'nocton-hall-raf-hospital',
     name: 'Nocton Hall RAF Hospital',
     dossierSlug: 'nocton-hall',
-    gate: { type: 'dust', value: 75 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 31,
@@ -348,7 +378,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'the-leap-castle-bloody-chapel',
     name: 'The Leap Castle Bloody Chapel',
     dossierSlug: 'leap-castle',
-    gate: { type: 'dust', value: 80 },
+    gate: { type: 'act', act: 4 },
   },
   {
     order: 32,
@@ -357,7 +387,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'copemish-masonic-temple',
     name: 'Copemish Masonic Temple',
     dossierSlug: 'copemish-temple',
-    gate: { type: 'dust', value: 80 },
+    gate: { type: 'act', act: 4 },
   },
 
   // ---------------------------------------------------------------------------
@@ -370,7 +400,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'mount-weather-emergency-operations-center',
     name: 'Mount Weather EOC',
     dossierSlug: 'mount-weather',
-    gate: { type: 'dust', value: 85 },
+    gate: { type: 'act', act: 5 },
   },
   {
     order: 34,
@@ -379,7 +409,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'cheyenne-mountain-complex',
     name: 'Cheyenne Mountain Complex',
     dossierSlug: 'cheyenne-mount',
-    gate: { type: 'dust', value: 85 },
+    gate: { type: 'act', act: 5 },
   },
   {
     order: 35,
@@ -388,7 +418,7 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     slug: 'raven-rock-mountain-complex',
     name: 'Raven Rock Complex',
     dossierSlug: 'raven-rock',
-    gate: { type: 'dust', value: 85 },
+    gate: { type: 'act', act: 5 },
   },
   {
     order: 36,
@@ -398,12 +428,27 @@ export const CANONICAL_CASES: readonly CanonicalCase[] = [
     name: 'The Grid Null Point',
     dossierSlug: 'grid-null-point',
     gate: {
-      type: 'centroid',
+      type: 'convergence',
       anchors: [
         'mount-weather-emergency-operations-center',
         'cheyenne-mountain-complex',
         'raven-rock-mountain-complex',
       ],
+      triangleConnections: [
+        [
+          'mount-weather-emergency-operations-center',
+          'cheyenne-mountain-complex',
+        ],
+        [
+          'cheyenne-mountain-complex',
+          'raven-rock-mountain-complex',
+        ],
+        [
+          'raven-rock-mountain-complex',
+          'mount-weather-emergency-operations-center',
+        ],
+      ],
+      signalHypothesisId: 'hyp-02-signal',
     },
   },
 ] as const;
@@ -438,7 +483,14 @@ export function getCanonicalAct(slug: string): CanonicalAct | undefined {
   return getCanonicalCase(slug)?.act;
 }
 
-export function getCanonicalDustGate(slug: string): number | undefined {
-  const gate = getCanonicalCase(slug)?.gate;
-  return gate?.type === 'dust' ? gate.value : undefined;
+/**
+ * Dust is no longer a canonical narrative gate.
+ *
+ * Exposure definitions own Dust requirements. This helper remains exported
+ * temporarily so legacy consumers fail safely rather than reintroducing Dust
+ * as story progression.
+ */
+export function getCanonicalDustGate(slug: string): undefined {
+  void slug;
+  return undefined;
 }

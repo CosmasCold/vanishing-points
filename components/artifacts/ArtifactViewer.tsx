@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useArtifactStore } from '@/state/artifactStore';
+import { useInvestigationStore } from '@/state/investigationStore';
 import { useProgressionStore } from '@/state/progressionStore';
 import { useAudioStore } from '@/state/audioStore';
 import { colors, typography, spacing } from '@/styles/theme';
@@ -28,14 +30,141 @@ interface ThreeRendererProps {
   rotation: number;
   zoom: number;
   lampMode: string;
+  inspectionYaw?: number;
+  inspectionPitch?: number;
+  onAnomalyDiscovered?: () => void;
   className?: string;
 }
+
+
+/**
+ * Micro-wear shader for the M-11A. The GLB supplies the macro geometry and
+ * this shader supplies the missing forensic surface story: pitting, abrasion,
+ * fine scratches, tarnish islands and tiny roughness variation without using
+ * a UV texture atlas.
+ */
+const applySolenoidWearShader = (material: THREE.MeshStandardMaterial, type: number) => {
+  material.userData.solenoidWearType = type;
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uWearType = { value: type };
+    shader.vertexShader = `
+      varying vec3 vSolenoidWearWorld;
+      ${shader.vertexShader.replace(
+        '#include <worldpos_vertex>',
+        '#include <worldpos_vertex>\n        vSolenoidWearWorld = worldPosition.xyz;'
+      )}
+    `;
+
+    shader.fragmentShader = `
+      varying vec3 vSolenoidWearWorld;
+      uniform float uWearType;
+
+      float wearHash(vec3 p) {
+        p = fract(p * 0.1031);
+        p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }
+
+      float wearNoise(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float n000 = wearHash(i + vec3(0.0,0.0,0.0));
+        float n100 = wearHash(i + vec3(1.0,0.0,0.0));
+        float n010 = wearHash(i + vec3(0.0,1.0,0.0));
+        float n110 = wearHash(i + vec3(1.0,1.0,0.0));
+        float n001 = wearHash(i + vec3(0.0,0.0,1.0));
+        float n101 = wearHash(i + vec3(1.0,0.0,1.0));
+        float n011 = wearHash(i + vec3(0.0,1.0,1.0));
+        float n111 = wearHash(i + vec3(1.0,1.0,1.0));
+        float nx00 = mix(n000,n100,f.x);
+        float nx10 = mix(n010,n110,f.x);
+        float nx01 = mix(n001,n101,f.x);
+        float nx11 = mix(n011,n111,f.x);
+        return mix(mix(nx00,nx10,f.y),mix(nx01,nx11,f.y),f.z);
+      }
+
+      float wearFbm(vec3 p) {
+        float n = 0.0;
+        float a = 0.5;
+        n += wearNoise(p) * a; p *= 2.03; a *= 0.5;
+        n += wearNoise(p) * a; p *= 2.01; a *= 0.5;
+        n += wearNoise(p) * a; p *= 2.07; a *= 0.5;
+        n += wearNoise(p) * a;
+        return n;
+      }
+
+      float wearPits(vec3 p) {
+        float coarse = wearFbm(p * 8.0);
+        float fine = wearFbm(p * 34.0);
+        float islands = smoothstep(0.68, 0.90, coarse);
+        float pores = smoothstep(0.70, 0.96, fine);
+        return islands * pores;
+      }
+
+      float wearScratches(vec3 p) {
+        vec3 q = p * vec3(38.0, 13.0, 31.0);
+        float a = abs(sin(q.x + sin(q.y * 0.71) * 2.0));
+        float b = abs(sin(q.z + sin(q.x * 0.37) * 1.5));
+        float c = abs(sin((q.x + q.y + q.z) * 0.41));
+        float scratches = 1.0 - smoothstep(0.985, 0.998, max(a, max(b,c)));
+        return scratches * smoothstep(0.28, 0.72, wearNoise(p * 9.0));
+      }
+
+      ${shader.fragmentShader.replace(
+        '#include <normal_fragment_begin>',
+        `#include <normal_fragment_begin>
+          float wearHeight = wearPits(vSolenoidWearWorld);
+          float wearEdge = wearScratches(vSolenoidWearWorld);
+          vec2 wearGrad = vec2(dFdx(wearHeight + wearEdge * 0.28), dFdy(wearHeight + wearEdge * 0.28));
+          normal = normalize(normal + vec3(-wearGrad.x, -wearGrad.y, 0.0) * (uWearType < 1.5 ? 0.85 : 0.48));`
+      ).replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+          float wear = wearPits(vSolenoidWearWorld);
+          float scratches = wearScratches(vSolenoidWearWorld);
+          float stain = wearFbm(vSolenoidWearWorld * 3.2);
+
+          if (uWearType < 0.5) {
+            // Brass: pitted dark islands + green/brown oxidation + bright rubbed edges.
+            diffuseColor.rgb *= mix(1.0, 0.56, wear * 0.72);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.19,0.15,0.09), wear * 0.28);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.22,0.28,0.16), smoothstep(0.78,0.94,stain) * 0.16);
+            diffuseColor.rgb *= 1.0 + scratches * 0.16;
+          } else if (uWearType < 1.5) {
+            // Copper: tarnish islands, dark heat bloom and fine abrasion.
+            diffuseColor.rgb *= mix(1.0, 0.43, wear * 0.62);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07,0.035,0.018), smoothstep(0.78,0.97,stain) * 0.42);
+            diffuseColor.rgb *= 1.0 + scratches * 0.22;
+          } else if (uWearType < 2.5) {
+            // Iron: dry oxidation and small corrosion pits.
+            diffuseColor.rgb *= mix(1.0, 0.46, wear * 0.78);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13,0.09,0.06), smoothstep(0.72,0.95,stain) * 0.30);
+          } else {
+            // Ceramic: chalking, stains and tiny abrasion.
+            diffuseColor.rgb *= mix(1.0, 0.74, wear * 0.36);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30,0.27,0.22), smoothstep(0.76,0.96,stain) * 0.13);
+          }`
+      ).replace(
+        '#include <roughness_fragment>',
+        `#include <roughness_fragment>
+          float microWear = wearPits(vSolenoidWearWorld);
+          float microScratch = wearScratches(vSolenoidWearWorld);
+          roughnessFactor = clamp(roughnessFactor + microWear * 0.22 - microScratch * 0.09, 0.16, 1.0);`
+      )}
+    `;
+  };
+  material.needsUpdate = true;
+};
 
 const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
   id,
   rotation,
   zoom,
   lampMode,
+  inspectionYaw = 0,
+  inspectionPitch = 0,
+  onAnomalyDiscovered,
   className
 }) => {
   const [glSupported, setGlSupported] = useState(true);
@@ -47,12 +176,15 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
   const uvMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const standardMaterialRef = useRef<THREE.Material | null>(null);
   const measurementGroupRef = useRef<THREE.Group | null>(null);
+  const anomalyMeshRef = useRef<THREE.Mesh | null>(null);
+  const anomalyCallbackRef = useRef(onAnomalyDiscovered);
 
   // Synchronize state props into a non-reactive ref to eliminate re-compilation leaks
-  const stateRef = useRef({ rotation, zoom, lampMode });
+  const stateRef = useRef({ rotation, zoom, lampMode, inspectionYaw, inspectionPitch });
   useEffect(() => {
-    stateRef.current = { rotation, zoom, lampMode };
-  }, [rotation, zoom, lampMode]);
+    stateRef.current = { rotation, zoom, lampMode, inspectionYaw, inspectionPitch };
+    anomalyCallbackRef.current = onAnomalyDiscovered;
+  }, [rotation, zoom, lampMode, inspectionYaw, inspectionPitch, onAnomalyDiscovered]);
 
   // Procedurally generate a high-frequency normal and roughness map
   const textures = useMemo(() => {
@@ -192,10 +324,16 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     const height = container.clientHeight || 320;
 
     const scene = new THREE.Scene();
+    // Temporary neutral archival backdrop. The eventual static examination-room
+    // background will replace this, but the specimen must remain readable now.
+    scene.background = null;
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 8;
+    // Physical cassettes are examined close-up. Keep the existing camera architecture,
+    // but frame this specimen like an object on an examination bench rather than
+    // a distant display model.
+    camera.position.z = id === 'art-vance-cassette' ? 5.75 : id === 'art-solenoid' ? 4.9 : 8;
     cameraRef.current = camera;
 
     let renderer;
@@ -207,6 +345,9 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.28;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
@@ -215,16 +356,32 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const handleAnomalyPointerDown = (event: PointerEvent) => {
+      if (!anomalyMeshRef.current?.visible) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObject(anomalyMeshRef.current, false)[0];
+      if (hit) {
+        event.stopPropagation();
+        anomalyCallbackRef.current?.();
+      }
+    };
+    renderer.domElement.addEventListener('pointerdown', handleAnomalyPointerDown);
+
     const group = new THREE.Group();
     scene.add(group);
     groupRef.current = group;
 
     // 2. Setup Hyper-Realistic Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0x8c867a, 1.6);
+    const ambientLight = new THREE.AmbientLight(0xa49b8d, 3.15);
     scene.add(ambientLight);
 
     // Bright radial Halogen lamp spot light
-    const keyLight = new THREE.SpotLight(0xfff5cb, 6.5);
+    const keyLight = new THREE.SpotLight(0xfff4d2, 12.5);
     keyLight.position.set(3, 4, 5);
     keyLight.angle = Math.PI / 6;
     keyLight.penumbra = 0.8;
@@ -235,18 +392,25 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
     scene.add(keyLight);
 
     // Cold fluorescent fill light representing the computer terminal's backglow
-    const fillLight = new THREE.DirectionalLight(0xa5c5d8, 2.2);
+    const fillLight = new THREE.DirectionalLight(0xc1d1d8, 4.8);
     fillLight.position.set(-4, -2, 2);
     scene.add(fillLight);
 
     // Warm tungsten bounce light representing the desk lamp reflection
-    const bounceLight = new THREE.DirectionalLight(0xffbf80, 1.25);
+    const bounceLight = new THREE.DirectionalLight(0xffc58d, 2.15);
     bounceLight.position.set(0, -4, -1);
     scene.add(bounceLight);
 
     // 3. Compile Specimen Geometry & Advanced PBR Material
-    let geometry: THREE.BufferGeometry;
-    let material: THREE.Material;
+    let geometry: THREE.BufferGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.01);
+    let material: THREE.Material = new THREE.MeshStandardMaterial({
+      color: 0x222222,
+      roughness: 0.8,
+      metalness: 0,
+    });
+
+    const cassetteLoadGroup = new THREE.Group();
+    group.add(cassetteLoadGroup);
 
     if (id === 'art-core') {
       // Hyper-detailed granite cylinder borehole core
@@ -280,120 +444,279 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       });
 
     } else if (id === 'art-solenoid') {
-      // 3D Telegraph electromagnetic solenoid core with coiled copper wire
-      geometry = new THREE.Group() as any;
-      const groupGeom = group as any;
+      // M-11A is a real manufactured GLB specimen. Do not approximate it with
+      // primitive Box/Cylinder/Sphere stand-ins. The asset contains the brass
+      // frame, iron core, ceramic former, individual copper windings, fused
+      // winding sections, terminals, mounting hardware and scorch residue.
+      const loader = new GLTFLoader();
+      loader.load(
+        '/models/solenoid.glb',
+        (gltf) => {
+          const specimen = gltf.scene;
+          specimen.name = 'FusedSolenoidCore_M11A';
+          specimen.updateMatrixWorld(true);
 
-      // Brass casing block
-      const bracketGeom = new THREE.BoxGeometry(1.3, 1.8, 1.3);
-      const bracketMat = new THREE.MeshStandardMaterial({
-        color: 0x876f4e,
-        roughness: 0.32,
-        metalness: 0.85,
-        normalMap: textures.normal,
-        normalScale: new THREE.Vector2(0.3, 0.3),
-      });
-      const bracketMesh = new THREE.Mesh(bracketGeom, bracketMat);
-      bracketMesh.castShadow = true;
-      bracketMesh.receiveShadow = true;
-      groupGeom.add(bracketMesh);
+          // Normalize the authored GLB around its actual visual center so the
+          // shared inspection controls rotate the physical specimen cleanly.
+          cassetteLoadGroup.updateMatrixWorld(true);
+          const bounds = new THREE.Box3().setFromObject(specimen);
+          const worldCenter = bounds.getCenter(new THREE.Vector3());
+          const localCenter = cassetteLoadGroup.worldToLocal(worldCenter.clone());
+          specimen.position.sub(localCenter);
+          specimen.updateMatrixWorld(true);
 
-      // Core spool cylinders
-      const spoolGeom = new THREE.CylinderGeometry(0.48, 0.48, 1.4, 32);
-      const spoolMat = new THREE.MeshStandardMaterial({
-        map: textures.diffuse,
-        normalMap: textures.normal,
-        roughnessMap: textures.roughness,
-        metalness: 0.95,
-        roughness: 0.15,
-      });
-      const spoolMesh = new THREE.Mesh(spoolGeom, spoolMat);
-      spoolMesh.position.set(0, 0, 0);
-      spoolMesh.castShadow = true;
-      spoolMesh.receiveShadow = true;
-      groupGeom.add(spoolMesh);
+          // The authored asset already contains the physical wear geometry.
+          // This pass makes that wear read as age rather than a pristine CAD
+          // specimen: uneven copper tarnish, dulled brass, ceramic staining,
+          // darkened fasteners, and restrained handling abrasion.
+          // Helsingr's asset is already a finished manufactured solenoid with its
+          // own authored geometry/material treatment. Preserve that asset rather
+          // than overlaying procedural wear that can fight its textures.
+          specimen.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) return;
+            child.visible = true;
+            child.castShadow = true;
+            child.receiveShadow = true;
 
-      // High-voltage arc blast scorch marks overlay
-      const blastGeom = new THREE.SphereGeometry(0.55, 32, 16);
-      const blastMat = new THREE.MeshStandardMaterial({
-        color: 0x0a0502,
-        roughness: 0.98,
-        metalness: 0.0,
-        transparent: true,
-        opacity: 0.85,
-      });
-      const blastMesh = new THREE.Mesh(blastGeom, blastMat);
-      blastMesh.position.set(0, 0, 0.35);
-      groupGeom.add(blastMesh);
+            // Preserve Helsingr's authored material type, maps, and textures.
+            // Only adjust the shared PBR values that the inspection room needs.
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            const cloned = materials.map((source: THREE.Material) => {
+              const m = source.clone() as any;
+              if ('envMapIntensity' in m) m.envMapIntensity = 0.8;
+              if ('roughness' in m && m.roughness < 0.28) m.roughness = 0.28;
+              m.needsUpdate = true;
+              return m;
+            });
+            child.material = Array.isArray(child.material) ? cloned : cloned[0];
+          });
 
-      material = bracketMat; // Ref for cleanup
+          // Normalize from the actual largest dimension. Do not assume the GLB's
+          // authored Y axis is its height, because downloaded assets may be Z-up.
+          specimen.updateMatrixWorld(true);
+          const normalizedBounds = new THREE.Box3().setFromObject(specimen);
+          const normalizedSize = normalizedBounds.getSize(new THREE.Vector3());
+          const targetDimension = 2.15;
+          const maxDimension = Math.max(normalizedSize.x, normalizedSize.y, normalizedSize.z);
+          if (Number.isFinite(maxDimension) && maxDimension > 0) {
+            specimen.scale.setScalar(targetDimension / maxDimension);
+            specimen.updateMatrixWorld(true);
+          }
 
-    } else if (id === 'art-watch') {
-      // Charred, melted silver pocketwatch casing
-      geometry = new THREE.SphereGeometry(1.0, 32, 24);
-      geometry.scale(1.0, 1.0, 0.28); // Flatten into a pocketwatch pouch shape
-      
-      // Melt and scorch vertices
-      const posAttr = geometry.attributes.position;
-      const v = new THREE.Vector3();
-      for (let i = 0; i < posAttr.count; i++) {
-        v.fromBufferAttribute(posAttr, i);
-        // Warp bottom half of watch casing to represent catastrophic heat melt
-        if (v.y < 0) {
-          v.y *= 1.15;
-          v.x += Math.sin(v.y * 4.0) * 0.12;
-          posAttr.setXYZ(i, v.x, v.y, v.z);
-        }
-      }
-      geometry.computeVertexNormals();
+          const scaledBounds = new THREE.Box3().setFromObject(specimen);
+          const scaledCenter = scaledBounds.getCenter(new THREE.Vector3());
+          specimen.position.sub(scaledCenter);
+          specimen.updateMatrixWorld(true);
 
+          cassetteLoadGroup.add(specimen);
+
+          const firstMesh = specimen.getObjectByProperty('isMesh', true) as THREE.Mesh | undefined;
+          if (firstMesh) {
+            const firstMaterial = Array.isArray(firstMesh.material)
+              ? firstMesh.material[0]
+              : firstMesh.material;
+            standardMaterialRef.current = firstMaterial;
+          }
+        },
+        undefined,
+        (error) => {
+          console.error('Failed to load M-11A solenoid GLB', error);
+        },
+      );
+
+      // The GLB owns the physical specimen. Keep the placeholder invisible.
+      geometry = new THREE.BoxGeometry(0.001, 0.001, 0.001);
+      material = new THREE.MeshStandardMaterial({ visible: false });
+
+    } else if (id === 'art-vance-cassette') {
+      // Load the cassette as a real GLB specimen rather than approximating
+      // a manufactured cassette from UI primitives. The mesh carries the
+      // complete front/rear shell, reel wells, hubs and molded details.
       material = new THREE.MeshStandardMaterial({
-        color: 0x9c9ca3,
-        metalness: 0.95,
-        roughness: 0.22,
-        normalMap: textures.normal,
-        normalScale: new THREE.Vector2(0.65, 0.65),
+        color: 0x3a3935,
+        roughness: 0.52,
+        metalness: 0.03,
       });
 
-    } else if (id === 'art-asbestos') {
-      // Wittenoom blue asbestos fiber inside a thick clear glass jar
-      geometry = new THREE.CylinderGeometry(0.72, 0.72, 1.8, 32);
-      const jarMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.18,
-        roughness: 0.04,
-        metalness: 0.1,
-        transmission: 0.92, // Hyper-realistic glass light refraction
-        thickness: 0.15,
-        ior: 1.5,
-      });
-      material = jarMat;
+      const loader = new GLTFLoader();
+      loader.load(
+        '/models/Cassette.glb',
+        (gltf) => {
+          const specimen = gltf.scene;
+          specimen.name = 'KeeperFinalLogCassette';
 
-      const jarMesh = new THREE.Mesh(geometry, jarMat);
-      group.add(jarMesh);
+          // Normalize the supplied cassette asset around its visual center so
+          // the shared examination controls rotate the physical object rather
+          // than its exported scene origin. The source GLB is retained intact.
+          // Normalize the GLB's world-space offset so the physical specimen is
+          // centered in the examination field regardless of how the source asset
+          // was authored. Some GLB exports carry a non-zero scene origin.
+          specimen.updateMatrixWorld(true);
+          const bounds = new THREE.Box3().setFromObject(specimen);
+          const center = bounds.getCenter(new THREE.Vector3());
+          specimen.position.sub(center);
+          specimen.updateMatrixWorld(true);
 
-      // Procedural asbestos needles block inside jar
-      const needleMat = new THREE.MeshStandardMaterial({
-        color: 0x1d4ed8,
-        roughness: 0.75,
-        metalness: 0.2,
-      });
+          // Re-center once more after applying the source transform. This keeps
+          // the cassette's visual mass on the inspection axis, not in a corner.
+          const correctedBounds = new THREE.Box3().setFromObject(specimen);
+          const correctedCenter = correctedBounds.getCenter(new THREE.Vector3());
+          specimen.position.sub(correctedCenter);
 
-      for (let i = 0; i < 28; i++) {
-        const needleGeom = new THREE.CylinderGeometry(0.015, 0.015, 1.1, 8);
-        const needleMesh = new THREE.Mesh(needleGeom, needleMat);
-        needleMesh.rotation.set(
-          Math.random() * 0.45,
-          Math.random() * Math.PI,
-          Math.random() * 0.45
+          const shellNames = new Set([
+            'Cassette',
+            'cassette_sides',
+            'cassette_top',
+            'Cassette_bottom',
+            'Cassette._rough',
+          ]);
+
+          specimen.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) return;
+            child.castShadow = true;
+            child.receiveShadow = true;
+
+            const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
+            const remapped = sourceMaterials.map((source: THREE.Material) => {
+              const name = source.name || '';
+
+              // The source asset contains excellent physical geometry and useful
+              // internal/reel textures, but its shell albedo is a photographed
+              // brown/black cassette surface. Rebuild only the shell material
+              // so the object reads as aged molded plastic under our lighting.
+              if (shellNames.has(name)) {
+                // A cassette this old should not have a perfectly uniform shell.
+                // Build a restrained, UV-space surface map containing fine molding
+                // variation, tiny scuffs and isolated handling marks. These are
+                // deliberately low-contrast so the artifact still reads as molded
+                // plastic rather than painted noise.
+                const surfaceCanvas = document.createElement('canvas');
+                surfaceCanvas.width = 1024;
+                surfaceCanvas.height = 1024;
+                const sctx = surfaceCanvas.getContext('2d')!;
+                sctx.fillStyle = '#303634';
+                sctx.fillRect(0, 0, 1024, 1024);
+
+                // Fine molded-plastic grain.
+                for (let i = 0; i < 18000; i++) {
+                  const x = (i * 197 + 31) % 1024;
+                  const y = (i * 113 + 71) % 1024;
+                  const tone = 38 + ((i * 17) % 24);
+                  const alpha = 0.035 + (((i * 13) % 10) / 100);
+                  sctx.fillStyle = `rgba(${tone},${tone + 5},${tone + 4},${alpha})`;
+                  sctx.fillRect(x, y, 1 + (i % 2), 1 + ((i >> 2) % 2));
+                }
+
+                // Sparse, directional handling scuffs.
+                for (let i = 0; i < 75; i++) {
+                  const x = (i * 347 + 91) % 980;
+                  const y = (i * 181 + 143) % 980;
+                  const len = 6 + ((i * 29) % 42);
+                  sctx.strokeStyle = i % 3 === 0
+                    ? 'rgba(155,165,160,0.16)'
+                    : 'rgba(8,10,10,0.18)';
+                  sctx.lineWidth = i % 4 === 0 ? 1.2 : 0.7;
+                  sctx.beginPath();
+                  sctx.moveTo(x, y);
+                  sctx.lineTo(x + len, y + ((i % 5) - 2) * 0.7);
+                  sctx.stroke();
+                }
+
+                // A few broader, soft handling patches.
+                for (let i = 0; i < 12; i++) {
+                  const gx = (i * 283 + 130) % 1024;
+                  const gy = (i * 421 + 210) % 1024;
+                  const grad = sctx.createRadialGradient(gx, gy, 2, gx, gy, 45 + (i % 4) * 12);
+                  grad.addColorStop(0, 'rgba(175,180,168,0.045)');
+                  grad.addColorStop(1, 'rgba(175,180,168,0)');
+                  sctx.fillStyle = grad;
+                  sctx.beginPath();
+                  sctx.arc(gx, gy, 55, 0, Math.PI * 2);
+                  sctx.fill();
+                }
+
+                const surfaceMap = new THREE.CanvasTexture(surfaceCanvas);
+                surfaceMap.colorSpace = THREE.SRGBColorSpace;
+                surfaceMap.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+                const shell = new THREE.MeshPhysicalMaterial({
+                  name: `VP_${name}`,
+                  map: surfaceMap,
+                  bumpMap: surfaceMap,
+                  bumpScale: 0.012,
+                  color: new THREE.Color(0xffffff),
+                  roughness: name === 'Cassette._rough' ? 0.68 : 0.56,
+                  metalness: 0.015,
+                  clearcoat: 0.035,
+                  clearcoatRoughness: 0.58,
+                  envMapIntensity: 0.8,
+                });
+                shell.userData.sourceMaterial = name;
+                shell.userData.surfaceMap = surfaceMap;
+                return shell;
+              }
+
+              // Keep the authored tape, reel, pressure-pad and internal materials.
+              if ('toneMapped' in source) (source as any).toneMapped = true;
+              return source;
+            });
+
+            child.material = Array.isArray(child.material) ? remapped : remapped[0];
+          });
+
+          // The cassette is intentionally presented as the physical artifact itself.
+          // Do not add a floating/procedural paper label here. Identification belongs
+          // to the surrounding evidence UI; the 3D specimen should remain mechanically
+          // honest and inspectable from every angle.
+
+          // Keep the authored GLB at physical scale and let the shared
+          // examination camera provide the close inspection framing.
+          specimen.rotation.x = 0;
+          specimen.rotation.z = 0;
+          cassetteLoadGroup.add(specimen);
+
+          if (anomalyMeshRef.current) {
+            const specimenBounds = new THREE.Box3().setFromObject(specimen);
+            const size = specimenBounds.getSize(new THREE.Vector3());
+            anomalyMeshRef.current.position.set(
+              specimenBounds.min.x + size.x * 0.28,
+              specimenBounds.min.y + size.y * 0.72,
+              specimenBounds.max.z + 0.018
+            );
+          }
+
+          const shellCandidate = specimen.getObjectByName('Shell');
+          if (shellCandidate instanceof THREE.Mesh) {
+            standardMaterialRef.current = Array.isArray(shellCandidate.material)
+              ? shellCandidate.material[0]
+              : shellCandidate.material;
+          }
+        },
+        undefined,
+        (error) => {
+          console.error('Failed to load Keeper Final Log cassette GLB', error);
+        },
+      );
+
+      // Authored St. Elmo discovery marker. It lives in the specimen hierarchy,
+      // so it follows the cassette through free physical inspection.
+      if (id === 'art-vance-cassette') {
+        const anomalyMaterial = new THREE.MeshBasicMaterial({
+          color: 0xd6b56a,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthTest: false,
+        });
+        const anomaly = new THREE.Mesh(
+          new THREE.SphereGeometry(0.055, 16, 12),
+          anomalyMaterial
         );
-        needleMesh.position.set(
-          (Math.random() - 0.5) * 0.15,
-          (Math.random() - 0.5) * 0.25,
-          (Math.random() - 0.5) * 0.15
-        );
-        group.add(needleMesh);
+        anomaly.name = 'KeeperCassetteMechanicalWear';
+        anomaly.visible = false;
+        anomaly.userData.forensicAnomaly = true;
+        anomalyMeshRef.current = anomaly;
+        cassetteLoadGroup.add(anomaly);
       }
 
     } else {
@@ -408,14 +731,16 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       });
     }
 
-    if (id !== 'art-solenoid' && id !== 'art-asbestos') {
+    if (id !== 'art-solenoid' && id !== 'art-asbestos' && id !== 'art-vance-cassette') {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
     }
 
-    standardMaterialRef.current = material;
+    if (id !== 'art-solenoid') {
+      standardMaterialRef.current = material;
+    }
 
     // 4. Glowing Fluorescent UV Ink Layer
     // Overlay mesh that sits 0.02 units proud of the standard object
@@ -460,11 +785,38 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       // Smooth mechanical glide towards standard targets
       if (groupRef.current) {
         const current = stateRef.current;
+
+        // The player discovers the response through ordinary examination. No
+        // target angle or recipe is exposed to the player.
+        if (id === 'art-vance-cassette' && anomalyMeshRef.current) {
+          const yaw = ((current.rotation + current.inspectionYaw) % 360 + 360) % 360;
+          const centeredYaw = yaw > 180 ? yaw - 360 : yaw;
+          const inspectionReady =
+            Math.abs(centeredYaw) <= 32 &&
+            Math.abs(current.inspectionPitch) <= 24 &&
+            current.zoom >= 1.25 &&
+            (current.lampMode === 'standard' || current.lampMode === 'magnify');
+
+          anomalyMeshRef.current.visible = inspectionReady;
+          const markerMaterial = anomalyMeshRef.current.material as THREE.MeshBasicMaterial;
+          markerMaterial.opacity = inspectionReady
+            ? 0.12 + Math.sin(elapsed * 2.8) * 0.035
+            : 0;
+          anomalyMeshRef.current.scale.setScalar(
+            inspectionReady ? 1 + Math.sin(elapsed * 2.8) * 0.08 : 0.8
+          );
+        }
+
         // Linear interpolation mapping rotation/zoom targets exactly
-        const targetRotRad = (current.rotation * Math.PI) / 180;
+        const targetRotRad = THREE.MathUtils.degToRad(current.rotation + current.inspectionYaw);
         groupRef.current.rotation.y += (targetRotRad - groupRef.current.rotation.y) * 0.12;
+
+        // Physical inspection pitch is independent of evidence calibration.
+        const targetPitchRad = THREE.MathUtils.degToRad(current.inspectionPitch);
+        groupRef.current.rotation.x += (targetPitchRad - groupRef.current.rotation.x) * 0.14;
         
-        const targetScale = current.zoom;
+        const baseScale = id === 'art-vance-cassette' ? 1.35 : 1.0;
+        const targetScale = current.zoom * baseScale;
         groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.12));
       }
 
@@ -494,11 +846,19 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
       if (material && typeof (material as any).dispose === 'function') {
         (material as any).dispose();
       }
+      cassetteLoadGroup.traverse((child: any) => {
+        if (child.geometry?.dispose) child.geometry.dispose();
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((m: any) => m?.dispose?.());
+        }
+      });
       if (textures) {
         textures.diffuse?.dispose();
         textures.normal?.dispose();
         textures.roughness?.dispose();
       }
+      renderer?.domElement.removeEventListener('pointerdown', handleAnomalyPointerDown);
       renderer?.dispose();
     };
   }, [id, textures]);
@@ -512,7 +872,9 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
 
     // 1. Modulate standard material properties to accommodate UV dark spectrums
     const mat = standardMaterialRef.current as any;
-    if (mat.color) {
+    if (id === 'art-vance-cassette') {
+      if (mat.color && !isUvActive && !String(mat.name || '').startsWith('VP_')) mat.color.setHex(0x303632);
+    } else if (mat.color) {
       if (isUvActive) {
         mat.color.setHex(0x101528); // Saturated deep co-axial indigo glow
         if (mat.roughness !== undefined) mat.roughness = 0.85;
@@ -522,9 +884,10 @@ const ThreeSpecimenRenderer: React.FC<ThreeRendererProps> = ({
         if (id === 'art-core') mat.color.setHex(0x6d5e53);
         else if (id === 'art-solenoid') mat.color.setHex(0x876f4e);
         else if (id === 'art-watch') mat.color.setHex(0x9c9ca3);
+         else if (id === 'art-vance-cassette') mat.color.setHex(0x303632);
         
         if (mat.roughness !== undefined) mat.roughness = id === 'art-watch' ? 0.22 : 0.52;
-        if (mat.metalness !== undefined) mat.metalness = id === 'art-core' ? 0.12 : 0.85;
+        if (mat.metalness !== undefined) mat.metalness = id === 'art-core' ? 0.12 : (id === 'art-vance-cassette' ? 0.03 : 0.85);
       }
     }
 
@@ -581,7 +944,9 @@ export const ArtifactViewer: React.FC = () => {
   // --- INJECTED TACTILE SCANNER STATE CONTROLS ---
   const [caliperPoints, setCaliperPoints] = useState<{ x: number; y: number }[]>([]);
   const [isDraggingSpecimen, setIsDraggingSpecimen] = useState(false);
-  const dragStartRef = useRef(0);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const [inspectionYaw, setInspectionYaw] = useState(0);
+  const [inspectionPitch, setInspectionPitch] = useState(0);
 
   const caliperDistance = useMemo(() => {
     if (caliperPoints.length !== 2) return 0;
@@ -604,15 +969,25 @@ export const ArtifactViewer: React.FC = () => {
       return;
     }
     setIsDraggingSpecimen(true);
-    dragStartRef.current = e.clientX;
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
     (e.target as any).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingSpecimen) return;
-    const deltaX = e.clientX - dragStartRef.current;
-    dragStartRef.current = e.clientX;
-    if (typeof rotate === 'function') rotate(deltaX * 0.5);
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+
+    const yawDelta = deltaX * 0.5;
+    setInspectionYaw(prev => prev + yawDelta);
+
+    // Vertical drag changes only the visual inspection pitch, clamped to avoid
+    // flipping the artifact upside-down. Physical inspection applies to every
+    // specimen; forensic calibration remains independent.
+    setInspectionPitch(prev =>
+      THREE.MathUtils.clamp(prev - deltaY * 0.5, -88, 88)
+    );
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -622,9 +997,12 @@ export const ArtifactViewer: React.FC = () => {
     } catch (err) {}
   };
 
-  // Reset calipers when changing modes
+  // Physical inspection orientation is intentionally separate from evidence
+  // calibration. Store rotation remains the forensic progression value.
   useEffect(() => {
     setCaliperPoints([]);
+    setInspectionYaw(0);
+    setInspectionPitch(0);
   }, [lampMode, activeArtifact]);
   
 
@@ -693,6 +1071,8 @@ export const ArtifactViewer: React.FC = () => {
   
   const am = activeMarking as any;
   const { click, play } = useAudioStore();
+  const { addEvidence, markEvidenceAnalysed } = useProgressionStore();
+  const { addEvidence: catalogueEvidence } = useInvestigationStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -764,6 +1144,43 @@ export const ArtifactViewer: React.FC = () => {
     }
   };
 
+  const handleCassetteAnomalyDiscovered = () => {
+    if (activeArtifact.id !== 'art-vance-cassette' || activeArtifact.hasBeenScanned) return;
+
+    const evidenceId = 'evidence-stelmo-mechanical-exposure';
+    const discovered = addEvidence(evidenceId);
+    markEvidenceAnalysed(evidenceId);
+
+    if (discovered) {
+      catalogueEvidence('stelmo-light', {
+        id: evidenceId,
+        type: 'artifact',
+        title: 'Mechanical Exposure Record',
+        description:
+          'Localized mechanical wear around the cassette label and housing seam is inconsistent with ordinary archival handling. The physical record establishes wear, but not who or what produced it.',
+        source: "Keeper's Final Log Cassette",
+        status: 'analyzed',
+        relatedTo: ['stelmo-light', 'doc-stelmo-001'],
+        timestamp: activeArtifact.dateRecovered,
+        metadata: {
+          artifactId: activeArtifact.id,
+          markingId: 'mark-vance-mechanical-wear',
+          provenance: 'physical-examination',
+        },
+      });
+    }
+
+    useArtifactStore.getState().updateArtifact(activeArtifact.id, {
+      hasBeenScanned: true,
+      relatedEvidenceIds: Array.from(
+        new Set([...activeArtifact.relatedEvidenceIds, evidenceId])
+      ),
+    });
+
+    click();
+    play('return');
+  };
+
   // Render our gorgeous procedurally animated vector-SVGs of actual artifacts!
   const renderArtifactGraphic = () => {
     return (
@@ -771,15 +1188,18 @@ export const ArtifactViewer: React.FC = () => {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className="relative w-[512px] h-[512px] flex items-center justify-center border border-stone-900 bg-[#070503] cursor-grab active:cursor-grabbing touch-none select-none" 
-        style={{ boxShadow: 'inset 0 0 40px rgba(0,0,0,0.95)', }}
+        className="relative w-[min(68vw,680px)] aspect-square flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none" 
+        style={{ boxShadow: '0 18px 60px rgba(0,0,0,0.20)', }}
       >
         {/* Render our gorgeous, high-fidelity WebGL 3D Specimen Scanner */}
         <ThreeSpecimenRenderer
           id={activeArtifact.id}
           rotation={rotation}
+          inspectionYaw={inspectionYaw}
           zoom={zoom}
           lampMode={lampMode}
+          inspectionPitch={inspectionPitch}
+          onAnomalyDiscovered={handleCassetteAnomalyDiscovered}
           className="absolute inset-0 z-0"
         />
 
@@ -850,14 +1270,14 @@ export const ArtifactViewer: React.FC = () => {
         style={{
           marginLeft: spacing.rail,
           marginBottom: spacing.statusBar,
-          backgroundColor: "rgba(10, 8, 6, 0.96)",
+          backgroundColor: "rgba(18, 15, 11, 0.97)",
         }}
         onClick={closeArtifact}
       >
         {/* Top Header toolbar */}
         <div 
           className="flex items-center justify-between px-6 h-12 border-b shrink-0" 
-          style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
+          style={{ borderColor: colors.archive.grayDark, backgroundColor: "#0f0d0a" }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3">
@@ -891,26 +1311,35 @@ export const ArtifactViewer: React.FC = () => {
         {/* Main Content Splits */}
         <div className="flex-1 flex min-h-0 divide-x" style={{ borderColor: colors.archive.grayDark }} onClick={(e) => e.stopPropagation()}>\n          
           {/* LEFT COLUMN: Visual Magnifier Table */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 bg-[#050403] relative">
-            
-            {/* Grid Coordinates backdrop */}
-            <div 
-              className="absolute inset-0 pointer-events-none opacity-5"
+          <div
+            className="flex-1 flex flex-col items-center justify-center gap-6 p-8 relative overflow-hidden"
+            style={{
+              backgroundImage: "url('/images/desktop-final.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundColor: "#17110d",
+            }}
+          >
+            {/* Static archival examination room. The photographic environment supplies
+                the physical context while restrained overlays preserve specimen legibility. */}
+            <div
+              className="absolute inset-0 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(ellipse at center, transparent 20%, #1c1917 100%), repeating-linear-gradient(0deg, transparent, transparent 19px, #fff 19px, #fff 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, #fff 19px, #fff 20px)',
-                backgroundSize: '100% 100%, 20px 20px, 20px 20px',
+                background:
+                  "linear-gradient(180deg, rgba(7,5,3,.34) 0%, rgba(7,5,3,.10) 42%, rgba(7,5,3,.30) 100%), radial-gradient(ellipse at center, rgba(45,31,20,.04) 0%, rgba(4,3,2,.38) 100%)",
               }}
             />
 
             {/* Main Interactive render */}
-            {renderArtifactGraphic()}
+            <div className="relative z-10 w-full h-full flex items-center justify-center">{renderArtifactGraphic()}</div>
 
             {/* Rotator and Zoom Controls bar */}
             <div className="flex items-center gap-2.5 z-10">
               <button
                 onClick={() => { click(); rotate(-15); }}
                 className="p-2 border hover:bg-[#1a1714] active:scale-95 transition-all text-stone-400"
-                style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
+                style={{ borderColor: colors.archive.grayDark, backgroundColor: "#0f0d0a" }}
                 title="Rotate Counter-Clockwise"
               >
                 <RotateCcw size={14} />
@@ -918,7 +1347,7 @@ export const ArtifactViewer: React.FC = () => {
               <button
                 onClick={() => { click(); rotate(15); }}
                 className="p-2 border hover:bg-[#1a1714] active:scale-95 transition-all text-stone-400"
-                style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
+                style={{ borderColor: colors.archive.grayDark, backgroundColor: "#0f0d0a" }}
                 title="Rotate Clockwise"
               >
                 <RotateCw size={14} />
@@ -927,7 +1356,7 @@ export const ArtifactViewer: React.FC = () => {
               <button
                 onClick={() => { click(); adjustZoom(0.15); }}
                 className="p-2 border hover:bg-[#1a1714] active:scale-95 transition-all text-stone-400"
-                style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
+                style={{ borderColor: colors.archive.grayDark, backgroundColor: "#0f0d0a" }}
                 title="Zoom In"
               >
                 <ZoomIn size={14} />
@@ -935,7 +1364,7 @@ export const ArtifactViewer: React.FC = () => {
               <button
                 onClick={() => { click(); adjustZoom(-0.15); }}
                 className="p-2 border hover:bg-[#1a1714] active:scale-95 transition-all text-stone-400"
-                style={{ borderColor: colors.archive.grayDark, backgroundColor: colors.archive.black }}
+                style={{ borderColor: colors.archive.grayDark, backgroundColor: "#0f0d0a" }}
                 title="Zoom Out"
               >
                 <ZoomOut size={14} />
@@ -944,7 +1373,7 @@ export const ArtifactViewer: React.FC = () => {
           </div>
 
           {/* RIGHT COLUMN: Diagnostic Controls & Markings Readout */}
-          <div className="w-80 flex flex-col p-6 overflow-y-auto gap-4 bg-[#0a0806]">
+          <div className="w-80 flex flex-col p-6 overflow-y-auto gap-4 bg-[#12100d]">
             
             {/* Spectral Lamp Mode Selectors */}
             <div className="space-y-2 shrink-0">
@@ -1047,36 +1476,52 @@ export const ArtifactViewer: React.FC = () => {
                 ) : (
                   <div className="flex flex-col justify-start gap-2.5 py-2">
                     {/* List each marking as either locked or resolved */}
-                    {activeArtifact.markings.map((m) => {
-                      const { ok: isAligned, targetRot, targetZoom } = getMarkingLockStatus(m);
-                      const isLampOk = !m.requiresUV || lampMode === 'uv';
+                    {activeArtifact.id === 'art-vance-cassette' ? (
+                      <div className="p-2.5 border border-amber-900/30 bg-amber-950/5 text-stone-400 rounded-[1px] text-[10px] space-y-1">
+                        <div className="font-bold text-[#bf9f62] uppercase flex items-center gap-1">
+                          <Eye size={11} />
+                          <span>MICRO-SURFACE RESPONSE</span>
+                        </div>
+                        <p className="text-stone-500 text-[9px] leading-normal">
+                          {activeArtifact.hasBeenScanned
+                            ? 'Localized mechanical wear has been recorded and filed as derived evidence.'
+                            : zoom >= 1.25 && (lampMode === 'standard' || lampMode === 'magnify')
+                              ? 'A faint localized response is present somewhere on the specimen.'
+                              : 'No distinctive surface response.'}
+                        </p>
+                      </div>
+                    ) : (
+                      activeArtifact.markings.map((m) => {
+                        const { ok: isAligned, targetRot, targetZoom } = getMarkingLockStatus(m);
+                        const isLampOk = !m.requiresUV || lampMode === 'uv';
 
-                      if (isAligned && isLampOk) {
+                        if (isAligned && isLampOk) {
+                          return (
+                            <div key={`hint-${m.id}`} className="p-2 border border-green-900/30 bg-green-950/5 text-green-500 rounded-[1px] text-[10px]">
+                              <div className="font-bold uppercase mb-0.5">● MARKING ALIGNED</div>
+                              <div>Click the glowing indicator on the artifact to decode.</div>
+                            </div>
+                          );
+                        }
+
                         return (
-                          <div key={`hint-${m.id}`} className="p-2 border border-green-900/30 bg-green-950/5 text-green-500 rounded-[1px] text-[10px]">
-                            <div className="font-bold uppercase mb-0.5">● MARKING ALIGNED</div>
-                            <div>Click the glowing indicator on the artifact to decode.</div>
+                          <div key={`hint-${m.id}`} className="p-2.5 border border-red-950/40 bg-red-950/5 text-stone-400 rounded-[1px] text-[10px] space-y-1">
+                            <div className="font-bold text-red-500 uppercase flex items-center gap-1">
+                              <AlertTriangle size={11} />
+                              <span>ANOMALY DETECTED but UNRESOLVED</span>
+                            </div>
+                            <p className="text-stone-500 text-[9px] leading-normal">
+                              Object scanning matrices indicate a micro-marking is buried here. You must calibrate alignment parameters to resolve:
+                            </p>
+                            <div className="font-mono text-[8.5px] text-amber-600/70 pl-2 space-y-0.5 border-l border-amber-900/30">
+                              <div>• ROTATION TARGET: {targetRot}° (Current: {Math.round(rotation % 360)}°)</div>
+                              <div>• RESOLUTION: {targetZoom}x (Current: {zoom.toFixed(2)}x)</div>
+                              <div>• LIGHTING: {m.requiresUV ? "UV BLACKLIGHT" : "ANY"} (Current: {getLampLabel()})</div>
+                            </div>
                           </div>
                         );
-                      }
-
-                      return (
-                        <div key={`hint-${m.id}`} className="p-2.5 border border-red-950/40 bg-red-950/5 text-stone-400 rounded-[1px] text-[10px] space-y-1">
-                          <div className="font-bold text-red-500 uppercase flex items-center gap-1">
-                            <AlertTriangle size={11} />
-                            <span>ANOMALY DETECTED but UNRESOLVED</span>
-                          </div>
-                          <p className="text-stone-500 text-[9px] leading-normal">
-                            Object scanning matrices indicate a micro-marking is buried here. You must calibrate alignment parameters to resolve:
-                          </p>
-                          <div className="font-mono text-[8.5px] text-amber-600/70 pl-2 space-y-0.5 border-l border-amber-900/30">
-                            <div>• ROTATION TARGET: {targetRot}° (Current: {Math.round(rotation % 360)}°)</div>
-                            <div>• RESOLUTION: {targetZoom}x (Current: {zoom.toFixed(2)}x)</div>
-                            <div>• LIGHTING: {m.requiresUV ? "UV BLACKLIGHT" : "ANY"} (Current: {getLampLabel()})</div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                      })
+                    )}
                   </div>
                 )}
               </div>

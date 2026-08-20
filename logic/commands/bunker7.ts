@@ -1,3 +1,4 @@
+
 import {
   CommandRegistry,
   CommandResult,
@@ -304,6 +305,56 @@ function isSignalHypothesisSupported(
   );
 }
 
+
+/**
+ * Determine whether the canonical progression has established the
+ * Grid Null Point convergence required by the narrative spine.
+ *
+ * This deliberately mirrors the canonical case gate:
+ *   - three military anchors investigated
+ *   - three anchor-to-anchor Board relationships
+ *   - Signal hypothesis supported or confirmed
+ *   - at least one evidence item attached to that hypothesis
+ *
+ * BUNKER_7 must not reveal final-convergence information merely because
+ * the player has drawn a partial centroid/triangle.
+ */
+function isCanonicalConvergenceEstablished(
+  snapshot: ReturnType<
+    typeof getCanonicalProgressionSnapshot
+  >,
+): boolean {
+  const anchorsInvestigated =
+    CANONICAL_ANCHORS.every((anchor) =>
+      snapshot.investigatedPlaceIds.includes(anchor),
+    );
+
+  const triangleEstablished =
+    TRIANGLE_CONNECTIONS.every((required) =>
+      snapshot.boardConnections.some(
+        (actual) =>
+          normalizeBoardConnection(actual) === required,
+      ),
+    );
+
+  const signalSupported =
+    isSignalHypothesisSupported(snapshot);
+
+  const signalEvidence =
+    (
+      snapshot.hypothesisEvidence[
+        'hyp-02-signal'
+      ] ?? []
+    ).length > 0;
+
+  return (
+    anchorsInvestigated &&
+    triangleEstablished &&
+    signalSupported &&
+    signalEvidence
+  );
+}
+
 /**
  * Canonical BUNKER_7 response resolver.
  *
@@ -333,6 +384,11 @@ function resolveCanonicalResponse(
       boardConnections,
     );
 
+  const canonicalConvergence =
+    isCanonicalConvergenceEstablished(
+      snapshot,
+    );
+
   const centroidLocked =
     isCentroidLocked(
       boardConnections,
@@ -355,7 +411,7 @@ function resolveCanonicalResponse(
    */
 
   if (
-    centroidLocked &&
+    canonicalConvergence &&
     (
       msg.includes('triangle') ||
       msg.includes('centroid') ||

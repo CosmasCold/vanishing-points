@@ -51,16 +51,14 @@ function connectionMatches(
 /**
  * Resonance Triangulation presentation layer.
  *
- * IMPORTANT:
  * Player-created Evidence Board relationships are hypotheses.
- * They must never establish canonical world state.
+ * They must never establish canonical world state by themselves.
  *
- * Canonical triangulation is therefore read exclusively from
- * progressionStore.boardConnections.
+ * The authored BUNKER_7 triangle requires all three relationships:
  *
- * The hook may react to an already-established canonical
- * triangulation by updating presentation state and playing
- * diegetic feedback, but it does not create progression itself.
+ * Mount Weather ↔ Cheyenne Mountain
+ * Cheyenne Mountain ↔ Raven Rock
+ * Raven Rock ↔ Mount Weather
  */
 export function useResonanceTriangulation() {
   const boardConnections = useProgressionStore(
@@ -83,32 +81,25 @@ export function useResonanceTriangulation() {
         ),
       );
 
-    const conn1 = hasConnection(
+    const weatherCheyenne = hasConnection(
       WEATHER_SLUGS,
       CHEYENNE_SLUGS,
     );
 
-    const conn2 = hasConnection(
+    const cheyenneRaven = hasConnection(
       CHEYENNE_SLUGS,
       RAVEN_SLUGS,
     );
 
-    const conn3 = hasConnection(
+    const ravenWeather = hasConnection(
       RAVEN_SLUGS,
       WEATHER_SLUGS,
     );
 
-    /*
-     * Canonical triangulation requires the same
-     * dual-link condition used by the existing system.
-     *
-     * The important architectural distinction is that
-     * these links can now only come from progressionStore.
-     */
     const isTriangulated =
-      (conn1 && conn2) ||
-      (conn2 && conn3) ||
-      (conn3 && conn1);
+      weatherCheyenne &&
+      cheyenneRaven &&
+      ravenWeather;
 
     if (!isTriangulated) {
       return;

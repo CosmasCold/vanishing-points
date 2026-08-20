@@ -1,5 +1,9 @@
-import type { EvidenceItem } from '@/types/investigation';
+﻿import type { EvidenceItem } from '@/types/investigation';
 import { ACT_I_CASES } from '@/data/act1Cases';
+import {
+  getCanonicalCase,
+  isCanonicalCaseCompletionAuthored,
+} from '@/data/canonicalCases';
 
 /**
  * Materialize authored source evidence from the reconciled Act I dossier.
@@ -18,12 +22,11 @@ export function getAuthoredCaseEvidence(caseSlug: string): EvidenceItem[] {
       type: 'document' as const,
       title: item.title,
       description: item.purpose,
-      source: 'ACT I CASE DOSSIER',
-      status: 'available' as const,
-      relatedTo: [caseSlug],
+      source: `Canonical dossier: ${spec.name}`,
+      status: 'available',
+      relatedTo: [],
       metadata: {
-        classification: 'authored source evidence',
-        case: caseSlug,
+        case: spec.slug,
         contentStatus: item.status,
       },
     }));
@@ -31,5 +34,39 @@ export function getAuthoredCaseEvidence(caseSlug: string): EvidenceItem[] {
 
 export function getCanonicalRequiredEvidence(caseSlug: string): string[] {
   const spec = ACT_I_CASES.find((item) => item.slug === caseSlug);
-  return spec ? [...new Set(spec.completion.requiredEvidence)] : [];
+
+  if (!spec || spec.completion.status !== 'source') {
+    return [];
+  }
+
+  return spec.completion.requiredEvidence;
+}
+
+/**
+ * Resolve a case against the canonical 36-case narrative spine.
+ *
+ * This is intentionally metadata-only for now.
+ * It does not replace Act I authored evidence or completion evaluation.
+ *
+ * An outline case is never treated as runtime-complete merely because it
+ * exists in the canonical registry.
+ */
+export function getCanonicalCaseStatus(caseSlug: string) {
+  const canonicalCase = getCanonicalCase(caseSlug);
+
+  if (!canonicalCase) {
+    return {
+      exists: false,
+      authored: false,
+      completionAuthored: false,
+      case: undefined,
+    };
+  }
+
+  return {
+    exists: true,
+    authored: canonicalCase.authoringStatus === 'authored-source',
+    completionAuthored: isCanonicalCaseCompletionAuthored(caseSlug),
+    case: canonicalCase,
+  };
 }

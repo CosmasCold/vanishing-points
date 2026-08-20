@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { HypothesisState } from '@/types/conditions';
 
-export const PROGRESSION_SCHEMA_VERSION = 2;
+export const PROGRESSION_SCHEMA_VERSION = 3;
 
 export type KnowledgeStatus =
   | 'suspected'
@@ -21,6 +21,8 @@ export interface ContradictionRecord {
   status: 'unresolved' | 'resolved' | 'accepted';
   sourceIds: string[];
   discoveredAtSession: number;
+  /** Hypothesis this contradiction currently challenges. Optional for legacy saves. */
+  hypothesisId?: string;
 }
 
 /**
@@ -186,7 +188,7 @@ export interface ProgressionState {
   changeStability: (delta: number) => number;
   changeConsensus: (delta: number) => number;
   addSessionWork: (amount?: number) => number;
-  completeCase: (caseId: string) => boolean;
+  completeCase: (caseId: string, requiredHypothesisId?: string) => boolean;
   beginSession: () => void;
 
   /**
@@ -582,13 +584,31 @@ export const useProgressionStore =
           return true;
         },
 
-        setHypothesis: (id, hypothesis) =>
+        setHypothesis: (id, hypothesis) => {
+          const current = get().hypotheses[id];
+
+          // Confirmed is a terminal epistemic state. It may only be reached
+          // from a contradiction that has been explicitly resolved/accepted.
+          if (hypothesis === 'confirmed') {
+            const unresolved = Object.values(get().contradictions).some(
+              (contradiction) =>
+                contradiction.hypothesisId === id &&
+                contradiction.status === 'unresolved',
+            );
+
+            if (unresolved) return;
+
+            // Do not allow a brand-new hypothesis to jump directly to fact.
+            if (current === undefined) return;
+          }
+
           set((state) => ({
             hypotheses: {
               ...state.hypotheses,
               [id]: hypothesis,
             },
-          })),
+          }));
+        },
 
         addHypothesisEvidence: (hypothesisId, evidenceId) => {
           const normalizedHypothesisId = hypothesisId.trim();
@@ -622,7 +642,12 @@ export const useProgressionStore =
           id,
           status,
           sourceIds = [],
-        ) =>
+        ) => {
+          // Knowledge cannot become confirmed while its hypothesis is not.
+          if (status === 'confirmed' && get().hypotheses[id] !== 'confirmed') {
+            return;
+          }
+
           set((state) => ({
             knowledge: {
               ...state.knowledge,
@@ -633,7 +658,8 @@ export const useProgressionStore =
                   state.sessionCount,
               },
             },
-          })),
+          }));
+        },
 
         addContradiction: (contradiction) => {
           if (
@@ -877,13 +903,27 @@ export const useProgressionStore =
           return get().sessionWorkDone;
         },
 
-        completeCase: (caseId) => {
+        completeCase: (caseId, requiredHypothesisId) => {
           if (
             get().completedCaseIds.includes(
               caseId,
             )
           ) {
             return false;
+          }
+
+          if (requiredHypothesisId) {
+            if (get().hypotheses[requiredHypothesisId] !== 'confirmed') {
+              return false;
+            }
+
+            const unresolved = Object.values(get().contradictions).some(
+              (contradiction) =>
+                contradiction.hypothesisId === requiredHypothesisId &&
+                contradiction.status === 'unresolved',
+            );
+
+            if (unresolved) return false;
           }
 
           set((state) => ({
@@ -1148,11 +1188,23 @@ export const useProgressionStore =
                 INITIAL_STATE.knowledge,
               ),
 
-            contradictions:
-              safeRecord<ContradictionRecord>(
-                persisted.contradictions,
-                INITIAL_STATE.contradictions,
-              ),
+            contradictions: Object.fromEntries(
+              Object.entries(
+                safeRecord<ContradictionRecord>(
+                  persisted.contradictions,
+                  INITIAL_STATE.contradictions,
+                ),
+              ).map(([id, contradiction]) => [
+                id,
+                {
+                  ...contradiction,
+                  hypothesisId:
+                    typeof contradiction.hypothesisId === 'string'
+                      ? contradiction.hypothesisId
+                      : undefined,
+                },
+              ]),
+            ),
 
             endingId:
               typeof persisted.endingId ===
